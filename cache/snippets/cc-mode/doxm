@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: doxm
+# key: doxm
+# --
+/**
+ * @mainpage ${1:Title}
+ *
+ * @section  ${2:label} ${3:title}
+ *
+ * $0
+ *
+ */

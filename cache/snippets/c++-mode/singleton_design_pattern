@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# name: singleton design pattern
+# key: singleton
+# --
+class ${1:Name} {
+    static $1 instance_;
+    $1();
+    $1& operator=($1&);
+    $1(const $1&);
+    ~$1();
+  public:
+    static $1& instance() { return instance_; }
+};
+
+${1:$(concat yas-text " ")}$1::instance_;
+
+$1::$1() {$2}
+
+$1::~$1() {$3}
+$0

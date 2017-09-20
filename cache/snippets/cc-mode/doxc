@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: doxc
+# key: doxc
+# --
+/** @brief  ${1:title}.
+ * @details ${2:description}
+ *
+ * @author  ${3:Héctor Enríquez}
+ * @code
+ *   ${4:example}
+ * @endcode
+ * @note    ${5:notes}
+ * @see     ${6:notes}
+ * @todo    ${7:tasks}
+ * @since   ${8:`(format-time-string "%d %b %Y")`}
+ */$0

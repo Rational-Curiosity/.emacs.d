@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: 3th-person
+# key: 3th_
+# possible improvement, compute the number of lines from the argument to array
+# --
+| 3th-person | Gerund | Past | Participle |
+| $1 | $2 | $3 | $4 |$0

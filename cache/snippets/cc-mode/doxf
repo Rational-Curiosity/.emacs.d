@@ -1,0 +1,17 @@
+# -*- mode: snippet -*-
+# name: doxf
+# key: doxf
+# --
+/**
+ * @brief   ${1:title}
+ * @details ${2:description}
+ *
+ * @param   ${3:name} ${4:description}
+ * @retval  ${5:variable} ${6:meaning}
+ *         <ul>
+ *           <li> ${7:value} = ${8:meaning}
+ *         </ul>
+ * @see     ${9:related}
+ * @todo    ${10:tasks}
+ * @note    ${11:notes}
+ */$0

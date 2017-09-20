@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: doxv
+# key: doxv
+# --
+/**< ${1:description} */$0
