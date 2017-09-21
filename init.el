@@ -140,26 +140,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-preview ((t (:foreground "darkgray" :underline t))))
- '(company-preview-common ((t (:inherit company-preview))))
- '(company-tooltip ((t (:background "lightgray" :foreground "black"))))
- '(company-tooltip-common ((((type x)) (:inherit company-tooltip :weight bold)) (t (:inherit company-tooltip))))
- '(company-tooltip-common-selection ((((type x)) (:inherit company-tooltip-selection :weight bold)) (t (:inherit company-tooltip-selection))))
- '(company-tooltip-selection ((t (:background "steelblue" :foreground "white"))))
- '(ediff-current-diff-A ((t (:foreground "White" :background "dark green"))))
- '(ediff-current-diff-B ((t (:foreground "White" :background "dark green"))))
- '(ediff-current-diff-C ((t (:foreground "White" :background "dark green"))))
- '(ediff-even-diff-A ((t (:background "dim gray"))))
- '(ediff-even-diff-B ((t (:background "dim gray"))))
- '(ediff-even-diff-C ((t (:background "dim gray"))))
- '(ediff-fine-diff-A ((t (:background "brown"))))
- '(ediff-fine-diff-B ((t (:background "brown"))))
- '(ediff-fine-diff-C ((t (:background "brown"))))
- '(ediff-odd-diff-A ((t (:background "dark slate gray"))))
- '(ediff-odd-diff-B ((t (:background "dark slate gray"))))
- '(ediff-odd-diff-C ((t (:background "dark slate gray"))))
- '(highlight-thing ((t (:background "dark slate gray"))))
- '(vimish-fold-overlay ((t (:background "#0f0f0f")))))
+ )
 
 (setq inhibit-startup-screen t
       ;; avoids warnings
