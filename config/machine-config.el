@@ -59,6 +59,7 @@
 ;; Machine operating system ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (eq system-type 'cygwin)
+  (add-to-list 'recentf-exclude "\\\\")
   (defun get-buffer-file-coding-system-local (process)
     (if (ede-current-project)
         (buffer-local-value 'buffer-file-coding-system (find-file-noselect (oref (ede-current-project) file)))
