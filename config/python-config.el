@@ -136,7 +136,9 @@ if __name__ == \"__main__\":
   #'sphinx-build-html)
 
 (cond
- ((string-equal python-shell-interpreter "ipython3")
+ ((or
+   (string-equal python-shell-interpreter "ipython")
+   (string-equal python-shell-interpreter "ipython3"))
   (define-key inferior-python-mode-map (kbd "M-w")
     #'ipython-to-python-ring-save)))
 
