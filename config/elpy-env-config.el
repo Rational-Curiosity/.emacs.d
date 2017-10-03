@@ -39,6 +39,7 @@
 
 (message "Importing elpy-env-config")
 (require 'python)
+(require 'python-config)
 (require 'elpy)
 (setcar (cdr (assq 'elpy-mode minor-mode-alist)) "Ep")
 
@@ -47,16 +48,6 @@
    (string-equal python-shell-interpreter "ipython")
    (string-equal python-shell-interpreter "ipython3"))
   (elpy-use-ipython python-shell-interpreter)))
-(elpy-modules-global-init)
-(define-key elpy-mode-map (kbd "M-TAB") nil)
-(define-key elpy-mode-map (kbd "<M-down>") nil)
-(define-key elpy-mode-map (kbd "<M-up>") nil)
-(define-key elpy-mode-map (kbd "<C-left>") nil)
-(define-key elpy-mode-map (kbd "<C-right>") nil)
-(define-key elpy-mode-map (kbd "<C-down>") #'forward-paragraph)
-(define-key elpy-mode-map (kbd "<C-up>") #'backward-paragraph)
-(define-key elpy-mode-map [(control tab)] #'elpy-company-backend);python-mode-map
-(define-key inferior-python-mode-map (kbd "C-c C-z") #'elpy-shell-switch-to-buffer)
 
 ;; [ backend rope insert parents always
 ;; (defun elpy-company-post-complete-parens (annotation name)
@@ -96,16 +87,22 @@
 ;; ]
 
 
-(setq elpy-rpc-python-command (cond
-                               ((or
-                                 (string-equal python-shell-interpreter "python3")
-                                 (string-equal python-shell-interpreter "ipython3"))
-                                "python3")
-                               (t "python"))
+(setq elpy-rpc-python-command python-command-version
       elpy-rpc-backend "jedi"
       elpy-company-post-completion-function #'elpy-company-post-complete-parens
       elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest"))
 
+(elpy-modules-global-init)
+
+(define-key elpy-mode-map (kbd "M-TAB") nil)
+(define-key elpy-mode-map (kbd "<M-down>") nil)
+(define-key elpy-mode-map (kbd "<M-up>") nil)
+(define-key elpy-mode-map (kbd "<C-left>") nil)
+(define-key elpy-mode-map (kbd "<C-right>") nil)
+(define-key elpy-mode-map (kbd "<C-down>") #'forward-paragraph)
+(define-key elpy-mode-map (kbd "<C-up>") #'backward-paragraph)
+(define-key elpy-mode-map [(control tab)] #'elpy-company-backend);python-mode-map
+(define-key inferior-python-mode-map (kbd "C-c C-z") #'elpy-shell-switch-to-buffer)
 
 
 (provide 'elpy-env-config)

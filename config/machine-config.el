@@ -66,15 +66,19 @@
       'utf-8-dos))
   (add-to-list 'process-coding-system-alist '("ag" . get-buffer-file-coding-system-local))
   (add-to-list 'process-coding-system-alist '("grep" . get-buffer-file-coding-system-local))
-  ;; (defun helm-ag--remove-carrige-returns ()
-  ;;   (save-excursion
-  ;;     ;; [ solve ^M at the end of the line
-  ;;     ;; (goto-char (point-min))
-  ;;     ;; (while (re-search-forward "\xd" nil t)
-  ;;     ;;   (replace-match ""))
-  ;;     ;; ]
-  ;;     ;; solve both ^M at end and acutes
-  ;;     (recode-region (point-min) (point-max) 'latin-1-dos 'utf-8-unix)))
+  (defun helm-ag--remove-carrige-returns ()
+    (save-excursion
+      ;; [ solve ^M at the end of the line
+      (goto-char (point-min))
+      (while (re-search-forward "\xd" nil t)
+        (replace-match ""))
+      ;; ]
+      ;; <xor>
+      ;; [ solve both ^M at end and acutes
+      ;; but have any problems... I don't remember
+      ;; (recode-region (point-min) (point-max) 'latin-1-dos 'utf-8-unix)
+      ;; ]
+      ))
   ;; correct ascii characters
   (defun ascii-to-utf8-compilation-filter ()
     (ascii-to-utf8-forward compilation-filter-start))

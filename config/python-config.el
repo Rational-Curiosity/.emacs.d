@@ -24,6 +24,13 @@
       python-shell-interpreter-args "-i"
       python-indent-guess-indent-offset nil)
 
+(defvar python-command-version (cond
+                               ((or
+                                 (string-equal python-shell-interpreter "python3")
+                                 (string-equal python-shell-interpreter "ipython3"))
+                                "python3")
+                               (t "python")))
+
 (add-hook 'python-mode-hook
           (lambda ()
             (setq-default tab-width 4)
