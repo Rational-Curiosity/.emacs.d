@@ -60,6 +60,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (eq system-type 'cygwin)
   (add-to-list 'recentf-exclude "\\\\")
+  ;; coding
   (defun get-buffer-file-coding-system-local (process)
     (if (ede-current-project)
         (buffer-local-value 'buffer-file-coding-system (find-file-noselect (oref (ede-current-project) file)))
@@ -83,7 +84,9 @@
   (defun ascii-to-utf8-compilation-filter ()
     (ascii-to-utf8-forward compilation-filter-start))
   (add-hook 'compilation-filter-hook 'ascii-to-utf8-compilation-filter)
-  ;; obtain linux style paths
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; obtain linux style paths ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (defun path-style-windows-to-linux (filename)
     (if (string-match "\\([A-Z]\\):\\\\" filename)
         (replace-regexp-in-string
@@ -93,12 +96,33 @@
                   (downcase (match-string 1 filename))
                   "/") nil t filename) nil 'literal)
       (replace-regexp-in-string "\\\\" "/" filename nil 'literal)))
+  ;; shell-command
+  (defun shell-command-advice (orig-fun command &rest args)
+    (if (string-match "java" command)
+        (apply orig-fun (replace-regexp-in-string
+                         " /"
+                         " /cygwin64/"
+                         command
+                         nil
+                         'literal) args)
+      (apply orig-fun command args)))
+  (advice-add 'shell-command :around #'shell-command-advice)
   ;; find-file
   ;; (defun find-file-advice (orig-fun filename &rest args)
   ;;   (set 'filename (path-style-windows-to-linux filename))
   ;;   (apply orig-fun filename args))
   ;; (require 'files)
   ;; (advice-add 'find-file-noselect :around #'find-file-advice)
+  ;; expand file name
+  ;; (defun expand-file-name-advice (orig-fun filename &rest args)
+  ;;   (if (string-match "^\\([A-Z]\\):\\\\" filename)
+  ;;       filename
+  ;;     (apply orig-fun filename args)))
+  ;; (advice-add 'expand-file-name :around #'expand-file-name-advice)
+  ;; file exist
+  ;; (defun file-exists-p-advice (orig-fun filename &rest args)
+  ;;   (apply orig-fun (path-style-windows-to-linux filename) args))
+  ;; (advice-add 'file-exists-p :around #'file-exists-p-advice)
   ;; compile
   (defun compilation-find-file-advice (orig-fun maker filename &rest args)
     (set 'filename (path-style-windows-to-linux filename))

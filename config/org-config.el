@@ -88,9 +88,9 @@
       org-babel-python-command "python3"
       ;; No pregunta al usuario antes de evaluar un bloque de código
       org-confirm-babel-evaluate nil
+      org-src-fontify-natively t
       org-plantuml-jar-path (expand-file-name "~/bin/plantuml.jar")
-      org-ditaa-jar-path "/usr/share/ditaa/ditaa.jar"
-      org-src-fontify-natively t)
+      org-ditaa-jar-path "/usr/share/ditaa/ditaa.jar")
 ;; active Babel languages
 (org-babel-do-load-languages
   'org-babel-load-languages
