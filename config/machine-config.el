@@ -98,15 +98,14 @@
       (replace-regexp-in-string "\\\\" "/" filename nil 'literal)))
   ;; shell-command
   (defun shell-command-advice (orig-fun command &rest args)
-    (if (string-match "java" command)
+    (if (string-match "^java" command)
         (apply orig-fun (replace-regexp-in-string
-                         " /"
-                         " /cygwin64/"
-                         command
-                         nil
-                         'literal) args)
+                         "\\([^<>]\\) +/"
+                         "\\1 /cygwin64/"
+                         command) args)
       (apply orig-fun command args)))
   (advice-add 'shell-command :around #'shell-command-advice)
+  (advice-add 'org-babel-eval :around #'shell-command-advice)
   ;; find-file
   ;; (defun find-file-advice (orig-fun filename &rest args)
   ;;   (set 'filename (path-style-windows-to-linux filename))

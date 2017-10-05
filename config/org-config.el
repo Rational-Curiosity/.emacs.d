@@ -89,8 +89,12 @@
       ;; No pregunta al usuario antes de evaluar un bloque de código
       org-confirm-babel-evaluate nil
       org-src-fontify-natively t
-      org-plantuml-jar-path (expand-file-name "~/bin/plantuml.jar")
-      org-ditaa-jar-path "/usr/share/ditaa/ditaa.jar")
+      org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/plantuml.jar")
+      org-babel-default-header-args:plantuml
+      '((:results . "file")
+        (:exports . "results")
+        (:java . "-Dfile.encoding=UTF-8"))
+      org-ditaa-jar-path (expand-file-name "~/.emacs.d/cache/ditaa.jar"))
 ;; active Babel languages
 (org-babel-do-load-languages
   'org-babel-load-languages
@@ -189,7 +193,6 @@
 (require 'ox-odt-bug)
 (setq org-odt-fontify-srcblocks t
       org-odt-create-custom-styles-for-srcblocks t
-      org-odt-preferred-output-format "doc"
       org-odt-table-styles
       (append org-odt-table-styles
               '(("TableWithBandingRows" "Custom"
@@ -197,7 +200,18 @@
                 ("TableWithBandingColumns" "Custom"
                  ((use-banding-column-styles . t)))
                 ("TableWithHeaderRow" "Custom"
-                 ((use-first-row-styles . t))))))
+                 ((use-first-row-styles . t)))))
+      ;; Convert to other formats
+      org-odt-convert-processes
+      '(("LibreOffice"
+         "soffice --headless --convert-to %f%x --outdir %d %i")
+        ("unoconv"
+         "unoconv -f %f -o %d %i"))
+      org-odt-convert-process (cond
+                               ((executable-find "soffice") "LibreOffice")
+                               ((executable-find "unoconv") "unoconv")
+                               (t nil))
+      org-odt-preferred-output-format (and org-odt-convert-process "doc"))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert pytex environments ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
