@@ -677,6 +677,26 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
+(require 'config-lib)
+(defun org-af (&optional prefix suffix)
+  "Return filename counting blocks using this function.
+Filename returned has the format:
+
+PREFIX block-number SUFFIX
+
+Example: doc000012.png
+
+PREFIX - default buffer name without extension
+SUFFIX - default .png"
+  (let ((number 0)
+        (pre (or prefix (file-name-sans-extension (buffer-name))))
+        (suf (or suffix ".png")))
+    (save-excursion
+      (forward-line 1)
+      (while (re-search-backward (format "#\\+BEGIN_SRC.*%s" (compile-time-function-name)) nil t)
+        (cl-incf number)))
+    (concat pre (format "%06d" number) suf)))
+
 (defun org-archive-done-tasks (&optional scope)
   (interactive "P")
   (cond
