@@ -318,6 +318,13 @@
 ;; cmake highlight
 (autoload 'cmake-font-lock-activate "cmake-font-lock" nil t)
 (add-hook 'cmake-mode-hook #'cmake-font-lock-activate)
+;; flymake-mode
+;; thanks to: stackoverflow.com/questions/6110691/is-there-a-way-to-make-flymake-to-compile-only-when-i-save
+(with-eval-after-load 'flymake
+  (defun flymake-after-change-function (start stop len)
+    "Start syntax check for current buffer if it isn't already running."
+    ;; Do nothing, don't want to run checks until I save.
+    ))
 ;; cc-mode
 (with-eval-after-load 'cc-mode
   (require 'c-c++-config)
