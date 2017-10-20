@@ -385,10 +385,12 @@
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
   (require 'python-config))
-(add-hook 'python-mode-hook #'elpy-mode)
-(add-hook 'pyvenv-post-activate-hooks 'elpy-rpc--disconnect)
-(with-eval-after-load 'elpy
-  (require 'elpy-env-config))
+;; [ annoying performance
+;; (add-hook 'python-mode-hook #'elpy-mode)
+;; (add-hook 'pyvenv-post-activate-hooks 'elpy-rpc--disconnect)
+;; (with-eval-after-load 'elpy
+;;   (require 'elpy-env-config))
+;; ]
 
 ;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
 (autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)

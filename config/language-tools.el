@@ -40,10 +40,11 @@
     (goto-char (point-min))
     (if (re-search-forward language-phonemic-script-regex nil t)
         (match-string 1)
-      (message "Phonemic script not found"))))
+      (error "Phonemic script not found"))))
 
 (defun language-get-translation (word from to &optional items)
-  "Get ITEMS posible translations of WORD from FROM to TO."
+  "Get items posible translations of WORD from FROM to TO.
+If no ITEMS `language-items-number'."
   (with-current-buffer
       (language-url-request-to-buffer word from to)
     (goto-char (point-min))
@@ -55,7 +56,9 @@
           (unless (member item matches)
             (cl-decf items-number)
             (push item matches))))
-      (nreverse matches))))
+      (if matches
+          (nreverse matches)
+        (error "Translation not found")))))
 
 (defun language-get-phonemic-script-and-translation (word from to &optional items)
   "Get ITEMS posible translations of WORD from FROM to TO, with phonemic script."
@@ -73,18 +76,22 @@
                 (cl-decf items-number)
                 (push item matches))))
           (cons phonemic-script (nreverse matches)))
-      (message "Phonemic script not found"))))
+      (error "Phonemic script not found"))))
 
 (defun language-goto-insertion-point ()
+  "Goto proper insertion point."
   (let ((curr-char (char-after (point))))
     (condition-case nil
-        (unless (or (char-equal 10 curr-char) (char-equal ?  curr-char))
+        (when (and curr-char
+                   (memq (get-char-code-property curr-char 'general-category)
+                         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
           (right-word 1))
       (error nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactive functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'thingatpt)
 ;;(mapconcat 'identity matches ", ")
 
 (defun language-en-es-translation-at-point (&optional items)
