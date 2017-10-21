@@ -60,6 +60,7 @@ If no ITEMS `language-items-number'."
           (nreverse matches)
         (error "Translation not found")))))
 
+(require 'subr-x)
 (defun language-get-phonemic-script-and-translation (word from to &optional items)
   "Get ITEMS posible translations of WORD from FROM to TO, with phonemic script."
   (with-current-buffer
@@ -95,6 +96,8 @@ If no ITEMS `language-items-number'."
 ;;(mapconcat 'identity matches ", ")
 
 (defun language-en-es-translation-at-point (&optional items)
+  "Get ITEMS translations of the word at point.
+By default insert it, with prefix display a message with it."
   (interactive "P")
   (cond
    ((equal items '(4))
@@ -114,6 +117,8 @@ If no ITEMS `language-items-number'."
                           translation ", ")))))))
 
 (defun language-en-es-phonemic-script-and-translation-at-point (&optional items)
+  "Get the phonemic script and ITEMS translations of the word at point.
+By default insert it, with prefix display a message with it."
   (interactive "P")
   (cond
    ((equal items '(4))
@@ -139,6 +144,8 @@ If no ITEMS `language-items-number'."
                           (cdr translation) ", ")))))))
 
 (defun language-phonemic-script-at-point (&optional paren)
+  "Get the phonemic script of the word at point.
+By default insert it, with prefix display a message with it."
   (interactive "P")
   (cond
    ((equal paren '(4))
