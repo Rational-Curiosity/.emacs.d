@@ -90,7 +90,17 @@
 (setq elpy-rpc-python-command python-command-version
       elpy-rpc-backend "jedi"
       elpy-company-post-completion-function #'elpy-company-post-complete-parens
-      elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest"))
+      elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest")
+      elpy-modules '(elpy-module-sane-defaults
+                          elpy-module-company
+                          elpy-module-eldoc
+                          elpy-module-flymake
+                          ;; [ poor performance
+                          ;; elpy-module-highlight-indentation
+                          ;; ]
+                          elpy-module-pyvenv
+                          elpy-module-yasnippet
+                          elpy-module-django))
 
 (elpy-modules-global-init)
 

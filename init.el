@@ -133,14 +133,33 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (flymake ox-gfm smart-mode-line undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds thingatpt+ protobuf-mode csv-mode markdown-mode+ org gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode org-plus-contrib async auctex bind-key cmake-mode company dash epl let-alist pkg-info popup projectile rich-minority s seq web-completion-data flycheck helm helm-core irony elpy pyvenv highlight-indentation find-file-in-project ivy python-mode company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags which-key transpose-frame string-inflection smooth-scrolling smartparens rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-swoop helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers company-auctex cmake-font-lock clang-format bookmark+ bash-completion android-mode ag))))
+    (flymake ox-gfm smart-mode-line undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds thingatpt+ protobuf-mode csv-mode markdown-mode+ org gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode org-plus-contrib async auctex bind-key cmake-mode company dash epl let-alist pkg-info popup projectile rich-minority s seq web-completion-data flycheck helm helm-core irony elpy pyvenv highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags which-key transpose-frame string-inflection smooth-scrolling smartparens rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-swoop helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers company-auctex cmake-font-lock clang-format bookmark+ bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(company-preview ((t (:foreground "darkgray" :underline t))))
+ '(company-preview-common ((t (:inherit company-preview))))
+ '(company-tooltip ((t (:background "lightgray" :foreground "black"))))
+ '(company-tooltip-common ((((type x)) (:inherit company-tooltip :weight bold)) (t (:inherit company-tooltip))))
+ '(company-tooltip-common-selection ((((type x)) (:inherit company-tooltip-selection :weight bold)) (t (:inherit company-tooltip-selection))))
+ '(company-tooltip-selection ((t (:background "steelblue" :foreground "white"))))
+ '(ediff-current-diff-A ((t (:foreground "White" :background "dark green"))))
+ '(ediff-current-diff-B ((t (:foreground "White" :background "dark green"))))
+ '(ediff-current-diff-C ((t (:foreground "White" :background "dark green"))))
+ '(ediff-even-diff-A ((t (:background "dim gray"))))
+ '(ediff-even-diff-B ((t (:background "dim gray"))))
+ '(ediff-even-diff-C ((t (:background "dim gray"))))
+ '(ediff-fine-diff-A ((t (:background "brown"))))
+ '(ediff-fine-diff-B ((t (:background "brown"))))
+ '(ediff-fine-diff-C ((t (:background "brown"))))
+ '(ediff-odd-diff-A ((t (:background "dark slate gray"))))
+ '(ediff-odd-diff-B ((t (:background "dark slate gray"))))
+ '(ediff-odd-diff-C ((t (:background "dark slate gray"))))
+ '(highlight-thing ((t (:background "dark slate gray"))))
+ '(vimish-fold-overlay ((t (:background "#0f0f0f")))))
 
 (setq inhibit-startup-screen t
       ;; avoids warnings
@@ -357,8 +376,8 @@
   ;; ]
   ;; ]]
   )
-
-(add-hook 'c-mode-common-hook #'highlight-indentation-mode)
+;; poor performance
+;; (add-hook 'c-mode-common-hook #'highlight-indentation-mode)
 ;; ] <c-c++>
 
 
@@ -380,17 +399,18 @@
 (add-hook 'python-mode-hook #'sphinx-doc-mode)
 (with-eval-after-load 'sphinx-doc
   (require 'sphinx-doc-config))
-(with-eval-after-load 'python-mode
+(with-eval-after-load 'python
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
   (require 'python-config))
-;; [ annoying performance
-;; (add-hook 'python-mode-hook #'elpy-mode)
-;; (add-hook 'pyvenv-post-activate-hooks 'elpy-rpc--disconnect)
-;; (with-eval-after-load 'elpy
-;;   (require 'elpy-env-config))
-;; ]
+;; packages elpy-mode and python-mode are incompatible
+;; among other things for duplicate features
+(add-hook 'python-mode-hook #'elpy-mode)
+(add-hook 'pyvenv-post-activate-hooks 'elpy-rpc--disconnect)
+(with-eval-after-load 'elpy
+  (require 'elpy-env-config))
+
 
 ;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
 (autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
