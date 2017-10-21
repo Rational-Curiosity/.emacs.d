@@ -133,7 +133,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (flymake ox-gfm smart-mode-line undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds thingatpt+ protobuf-mode csv-mode markdown-mode+ org gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode org-plus-contrib async auctex bind-key cmake-mode company dash epl let-alist pkg-info popup projectile rich-minority s seq web-completion-data flycheck helm helm-core irony elpy pyvenv highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags which-key transpose-frame string-inflection smooth-scrolling smartparens rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-swoop helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers company-auctex cmake-font-lock clang-format bookmark+ bash-completion android-mode ag))))
+    (highlight-indent-guides flymake ox-gfm smart-mode-line undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds thingatpt+ protobuf-mode csv-mode markdown-mode+ org gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode org-plus-contrib async auctex bind-key cmake-mode company dash epl let-alist pkg-info popup projectile rich-minority s seq web-completion-data flycheck helm helm-core irony elpy pyvenv highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags which-key transpose-frame string-inflection smooth-scrolling smartparens rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-swoop helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers company-auctex cmake-font-lock clang-format bookmark+ bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -287,6 +287,10 @@
 (add-hook 'prog-mode-hook #'highlight-thing-mode)
 (with-eval-after-load 'highlight-thing
   (require 'highlight-thing-config))
+;; highlight-indent-guides
+(add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
+(with-eval-after-load 'highlight-indent-guides
+  (require 'highlight-indent-guides-config))
 ;; rainbow-delimiters-mode (before smartparens-mode)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 (with-eval-after-load 'rainbow-delimiters
