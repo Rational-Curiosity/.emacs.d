@@ -183,12 +183,19 @@ prompt the user for a coding system."
 ;; ⇤ 8676  LEFTWARDS ARROW TO BAR
 ;; ⇥ 8677  RIGHTWARDS ARROW TO BAR
 ;; ⇨ 8680  RIGHTWARDS WHITE ARROW
-(setq whitespace-display-mappings
-      '(
-;;        (space-mark   ?\     [? ]) ;; use space not dot
-        (newline-mark 10   [8629 10] [36 10])
-        (tab-mark     9    [8676 32 8677 32] [92 9])))
-
+(defun my-whitespace-display-mappings (frame)
+  (interactive)
+  (if (display-graphic-p frame)
+      (setq whitespace-display-mappings
+            '(;; (space-mark   ?\     [? ]) ;; use space not dot
+              (newline-mark 10   [8629 10] [36 10])
+              (tab-mark     9    [8676 32 8677 32] [92 9])))
+    (setq whitespace-display-mappings
+          '(;; (space-mark   ?\     [? ]) ;; use space not dot
+            (newline-mark 10   [36 10])
+            (tab-mark     9    [46 95 46 32])))))
+(my-whitespace-display-mappings (selected-frame))
+(add-hook 'after-make-frame-functions #'my-whitespace-display-mappings)
 
 (defmacro save-line (&rest body)
   `(let* ((origin (point))
@@ -264,7 +271,10 @@ prompt the user for a coding system."
                           :height 100
                           :weight 'light
                           :slant 'normal
-                          :width 'normal))))
+                          :width 'normal))
+    (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
+                (equal "unspecified-fg" (face-foreground 'default nil 'default)))
+      (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))))
 (my-default-font (selected-frame))
 (add-hook 'after-make-frame-functions 'my-default-font)
 ;;;;;;;;;;;;

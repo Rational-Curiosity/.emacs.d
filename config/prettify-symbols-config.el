@@ -53,7 +53,7 @@
      ("<f7> t"  . prettify-symbols-mode))))
 
 (my-prettify-config (selected-frame))
-(add-hook 'after-make-frame-functions 'my-prettify-config)
+(add-hook 'after-make-frame-functions #'my-prettify-config)
 
 
 (provide 'prettify-symbols-config)

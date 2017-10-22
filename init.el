@@ -287,8 +287,7 @@
 (add-hook 'prog-mode-hook #'highlight-thing-mode)
 (with-eval-after-load 'highlight-thing
   (require 'highlight-thing-config))
-;; highlight-indent-guides
-(add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
+;; highlight-indent-guides (started inside typing-config when emacs server)
 (with-eval-after-load 'highlight-indent-guides
   (require 'highlight-indent-guides-config))
 ;; rainbow-delimiters-mode (before smartparens-mode)
