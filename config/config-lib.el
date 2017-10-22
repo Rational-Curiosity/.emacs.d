@@ -17,8 +17,8 @@
         (index 5))
     (while (setq frame (backtrace-frame index))
       (push frame frames)
-      (incf index))
-    (remove-if-not 'car frames)))
+      (cl-incf index))
+    (cl-remove-if-not 'car frames)))
 
 (defmacro compile-time-function-name ()
   "Get the name of calling function at expansion time."
@@ -49,7 +49,7 @@
 ;; Eval checking bound before
 (defmacro bound-and-eval (func &rest args)
   "Ensures FUNC exist and eval with ARGS."
-  `(and (fboundp ,func) (eval (list ,func ,@args))))
+  (list 'and (list 'fboundp func) (list 'apply func (list 'quote args))))
 
 ;; Silent messages
 ;; Usage:
@@ -67,6 +67,20 @@
   "Stablish `message-truncate-lines' and eval ORIG-FUN with ARGS."
   (let ((message-truncate-lines t))
     (apply orig-fun args)))
+
+(require 'server)
+(defmacro with-daemon-after-frame (frame &rest body)
+  "When starting daemon wait FRAME ready before BODY."
+  (declare (indent defun))
+  (cons 'if
+        (cons
+         (list 'daemonp)
+         (append
+          (list (list 'add-hook (quote 'after-make-frame-functions)
+                      (cons 'lambda (cons (list frame) body))))
+          (list (list 'funcall
+                      (cons 'lambda (cons (list frame) body))
+                      (list 'selected-frame)))))))
 
 
 (provide 'config-lib)

@@ -16,6 +16,7 @@
 ;; para que las plantillas de 'yasnippet' no añadan nueva liena
 (set 'mode-require-final-newline nil)
 
+(require 'config-lib)
 ;;;;;;;;;;;;;;;;;;;
 ;; Coding system ;;
 ;;;;;;;;;;;;;;;;;;;
@@ -30,13 +31,10 @@
       file-name-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8-unix)
 
-(defun my-default-keyboard-coding-system (frame)
-  (interactive)
+(with-daemon-after-frame frame
   (with-selected-frame frame
     (unless window-system
       (set-keyboard-coding-system 'utf-8))))
-(my-default-keyboard-coding-system (selected-frame))
-(add-hook 'after-make-frame-functions 'my-default-keyboard-coding-system)
 
 (set-selection-coding-system 'utf-8)
 (set-next-selection-coding-system 'utf-8)
@@ -171,6 +169,7 @@ prompt the user for a coding system."
                               (whitespace-mode)))
 (add-hook 'csv-mode-hook #'whitespace-mode)
 (setq whitespace-style '(face tab newline tab-mark newline-mark))
+
 ;; ·  183   MIDDLE DOT
 ;; ¶  182   PILCROW SIGN
 ;; ↵  8629  DOWNWARDS ARROW WITH CORNER LEFTWARDS
@@ -183,19 +182,16 @@ prompt the user for a coding system."
 ;; ⇤ 8676  LEFTWARDS ARROW TO BAR
 ;; ⇥ 8677  RIGHTWARDS ARROW TO BAR
 ;; ⇨ 8680  RIGHTWARDS WHITE ARROW
-(defun my-whitespace-display-mappings (frame)
-  (interactive)
+(with-daemon-after-frame frame
   (if (display-graphic-p frame)
       (setq whitespace-display-mappings
             '(;; (space-mark   ?\     [? ]) ;; use space not dot
               (newline-mark 10   [8629 10] [36 10])
               (tab-mark     9    [8676 32 8677 32] [92 9])))
     (setq whitespace-display-mappings
-          '(;; (space-mark   ?\     [? ]) ;; use space not dot
+          '(;; (space-mark   ?\     [? ])  ;; use space not dot
             (newline-mark 10   [36 10])
             (tab-mark     9    [46 95 46 32])))))
-(my-whitespace-display-mappings (selected-frame))
-(add-hook 'after-make-frame-functions #'my-whitespace-display-mappings)
 
 (defmacro save-line (&rest body)
   `(let* ((origin (point))
@@ -249,8 +245,7 @@ prompt the user for a coding system."
 ;;;;;;;;;;
 ;; set a default font
 ;; $(sudo fc-cache -rfv)
-(defun my-default-font (frame)
-  (interactive)
+(with-daemon-after-frame frame
   (with-selected-frame frame
     (if (member "Iosevka Term" (font-family-list))
         (progn
@@ -275,8 +270,6 @@ prompt the user for a coding system."
     (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
                 (equal "unspecified-fg" (face-foreground 'default nil 'default)))
       (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))))
-(my-default-font (selected-frame))
-(add-hook 'after-make-frame-functions 'my-default-font)
 ;;;;;;;;;;;;
 ;; Moving ;;
 ;;;;;;;;;;;;

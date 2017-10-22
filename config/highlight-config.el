@@ -46,5 +46,6 @@
   (unhighlight-regexp "\\_<information\\_>")
   (unhighlight-regexp "\\_<assertion\\_>"))
 
+
 (provide 'highlight-config)
 ;;; highlight-config.el ends here

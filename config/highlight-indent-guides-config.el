@@ -14,14 +14,10 @@
       ;; disable or enable auto-theme
       highlight-indent-guides-auto-enabled t)
 
-(defun my-highlight-indent-guides-config (frame)
-  (interactive)
+(with-daemon-after-frame frame
   (if (display-graphic-p frame)
       (setq highlight-indent-guides-character 9474)
     (setq highlight-indent-guides-character ?\|)))
-
-(my-highlight-indent-guides-config (selected-frame))
-(add-hook 'after-make-frame-functions 'my-highlight-indent-guides-config)
 
 ;; (set-face-background 'highlight-indent-guides-odd-face "darkgray")
 ;; (set-face-background 'highlight-indent-guides-even-face "dimgray")

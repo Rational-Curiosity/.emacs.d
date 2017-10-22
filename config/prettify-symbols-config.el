@@ -8,9 +8,7 @@
 ;;; Code:
 
 ;;(global-prettify-symbols-mode)
-(defun my-prettify-config (frame)
-  "Configure prettify-symbols in the FRAME."
-  (interactive)
+(with-daemon-after-frame frame
   (when (display-graphic-p frame)
     (setq prettify-symbols-unprettify-at-point 'right-edge)
 
@@ -51,9 +49,6 @@
 
     (bind-keys
      ("<f7> t"  . prettify-symbols-mode))))
-
-(my-prettify-config (selected-frame))
-(add-hook 'after-make-frame-functions #'my-prettify-config)
 
 
 (provide 'prettify-symbols-config)

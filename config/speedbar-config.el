@@ -25,15 +25,10 @@
 ;; (setq speedbar-hide-button-brackets-flag t)
 ;; (setq speedbar-show-unknown-files t)
 ;; (setq speedbar-smart-directory-expand-flag t)
-
-(defun my-speedbar-enable-images (&optional frame)
-  "Enable images in FRAME."
-  (interactive)
-  (when (display-graphic-p)
+(with-daemon-after-frame frame
+  (when (display-graphic-p frame)
     (setq ezimage-use-images t
           speedbar-use-images t)))
-(my-speedbar-enable-images)
-(add-hook 'after-make-frame-functions 'my-speedbar-enable-images)
 
 (speedbar-enable-update)
 
