@@ -9,6 +9,7 @@
 
 (message "Importing speedbar-config")
 (require 'speedbar)
+(require 'config-lib)
 
 ;; (require 'eieio)
 ;; (require 'eieio-speedbar)

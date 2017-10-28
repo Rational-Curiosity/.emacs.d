@@ -121,9 +121,16 @@
 ;; server-visit-hook is run every time the server is called (when call emacsclient).
 ;; server-done-hook Hook run when done editing a buffer for the Emacs server.
 
+;; Cargaremos las configuraciones desde otros ficheros
+;; Se evalua al compilar y cuando se arranca el programa
+(eval-and-compile
+  (add-to-list 'load-path "~/.emacs.d/bugs")
+  (add-to-list 'load-path "~/.emacs.d/config"))
+
 (require 'cl-lib)
 (eval-when-compile
   (require 'cl)) ;; obsolete but used
+(require 'config-lib)
 
 ;;(modify-frame-parameters nil '((wait-for-wm . nil)))
 (custom-set-variables
@@ -182,13 +189,8 @@
           (mapc #'package-install list-of-uninstalled)))))
   ;; Desinstalamos los que sobran
   ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-  (package-autoremove))
-
-;; Cargaremos las configuraciones desde otros ficheros
-;; Se evalua al compilar y cuando se arranca el programa
-(eval-and-compile
-  (add-to-list 'load-path "~/.emacs.d/bugs")
-  (add-to-list 'load-path "~/.emacs.d/config"))
+  (with-daemon-after-frame nil
+    (package-autoremove)))
 
 ;; Se evalua al compilar pero no cuando corre el programa compilado
 ;; (eval-when-compile
@@ -288,6 +290,7 @@
 (with-eval-after-load 'highlight-thing
   (require 'highlight-thing-config))
 ;; highlight-indent-guides (started inside typing-config when emacs server)
+(add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
 (with-eval-after-load 'highlight-indent-guides
   (require 'highlight-indent-guides-config))
 ;; rainbow-delimiters-mode (before smartparens-mode)

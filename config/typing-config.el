@@ -267,9 +267,10 @@ prompt the user for a coding system."
                           :weight 'light
                           :slant 'normal
                           :width 'normal))
-    (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
-                (equal "unspecified-fg" (face-foreground 'default nil 'default)))
-      (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))))
+    ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
+    ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
+    ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
+    ))
 ;;;;;;;;;;;;
 ;; Moving ;;
 ;;;;;;;;;;;;

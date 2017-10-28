@@ -77,9 +77,9 @@
          (list 'daemonp)
          (append
           (list (list 'add-hook (quote 'after-make-frame-functions)
-                      (cons 'lambda (cons (list frame) body))))
+                      (cons 'lambda (cons (list (if frame frame 'frame)) body))))
           (list (list 'funcall
-                      (cons 'lambda (cons (list frame) body))
+                      (cons 'lambda (cons (list (if frame frame 'frame)) body))
                       (list 'selected-frame)))))))
 
 
