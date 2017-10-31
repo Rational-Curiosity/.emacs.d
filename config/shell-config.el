@@ -74,8 +74,8 @@
 ;;                                     (and (bound-and-true-p execute-command)
 ;;                                          (eval execute-command))))))
 (defvar execute-list '(compile execute test check config convert copy move next previous extern generate clean recompile build rebuild))
-(defun execute ()
-  (interactive)
+(defun execute (&optional arg)
+  (interactive "P")
   (let* ((pair-list (cl-remove-if-not
                      #'boundp
                      execute-list))
@@ -83,6 +83,7 @@
          (default-directory (if current-prefix-arg
                                 (read-string "Execute directory: " (eval (cdr pair)))
                               (eval (cdr pair)))))
+    (save-some-buffers arg)
     (compilation-start (read-string "Execute command: " (eval (car pair))))))
 
 ;;;;;;;;;;;;;;;
