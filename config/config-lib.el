@@ -82,6 +82,41 @@
                       (cons 'lambda (cons (list (if frame frame 'frame)) body))
                       (list 'selected-frame)))))))
 
+;; Establish safe dir-locals variables
+(defun safe-dir-locals (dir list &optional class)
+  (unless class
+    (setq class dir))
+  (dir-locals-set-class-variables class list)
+  (dir-locals-set-directory-class dir class)
+  (dolist (item list)
+    (setq safe-local-variable-values (append safe-local-variable-values (cdr item))))
+  class)
+
+
+;; regex inside each file in list
+;; return first occurence
+(defun re-search-in-files (regex files &optional first)
+  (let ((matched '()))
+    (while (and
+            files
+            (not (and first matched)))
+      (let* ((file (pop files))
+             (buffer (get-file-buffer file)))
+        (if buffer
+            (with-current-buffer buffer
+              (save-excursion
+                (goto-char (point-min))
+                (when (re-search-forward regex nil t)
+                  (push file matched))))
+          (let ((buffer (find-file-noselect file t t)))
+            (with-current-buffer buffer
+              (when (re-search-forward regex nil t)
+                (push file matched)))
+            (kill-buffer buffer)))))
+    (if first
+        (car matched)
+      matched)))
+
 
 (provide 'config-lib)
 ;;; config-lib.el ends here
