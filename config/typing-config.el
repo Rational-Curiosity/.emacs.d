@@ -31,7 +31,7 @@
       file-name-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8-unix)
 
-(with-daemon-after-frame frame
+(eval-and-when-daemon frame
   (with-selected-frame frame
     (unless window-system
       (set-keyboard-coding-system 'utf-8))))
@@ -182,7 +182,7 @@ prompt the user for a coding system."
 ;; ⇤ 8676  LEFTWARDS ARROW TO BAR
 ;; ⇥ 8677  RIGHTWARDS ARROW TO BAR
 ;; ⇨ 8680  RIGHTWARDS WHITE ARROW
-(with-daemon-after-frame frame
+(eval-and-when-daemon frame
   (if (display-graphic-p frame)
       (setq whitespace-display-mappings
             '(;; (space-mark   ?\     [? ]) ;; use space not dot
@@ -245,7 +245,7 @@ prompt the user for a coding system."
 ;;;;;;;;;;
 ;; set a default font
 ;; $(sudo fc-cache -rfv)
-(with-daemon-after-frame frame
+(eval-and-when-daemon frame
   (with-selected-frame frame
     (if (member "Iosevka Term" (font-family-list))
         (progn

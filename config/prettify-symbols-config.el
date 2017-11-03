@@ -11,7 +11,7 @@
 
 (require 'config-lib)
 
-(with-daemon-after-frame frame
+(eval-and-when-daemon frame
   (when (display-graphic-p frame)
     (setq prettify-symbols-unprettify-at-point 'right-edge)
 

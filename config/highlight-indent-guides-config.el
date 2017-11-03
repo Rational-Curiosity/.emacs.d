@@ -16,7 +16,7 @@
       ;; disable or enable auto-theme
       highlight-indent-guides-auto-enabled nil)
 
-(with-daemon-after-frame frame
+(eval-and-when-daemon frame
   (unless (display-graphic-p frame)
     (setq highlight-indent-guides-character ?\|)))
 

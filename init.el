@@ -123,14 +123,14 @@
 
 ;; Cargaremos las configuraciones desde otros ficheros
 ;; Se evalua al compilar y cuando se arranca el programa
-(eval-and-compile
-  (add-to-list 'load-path "~/.emacs.d/bugs")
-  (add-to-list 'load-path "~/.emacs.d/config"))
-
 (require 'cl-lib)
 (eval-when-compile
-  (require 'cl)) ;; obsolete but used
-(require 'config-lib)
+  (require 'cl))
+
+(eval-and-compile
+  (add-to-list 'load-path "~/.emacs.d/bugs")
+  (add-to-list 'load-path "~/.emacs.d/config")
+  (require 'config-lib))
 
 ;;(modify-frame-parameters nil '((wait-for-wm . nil)))
 (custom-set-variables
@@ -158,43 +158,7 @@
 ;;        Paquetes        ;;
 ;;                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(require 'package)
-(setq package-enable-at-startup nil)
-;; (add-to-list 'package-archives '("ELPA"         . "http://tromey.com/elpa/"))
-(add-to-list 'package-archives '("gnu"          . "http://elpa.gnu.org/packages/"))
-(add-to-list 'package-archives '("melpa"        . "https://melpa.org/packages/"))
-(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
-(add-to-list 'package-archives '("marmalade"    . "http://marmalade-repo.org/packages/"))
-(add-to-list 'package-archives '("org"          . "http://orgmode.org/elpa/"))
-(delete-dups  package-archives)
-(package-initialize)
-
-;; (unless (package-installed-p 'use-package)
-;;   (package-refresh-contents)
-;;   (package-install 'use-package))
-
-(with-eval-after-load 'custom
-  ;; Instalamos los paquetes que falten
-  (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
-    (if (cl-every #'identity list-of-boolean)
-        (message "Nothing to install")
-      (progn
-        (package-refresh-contents)
-        (let ((list-of-uninstalled '()))
-          (cl-mapc #'(lambda (a b)
-                       (unless a
-                         (set 'list-of-uninstalled (cons b list-of-uninstalled))))
-                   list-of-boolean package-selected-packages)
-          (mapc #'package-install list-of-uninstalled)))))
-  ;; Desinstalamos los que sobran
-  ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-  (with-daemon-after-frame nil
-    (package-autoremove)))
-
-;; Se evalua al compilar pero no cuando corre el programa compilado
-;; (eval-when-compile
-;;   (require 'use-package))
+(require 'package-config)
 (require 'helm-bind-key) ; no está mostrando las teclas de los submodos
 (require 'bind-key)
 
@@ -203,9 +167,9 @@
 ;; (setq undo-tree-visualizer-diff t
 ;;       undo-tree-visualizer-timestamps t
 ;;       undo-tree-visualizer-relative-timestamps t)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                               ;;
-;;   Archivos de configuración   ;;
+;;   Configuration files         ;;
 ;;                               ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

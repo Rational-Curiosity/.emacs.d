@@ -26,7 +26,7 @@
 ;; (setq speedbar-hide-button-brackets-flag t)
 ;; (setq speedbar-show-unknown-files t)
 ;; (setq speedbar-smart-directory-expand-flag t)
-(with-daemon-after-frame frame
+(eval-and-when-daemon frame
   (when (display-graphic-p frame)
     (setq ezimage-use-images t
           speedbar-use-images t)))

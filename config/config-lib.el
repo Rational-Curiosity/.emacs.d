@@ -69,7 +69,7 @@
     (apply orig-fun args)))
 
 (require 'server)
-(defmacro with-daemon-after-frame (frame &rest body)
+(defmacro eval-and-when-daemon (frame &rest body)
   "When starting daemon wait FRAME ready before BODY."
   (declare (indent defun))
   (cons 'if
@@ -84,6 +84,10 @@
 
 ;; Establish safe dir-locals variables
 (defun safe-dir-locals (dir list &optional class)
+  "Set local variables for directory.
+DIR directory.
+LIST list of local variables.
+CLASS optional class name, DIR default."
   (unless class
     (setq class dir))
   (dir-locals-set-class-variables class list)
@@ -96,6 +100,9 @@
 ;; regex inside each file in list
 ;; return first occurence
 (defun re-search-in-files (regex files &optional first)
+  "Search REGEX match inside the files of FILES list.
+If FIRST is not-nil return first file in files with regex match.
+Otherwise return a list of files which regex match."
   (let ((matched '()))
     (while (and
             files
