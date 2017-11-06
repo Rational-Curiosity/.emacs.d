@@ -99,6 +99,13 @@
   (require 'company-auctex)
   (company-auctex-init))
 
+;;;;;;;;;;
+;; Java ;;
+;;;;;;;;;;
+(with-eval-after-load 'eclim
+  (require 'company-emacs-eclim)
+  (company-emacs-eclim-setup))
+
 (bind-keys
  ("<f7> ," . toggle-company-semantic)
  ("C-c y"  . company-yasnippet))

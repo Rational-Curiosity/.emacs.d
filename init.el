@@ -123,6 +123,13 @@
 
 ;; Cargaremos las configuraciones desde otros ficheros
 ;; Se evalua al compilar y cuando se arranca el programa
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
 (require 'cl-lib)
 (eval-when-compile
   (require 'cl))
@@ -140,14 +147,33 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (highlight-indent-guides flymake ox-gfm smart-mode-line undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds thingatpt+ protobuf-mode csv-mode markdown-mode+ org gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode org-plus-contrib async auctex bind-key cmake-mode company dash epl let-alist pkg-info popup projectile rich-minority s seq web-completion-data flycheck helm helm-core irony elpy pyvenv highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags which-key transpose-frame string-inflection smooth-scrolling smartparens rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-swoop helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers company-auctex cmake-font-lock clang-format bookmark+ bash-completion android-mode ag))))
+    (company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm smart-mode-line undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds thingatpt+ protobuf-mode csv-mode markdown-mode+ org gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode org-plus-contrib async auctex bind-key cmake-mode company dash epl let-alist pkg-info popup projectile rich-minority s seq web-completion-data flycheck helm helm-core irony elpy pyvenv highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags which-key transpose-frame string-inflection smooth-scrolling smartparens rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-swoop helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers company-auctex cmake-font-lock clang-format bookmark+ bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(company-preview ((t (:foreground "darkgray" :underline t))))
+ '(company-preview-common ((t (:inherit company-preview))))
+ '(company-tooltip ((t (:background "lightgray" :foreground "black"))))
+ '(company-tooltip-common ((((type x)) (:inherit company-tooltip :weight bold)) (t (:inherit company-tooltip))))
+ '(company-tooltip-common-selection ((((type x)) (:inherit company-tooltip-selection :weight bold)) (t (:inherit company-tooltip-selection))))
+ '(company-tooltip-selection ((t (:background "steelblue" :foreground "white"))))
+ '(ediff-current-diff-A ((t (:foreground "White" :background "dark green"))))
+ '(ediff-current-diff-B ((t (:foreground "White" :background "dark green"))))
+ '(ediff-current-diff-C ((t (:foreground "White" :background "dark green"))))
+ '(ediff-even-diff-A ((t (:background "dim gray"))))
+ '(ediff-even-diff-B ((t (:background "dim gray"))))
+ '(ediff-even-diff-C ((t (:background "dim gray"))))
+ '(ediff-fine-diff-A ((t (:background "brown"))))
+ '(ediff-fine-diff-B ((t (:background "brown"))))
+ '(ediff-fine-diff-C ((t (:background "brown"))))
+ '(ediff-odd-diff-A ((t (:background "dark slate gray"))))
+ '(ediff-odd-diff-B ((t (:background "dark slate gray"))))
+ '(ediff-odd-diff-C ((t (:background "dark slate gray"))))
+ '(highlight-thing ((t (:background "dark slate gray"))))
+ '(vimish-fold-overlay ((t (:background "#0f0f0f")))))
 
 (setq inhibit-startup-screen t
       ;; avoids warnings
@@ -330,7 +356,9 @@
 ;; poor performance
 ;; (add-hook 'c-mode-common-hook #'highlight-indentation-mode)
 ;; ] <c-c++>
-
+;; java
+(with-eval-after-load 'eclim
+  (require 'eclim-config))
 
 ;; Snippets
 (add-hook 'prog-mode-hook #'yas-minor-mode)
