@@ -153,6 +153,8 @@ prompt the user for a coding system."
 (add-hook 'prog-mode-hook #'(lambda ()
                               (interactive)
                               ;; use make-local-variable with all variables
+                              (setq-default tab-width 4)
+                              (setq tab-width 4)
                               (cond
                                ((string-equal mode-name "C++/l")
                                 (set (make-local-variable 'whitespace-line-column) 100))

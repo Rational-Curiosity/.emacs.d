@@ -94,7 +94,7 @@
       '((:results . "file")
         (:exports . "results")
         (:java . "-Dfile.encoding=UTF-8"))
-      org-ditaa-jar-path (expand-file-name "~/.emacs.d/cache/ditaa.jar"))
+      org-ditaa-jar-path (expand-file-name "~/.emacs.d/cache/java/ditaa.jar"))
 ;; active Babel languages
 (org-babel-do-load-languages
   'org-babel-load-languages

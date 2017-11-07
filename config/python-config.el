@@ -18,6 +18,7 @@
 
 (message "Importing python-config")
 (require 'python) ;; inferior-python-mode-map
+(require 'flycheck)
 
 (setq py-custom-temp-directory temporary-file-directory
       python-shell-interpreter "python3"
@@ -25,16 +26,46 @@
       python-indent-guess-indent-offset nil)
 
 (defvar python-command-version (cond
-                               ((or
-                                 (string-equal python-shell-interpreter "python3")
-                                 (string-equal python-shell-interpreter "ipython3"))
-                                "python3")
-                               (t "python")))
+                                ((or
+                                  (string-equal python-shell-interpreter "python3")
+                                  (string-equal python-shell-interpreter "ipython3"))
+                                 "python3")
+                                (t "python")))
+(defvar python-syntax-check-command (executable-find "flake8"))
 
-(add-hook 'python-mode-hook
-          (lambda ()
-            (setq-default tab-width 4)
-            (setq tab-width 4)))
+(defun toggle-python-version ()
+  (interactive)
+  (cond
+   ((string-equal python-shell-interpreter "python3")
+    (setq python-shell-interpreter "python"
+          python-command-version "python"
+          python-syntax-check-command
+          (or (executable-find "~/.emacs.d/cache/python/flake82")
+              "flake8")))
+   ((string-equal python-shell-interpreter "ipython3")
+    (setq python-shell-interpreter "ipython"
+          python-command-version "python"
+          python-syntax-check-command
+          (or (executable-find "~/.emacs.d/cache/python/flake82")
+              "flake8")))
+   ((string-equal python-shell-interpreter "python")
+    (setq python-shell-interpreter "python3"
+          python-command-version "python3"
+          python-syntax-check-command
+          (or (executable-find "~/.emacs.d/cache/python/flake83")
+              "flake8")))
+   ((string-equal python-shell-interpreter "ipython")
+    (setq python-shell-interpreter "ipython3"
+          python-command-version "python3"
+          python-syntax-check-command
+          (or (executable-find "~/.emacs.d/cache/python/flake83")
+              "flake8")))
+   (t (setq python-shell-interpreter "python3"
+            python-command-version "python3"
+            python-syntax-check-command
+            (or (executable-find "~/.emacs.d/cache/python/flake83")
+              "flake8"))))
+  (setq flycheck-python-flake8-executable python-syntax-check-command))
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
@@ -135,12 +166,18 @@ if __name__ == \"__main__\":
 ;; Keys ;;
 ;;;;;;;;;;
 (define-key python-mode-map [(control backspace)] nil)
-(define-key python-mode-map (kbd "C-c t d")
-  #'python-doctest-to-message)
-(define-key python-mode-map (kbd "C-c t t")
-  #'python-timeit-to-message)
-(define-key python-mode-map (kbd "C-c d h")
-  #'sphinx-build-html)
+;; (define-key python-mode-map (kbd "C-c t d")
+;;   #'python-doctest-to-message)
+;; (define-key python-mode-map (kbd "C-c t t")
+;;   #'python-timeit-to-message)
+;; (define-key python-mode-map (kbd "C-c d h")
+;;   #'sphinx-build-html)
+
+(bind-keys :map python-mode-map
+           ("C-c t d" . python-doctest-to-message)
+           ("C-c t t" . python-timeit-to-message)
+           ("C-c d h" . sphinx-build-html)
+           ("<f7> p"  . toggle-python-version))
 
 (cond
  ((or

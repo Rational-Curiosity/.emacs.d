@@ -43,11 +43,17 @@
 (require 'elpy)
 (setcar (cdr (assq 'elpy-mode minor-mode-alist)) "Ep")
 
-(cond
- ((or
-   (string-equal python-shell-interpreter "ipython")
-   (string-equal python-shell-interpreter "ipython3"))
-  (elpy-use-ipython python-shell-interpreter)))
+(defun elpy-version ()
+  (setq elpy-syntax-check-command python-syntax-check-command
+        python-check-command elpy-syntax-check-command)
+  (cond
+   ((or
+     (string-equal python-shell-interpreter "ipython")
+     (string-equal python-shell-interpreter "ipython3"))
+    (elpy-use-ipython python-shell-interpreter))))
+(elpy-version)
+(advice-add 'toggle-python-version :after #'elpy-version)
+
 
 ;; [ backend rope insert parents always
 ;; (defun elpy-company-post-complete-parens (annotation name)
@@ -86,15 +92,16 @@
 ;;           )))
 ;; ]
 
-
 (setq elpy-rpc-python-command python-command-version
-      elpy-rpc-backend "jedi"
+      elpy-rpc-backend "rope" ;; "jedi" or "rope"
       elpy-company-post-completion-function #'elpy-company-post-complete-parens
       elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest")
       elpy-modules '(elpy-module-sane-defaults
                           elpy-module-company
                           elpy-module-eldoc
-                          elpy-module-flymake
+                          ;; [ flymake xor flycheck
+                          ;; elpy-module-flymake
+                          ;; ]
                           ;; [ poor performance
                           ;; elpy-module-highlight-indentation
                           ;; ]
