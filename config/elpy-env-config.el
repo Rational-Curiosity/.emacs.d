@@ -93,7 +93,8 @@
 ;; ]
 
 (setq elpy-rpc-python-command python-command-version
-      elpy-rpc-backend "rope" ;; "jedi" or "rope"
+      elpy-rpc-backend "jedi" ;; "jedi" or "rope"
+      elpy-rpc-timeout 6
       elpy-company-post-completion-function #'elpy-company-post-complete-parens
       elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest")
       elpy-modules '(elpy-module-sane-defaults

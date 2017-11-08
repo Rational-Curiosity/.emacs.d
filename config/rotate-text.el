@@ -109,7 +109,8 @@ text."
 ;;                          (or minimum most-negative-fixnum))))
 (defun rotate-text-increment-number (original arg &optional minimum)
   (let ((current-prefix-arg arg))
-    (apply-operation-to-number-at-point ?+)))
+    (apply-operation-to-number-at-point ?+))
+  nil)
 
 (defun rotate-text-increment-hex-number (original arg)
   (when (string-match "\\`-?\\(0x\\)" original)

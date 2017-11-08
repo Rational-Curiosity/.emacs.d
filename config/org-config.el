@@ -89,7 +89,7 @@
       ;; No pregunta al usuario antes de evaluar un bloque de código
       org-confirm-babel-evaluate nil
       org-src-fontify-natively t
-      org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/plantuml.jar")
+      org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar")
       org-babel-default-header-args:plantuml
       '((:results . "file")
         (:exports . "results")

@@ -66,7 +66,6 @@
 ;;; Code:
 
 (require 'calc-bin)
-(require 'thingatpt+)
 
 (defun oon--parse-number-at-point ()
   "Parse the text around point for a number and return a vector
@@ -88,16 +87,14 @@ Return nil if no number is found."
       (cond
        ;; Decimal numbers as sexp: e.g. "100", "3.1415", "1e3"
        ((save-excursion
-          (and
-           (setq num (tap-thing-at-point 'symbol))
-           (setq bounds (tap-bounds-of-thing-at-point 'symbol))
-           (not (char-equal (char-after (car bounds)) ?#))))
-        (let* ((beg (car bounds))
-               (end (cdr bounds))
-               (char (char-after beg))
-               (sign (or (char-equal char ?-) (char-equal char ?+)))
-               (nbeg (if sign (1+ beg) beg)))
-          (vector 10 beg beg nbeg end end)))
+          (and (looking-at "[+-]?[[:digit:]]*\\.?[[:digit:]]+") (goto-char (match-end 0)))
+          (looking-back "\\([+-]\\)?\\([[:digit:]]*\\.[[:digit:]]+\\)" (line-beginning-position) t))
+        (vector 10
+                (match-beginning 0)
+                (match-beginning 1)
+                (match-beginning 2)
+                (match-end 2)
+                (match-end 0)))
        ;; Hexadecimal literals: e.g. "0x1e", "#x1e"
        ((save-excursion
           (and (looking-at "\\([+-]?0?[xX]?\\|#?[xX]?[+-]?\\)[[:xdigit:]]*")
@@ -249,7 +246,8 @@ Return nil if no number is found."
           (nend (elt parsed 4)))
       (goto-char beg)
       (delete-region beg nend)
-      (insert number)))))
+      (insert number))))
+  (goto-char (elt parsed 1)))
 
 ;;;###autoload
 (defun find-number-at-point ()
@@ -338,9 +336,14 @@ following keys are available:
 (defun apply-to-number-at-point (func args &optional plist)
   "Apply FUNC on a number at point with ARGS.
 For possible keys of PLIST, see `operate-on-number-at-point-alist'."
-  (let* ((parsed (or (oon--parse-number-at-point)
-                     (error "No number found at point")))
-         (num (oon--parsed-number parsed))
+  (apply--to-number-at-point func
+                             args
+                             (or (oon--parse-number-at-point)
+                                 (error "No number found at point"))
+                             plist))
+
+(defun apply--to-number-at-point (func args parsed &optional plist)
+  (let* ((num (oon--parsed-number parsed))
          (result (apply func num args)))
     (oon--replace-number parsed result)))
 
@@ -363,10 +366,14 @@ one of the following sources in the order named:
                 (let ((keys (this-command-keys-vector)))
                   (elt keys (1- (length keys))))
                 nil))
+  (apply--operation-to-number-at-point key
+                                       read-args
+                                       (or (oon--parse-number-at-point)
+                                           (error "No number found at point"))))
+
+(defun apply--operation-to-number-at-point (key read-args parsed)
   (let* ((arg (and current-prefix-arg
                    (prefix-numeric-value current-prefix-arg)))
-         (parsed (or (oon--parse-number-at-point)
-                     (error "No number found at point")))
          (oargs (or (cdr (assoc key operate-on-number-at-point-alist))
                     (error "Unknown operator: %c" key)))
          (formatted (oon--original-number-for-display parsed))
@@ -390,7 +397,7 @@ one of the following sources in the order named:
                         (list input)))
                      (t
                       defargs))))
-    (apply-to-number-at-point func args plist)))
+    (apply--to-number-at-point func args parsed plist)))
 
 ;;;###autoload
 (defun operate-on-number-at-point (&optional arg)
@@ -406,7 +413,7 @@ point for the operation if applicable."
                      (error "No number found at point")))
          (formatted (oon--original-number-for-display parsed))
          (key (read-char (format "Apply on %s:" formatted) t)))
-    (apply-operation-to-number-at-point key t)))
+    (apply--operation-to-number-at-point key t parsed)))
 
 (defun operate-on-number-at-point-or-region (&optional arg)
   "Operate on number at point or on region.
@@ -443,7 +450,7 @@ point for the operation if applicable."
                        (error "No number found at point")))
            (formatted (oon--original-number-for-display parsed))
            (key (read-char (format "Apply on %s:" formatted) t)))
-      (apply-operation-to-number-at-point key t))))
+      (apply--operation-to-number-at-point key t parsed))))
 
 
 (provide 'operate-on-number)
