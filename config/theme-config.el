@@ -8,11 +8,31 @@
 ;;; Code:
 
 ;; (set 'custom-enabled-themes 'wheatgrass)
-(load-theme 'wheatgrass t)
+(load-theme 'wombat t)
 
 (with-eval-after-load 'mode-line-config
   (set-face-background 'mode-line "dark slate gray")
   (set-face-background 'mode-line-inactive "gray14"))
+
+;; [ Cycle themes
+(require 'ring)
+(defvar theme-ring nil)
+(let ((themes '(whiteboard adwaita misterioso wombat)))
+  (setq theme-ring (make-ring (length themes)))
+  (dolist (elem themes) (ring-insert theme-ring elem)))
+
+(defun cycle-themes ()
+  "Cycle themes in ring."
+  (interactive)
+  (let ((theme (ring-ref theme-ring -1)))
+    (ring-insert theme-ring theme)
+    (load-theme theme)
+    (message "%s theme loaded" theme)))
+;; ]
+
+(bind-keys
+ ("<f7> b" . cycle-themes))
+
 
 (provide 'theme-config)
 ;;; theme-config.el ends here

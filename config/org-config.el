@@ -684,7 +684,7 @@ Filename returned has the format:
 
 PREFIX block-number SUFFIX
 
-Example: doc000012.png
+Example: doc-000012.png
 
 PREFIX - default buffer name without extension
 SUFFIX - default .png"
@@ -693,9 +693,9 @@ SUFFIX - default .png"
         (suf (or suffix ".png")))
     (save-excursion
       (forward-line 1)
-      (while (re-search-backward (format "#\\+BEGIN_SRC.*%s" (compile-time-function-name)) nil t)
+      (while (re-search-forward (format "#\\+BEGIN_SRC.*%s" (compile-time-function-name)) nil t)
         (cl-incf number)))
-    (concat pre (format "%06d" number) suf)))
+    (concat pre (format "-%06d" number) suf)))
 
 (defun org-archive-done-tasks (&optional scope)
   (interactive "P")

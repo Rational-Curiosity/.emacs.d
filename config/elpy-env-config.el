@@ -54,6 +54,7 @@
 (elpy-version)
 (advice-add 'toggle-python-version :after #'elpy-version)
 
+(advice-add 'elpy-goto-definition :before #'push-mark)
 
 ;; [ backend rope insert parents always
 ;; (defun elpy-company-post-complete-parens (annotation name)
