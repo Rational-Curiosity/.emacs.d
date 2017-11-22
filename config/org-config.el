@@ -27,6 +27,7 @@
 (set-face-attribute 'org-scheduled-previously nil :foreground "rosy brown")
 (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
 (set-face-attribute 'org-warning nil :foreground "gold")
+(set-face-attribute 'org-tag nil :bold nil)
 
 (defface my-face-org-keystroke
   '((t (:inherit shadow
@@ -46,7 +47,36 @@
         ("_" underline)
         ("=" org-verbatim verbatim)
         ("~" (org-code :box t) org-code)
-        ("+" (:strike-through t))))
+        ("+" (:strike-through t)))
+      ;; TODO keyword faces
+      org-todo-keyword-faces
+      '(("TODO" :foreground "orange red" :weight bold)
+        ("NEXT" :foreground "gold" :weight bold)
+        ("DONE" :foreground "forest green" :weight bold)
+        ("STARTED" :foreground "deep sky blue" :weight bold)
+        ("FINISHED" :foreground "dark olive green" :weight bold)
+        ("ENOUGH" :foreground "green yellow" :weight bold)
+        ("WAITING" :foreground "blue violet" :weight bold :underline t)
+        ("HOLD" :foreground "dark violet" :weight bold :underline t)
+        ("CANCELLED" :foreground "dark green" :weight bold))
+      ;; TAG faces
+      org-tag-faces
+      '(("@business"     :foreground "#e5786d")
+        ("@admin"        :foreground "#e68a00")
+        ("@job"          :foreground "#996633")
+        ("@improvement"  :foreground "#e6e600")
+        ("@home"         :foreground "#95e454")
+        ("business"     :foreground "#e5786d")
+        ("admin"        :foreground "#e68a00")
+        ("job"          :foreground "#996633")
+        ("improvement"  :foreground "#e6e600")
+        ("home"         :foreground "#95e454"))
+      org-tag-alist
+      '((:startgrouptag) ("business")    (:grouptags) ("@business")    (:endgrouptag)
+        (:startgrouptag) ("admin")       (:grouptags) ("@admin")       (:endgrouptag)
+        (:startgrouptag) ("job")         (:grouptags) ("@job")         (:endgrouptag)
+        (:startgrouptag) ("improvement") (:grouptags) ("@improvement") (:endgrouptag)
+        (:startgrouptag) ("home")        (:grouptags) ("@home")        (:endgrouptag)))
 ;;(:box t :foreground "#AAF")
 
 (require 'language-tools)
@@ -75,6 +105,7 @@
       org-pretty-entities t
       org-use-property-inheritance t
       org-tags-column -80
+      org-tags-sort-function #'string>
       org-ellipsis "▼"
       org-use-speed-commands
       (lambda () (and (looking-at org-outline-regexp)
@@ -155,16 +186,6 @@
       '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
         (sequence "STARTED(s!)" "|" "ENOUGH(e@/!)" "FINISHED(f!)")
         (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))
-      org-todo-keyword-faces
-      '(("TODO" :foreground "orange red" :weight bold)
-        ("NEXT" :foreground "gold" :weight bold)
-        ("DONE" :foreground "forest green" :weight bold)
-        ("STARTED" :foreground "deep sky blue" :weight bold)
-        ("FINISHED" :foreground "dark olive green" :weight bold)
-        ("ENOUGH" :foreground "green yellow" :weight bold)
-        ("WAITING" :foreground "blue violet" :weight bold :underline t)
-        ("HOLD" :foreground "dark violet" :weight bold :underline t)
-        ("CANCELLED" :foreground "dark green" :weight bold))
       org-archive-location "archived.org::* From %s"
       org-archive-file-header-format nil)
 
@@ -646,7 +667,7 @@ You can also customize this for each buffer, using something like
       org-agenda-prefix-format
       '((agenda . " %i %-4.4 c%?-12t% s") ; (agenda . " %i %-12:c%?-12t% s")
         (timeline . "  % s")
-        (todo . " %i %-12:c")
+        (todo . " %i %-4.4 c%?-12t% s") ; (todo . " %i %-12:c")
         (tags . " %i %-12:c")
         (search . " %i %-12:c"))
       org-agenda-scheduled-leaders '("Sche" "S-%3dd")
@@ -666,14 +687,31 @@ You can also customize this for each buffer, using something like
       org-habit-show-habits-only-for-today t
       ;; <Agenda commands>
       org-agenda-custom-commands
-      '(("h" "Habits" 
+      '(("h" "[h]abits" 
          ((agenda ""))
          ((org-agenda-show-log t)
           (org-agenda-ndays 7)
           (org-agenda-log-mode-items '(state))
           (org-agenda-skip-function
            '(org-agenda-skip-entry-if 'notregexp ":STYLE: *habit"))))
-        ("c" "Calendar" cfw:open-org-calendar-command)))
+        ("c" "[c]alendar" cfw:open-org-calendar-command)
+        ("u" "[u]nscheduled tasks"
+         ((alltodo ""
+           ((org-agenda-skip-function
+           '(org-agenda-skip-entry-if
+             'scheduled 'deadline
+             ;;'todo '("DONE" "CANCELLED" "FINISHED" "ENOUGH")
+             ))))))
+        ("A" "[A]ll scheduled or not"
+         ((agenda "")
+          (alltodo ""
+                   ((org-agenda-skip-function
+                     '(org-agenda-skip-entry-if
+                       'scheduled 'deadline
+                       ;;'todo '("DONE" "CANCELLED" "FINISHED" "ENOUGH")
+                       ))))))
+        ;;("u" "[u]nscheduled tasks" tags "-SCHEDULED={.+}/!+TODO|+NEXT|+STARTED|+WAITING|+HOLD")
+        ))
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
