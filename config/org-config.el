@@ -662,8 +662,8 @@ You can also customize this for each buffer, using something like
       ;; <Agenda format>
       org-agenda-time-grid
       '((daily today require-timed remove-match)
-        "----------------"
-        (800 1000 1200 1400 1600 1800 2000))
+        (800 1000 1200 1400 1600 1800 2000)
+        "......" "----------------")
       org-agenda-prefix-format
       '((agenda . " %i %-4.4 c%?-12t% s") ; (agenda . " %i %-12:c%?-12t% s")
         (timeline . "  % s")

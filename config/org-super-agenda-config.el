@@ -65,7 +65,10 @@
 
 (setq org-super-agenda-fontify-whole-header-line t
       org-super-agenda-groups
-      '((:name "Negocios"
+      '((:name "Hoy"
+               :time-grid t
+               :todo "TODAY")
+        (:name "Negocios"
                :tag "@business")
         (:name "Administración"
                :tag "@admin")
@@ -76,9 +79,7 @@
         (:name "Hogar"
                :tag "@home")
         (:name "Hábito"
-               :habit t)
-        (:name "No Planificado"
-               :time-grid nil)))
+               :habit t)))
 
 
 (provide 'org-super-agenda-config)
