@@ -65,10 +65,18 @@
 ;;                   (progn
 ;;                     (set 'semantic-fetch-tags-limit semantic-fetch-tags-limit-default)
 ;;                     (error "Parsing limit reached"))
-;;                 (set 'semantic-fetch-tags-limit number)))
-;;           (apply orig-fun args))))
+;;                 (set 'semantic-fetch-tags-limit number))))))
 ;;   (apply orig-fun args))
-;; (advice-add 'semantic-fetch-tags :around #'semantic-fetch-tags-advice)
+;; <xor>
+(defun semantic-fetch-tags-advice (orig-fun &rest args)
+  "Only advice `semantic-fetch-tags' ORIG-FUN.  ARGS have to be nil."
+  (if (and
+       (semantic-parse-tree-needs-rebuild-p)
+       (not noninteractive)
+       (read-event nil nil 0.001))
+      (error "Parsing while typing"))
+  (apply orig-fun args))
+(advice-add 'semantic-fetch-tags :around #'semantic-fetch-tags-advice)
 ;; ]
 
 (require 'semantic-parse-dir)

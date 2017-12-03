@@ -16,7 +16,7 @@
       helm-move-to-line-cycle-in-source t
       helm-ff-file-name-history-use-recentf t
       helm-scroll-amount 8
-      helm-buffer-max-length 25
+      helm-buffer-max-length 20
       helm-autoresize-max-height 40
       helm-autoresize-min-height 5)
 
@@ -34,6 +34,33 @@
 (global-set-key (kbd "C-h SPC") 'helm-all-mark-rings)
 (global-set-key (kbd "C-x C-r") 'helm-recentf)
 
+
+(defun helm-decrease-buffer-max-length ()
+  (interactive)
+  (with-helm-alive-p
+    (let* ((buf (helm-get-selection))
+           (preselect (helm-buffer--get-preselection buf)))
+      (setq helm-buffer-max-length (- helm-buffer-max-length 4))
+      (helm-update (lambda ()
+                     (helm-awhile (re-search-forward preselect nil t)
+                       (helm-mark-current-line)
+                       (when (equal buf (helm-get-selection))
+                         (cl-return t))))))))
+(put 'helm-decrease-buffer-max-length 'helm-only t)
+
+(defun helm-increase-buffer-max-length ()
+  (interactive)
+  (with-helm-alive-p
+    (let* ((buf (helm-get-selection))
+           (preselect (helm-buffer--get-preselection buf)))
+      (setq helm-buffer-max-length (+ helm-buffer-max-length 4))
+      (helm-update (lambda ()
+                     (helm-awhile (re-search-forward preselect nil t)
+                       (helm-mark-current-line)
+                       (when (equal buf (helm-get-selection))
+                         (cl-return t))))))))
+(put 'helm-increase-buffer-max-length 'helm-only t)
+
 ;; rebind tab to run persistent action
 (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
 ;; make TAB works in terminal
@@ -41,7 +68,9 @@
 ;; new Actions key
 (define-key helm-map (kbd "C-c a")  'helm-select-action)
 ;; toggle buffers details
-(define-key helm-buffer-map (kbd "C-+") 'helm-toggle-buffers-details)
+(define-key helm-buffer-map (kbd "C-*") 'helm-toggle-buffers-details)
+(define-key helm-buffer-map (kbd "C-+") 'helm-increase-buffer-max-length)
+(define-key helm-buffer-map (kbd "C--") 'helm-decrease-buffer-max-length)
 
 (helm-autoresize-mode 1)
 (helm-mode 1)
