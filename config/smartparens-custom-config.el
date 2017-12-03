@@ -205,6 +205,10 @@
   (when (= (point) (progn (sp-end-of-sexp arg) (point)))
     (sp-end-of-next-sexp arg)))
 
+
+(advice-add 'sp-unwrap-sexp :before 'left-char)
+(advice-add 'sp-rewrap-sexp :before 'left-char)
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;

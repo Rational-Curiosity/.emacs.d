@@ -12,10 +12,11 @@
 (require 'helm-files)
 
 (setq helm-display-header-line nil
-      helm-split-window-in-side-p t
+      helm-split-window-inside-p t
       helm-move-to-line-cycle-in-source t
       helm-ff-file-name-history-use-recentf t
       helm-scroll-amount 8
+      helm-buffer-max-length 25
       helm-autoresize-max-height 40
       helm-autoresize-min-height 5)
 
@@ -39,6 +40,8 @@
 (define-key helm-map (kbd "C-i") 'helm-execute-persistent-action)
 ;; new Actions key
 (define-key helm-map (kbd "C-c a")  'helm-select-action)
+;; toggle buffers details
+(define-key helm-buffer-map (kbd "C-+") 'helm-toggle-buffers-details)
 
 (helm-autoresize-mode 1)
 (helm-mode 1)
