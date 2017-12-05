@@ -208,12 +208,12 @@
 
 (defun sp-unwrap-sexp-lc ()
   (interactive)
-  (left-char)
+  (if (char-equal (char-before (point)) ?\)) (left-char))
   (call-interactively 'sp-unwrap-sexp))
 
 (defun sp-rewrap-sexp-lc ()
   (interactive)
-  (left-char)
+  (if (char-equal (char-before (point)) ?\)) (left-char))
   (call-interactively 'sp-rewrap-sexp))
 
 ;;;;;;;;;;
