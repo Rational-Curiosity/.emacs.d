@@ -206,8 +206,15 @@
     (sp-end-of-next-sexp arg)))
 
 
-(advice-add 'sp-unwrap-sexp :before 'left-char)
-(advice-add 'sp-rewrap-sexp :before 'left-char)
+(defun sp-unwrap-sexp-lc ()
+  (interactive)
+  (left-char)
+  (call-interactively 'sp-unwrap-sexp))
+
+(defun sp-rewrap-sexp-lc ()
+  (interactive)
+  (left-char)
+  (call-interactively 'sp-rewrap-sexp))
 
 ;;;;;;;;;;
 ;; Keys ;;
@@ -229,9 +236,9 @@
  ("C-S-<end>"           . sp-slurp-hybrid-sexp)
  ("C-S-<prior>"         . sp-backward-slurp-sexp)
  ("C-S-<next>"          . sp-backward-barf-sexp)
- ("C-)"                 . sp-unwrap-sexp)
+ ("C-)"                 . sp-unwrap-sexp-lc)
+ ("C-("                 . sp-rewrap-sexp-lc)
  ("C-\""                . sp-swap-enclosing-sexp)
- ("C-("                 . sp-rewrap-sexp)
  ("C-S-<return>"        . sp-split-sexp)
  ("C-c ( m"             . hydra-sp-change/body)
  ("C-c ( <"             . remove-c-<-as-paren-syntax-backward)

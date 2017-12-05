@@ -72,9 +72,11 @@
   "Only advice `semantic-fetch-tags' ORIG-FUN.  ARGS have to be nil."
   (if (and
        (semantic-parse-tree-needs-rebuild-p)
-       (not noninteractive)
-       (read-event nil nil 0.001))
-      (error "Parsing while typing"))
+       (not noninteractive))
+      (let ((event (read-event nil nil 0.001)))
+        (when event
+          (push event unread-command-events)
+          (error "Parsing while typing"))))
   (apply orig-fun args))
 (advice-add 'semantic-fetch-tags :around #'semantic-fetch-tags-advice)
 ;; ]
@@ -89,7 +91,7 @@
       ;;   ("semantic-decoration-on-protected-members" . t)
       ;;   ("semantic-decoration-on-private-members" . t)
       ;;   ("semantic-tag-boundary" . t))
-      )
+      semantic-idle-scheduler-idle-time 3)
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
