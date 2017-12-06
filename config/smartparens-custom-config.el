@@ -206,14 +206,40 @@
     (sp-end-of-next-sexp arg)))
 
 
+(defun sp-local-equal-length (str)
+  (let ((pos (point))
+        (len (length str))
+        (it 0)
+        (check))
+    (while (and (< 0 len)
+                (not (set 'check
+                          (string-equal
+                           str
+                           (buffer-substring-no-properties
+                            (- pos len)
+                            (+ pos it))))))
+      (cl-decf len)
+      (cl-incf it))
+    (if check
+        len
+      nil)))
+
 (defun sp-unwrap-sexp-lc ()
   (interactive)
-  (if (char-equal (char-before (point)) ?\)) (left-char))
+  (let ((ends (sort (mapcar 'cdr sp-pair-list) (lambda (x y) (> (length x) (length y)))))
+        (check))
+    (while (and ends
+                (not (set 'check (sp-local-equal-length (pop ends))))))
+    (if check (left-char check)))
   (call-interactively 'sp-unwrap-sexp))
 
 (defun sp-rewrap-sexp-lc ()
   (interactive)
-  (if (char-equal (char-before (point)) ?\)) (left-char))
+  (let ((ends (sort (mapcar 'cdr sp-pair-list) (lambda (x y) (> (length x) (length y)))))
+        (check))
+    (while (and ends
+                (not (set 'check (sp-local-equal-length (pop ends))))))
+    (if check (left-char check)))
   (call-interactively 'sp-rewrap-sexp))
 
 ;;;;;;;;;;
