@@ -14,6 +14,13 @@
   (set-face-background 'mode-line "dark slate gray")
   (set-face-background 'mode-line-inactive "gray14"))
 
+(require 'cursor-chg)  ; Load this library
+(change-cursor-mode 1) ; On for overwrite/read-only/input mode
+(toggle-cursor-type-when-idle 1) ; On when idle
+(setq curchg-idle-cursor-type 'hbar
+      curchg-default-cursor-type 'bar
+      curchg-overwrite/read-only-cursor-type 'box)
+
 ;; [ Cycle themes
 (require 'ring)
 (defvar theme-ring nil)

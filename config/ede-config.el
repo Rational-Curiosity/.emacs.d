@@ -62,7 +62,15 @@
 ;; Teclas
 (bind-keys :map ede-minor-mode-map
            ("M-r" . helm-ag-case)
-           ("M-f" . helm-grep-case))
+           ("M-R" . (lambda ()
+                      (interactive)
+                      (mark-thing 'symbol)
+                      (helm-ag-case)))
+           ("M-f" . helm-grep-case)
+           ("M-F" . (lambda ()
+                      (interactive)
+                      (mark-thing 'symbol)
+                      (helm-grep-case))))
 
 (global-ede-mode 1)
 (ede-enable-generic-projects)

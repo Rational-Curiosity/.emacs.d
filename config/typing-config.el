@@ -281,40 +281,85 @@ prompt the user for a coding system."
 ;; ;;(drag-stuff-mode t)
 ;;(drag-stuff-global-mode t)
 
-(require 'move-token)
+;;(require 'move-token)
+(require 'move-thing)
 
 ;;;;;;;;;;;
 ;; Copia ;;
 ;;;;;;;;;;;
+(defun duplicate-region (arg beg end &optional orig)
+  "Duplicates ARG times region from BEG to END."
+  (let ((origin (or orig end))
+        (neg (> 0 arg))
+        (argument (abs arg))
+        (region (buffer-substring-no-properties beg end)))
+    (if neg
+        (dotimes (i argument)
+          (goto-char end)
+          (newline)
+          (insert region)
+          (setq end (point)))
+      (dotimes (i argument)
+        (goto-char end)
+        (insert region)
+        (setq end (point)))
+      (set 'origin (- origin argument)))
+    (goto-char (+ origin (* (length region) argument) argument))))
+
+(defun duplicate-rectangle-region (arg beg end)
+  (let ((region (sort (list beg end) '<)))
+    (let ((rectangle (extract-rectangle (cl-first region)
+                                        (cl-second region)))
+          (bounds (extract-rectangle-bounds (cl-first region)
+                                            (cl-second region))))
+      (cond
+       ((or (= end (cdr (car bounds)))
+            (= end (cdr (car (last bounds)))))
+        (dotimes (i arg)
+            (goto-char (car region))
+            (insert-rectangle rectangle)))
+       ((= end (car (car bounds)))
+        (let ((column (current-column))
+              (lines (length bounds))
+              backward-lines)
+          (setq backward-lines (- 1 (* 2 lines))
+                lines (- 1 lines))
+          (forward-line lines)
+          (dotimes (i arg)
+            (unless (= 0 (forward-line backward-lines))
+              (error "Not enough lines above"))
+            (move-to-column column)
+            (insert-rectangle rectangle))
+          (forward-line lines)
+          (move-to-column column)))
+       ((= end (car (car (last bounds))))
+        (let ((column (current-column)))
+          (dotimes (i arg)
+            (let ((line (line-number-at-pos)))
+              (forward-line)
+              (if (= line (line-number-at-pos))
+                  (insert "\n")))
+            (move-to-column column)
+            (insert-rectangle rectangle))
+          (move-to-column column)))))))
+
 (defun duplicate-current-line-or-region (arg)
   "Duplicates the current line or region ARG times.
 If there's no region, the current line will be duplicated. However, if
 there's a region, all lines that region covers will be duplicated."
   (interactive "p")
-  (let (beg end (origin (point)))
-    (if mark-active
-        (progn
-          (if (> (point) (mark))
-              (exchange-point-and-mark))
-          (setq beg (point))
-          (exchange-point-and-mark)
-          (setq end (point))
-          (let ((region (buffer-substring-no-properties beg end)))
-            (dotimes (i arg)
-              (goto-char end)
-              (insert region)
-              (setq end (point)))
-            (goto-char (+ origin (* (length region) arg)))))
-      (progn
-        (setq beg (line-beginning-position))
-        (setq end (line-end-position))
-    (let ((region (buffer-substring-no-properties beg end)))
-      (dotimes (i arg)
-        (goto-char end)
-        (newline)
-        (insert region)
-        (setq end (point)))
-      (goto-char (+ origin (* (length region) arg) arg)))))))
+  (if (use-region-p)
+      (if rectangle-mark-mode
+          (duplicate-rectangle-region arg (mark) (point))
+        (let ((region (sort (list (mark) (point)) '<)))
+          (duplicate-region arg
+                            (cl-first region)
+                            (cl-second region)
+                            (point))))
+    (duplicate-region (- arg)
+                      (line-beginning-position)
+                      (line-end-position)
+                      (point))))
 ;;;;;;;;;;;
 ;; Ratón ;;
 ;;;;;;;;;;;

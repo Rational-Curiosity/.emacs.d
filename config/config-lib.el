@@ -124,6 +124,15 @@ Otherwise return a list of files which regex match."
         (car matched)
       matched)))
 
+;; Protect from errors
+(defun rollback-on-error-advice (orig-fun &rest args)
+  "Rollback (ORIG-FUN ARGS) evaluation on error."
+  (undo-boundary)
+  (condition-case raised-error
+      (apply orig-fun args)
+    (error (primitive-undo 1 buffer-undo-list)
+           (message "%s rolled back" raised-error))))
+
 
 (provide 'config-lib)
 ;;; config-lib.el ends here

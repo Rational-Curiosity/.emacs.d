@@ -92,8 +92,9 @@
 ;; Region-Word ;;
 ;;;;;;;;;;;;;;;;;
 (defun move-region-word-up ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (delete-and-extract-region token-1-beg token-1-end)))
     (goto-char token-1-beg)
     (line-move -1)
@@ -117,8 +118,9 @@
       (goto-char token-2-beg))))
 
 (defun move-region-word-down ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (buffer-substring token-1-beg token-1-end)))
     (goto-char token-1-beg)
     (line-move 1)
@@ -142,8 +144,9 @@
       (goto-char (+ token-2-beg (- (length token-2-str) (length token-1-str)))))))
 
 (defun move-region-word-left ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (delete-and-extract-region token-1-beg token-1-end)))
     (goto-char token-1-beg)
     (left-word 1)
@@ -158,8 +161,9 @@
       (goto-char token-2-beg))))
 
 (defun move-region-word-right ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (buffer-substring token-1-beg token-1-end)))
     (goto-char token-1-end)
     (right-word 1)
@@ -264,8 +268,9 @@
 ;; Region-SExp ;;
 ;;;;;;;;;;;;;;;;;
 (defun move-region-sexp-up ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (delete-and-extract-region token-1-beg token-1-end)))
     (goto-char token-1-beg)
     (line-move -1)
@@ -291,8 +296,9 @@
       (goto-char token-2-beg))))
 
 (defun move-region-sexp-down ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (buffer-substring token-1-beg token-1-end)))
     (goto-char token-1-beg)
     (line-move 1)
@@ -318,8 +324,9 @@
       (goto-char (+ token-2-beg (- (length token-2-str) (length token-1-str)))))))
 
 (defun move-region-sexp-left ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (delete-and-extract-region token-1-beg token-1-end)))
     (goto-char token-1-beg)
     (sp-backward-sexp 1)
@@ -334,8 +341,9 @@
       (goto-char token-2-beg))))
 
 (defun move-region-sexp-right ()
-  (let* ((token-1-end (max (point) (mark)))
-         (token-1-beg (min (point) (mark)))
+  (let* ((bounds (sort (list (point) (mark)) '<))
+         (token-1-beg (car bounds))
+         (token-1-end (car (cdr bounds)))
          (token-1-str (buffer-substring token-1-beg token-1-end)))
     (goto-char token-1-end)
     (sp-forward-sexp 1)
@@ -439,49 +447,49 @@
 ;;;;;;;;;;;;;;;;;
 (defun move-word-or-region-up ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-word-up)
     (move-word-up)))
 
 (defun move-word-or-region-down ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-word-down)
     (move-word-down)))
 
 (defun move-word-or-region-left ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-word-left)
     (move-word-left)))
 
 (defun move-word-or-region-right ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-word-right)
     (move-word-right)))
 
 (defun move-sexp-or-region-up ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-sexp-up)
     (move-sexp-up)))
 
 (defun move-sexp-or-region-down ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-sexp-down)
     (move-sexp-down)))
 
 (defun move-sexp-or-region-left ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-sexp-left)
     (move-sexp-left)))
 
 (defun move-sexp-or-region-right ()
   (interactive)
-  (if mark-active
+  (if (use-region-p)
       (move-region-sexp-right)
     (move-sexp-right)))
 
@@ -491,7 +499,7 @@
 ;;;;;;;;;;;
 (defun move-text-internal (arg)
    (cond
-    ((and mark-active transient-mark-mode)
+    ((use-region-p)
      (if (> (point) (mark))
             (exchange-point-and-mark))
      (let ((column (current-column))

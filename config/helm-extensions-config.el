@@ -102,9 +102,14 @@
 
 ;; Change the keybinds to whatever you like :)
 (global-set-key (kbd "M-i") 'helm-swoop)
-(global-set-key (kbd "C-ç M-i") 'helm-swoop-back-to-last-point)
+(global-set-key (kbd "M-I") (lambda ()
+                              (interactive)
+                              (mark-thing 'symbol)
+                              (helm-swoop)))
+(global-set-key (kbd "C-x M-i") 'helm-swoop-back-to-last-point)
 (global-set-key (kbd "C-c M-i") 'helm-multi-swoop)
-(global-set-key (kbd "C-x M-i") 'helm-multi-swoop-all)
+(global-set-key (kbd "C-v") nil)
+(global-set-key (kbd "C-v M-i") 'helm-multi-swoop-all)
 
 ;; When doing isearch, hand the word over to helm-swoop
 (define-key isearch-mode-map (kbd "M-i") 'helm-swoop-from-isearch)
@@ -139,11 +144,34 @@
 
 ;; Optional face for line numbers
 ;; Face name is `helm-swoop-line-number-face`
-(setq helm-swoop-use-line-number-face t)
+(setq helm-swoop-use-line-number-face nil)
 
 ;; If you prefer fuzzy matching
 (setq helm-swoop-use-fuzzy-match nil)
 
+;; This function can pre-input keywords when helm-swoop invoked
+(setq helm-swoop-pre-input-function
+      (lambda ()
+        (if (use-region-p)
+            (buffer-substring-no-properties (region-beginning) (region-end)))))
+
+(dolist (mode-map (list helm-swoop-map helm-multi-swoop-map))
+  (bind-keys :map mode-map
+             ("C-x n" . (lambda ()
+                          (interactive)
+                          (insert "\\ .*")))
+             ("C-x i" . (lambda ()
+                          (interactive)
+                          (insert "\\ .*[0-9]+")))
+             ("C-x f" . (lambda ()
+                          (interactive)
+                          (insert "[0-9]*\\.[0-9]+\\|[0-9]+\\.")))
+             ("C-x d" . (lambda ()
+                          (interactive)
+                          (insert "[0-9]\\{4\\}-[0-9][0-9]-[0-9][0-9]")))
+             ("C-x D" . (lambda ()
+                          (interactive)
+                          (insert "[0-9]\\{8\\}")))))
 
 ;;;;;;;;;;;;;;;
 ;;  company  ;;
