@@ -21,7 +21,43 @@
         #'bounds-of-thing-at-point))
 
 
-(defvar mt-things '(word symbol sexp line))
+(defgroup move-thing ()
+  "Move thing minor mode."
+  :group 'editing
+  :prefix "mt-")
+
+(defcustom move-thing-mode-line
+  '(:eval (concat "'" (cdr (assoc mt-from-thing mt-things))
+                  "'" (cdr (assoc mt-to-thing mt-things))))
+  "Show current selected thing."
+  :group 'move-thing
+  :risky t
+  :type 'sexp)
+
+(defvar move-thing-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "M-C-<up>") 'mt-move-up)
+    (define-key map (kbd "M-C-<down>") 'mt-move-down)
+    (define-key map (kbd "M-C-<left>") 'mt-move-left)
+    (define-key map (kbd "M-C-<right>") 'mt-move-right)
+    (define-key map (kbd "C-<up>") 'mt-up)
+    (define-key map (kbd "C-<down>") 'mt-down)
+    (define-key map (kbd "C-<left>") 'mt-backward)
+    (define-key map (kbd "C-<right>") 'mt-forward)
+    (define-key map (kbd "M-C-f") 'mt-cycle-things)
+    (define-key map (kbd "M-C-g") 'mt-cycle-to-things)
+    map))
+
+(define-minor-mode move-thing-mode
+  "Toggle Move thing mode."
+  :init-value nil
+  :lighter move-thing-mode-line
+  :group 'move-thing
+  :keymap move-thing-mode-map
+  :global t)
+
+
+(defvar mt-things '((symbol . "s") (sexp . "e") (line . "l") (word . "w")))
 
 (defun mt-bounds-of-thing-at-point (thing)
   (let ((bounds (mt-bounds-of-thing-at-point-helper thing)))
@@ -31,13 +67,14 @@
 
 
 ;; [ from
-(defvar mt-from-thing 'line)
-(make-variable-buffer-local mt-from-thing)
-
 (defvar mt-from-thing-ring nil)
 (let ((from-things mt-things))
   (set 'mt-from-thing-ring (make-ring (length from-things)))
-  (dolist (elem from-things) (ring-insert mt-from-thing-ring elem)))
+  (dolist (elem from-things) (ring-insert mt-from-thing-ring (car elem))))
+(make-variable-buffer-local 'mt-from-thing-ring)
+
+(defvar mt-from-thing (ring-ref mt-from-thing-ring 0))
+(make-variable-buffer-local 'mt-from-thing)
 
 (defun mt-cycle-from-things ()
   "Cycle from-things in ring."
@@ -45,37 +82,60 @@
     (ring-insert mt-from-thing-ring from-thing)
     (setq mt-from-thing from-thing
           mt-to-thing from-thing)
-    (let ((bounds (mt-bounds-of-thing-at-point from-thing)))
-      (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
     from-thing))
 ;; ]
 
 (defun mt-cycle-things ()
   "Cycle things in ring."
   (interactive)
-  (condition-case nil
-      (message "%s thing setted" (mt-cycle-from-things))
-    (error (message "%s thing setted, second try" (mt-cycle-from-things)))))
+  (if (not (eql mt-from-thing mt-to-thing))
+      (while (not (eql mt-from-thing mt-to-thing))
+        (mt-cycle-to-things))
+    (let ((init-thing (ring-ref mt-from-thing-ring 0))
+          current-thing found)
+      (while (not (or found
+                      (eql init-thing current-thing)))
+        (setq found t
+              current-thing (mt-cycle-from-things))
+        (condition-case nil
+            (let ((bounds (mt-bounds-of-thing-at-point current-thing)))
+              (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
+          (error (set 'found nil)))))))
 
 ;; [ to
-(defvar mt-to-thing 'line)
-(make-variable-buffer-local mt-to-thing)
-
 (defvar mt-to-thing-ring nil)
 (let ((to-things mt-things))
   (set 'mt-to-thing-ring (make-ring (length to-things)))
-  (dolist (elem to-things) (ring-insert mt-to-thing-ring elem)))
+  (dolist (elem to-things) (ring-insert mt-to-thing-ring (car elem))))
+(make-variable-buffer-local 'mt-to-thing-ring)
+
+(defvar mt-to-thing (ring-ref mt-to-thing-ring 0))
+(make-variable-buffer-local 'mt-to-thing)
 
 (defun mt-cycle-to-things ()
   "Cycle to-things in ring."
   (interactive)
   (let ((to-thing (ring-ref mt-to-thing-ring -1)))
     (ring-insert mt-to-thing-ring to-thing)
-    (set 'mt-to-thing to-thing)
-    (message "%s to-thing setted" to-thing)))
+    (set 'mt-to-thing to-thing)))
 ;; ]
 
 
+(defun mt-insert-rectangle (rectangle)
+  "Insert text of RECTANGLE with upper left corner at point.
+RECTANGLE's first line is inserted at point, its second
+line is inserted at a point vertically under point, etc.
+RECTANGLE should be a list of strings."
+  (let ((lines rectangle)
+        (insertcolumn (current-column)))
+    (insert-for-yank (car lines))
+    (setq lines (cdr lines))
+    (while lines
+      (forward-line 1)
+      (or (bolp) (insert ?\n))
+      (move-to-column insertcolumn t)
+      (insert-for-yank (car lines))
+      (setq lines (cdr lines)))))
 
 (defun mt-kill-thing-at-point (thing)
   (let* ((region (mt-bounds-of-thing-at-point thing))
@@ -104,31 +164,95 @@
 
 
 
-(defun mt-up-thing (arg)
-  (cl-case mt-to-thing
-    ('line
-     (line-move arg))
-    ('word
-     (line-move arg))
-    ('symbol
-     (line-move arg))
-    ('sexp
-     (line-move arg))
-    (t (error "Undefined forward for %s" mt-to-thing))))
+(defun mt-up-thing (arg &optional thing)
+  (setq arg (- (abs arg))
+        thing (or thing mt-to-thing))
+  (let ((pos (point)))
+   (cl-case thing
+     ('line
+      (line-move arg)
+      (while (let ((bounds (mt-bounds-of-thing-at-point 'line)))
+               (not (and bounds (< 1 (- (cdr bounds) (car bounds))))))
+        (goto-char pos)
+        (cl-decf arg)
+        (line-move arg)))
+     ('word
+      (line-move arg)
+      (while (let ((line (line-number-at-pos)))
+               (right-word 1)
+               (left-word 1)
+               (not (and (= line (line-number-at-pos))
+                         (mt-bounds-of-thing-at-point 'word))))
+        (goto-char pos)
+        (cl-decf arg)
+        (line-move arg)))
+     ('symbol
+      (line-move arg)
+      (while (let ((line (line-number-at-pos)))
+               (sp-forward-symbol 1)
+               (sp-backward-symbol 1)
+               (not (and (= line (line-number-at-pos))
+                         (mt-bounds-of-thing-at-point 'symbol))))
+        (goto-char pos)
+        (cl-decf arg)
+        (line-move arg)))
+     ('sexp
+      (line-move arg)
+      (while (let ((line (line-number-at-pos)))
+               (sp-forward-sexp 1)
+               (sp-backward-sexp 1)
+               (not (and (= line (line-number-at-pos))
+                         (mt-bounds-of-thing-at-point 'sexp))))
+        (goto-char pos)
+        (cl-decf arg)
+        (line-move arg)))
+     (t (error "Undefined up for %s" thing))))
+  (- arg))
 
-(defun mt-down-thing (arg)
-  (when (eql mt-from-thing 'line)
-    (cl-decf arg))
-  (cl-case mt-to-thing
-    ('line
-     (line-move arg))
-    ('word
-     (line-move arg))
-    ('symbol
-     (line-move arg))
-    ('sexp
-     (line-move arg))
-    (t (error "Undefined forward for %s" mt-to-thing))))
+(defun mt-down-thing (arg &optional thing)
+  (setq arg (abs arg)
+        thing (or thing mt-to-thing))
+  (let ((pos (point)))
+   (cl-case thing
+     ('line
+      (line-move arg)
+      (while (let ((bounds (mt-bounds-of-thing-at-point 'line)))
+               (not (and bounds (< 1 (- (cdr bounds) (car bounds))))))
+        (goto-char pos)
+        (cl-incf arg)
+        (line-move arg)))
+     ('word
+      (line-move arg)
+      (while (let ((line (line-number-at-pos)))
+               (right-word 1)
+               (left-word 1)
+               (not (and (= line (line-number-at-pos))
+                         (mt-bounds-of-thing-at-point 'word))))
+        (goto-char pos)
+        (cl-incf arg)
+        (line-move arg)))
+     ('symbol
+      (line-move arg)
+      (while (let ((line (line-number-at-pos)))
+               (sp-forward-symbol 1)
+               (sp-backward-symbol 1)
+               (not (and (= line (line-number-at-pos))
+                         (mt-bounds-of-thing-at-point 'symbol))))
+        (goto-char pos)
+        (cl-incf arg)
+        (line-move arg)))
+     ('sexp
+      (line-move arg)
+      (while (let ((line (line-number-at-pos)))
+               (sp-forward-sexp 1)
+               (sp-backward-sexp 1)
+               (not (and (= line (line-number-at-pos))
+                         (mt-bounds-of-thing-at-point 'sexp))))
+        (goto-char pos)
+        (cl-incf arg)
+        (line-move arg)))
+     (t (error "Undefined up for %s" thing))))
+  arg)
 
 (defun mt-forward-thing (arg)
   (cl-case mt-to-thing
@@ -171,40 +295,20 @@
 
 
 
-(defun mt-check-thing-at-point (thing)
-  (let ((line (line-number-at-pos)))
-    (cl-case mt-to-thing
-      ('word
-       (right-word 1)
-       (left-word 1))
-      ('symbol
-       (sp-forward-symbol 1)
-       (sp-backward-symbol 1))
-      ('sexp
-       (sp-forward-sexp 1)
-       (sp-backward-sexp 1)))
-    (and (= line (line-number-at-pos))
-         (mt-bounds-of-thing-at-point thing))))
-
-
 
 (defun mt-move-thing-up (arg)
   (let ((from (mt-kill-from-thing-at-point)))
     (let ((from-lines (length from))
           (from-lengths (mapcar 'length from))
           (pos (point)))
-      (mt-up-thing (- arg))
-      (while (not (mt-check-thing-at-point mt-to-thing))
-        (cl-incf arg)
-        (goto-char pos)
-        (mt-up-thing (- arg)))
+      (set 'arg (mt-up-thing arg))
       (let ((to (mt-kill-thing-at-point mt-to-thing)))
         (let ((to-lines (length to))
               (to-lengths (mapcar 'length to))
               (pos-end (point)))
-          (insert-rectangle from)
+          (mt-insert-rectangle from)
           (goto-char (mt-correct-pos-up pos arg from-lengths to-lengths))
-          (insert-rectangle to)
+          (mt-insert-rectangle to)
           (goto-char pos-end))))))
 (advice-add 'mt-move-thing-up :around #'rollback-on-error-advice)
 
@@ -219,9 +323,9 @@
         (let ((to-lines (length to))
               (to-lengths (mapcar 'length to))
               (pos-end (point)))
-          (insert-rectangle from)
+          (mt-insert-rectangle from)
           (goto-char (mt-correct-pos-up pos arg from-lengths to-lengths))
-          (insert-rectangle to)
+          (mt-insert-rectangle to)
           (goto-char pos-end))))))
 (advice-add 'mt-move-thing-backward :around #'rollback-on-error-advice)
 
@@ -230,18 +334,18 @@
     (let  ((from-lines (length from))
            (from-lengths (mapcar 'length from))
            (pos (point)))
-      (mt-down-thing arg)
-      (while (not (mt-check-thing-at-point mt-to-thing))
-        (cl-incf arg)
-        (goto-char pos)
-        (mt-down-thing arg))
+      (if (not (eql mt-from-thing 'line))
+          (set 'arg (mt-down-thing arg))
+        (cl-decf arg)
+        (set 'arg (mt-down-thing arg))
+        (cl-incf arg))
       (let ((to (mt-kill-thing-at-point mt-to-thing)))
         (let ((to-lines (length to))
               (to-lengths (mapcar 'length to)))
           (let ((pos-end (mt-correct-pos-down (point) arg to-lengths)))
-            (insert-rectangle from)
+            (mt-insert-rectangle from)
             (goto-char pos)
-            (insert-rectangle to)
+            (mt-insert-rectangle to)
             (goto-char pos-end)))))))
 (advice-add 'mt-move-thing-down :around #'rollback-on-error-advice)
 
@@ -257,9 +361,9 @@
         (let ((to-lines (length to))
               (to-lengths (mapcar 'length to)))
           (let ((pos-end (mt-correct-pos-down (point) arg to-lengths)))
-            (insert-rectangle from)
+            (mt-insert-rectangle from)
             (goto-char pos)
-            (insert-rectangle to)
+            (mt-insert-rectangle to)
             (goto-char pos-end)))))))
 (advice-add 'mt-move-thing-forward :around #'rollback-on-error-advice)
 
@@ -281,14 +385,21 @@
   (interactive "p")
   (mt-move-thing-backward (or arg 1)))
 
+(defun mt-up (arg)
+  (interactive "p")
+  (mt-up-thing (or arg 1)))
 
+(defun mt-down (arg)
+  (interactive "p")
+  (mt-down-thing (or arg 1)))
 
-(bind-keys
- ("M-C-<up>"    . mt-move-up)
- ("M-C-<down>"  . mt-move-down)
- ("M-C-<left>"  . mt-move-left)
- ("M-C-<right>" . mt-move-right)
- ("M-C-f"       . mt-cycle-things))
+(defun mt-backward (arg)
+  (interactive "p")
+  (mt-backward-thing (or arg 1)))
+
+(defun mt-forward (arg)
+  (interactive "p")
+  (mt-forward-thing (or arg 1)))
 
 
 (provide 'move-thing)

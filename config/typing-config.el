@@ -283,6 +283,7 @@ prompt the user for a coding system."
 
 ;;(require 'move-token)
 (require 'move-thing)
+(move-thing-mode t)
 
 ;;;;;;;;;;;
 ;; Copia ;;
