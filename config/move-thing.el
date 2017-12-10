@@ -11,9 +11,24 @@
 ;; ‘line’, and ‘page’.
 
 ;;; Code:
-(require 'config-lib)
+;; Protect from errors
+(defun rollback-on-error-inc ()
+  (cl-incf rollback-on-error-counter))
+(defun rollback-on-error-advice (orig-fun &rest args)
+  "Rollback (ORIG-FUN ARGS) evaluation on error."
+  (undo-boundary)
+  (advice-add 'undo-boundary :before #'rollback-on-error-inc)
+  (unwind-protect
+      (let ((rollback-on-error-counter 1))
+        (condition-case raised-error
+            (apply orig-fun args)
+          (error (primitive-undo rollback-on-error-counter
+                                 buffer-undo-list)
+                 (message "%s rolled back (%i)"
+                          raised-error
+                          rollback-on-error-counter))))
+    (advice-remove 'undo-boundary #'rollback-on-error-inc)))
 (require 'rect)
-(require 'smartparens)
 (require 'ring)
 (fset 'mt-bounds-of-thing-at-point
       (if (require 'thingatpt+ nil t)
@@ -69,13 +84,15 @@
 ;;    #    #    # # #  # # #  ###      #
 ;;    #    #    # # #   ## #    # #    #
 ;;    #    #    # # #    #  ####   ####
-(defvar mt-things '((symbol . "s")
-                    (sexp . "e")
-                    (line . "l")
+(defvar mt-things '((symbol   . "s")
+                    (list     . "t")
+                    (sexp     . "e")
+                    (defun    . "d")
+                    (line     . "l")
                     (filename . "f")
-                    (url . "u")
-                    (email . "m")
-                    (word . "w")))
+                    (url      . "u")
+                    (email    . "m")
+                    (word     . "w")))
 
 ;; [ from
 (defvar mt-from-thing-ring nil)
@@ -146,6 +163,9 @@ line is inserted at a point vertically under point, etc.
 RECTANGLE should be a list of strings."
   (let ((lines rectangle)
         (insertcolumn (current-column)))
+    (when (< 1 (length lines))
+      (set-mark (point)))
+    (undo-boundary)
     (insert-for-yank (car lines))
     (setq lines (cdr lines))
     (while lines
@@ -156,26 +176,26 @@ RECTANGLE should be a list of strings."
       (setq lines (cdr lines)))))
 
 (defun mt-kill-thing-at-point (thing)
-  (let ((region (mt-bounds-of-thing-at-point thing)))
-    (unless region
+  (let ((bounds (mt-bounds-of-thing-at-point thing)))
+    (unless bounds
       (error "%s not found, kill imposible" thing))
-    (let ((beg (car region))
-          (end (cdr region)))
+    (let ((beg (car bounds))
+          (end (cdr bounds)))
       (prog1
           (list (buffer-substring-no-properties beg end))
+        (undo-boundary)
         (delete-region beg end)))))
 
 (defun mt-kill-from-thing-at-point ()
   (if (use-region-p)
-      (let* ((region (sort (list (mark) (point)) '<))
-             (beg (car region))
-             (end (car (cdr region))))
+      (let* ((bounds (sort (list (mark) (point)) '<))
+             (beg (car bounds))
+             (end (car (cdr bounds))))
         (if rectangle-mark-mode
-            (prog1
-                (extract-rectangle beg end)
-              (delete-rectangle beg end))
-          (prog1
-              (list (buffer-substring-no-properties beg end))
+            (progn (undo-boundary)
+                   (delete-extract-rectangle beg end))
+          (prog1 (list (buffer-substring-no-properties beg end))
+            (undo-boundary)
             (delete-region beg end))))
     (mt-kill-thing-at-point mt-from-thing)))
 
@@ -190,10 +210,11 @@ RECTANGLE should be a list of strings."
 ;; #    ## #    #  #  #  # #    # #    #   #   # #    # #   ##
 ;; #     # #    #   ##   #  ####  #    #   #   #  ####  #    #
 (defun mt-forward-line (arg &optional column)
-  (setq column (or column (current-column)))
-  (unless (= 0 (forward-line arg))
-    (error "Buffer limit reached"))
-  (= column (move-to-column column)))
+  (unless (and (not column) (= 0 arg))
+    (setq column (or column (current-column)))
+    (unless (= 0 (forward-line arg))
+      (error "Buffer limit reached"))
+    (= column (move-to-column column))))
 
 (defun mt-exists-thing-at-point (thing)
   (let ((bounds (mt-bounds-of-thing-at-point thing)))
@@ -245,9 +266,7 @@ RECTANGLE should be a list of strings."
 ;; #     # #    #  #  #  #      #    # #      #   ##   #
 ;; #     #  ####    ##   ###### #    # ###### #    #   #
 (defun mt-newline-ending (str)
-  (if (char-equal ?\n (aref str (1- (length str))))
-      1
-    0))
+  (char-equal ?\n (aref str (1- (length str)))))
 
 (defun mt-correct-pos-up (pos arg from-lengths to-lengths)
   (+ pos (- (apply '+ (cl-subseq
@@ -266,11 +285,11 @@ RECTANGLE should be a list of strings."
                          arg)))))
 
 (defun mt-move-thing-up (arg)
-  (let* ((column (prog1 (current-column)
-                   (mt-backward-thing 1 mt-from-thing)))
-         (from (mt-kill-from-thing-at-point)))
-    (let ((from-lines (length from))
-          (from-lengths (mapcar 'length from))
+  (let* ((column (current-column))
+         (from (mt-kill-from-thing-at-point))
+         (from-lines (length from)))
+    (mt-forward-line (- 1 from-lines))
+    (let ((from-lengths (mapcar 'length from))
           (pos (point)))
       (set 'arg (mt-up-thing arg column mt-to-thing))
       (let ((to (mt-kill-thing-at-point mt-to-thing)))
@@ -284,16 +303,14 @@ RECTANGLE should be a list of strings."
 (advice-add 'mt-move-thing-up :around #'rollback-on-error-advice)
 
 (defun mt-move-thing-down (arg)
-  (let* ((column (prog1 (current-column)
-                   (mt-backward-thing 1 mt-from-thing)))
+  (let* ((column (current-column))
          (from (mt-kill-from-thing-at-point)))
     (let  ((from-lines (length from))
            (from-lengths (mapcar 'length from))
-           (newlines (apply '+ (mapcar 'mt-newline-ending from)))
            (pos (point)))
-      (set 'arg (- arg newlines))
-      (set 'arg (mt-down-thing arg column mt-to-thing))
-      (set 'arg (+ arg newlines))
+      (if (not (mt-newline-ending (car (last from))))
+          (set 'arg (mt-down-thing arg column mt-to-thing))
+        (set 'arg (1+ (mt-down-thing (1- arg) column mt-to-thing))))
       (let ((to (mt-kill-thing-at-point mt-to-thing)))
         (let ((to-lines (length to))
               (to-lengths (mapcar 'length to)))
@@ -305,7 +322,6 @@ RECTANGLE should be a list of strings."
 (advice-add 'mt-move-thing-down :around #'rollback-on-error-advice)
 
 (defun mt-move-thing-backward (arg)
-  (mt-backward-thing 1 mt-from-thing)
   (let ((from (mt-kill-from-thing-at-point)))
     (let ((from-lines (length from))
           (from-lengths (mapcar 'length from))
@@ -323,7 +339,6 @@ RECTANGLE should be a list of strings."
 (advice-add 'mt-move-thing-backward :around #'rollback-on-error-advice)
 
 (defun mt-move-thing-forward (arg)
-  (mt-backward-thing 1 mt-from-thing)
   (let ((from (mt-kill-from-thing-at-point)))
     (let   ((from-lines (length from))
             (from-lengths (mapcar 'length from))
