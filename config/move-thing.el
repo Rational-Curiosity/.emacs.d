@@ -35,6 +35,28 @@
           #'tap-bounds-of-thing-at-point
         #'bounds-of-thing-at-point))
 
+
+(defun mt-bounds-of-thing-at-point-or-region (thing)
+  (if (use-region-p)
+      (let ((positions (sort (list (mark) (point)) '<)))
+        (if rectangle-mark-mode
+            (let ((columns (sort (list (progn (goto-char (car positions))
+                                              (current-column))
+                                       (progn (goto-char (car (cdr positions)))
+                                              (current-column))) '<)))
+              (cons 'rectangle
+                    (cons (progn (goto-char (car positions))
+                                 (move-to-column (car columns))
+                                 (point))
+                          (progn (goto-char (car (cdr positions)))
+                                 (move-to-column (car (cdr columns)))
+                                 (point)))))
+          (cons 'region
+                (cons (car positions) (car (cdr positions))))))
+    (cons 'bounds
+          (mt-bounds-of-thing-at-point thing))))
+
+
 ;; #     #
 ;; ##   ##  ####  #####  ######
 ;; # # # # #    # #    # #
@@ -84,15 +106,33 @@
 ;;    #    #    # # #  # # #  ###      #
 ;;    #    #    # # #   ## #    # #    #
 ;;    #    #    # # #    #  ####   ####
-(defvar mt-things '((symbol   . "s")
-                    (list     . "t")
+(defvar mt-things '((word     . "w")
+                    (symbol   . "s")
                     (sexp     . "e")
+                    (list     . "t")
                     (defun    . "d")
-                    (line     . "l")
                     (filename . "f")
                     (url      . "u")
                     (email    . "m")
-                    (word     . "w")))
+                    (line     . "l")))
+
+;; [ to
+(defvar mt-to-thing-ring nil)
+(let ((to-things mt-things))
+  (set 'mt-to-thing-ring (make-ring (length to-things)))
+  (dolist (elem to-things) (ring-insert mt-to-thing-ring (car elem))))
+(make-variable-buffer-local 'mt-to-thing-ring)
+
+(defvar mt-to-thing (ring-ref mt-to-thing-ring 0))
+(make-variable-buffer-local 'mt-to-thing)
+
+(defun mt-cycle-to-things ()
+  "Cycle to-things in ring."
+  (interactive)
+  (let ((to-thing (ring-ref mt-to-thing-ring -1)))
+    (ring-insert mt-to-thing-ring to-thing)
+    (set 'mt-to-thing to-thing)))
+;; ]
 
 ;; [ from
 (defvar mt-from-thing-ring nil)
@@ -130,24 +170,6 @@
               (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
           (error (set 'found nil)))))))
 
-;; [ to
-(defvar mt-to-thing-ring nil)
-(let ((to-things mt-things))
-  (set 'mt-to-thing-ring (make-ring (length to-things)))
-  (dolist (elem to-things) (ring-insert mt-to-thing-ring (car elem))))
-(make-variable-buffer-local 'mt-to-thing-ring)
-
-(defvar mt-to-thing (ring-ref mt-to-thing-ring 0))
-(make-variable-buffer-local 'mt-to-thing)
-
-(defun mt-cycle-to-things ()
-  "Cycle to-things in ring."
-  (interactive)
-  (let ((to-thing (ring-ref mt-to-thing-ring -1)))
-    (ring-insert mt-to-thing-ring to-thing)
-    (set 'mt-to-thing to-thing)))
-;; ]
-
 
 ;;              #
 ;; #####       #  #    #
@@ -156,51 +178,39 @@
 ;; #####    #     # ## #
 ;; #   #   #      ##  ##
 ;; #    # #       #    #
-(defun mt-insert-rectangle (rectangle)
-  "Insert text of RECTANGLE with upper left corner at point.
-RECTANGLE's first line is inserted at point, its second
-line is inserted at a point vertically under point, etc.
-RECTANGLE should be a list of strings."
-  (let ((lines rectangle)
+(defun mt-insert-rectangle (rectangle arg)
+  (let ((lines (if (<= 0 arg) rectangle (nreverse rectangle)))
         (insertcolumn (current-column)))
-    (when (< 1 (length lines))
-      (set-mark (point)))
     (undo-boundary)
     (insert-for-yank (car lines))
     (setq lines (cdr lines))
     (while lines
-      (forward-line 1)
+      (forward-line arg)
       (or (bolp) (insert ?\n))
       (move-to-column insertcolumn t)
       (insert-for-yank (car lines))
       (setq lines (cdr lines)))))
 
-(defun mt-kill-thing-at-point (thing)
-  (let ((bounds (mt-bounds-of-thing-at-point thing)))
-    (unless bounds
-      (error "%s not found, kill imposible" thing))
-    (let ((beg (car bounds))
-          (end (cdr bounds)))
-      (prog1
-          (list (buffer-substring-no-properties beg end))
-        (undo-boundary)
-        (delete-region beg end)))))
+(defun mt-kill-rectangle-or-bounds (arg)
+  (unless (cdr arg)
+    (error "%s not found, kill imposible" arg))
+  (cl-case (car arg)
+    ('rectangle
+     (undo-boundary)
+     (delete-extract-rectangle (car (cdr arg)) (cdr (cdr arg))))
+    ((region bounds)
+     (prog1
+         (list (buffer-substring-no-properties (car (cdr arg)) (cdr (cdr arg))))
+       (undo-boundary)
+       (delete-region (car (cdr arg)) (cdr (cdr arg)))))))
 
-(defun mt-kill-from-thing-at-point ()
-  (if (use-region-p)
-      (let* ((bounds (sort (list (mark) (point)) '<))
-             (beg (car bounds))
-             (end (car (cdr bounds))))
-        (if rectangle-mark-mode
-            (progn (undo-boundary)
-                   (delete-extract-rectangle beg end))
-          (prog1 (list (buffer-substring-no-properties beg end))
-            (undo-boundary)
-            (delete-region beg end))))
-    (mt-kill-thing-at-point mt-from-thing)))
-
-
-
+(defun mt-kill-bounds (arg)
+  (unless arg
+    (error "Thing not found, kill imposible"))
+  (prog1
+      (buffer-substring-no-properties (car arg) (cdr arg))
+    (undo-boundary)
+    (delete-region (car arg) (cdr arg))))
 
 ;; #     #
 ;; ##    #   ##   #    # #  ####    ##   ##### #  ####  #    #
@@ -245,15 +255,19 @@ RECTANGLE should be a list of strings."
   (setq thing (or thing mt-to-thing))
   (dotimes (i arg)
     (let (bounds)
-      (while (not (set 'bounds (mt-bounds-of-thing-at-point thing)))
+      (while (not (and
+                   (set 'bounds (mt-bounds-of-thing-at-point thing))
+                   (not (= (point) (cdr bounds)))))
         (forward-char 1))
-      (goto-char (cdr bounds)))))
+      (goto-char (1- (cdr bounds))))))
 
 (defun mt-backward-thing (arg &optional thing)
   (setq thing (or thing mt-to-thing))
   (dotimes (i arg)
     (let (bounds)
-      (while (not (set 'bounds (mt-bounds-of-thing-at-point thing)))
+      (while (not (and
+                   (set 'bounds (mt-bounds-of-thing-at-point thing))
+                   (not (= (point) (car bounds)))))
         (backward-char 1))
       (goto-char (car bounds)))))
 
@@ -268,91 +282,103 @@ RECTANGLE should be a list of strings."
 (defun mt-newline-ending (str)
   (char-equal ?\n (aref str (1- (length str)))))
 
-(defun mt-correct-pos-up (pos arg from-lengths to-lengths)
-  (+ pos (- (apply '+ (cl-subseq
-                       from-lengths 0
-                       (min (length from-lengths)
-                            arg)))
-            (apply '+ (cl-subseq
-                       to-lengths 0
-                       (min (length to-lengths)
-                            arg))))))
-
-(defun mt-correct-pos-down (pos arg to-lengths)
-  (+ pos (apply '+ (cl-subseq
-                    to-lengths 0
-                    (min (length to-lengths)
-                         arg)))))
-
 (defun mt-move-thing-up (arg)
   (let* ((column (current-column))
-         (from (mt-kill-from-thing-at-point))
-         (from-lines (length from)))
-    (mt-forward-line (- 1 from-lines))
-    (let ((from-lengths (mapcar 'length from))
-          (pos (point)))
-      (set 'arg (mt-up-thing arg column mt-to-thing))
-      (let ((to (mt-kill-thing-at-point mt-to-thing)))
-        (let ((to-lines (length to))
-              (to-lengths (mapcar 'length to))
-              (pos-end (point)))
-          (mt-insert-rectangle from)
-          (goto-char (mt-correct-pos-up pos arg from-lengths to-lengths))
-          (mt-insert-rectangle to)
-          (goto-char pos-end))))))
-(advice-add 'mt-move-thing-up :around #'rollback-on-error-advice)
+         (from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+         (from (mt-kill-rectangle-or-bounds from-sbs)))
+    (goto-char (car (cdr from-sbs)))
+    (mt-up-thing arg column mt-to-thing)
+    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+           (to (mt-kill-bounds to-bs)))
+      (goto-char (- (car (cdr from-sbs)) (length to)))
+      (undo-boundary)
+      (insert to)
+      (goto-char (car to-bs))
+      (mt-insert-rectangle from 1)
+      (cl-case (car from-sbs)
+        ('rectangle
+         (rectangle-mark-mode)
+         (push-mark)
+         (setq deactivate-mark nil))
+        ('region
+         (push-mark)
+         (setq deactivate-mark nil)))
+      (goto-char (car to-bs)))))
+(advice-add 'mt-move-thing-backward :around #'rollback-on-error-advice)
 
 (defun mt-move-thing-down (arg)
   (let* ((column (current-column))
-         (from (mt-kill-from-thing-at-point)))
-    (let  ((from-lines (length from))
-           (from-lengths (mapcar 'length from))
-           (pos (point)))
-      (if (not (mt-newline-ending (car (last from))))
-          (set 'arg (mt-down-thing arg column mt-to-thing))
-        (set 'arg (1+ (mt-down-thing (1- arg) column mt-to-thing))))
-      (let ((to (mt-kill-thing-at-point mt-to-thing)))
-        (let ((to-lines (length to))
-              (to-lengths (mapcar 'length to)))
-          (let ((pos-end (mt-correct-pos-down (point) arg to-lengths)))
-            (mt-insert-rectangle from)
-            (goto-char pos)
-            (mt-insert-rectangle to)
-            (goto-char pos-end)))))))
-(advice-add 'mt-move-thing-down :around #'rollback-on-error-advice)
+         (from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+         (from (mt-kill-rectangle-or-bounds from-sbs)))
+    (goto-char (car (cdr from-sbs)))
+    (mt-forward-line (1- (length from)))
+    (when (mt-newline-ending (car from))
+      (cl-decf arg))
+    (mt-down-thing arg column mt-to-thing)
+    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+           (to (mt-kill-bounds to-bs)))
+      (goto-char (car (cdr from-sbs)))
+      (undo-boundary)
+      (insert to)
+      (let ((pos (+ (length to) (car to-bs))))
+        (goto-char pos)
+        (mt-insert-rectangle from 1)
+        (cl-case (car from-sbs)
+          ('rectangle
+           (rectangle-mark-mode)
+           (push-mark)
+           (setq deactivate-mark nil))
+          ('region
+           (push-mark)
+           (setq deactivate-mark nil)))
+        (goto-char pos)))))
+(advice-add 'mt-move-thing-forward :around #'rollback-on-error-advice)
 
 (defun mt-move-thing-backward (arg)
-  (let ((from (mt-kill-from-thing-at-point)))
-    (let ((from-lines (length from))
-          (from-lengths (mapcar 'length from))
-          (pos (point))
-          pos-end)
-      (mt-backward-thing arg)
-      (let ((to (mt-kill-thing-at-point mt-to-thing)))
-        (let ((to-lines (length to))
-              (to-lengths (mapcar 'length to))
-              (pos-end (point)))
-          (mt-insert-rectangle from)
-          (goto-char (mt-correct-pos-up pos arg from-lengths to-lengths))
-          (mt-insert-rectangle to)
-          (goto-char pos-end))))))
+  (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+         (from (mt-kill-rectangle-or-bounds from-sbs)))
+    (goto-char (car (cdr from-sbs)))
+    (mt-backward-thing arg mt-to-thing)
+    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+           (to (mt-kill-bounds to-bs)))
+      (goto-char (- (car (cdr from-sbs)) (length to)))
+      (undo-boundary)
+      (insert to)
+      (goto-char (car to-bs))
+      (mt-insert-rectangle from 1)
+      (cl-case (car from-sbs)
+        ('rectangle
+         (rectangle-mark-mode)
+         (push-mark)
+         (setq deactivate-mark nil))
+        ('region
+         (push-mark)
+         (setq deactivate-mark nil)))
+      (goto-char (car to-bs)))))
 (advice-add 'mt-move-thing-backward :around #'rollback-on-error-advice)
 
 (defun mt-move-thing-forward (arg)
-  (let ((from (mt-kill-from-thing-at-point)))
-    (let   ((from-lines (length from))
-            (from-lengths (mapcar 'length from))
-            (pos (point)))
-      (mt-forward-thing arg)
-      (mt-backward-thing 1)
-      (let ((to (mt-kill-thing-at-point mt-to-thing)))
-        (let ((to-lines (length to))
-              (to-lengths (mapcar 'length to)))
-          (let ((pos-end (mt-correct-pos-down (point) arg to-lengths)))
-            (mt-insert-rectangle from)
-            (goto-char pos)
-            (mt-insert-rectangle to)
-            (goto-char pos-end)))))))
+  (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+         (from (mt-kill-rectangle-or-bounds from-sbs)))
+    (goto-char (car (cdr from-sbs)))
+    (mt-forward-thing arg mt-to-thing)
+    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+           (to (mt-kill-bounds to-bs)))
+      (goto-char (car (cdr from-sbs)))
+      (undo-boundary)
+      (insert to)
+      (let ((pos (+ (length to) (car to-bs))))
+        (goto-char pos)
+        (mt-insert-rectangle from 1)
+        (cl-case (car from-sbs)
+          ('rectangle
+           (rectangle-mark-mode)
+           (push-mark)
+           (setq deactivate-mark nil))
+          ('region
+           (push-mark)
+           (setq deactivate-mark nil)))
+        (goto-char pos)))))
 (advice-add 'mt-move-thing-forward :around #'rollback-on-error-advice)
 
 
