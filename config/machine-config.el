@@ -16,9 +16,7 @@
  ;; JOB machine ;;
  ;;;;;;;;;;;;;;;;;
  ((string-equal (system-name) (getenv "JOB_MACHINE_NAME"))
-  (bound-and-eval 'config-01)
-  (message "Loading version-control-config")
-  (require 'version-control-config))
+  (bound-and-eval 'config-01))
  ;;;;;;;;;;;;;;;;;;;
  ;; Almis machine ;;
  ;;;;;;;;;;;;;;;;;;;

@@ -22,6 +22,7 @@
 (defvar c-c++-default-mode-for-headers 'c++-mode)
 (defvar c-c++-enable-clang-support t)
 
+(require 'faces)
 (require 'find-file)
 ;; Directorios para busqueda del archivo dual
 (dolist (path c-c++-include-paths)
@@ -76,6 +77,48 @@
 ;;             (downcase-region start (1+ start)))
 ;;         (replace-regexp "\\([A-Z]\\)" "_\\1" nil (1+ start) end)
 ;;         (downcase-region start (cdr (bounds-of-thing-at-point 'symbol)))))))
+
+;;;;;;;;;
+;; C++ ;;
+;;;;;;;;;
+(defun avoid-shared-ptr-by-ref (arg)
+  (interactive "P")
+  (goto-char (point-min))
+  (let ((counts 0))
+    (while (search-forward-regexp "> *&[^&]" nil t)
+      (let ((pos-end (- (point) 2)))
+        (goto-char (match-beginning 0))
+        (let ((angles 1))
+          (while (< 0 angles)
+            (backward-char 1)
+            (if (char-equal (char-after (point)) ?<)
+                (cl-decf angles)
+              (if (char-equal (char-after (point)) ?>)
+                  (cl-incf angles))))
+          (search-backward-regexp "[^_a-zA-Z0-9: \t\n]" nil t)
+          (if (or (char-equal (char-after (point)) ?,)
+                  (char-equal (char-after (point)) ?\())
+              (let ((pos-beg (point)))
+                (when (and
+                       (cl-search
+                        "shared_ptr"
+                        (buffer-substring-no-properties pos-beg pos-end))
+                       (or arg
+                           (progn
+                             (goto-char pos-end)
+                             (pulse-momentary-highlight-region (1+ pos-beg)
+                                                               (1+ pos-end) 'region)
+                             (y-or-n-p "Delete match? "))))
+                  (delete-region pos-end (1+ pos-end))
+                  (save-restriction
+                    (narrow-to-region pos-beg pos-end)
+                    (goto-char (point-min))
+                    (if (search-forward-regexp "[^a-zA-Z_]\\(const +\\)[a-zA-Z_:]" nil t)
+                      (delete-region (match-beginning 1) (match-end 1))))
+                  (cl-incf counts)))))
+        (goto-char pos-end)))
+    (message "Found %i pointers by ref" counts)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                             ;;

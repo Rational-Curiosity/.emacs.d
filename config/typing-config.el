@@ -150,6 +150,7 @@ prompt the user for a coding system."
 (add-hook 'prog-mode-hook #'linum-mode)
 (setq linum-format "%d")
 ;; Mostrar nueva linea y tabulador
+(require 'whitespace-bug)
 (add-hook 'prog-mode-hook #'(lambda ()
                               (interactive)
                               ;; use make-local-variable with all variables
@@ -288,6 +289,8 @@ prompt the user for a coding system."
 ;;;;;;;;;;;
 ;; Copia ;;
 ;;;;;;;;;;;
+(setq yank-excluded-properties t)
+
 (defun duplicate-region (arg beg end &optional orig)
   "Duplicates ARG times region from BEG to END."
   (let ((origin (or orig end))

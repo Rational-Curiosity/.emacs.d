@@ -239,6 +239,8 @@
 
 (require 'vlf-config)
 
+(require 'version-control-config)
+
 ;; csv-mode
 (add-to-list 'auto-mode-alist '("\\.tsv\\'" . csv-mode))
 ;; not working with with-eval-after-load 'csv-mode

@@ -6,6 +6,7 @@
 ;; (require 'version-control-config)
 
 ;;; Code:
+(message "Loading version-control-config")
 
 
 
