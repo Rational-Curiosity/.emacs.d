@@ -124,7 +124,8 @@
                     (email    . "'m")
                     (line     . "'l")))
 
-(defvar mt-interchange-things t)
+(defvar mt-interchange-things nil)
+(make-variable-buffer-local 'mt-interchange-things)
 
 ;; [ to
 (defvar mt-to-thing-ring nil)

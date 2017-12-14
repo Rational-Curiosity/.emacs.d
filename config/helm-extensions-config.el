@@ -23,7 +23,7 @@
 (set-face-attribute 'helm-selection nil :background "purple")
 (set-face-attribute 'helm-source-header nil :height 1.0)
 
-(bind-key* "C-M-x" 'execute-extended-command)
+(bind-key* "C-x M-x" 'execute-extended-command)
 
 (global-set-key (kbd "C-x b") 'helm-buffers-list)
 (global-set-key (kbd "M-y") 'helm-show-kill-ring)

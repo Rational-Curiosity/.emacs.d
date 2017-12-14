@@ -41,7 +41,7 @@
       rm-blacklist
       '(" Server" " hl-p" " WK" " Fly" " company" " Helm" " Undo-Tree"
         " Abbrev" " yas" " ws" " Projectile" " drag" " ||" " Spnxd"
-        " hlt" " Hi"))
+        " hlt" " Hi" " MMap"))
 
 ;; example of mode-line-format
 ;; (setq-default mode-line-format

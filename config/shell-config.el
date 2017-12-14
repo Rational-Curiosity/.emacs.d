@@ -86,16 +86,50 @@
     (save-some-buffers arg)
     (compilation-start (read-string "Execute command: " (eval (car pair))))))
 
-(defvar insert-from-function-alist '(("git branches" . vc-git-branches)))
+(defvar insert-from-function-alist '(("git branches" . vc-git-branches)
+                                     ("text to rotate" . rotate-text-symbols)))
 (defun insert-from-function (arg)
   (interactive "P")
-  (let* ((functions (mapcar 'car insert-from-function-alist))
-         (result (completing-read "Text to insert: "
-                                  (funcall
-                                   (cdr (assoc
-                                         (completing-read "Function: "
-                                                          functions nil t)
-                                         insert-from-function-alist))))))
+  (let* ((choices (mapcar 'car insert-from-function-alist))
+         (result (cdr (assoc (completing-read "Choose: "
+                                              choices nil t)
+                             insert-from-function-alist))))
+    (while (not (stringp result))
+      ;; (message "not string %s" result)
+      (cond
+       ((json-alist-p result)
+        ;; (message "alist %s" result)
+        (cond
+         ((cl-every (lambda (x) (consp (cdr x))) result)
+          ;; (message "list list %s" result)
+          (setq choices (mapcar 'car result)
+                result (assoc (completing-read "Choose list: " choices nil t) result)))
+         ((cl-every (lambda (x) (functionp (cdr x))) result)
+          ;; (message "alist function %s" result)
+          (setq choices (mapcar 'car result)
+                result (funcall (cdr (assoc (completing-read "Choose function: " choices nil t) result)))))
+         (t
+          ;; (message "alist ¿? %s" result)
+          (setq choices (mapcar 'car result)
+                result (cdr (assoc (completing-read "Choose: " choices nil t) result))))))
+       ((consp result)
+        (cond
+         ((cl-every #'stringp result)
+          ;; (message "list strings %s" result)
+          (setq result (completing-read "Text to insert: " result)))
+         ((cl-every #'functionp result)
+          ;; (message "list function %s" result)
+          (setq result (completing-read "Choose function: " result nil t)))
+         (t
+          (error "Unknown type in list"))))
+       ((functionp result)
+        ;; (message "function %s" result)
+        (setq result (funcall result)))
+       ((symbolp result)
+        ;; (message "symbol %s" result)
+        (setq result (eval result)))
+       (t
+        (error "Unknown type"))))
     (if arg
         (kill-new result)
       (insert result))))
