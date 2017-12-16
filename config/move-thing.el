@@ -29,9 +29,9 @@
             (apply orig-fun args)
           (error (primitive-undo rollback-on-error-counter
                                  buffer-undo-list)
-                 (message "%s rolled back (%i)"
-                          raised-error
-                          rollback-on-error-counter))))
+                 (error "%s rolled back (%i)"
+                        raised-error
+                        rollback-on-error-counter))))
     (advice-remove 'undo-boundary #'rollback-on-error-inc)))
 (require 'rect)
 (require 'ring)
@@ -403,7 +403,24 @@
                    (lambda (b)
                      (buffer-substring-no-properties (car b) (cdr b)))
                    bounds))
-         (item (pop strings)))
+         (item (pop strings))
+         (last-correction 0)
+         (lengths (mapcar (lambda (b) (- (cdr b) (car b))) bounds))
+         (paste-lengths (cons 0 (cdr lengths)))
+         (cut-lengths (cons 0 lengths))
+         (positions (cl-mapcar
+                     (lambda (b c p)
+                       (setq last-correction (+ last-correction
+                                                (- p c)))
+                       (+ (car b) last-correction))
+                     bounds
+                     cut-lengths
+                     paste-lengths))
+         (new-bounds (cl-mapcar
+                      (lambda (p l)
+                        (cons p (+ p l)))
+                      positions
+                      (nconc (cdr lengths) (list (car lengths))))))
     (setq strings (nreverse strings)
           bounds (nreverse bounds))
     (push item strings)
@@ -411,13 +428,32 @@
       (let ((bound (pop bounds)))
         (delete-region (car bound) (cdr bound))
         (goto-char (car bound))
-        (insert (pop strings))))))
+        (insert (pop strings))))
+    new-bounds))
 
 (defun mt-shift-points-right (bounds)
   (let* ((strings (mapcar
                    (lambda (b)
                      (buffer-substring-no-properties (car b) (cdr b)))
-                   bounds)))
+                   bounds))
+         (last-correnction 0)
+         (lengths (mapcar (lambda (b) (- (cdr b) (car b))) bounds))
+         (cut-lengths (cons 0 lengths))
+         (final-lengths (cons (car (last lengths)) lengths))
+         (paste-lengths (cons 0 final-lengths))
+         (positions (cl-mapcar
+                     (lambda (b c p)
+                       (setq last-correnction (+ last-correnction
+                                                 (- p c)))
+                       (+ (car b) last-correnction))
+                     bounds
+                     cut-lengths
+                     paste-lengths))
+         (new-bounds (cl-mapcar
+                      (lambda (p l)
+                        (cons p (+ p l)))
+                      positions
+                      final-lengths)))
     (push (elt strings (1- (length strings))) strings)
     (setq strings (nreverse strings)
           bounds (nreverse bounds))
@@ -426,7 +462,8 @@
       (let ((bound (pop bounds)))
         (delete-region (car bound) (cdr bound))
         (goto-char (car bound))
-        (insert (pop strings))))))
+        (insert (pop strings))))
+    new-bounds))
 
 (defun mt-shift-points (points arg)
   (let ((bounds
@@ -441,13 +478,12 @@
             (push (car x) listed-bounds)
             (push (cdr x) listed-bounds)) bounds)
     (if (not (sorted-p listed-bounds '>))
-        (message "%s's bounds overlap" mt-from-thing)
+        (error "move-thing: %s's bounds overlap" mt-from-thing)
       (if neg
-          (dotimes (i (- arg))
-           (mt-shift-points-left bounds))
-        (dotimes (i arg)
-          (mt-shift-points-right bounds))))
-    bounds))
+          (dotimes (i (- arg) bounds)
+            (setq bounds (mt-shift-points-left bounds)))
+        (dotimes (i arg bounds)
+          (setq bounds (mt-shift-points-right bounds)))))))
 (advice-add 'mt-shift-points :around #'rollback-on-error-advice)
 
 
@@ -489,6 +525,7 @@
                         (mc/all-fake-cursors)))
                  arg))
          (bound (pop bounds)))
+    (mc/remove-fake-cursors)
     (dolist (b bounds)
       (goto-char (car b))
       (mc/create-fake-cursor-at-point))

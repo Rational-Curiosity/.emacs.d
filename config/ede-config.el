@@ -60,7 +60,7 @@
 
 (require 'ede)
 ;; Teclas
-(bind-keys :map ede-minor-mode-map
+(bind-keys
            ("M-r" . helm-ag-case)
            ("M-R" . (lambda ()
                       (interactive)
