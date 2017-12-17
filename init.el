@@ -391,10 +391,12 @@
   (require 'plantuml-config))
 
 (defvar org-replace-disputed-keys t)
-(add-hook 'org-mode-hook #'org-super-agenda-mode)
 (with-eval-after-load 'org
   (require 'org-config)
-  (require 'org-super-agenda-config))
+  (require 'org-super-agenda-config)
+  (require 'org-appt))
+(org-agenda-to-appt)
+(add-hook 'org-mode-hook #'org-super-agenda-mode)
 
 (with-eval-after-load 'android-mode
   (require 'android-config))
