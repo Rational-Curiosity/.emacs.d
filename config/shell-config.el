@@ -140,7 +140,7 @@
 ;; '$p' por el nombre del buffer con su ruta.
 ;; '$n' por el nombre del buffer.
 ;; '$b' por el nombre del buffer sin extensión.
-(defun shell-execute (command &rest args)
+(defun shell-execute (command &optional output-buffer error-buffer)
   (interactive
    (list
     (read-shell-command "Shell command: " nil nil
@@ -152,13 +152,18 @@
                           (and filename (file-relative-name filename))))
     current-prefix-arg
     shell-command-default-error-buffer))
-  (apply 'shell-command (replace-regexp-in-string
-                         "%p" (concat "\"" (or buffer-file-name "") "\"")
-                         (replace-regexp-in-string
-                          "%n" (concat "\"" (or (buffer-name) "") "\"")
-                          (replace-regexp-in-string
-                           "%b" (concat "\"" (or (file-name-base) "") "\"")
-                           command t t) t t) t t) args))
+  (let ((command-replaced command)
+        (replacements
+         (append (list (cons "%n" (concat "\"" (buffer-name) "\"")))
+                 (if buffer-file-name
+                     (list (cons "%p" (concat "\"" buffer-file-name "\""))
+                           (cons "%b" (concat "\"" (file-name-nondirectory buffer-file-name) "\"")))))))
+    (dolist (replacement replacements)
+      (set 'command-replaced (replace-regexp-in-string
+                              (car replacement) (cdr replacement)
+                              command-replaced
+                              t t)))
+    (funcall 'shell-command command-replaced output-buffer error-buffer)))
 
 (bind-keys
  ("C-M-!"   . insert-from-function)

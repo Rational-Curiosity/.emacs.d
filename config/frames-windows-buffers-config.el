@@ -78,25 +78,6 @@
       ((?w ?W)
        (kill-buffers-with-window frame)))))
 
-;; [ filter annoying messages
-;; (defvar message-filter-regexp-list '("^Starting new Ispell process \\[.+\\] \\.\\.\\.$"
-;;                                      "^Ispell process killed$")
-;;   "filter formatted message string to remove noisy messages")
-;; (defadvice message (around message-filter-by-regexp activate)
-;;   (if (not (ad-get-arg 0))
-;;       ad-do-it
-;;     (let ((formatted-string (apply 'format (ad-get-args 0))))
-;;       (if (and (stringp formatted-string)
-;;                (some (lambda (re) (string-match re formatted-string)) message-filter-regexp-list))
-;;           (save-excursion
-;;             (set-buffer "*Messages*")
-;;             (goto-char (point-max))
-;;             (insert formatted-string "\n"))
-;;         (progn
-;;           (ad-set-args 0 `("%s" ,formatted-string))
-;;           ad-do-it)))))
-;; ]
-
 
 ;;;;;;;;;;;;;
 ;; Windows ;;
@@ -133,6 +114,66 @@
       (setq  hscroll-margin 10
              hscroll-step 25
              hscroll-aggressive t))))
+;; [ filter annoying messages
+;; (defvar message-filter-regexp-list '("^Starting new Ispell process \\[.+\\] \\.\\.\\.$"
+;;                                      "^Ispell process killed$")
+;;   "filter formatted message string to remove noisy messages")
+;; (defadvice message (around message-filter-by-regexp activate)
+;;   (if (not (ad-get-arg 0))
+;;       ad-do-it
+;;     (let ((formatted-string (apply 'format (ad-get-args 0))))
+;;       (if (and (stringp formatted-string)
+;;                (some (lambda (re) (string-match re formatted-string)) message-filter-regexp-list))
+;;           (save-excursion
+;;             (set-buffer "*Messages*")
+;;             (goto-char (point-max))
+;;             (insert formatted-string "\n"))
+;;         (progn
+;;           (ad-set-args 0 `("%s" ,formatted-string))
+;;           ad-do-it)))))
+;; ]
+;; message timestamp
+;; thanks: https://emacs.stackexchange.com/questions/32150/how-to-add-a-timestamp-to-each-entry-in-emacs-messages-buffer
+(defun message-timestamp-advice (format-string &rest args)
+  "Advice to run before `message' with FORMAT-STRING ARGS that prepend a timestamp to each message."
+  (unless (string-equal format-string "%s%s")
+    (let ((deactivate-mark nil)
+          (inhibit-read-only t))
+      (with-current-buffer "*Messages*"
+        (goto-char (point-max))
+        (if (not (bolp))
+            (newline))
+        (let* ((nowtime (current-time))
+               (now-ms (nth 2 nowtime)))
+          (insert (format-time-string "[%Y-%m-%d %T" nowtime)
+                  (format ".%06d]" now-ms) " "))))))
+(defvar message-advice-timestamp nil)
+(defun advice-message-timestamp ()
+  (interactive)
+  (set 'message-advice-timestamp t))
+(defun unadvice-message-timestamp ()
+  (interactive)
+  (set 'message-advice-timestamp nil))
+;; not necesary, included in message-filter
+;; (advice-add 'message :before 'message-timestamp-advice)
+(defun signal-timestamp-advice (error-symbol data)
+  "Advice to run before `signal' with ERROR-SYMBOL DATA that prepend a timestamp to each message."
+  (let ((deactivate-mark nil)
+        (inhibit-read-only t))
+    (with-current-buffer "*Messages*"
+      (goto-char (point-max))
+      (if (not (bolp))
+          (newline))
+      (let* ((nowtime (current-time))
+             (now-ms (nth 2 nowtime)))
+        (insert (format-time-string "<%Y-%m-%d %T" nowtime)
+                (format ".%06d>" now-ms) " " (if data (format "%s" data)))))))
+(defun advice-signal-timestamp ()
+  (interactive)
+  (advice-add 'signal :before 'signal-timestamp-advice))
+(defun unadvice-signal-timestamp ()
+  (interactive)
+  (advice-remove 'signal 'signal-timestamp-advice))
 ;; Truncate lines in messages and filter messages buffer
 (defvar message-nillog-filter-functions '()) ;; (lambda (str) (string-match-p "oading" str))
 (defvar message-inhibit-filter-functions '())
@@ -155,6 +196,7 @@
                                  (funcall func msg-str)) message-nillog-filter-functions))
                    nil
                  message-log-max)))
+          (if message-advice-timestamp (message-timestamp-advice msg))
           (apply orig-fun msg args)))
     (apply orig-fun msg args)))
 (advice-add 'message :around #'message-filter)
@@ -403,7 +445,7 @@ Don't show on windows buffers currently showed."
  ("C-x M-h"   . flop-frame)
  ("C-x M-v"   . flip-frame)
  ("C-x M-r"   . rotate-frame-clockwise)
- ("C-x M-R"   . rotate-frame-unticlockwise)
+ ("C-x M-R"   . rotate-frame-anticlockwise)
  ("C-x 2"     . vsplit-last-buffer)
  ("C-x 3"     . hsplit-last-buffer)
  ("C-x M-2"   . shell-2-window-frame)

@@ -22,6 +22,8 @@
 ;;;;;;;;;;;;;;;;;;;;
 ;; Select checker ;;
 ;;;;;;;;;;;;;;;;;;;;
+(message "Importing ispell-config")
+
 (let ((executable (file-name-nondirectory ispell-program-name)))
   (cond
    ((string-equal executable "aspell")

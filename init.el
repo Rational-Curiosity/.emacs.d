@@ -156,7 +156,9 @@
  ;; If there is more than one, they won't work right.
  )
 
-(setq inhibit-startup-screen t
+(setq initial-buffer-choice nil
+      inhibit-startup-screen t
+      initial-major-mode 'fundamental-mode
       visible-bell t
       ;; avoids warnings
       ad-redefinition-action 'accept)
@@ -282,7 +284,9 @@
 (with-eval-after-load 'flycheck
   (require 'flycheck-config))
 ;; elisp-mode
-(with-eval-after-load 'elisp-mode
+(with-eval-after-load 'flycheck  ;; trick
+  (with-current-buffer "*scratch*"
+    (lisp-interaction-mode))
   (require 'semantic-config)
   (require 'srefactor-config))
 ;; [ <c-c++> Programación en c y c++
@@ -395,7 +399,6 @@
   (require 'org-config)
   (require 'org-super-agenda-config)
   (require 'org-appt))
-(org-agenda-to-appt)
 (add-hook 'org-mode-hook #'org-super-agenda-mode)
 
 (with-eval-after-load 'android-mode
@@ -448,6 +451,10 @@
   (require 'flycheck)
   (require 'rtags))
 (add-to-list 'command-switch-alist '("--all" . argument--all))
+(defun argument--agenda (switch)
+  "Command line arg `--agenda'.  SWITCH ignored."
+  (require 'org))
+(add-to-list 'command-switch-alist '("--agenda" . argument--agenda))
 ;; Usage: emacs -diff file/dir1 file/dir2
 (defun argument--diff (switch)
   "Command line arg `--diff'.  SWITCH ignored."

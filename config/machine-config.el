@@ -92,8 +92,8 @@
          (replace-match
           (concat "/cygdrive/"
                   (downcase (match-string 1 filename))
-                  "/") nil t filename) nil 'literal)
-      (replace-regexp-in-string "\\\\" "/" filename nil 'literal)))
+                  "/") nil t filename) nil t)
+      (replace-regexp-in-string "\\\\" "/" filename nil t)))
   ;; shell-command
   (defun shell-command-advice (orig-fun command &rest args)
     (if (string-match "^java" command)

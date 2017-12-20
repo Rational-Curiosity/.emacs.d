@@ -9,8 +9,8 @@
 ;; avoid automatic startup
 (setq package-enable-at-startup nil)
 ;; [ <repos> configure repositories
-;; (add-to-list 'package-archives '("ELPA"         . "http://tromey.com/elpa/"))
-(add-to-list 'package-archives '("org"          . "http://orgmode.org/elpa/"))
+;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))

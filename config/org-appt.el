@@ -12,13 +12,13 @@
 ;; (require 'org-appt)
 
 ;; Do not include in this file:
-;; (require 'android-mode)
+;; (require 'org-appt)
 
 ;;; Code:
 (message "Importing org-appt")
 
 (require 'appt)
-(fset 'appt-start-process
+(fset 'org-appt-start-process
       (if (require 'async nil t)
           #'async-start-process
         (lambda (name program finish &rest args)
@@ -26,8 +26,8 @@
 
 (setq appt-disp-window-function 'org-appt-disp-function
       ;; appt-delete-window-function (lambda () t)
-      appt-display-interval 3
-      appt-message-warning-time (* 3 appt-display-interval)
+      appt-display-interval 5
+      appt-message-warning-time (* 2 appt-display-interval)
       appt-display-duration 12
       appt-display-diary nil
       diary-file "~/.emacs.d/cache/diary"
@@ -39,31 +39,58 @@
 ;; Add org agenda appointments
 ;; t means refresh
 (defun org-appt-update (&rest args)
-  (org-agenda-to-appt t))
+  (interactive (list nil))
+  (let (msg)
+    (let ((inhibit-message t)
+          (message-log-max nil))
+      (set 'msg (org-agenda-to-appt t)))
+    (message msg)))
 (advice-add 'org-deadline :after #'org-appt-update)
 (advice-add 'org-schedule :after #'org-appt-update)
 (advice-add 'org-agenda-schedule :after #'org-appt-update)
+(run-at-time "00:00" (* 24 3600) 'org-appt-update)
 
-(defvar appt-disp-function
-  (cond
-   ((executable-find "xmessage")
-    (lambda (min time msg)
-      (appt-start-process "xmessage disp" "xmessage" nil
-                          (concat min " minutes to " msg " on " time))))
-   ((executable-find "termux-notification")
-    (lambda (min time msg)
-      (let ((message (concat min " minutos para " msg)))
-        (appt-start-process "termux disp" "termux-notification" nil
-                            "-c" message
-                            "-t" "Org Agenda")
-        (appt-start-process "termux disp" "termux-tts-speak" nil
-                            "-l" "es" message)
-        (appt-start-process "termux disp" "termux-vibrate" nil
-                            "-d" "1000"))))
-   (t
-    (lambda (min time msg)
-      (message "%s minutes to %s on %s" min msg time))))
-  "Function that display message.")
+(defvar org-appt-disp-functions nil)
+
+(when (executable-find "xmessage")
+  (defun org-appt-function-xmessage (msg)
+    (org-appt-start-process "xmessage disp" "xmessage" nil
+                            msg))
+  (set 'org-appt-disp-functions (cons 'org-appt-function-xmessage org-appt-disp-functions)))
+
+(when (executable-find "sfestival")
+  (defun org-appt-function-sfestival (msg)
+    (org-appt-start-process "sfestival disp" "sfestival" nil
+                            msg))
+  (set 'org-appt-disp-functions (cons 'org-appt-function-sfestival org-appt-disp-functions)))
+
+(when (executable-find "termux-notification")
+  (defun org-appt-function-termux-notification (msg)
+    (org-appt-start-process "termux notification disp" "termux-notification" nil
+                            "-c" msg
+                            "-t" "Org Agenda"))
+  (set 'org-appt-disp-functions (cons 'org-appt-function-termux-notification org-appt-disp-functions)))
+
+(when (executable-find "termux-tts-speak")
+  (defun org-appt-function-termux-tts-speak (msg)
+    (org-appt-start-process "termux tts disp" "termux-tts-speak" nil
+                            "-l" "es" msg))
+  (set 'org-appt-disp-functions (cons 'org-appt-function-termux-tts-speak org-appt-disp-functions)))
+
+(when (executable-find "termux-vibrate")
+  (defun org-appt-function-termux-vibrate (msg)
+    (org-appt-start-process "termux vibrate disp" "termux-vibrate" nil
+                            "-d" "1000"))
+  (set 'org-appt-disp-functions (cons 'org-appt-function-termux-vibrate org-appt-disp-functions)))
+
+(unless org-appt-disp-functions
+  (set 'org-appt-disp-functions (cons 'message org-appt-disp-functions)))
+
+
+(defun org-appt-format-and-calls (min-to-app new-time appt-msg)
+  (let ((msg (concat min-to-app " minutos para " appt-msg)))
+    (dolist (fun org-appt-disp-functions)
+      (funcall fun msg))))
 
 (defun org-appt-disp-function (min-to-app new-time appt-msg)
   "Display appointment due in MIN-TO-APP (a string) minutes.
@@ -72,10 +99,10 @@ Displays the appointment message APPT-MSG in a separate buffer.
 The arguments may also be lists, where each element relates to a
 separate appointment."
   (appt-disp-window min-to-app new-time appt-msg)
-  (if appt-disp-function
+  (if org-appt-disp-functions
       (if (atom min-to-app)
-          (funcall appt-disp-function min-to-app new-time appt-msg)
-        (cl-mapc (lambda (min msg) (funcall appt-disp-function min new-time msg))
+          (org-appt-format-and-calls min-to-app new-time appt-msg)
+        (cl-mapc (lambda (min msg) (org-appt-format-and-calls min new-time msg))
                  min-to-app appt-msg))))
 
 
