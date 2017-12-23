@@ -44,7 +44,11 @@
     (let ((inhibit-message t)
           (message-log-max nil))
       (set 'msg (org-agenda-to-appt t)))
-    (message msg)))
+    (let* ((nowtime (current-time))
+           (now-ms (nth 2 nowtime)))
+      (message (concat msg " at "
+                       (format-time-string "%Y-%m-%d %T" nowtime)
+                       (format ".%06d" now-ms))))))
 (advice-add 'org-deadline :after #'org-appt-update)
 (advice-add 'org-schedule :after #'org-appt-update)
 (advice-add 'org-agenda-schedule :after #'org-appt-update)
