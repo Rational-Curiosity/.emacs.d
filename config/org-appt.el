@@ -56,31 +56,32 @@
 
 (defvar org-appt-disp-functions nil)
 
-(when (executable-find "xmessage")
-  (defun org-appt-function-xmessage (msg)
-    (org-appt-start-process "xmessage disp" "xmessage" nil
-                            msg))
-  (set 'org-appt-disp-functions (cons 'org-appt-function-xmessage org-appt-disp-functions)))
-
-(when (executable-find "sfestival")
-  (defun org-appt-function-sfestival (msg)
-    (org-appt-start-process "sfestival disp" "sfestival" nil
-                            msg))
-  (set 'org-appt-disp-functions (cons 'org-appt-function-sfestival org-appt-disp-functions)))
-
-(when (executable-find "termux-notification")
+;; text notification
+(if (not (executable-find "termux-notification"))
+    (when (executable-find "xmessage")
+      (defun org-appt-function-xmessage (msg)
+        (org-appt-start-process "xmessage disp" "xmessage" nil
+                                msg))
+      (set 'org-appt-disp-functions (cons 'org-appt-function-xmessage org-appt-disp-functions)))
   (defun org-appt-function-termux-notification (msg)
     (org-appt-start-process "termux notification disp" "termux-notification" nil
                             "-c" msg
                             "-t" "Org Agenda"))
   (set 'org-appt-disp-functions (cons 'org-appt-function-termux-notification org-appt-disp-functions)))
 
-(when (executable-find "termux-tts-speak")
+;; voice notification
+(if (not (executable-find "termux-tts-speak"))
+    (when (executable-find "sfestival")
+      (defun org-appt-function-sfestival (msg)
+        (org-appt-start-process "sfestival disp" "sfestival" nil
+                                msg))
+      (set 'org-appt-disp-functions (cons 'org-appt-function-sfestival org-appt-disp-functions)))
   (defun org-appt-function-termux-tts-speak (msg)
     (org-appt-start-process "termux tts disp" "termux-tts-speak" nil
                             "-l" "es" msg))
   (set 'org-appt-disp-functions (cons 'org-appt-function-termux-tts-speak org-appt-disp-functions)))
 
+;; vibrate notification
 (when (executable-find "termux-vibrate")
   (defun org-appt-function-termux-vibrate (msg)
     (org-appt-start-process "termux vibrate disp" "termux-vibrate" nil

@@ -715,6 +715,30 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
+(defun org-sort-entries-by-tags-then-todo ()
+  (interactive)
+  (let ((order '(("TODO"      . "a")
+                 ("NEXT"      . "b")
+                 ("DONE"      . "z")
+                 ("STARTED"   . "c")
+                 ("FINISHED"  . "y")
+                 ("ENOUGH"    . "o")
+                 ("WAITING"   . "h")
+                 ("HOLD"      . "i")
+                 ("CANCELLED" . "x"))))
+    (org-sort-entries nil ?f
+                      (lambda ()
+                        (let ((pos (point)))
+                          (concat
+                           (or (cdr (assoc (org-entry-get pos "TODO") order)) " ")
+                           (mapconcat
+                            'identity
+                            (sort
+                             (split-string
+                              (or (org-entry-get pos "TAGS") "") ":" t)
+                             'string<)
+                            " ")))))))
+
 (require 'config-lib)
 (defun org-af (&optional prefix suffix)
   "Return filename counting blocks using this function.
@@ -892,9 +916,10 @@ SUFFIX - default .png"
            ("C-c v t"   . org-show-todo-tree)
            ("C-c v s"   . org-block-and-result-show-all) 
            ("C-c v h"   . org-block-and-result-hide-all) 
+           ("C-c s"     . org-sort-entries-by-tags-then-todo)
            ("C-c c"     . org-capture)
            ("C-c a"     . org-agenda)
-           ("C-c C-l"     . org-store-link)
+           ("C-c C-l"   . org-store-link)
            ("C-c L"     . org-insert-link-global)
            ("C-c O"     . org-open-at-point-global)
            ("C-c p"     . org-publish)
