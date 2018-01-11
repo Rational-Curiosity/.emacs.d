@@ -217,7 +217,7 @@
                            str
                            (buffer-substring-no-properties
                             (- pos len)
-                            (+ pos it))))))
+                            (min (+ pos it) (point-max)))))))
       (cl-decf len)
       (cl-incf it))
     (if check
