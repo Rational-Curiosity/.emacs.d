@@ -2,7 +2,7 @@
 (setq recentf-max-saved-items 500
       recentf-max-menu-items 30
       recentf-exclude '("\\.emacs\\.d/elpa/.*\\.el\\'" "\\.el\\.gz\\'")
-      recentf-filename-handlers '(file-truename))
+      recentf-filename-handlers '(file-truename abbreviate-file-name))
 ;; There are machine dependent configurations
 (with-eval-after-load 'machine-config
   (recentf-mode 1))
