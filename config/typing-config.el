@@ -193,10 +193,19 @@ prompt the user for a coding system."
                                ;;(t (set (make-local-variable 'whitespace-line-column) 80))
                                )
                               (set (make-local-variable 'whitespace-style)
-                                   '(face tab newline tab-mark newline-mark lines-tail))
+                                   '(face tab newline tab-mark newline-mark))
                               (whitespace-mode)))
 (add-hook 'csv-mode-hook #'whitespace-mode)
 (setq whitespace-style '(face tab newline tab-mark newline-mark))
+(defun whitespace-toggle-lines-tail ()
+  (interactive)
+  (if (bound-and-true-p whitespace-mode)
+      (call-interactively #'whitespace-mode))
+  (if (memq 'lines-tail whitespace-style)
+      (setq whitespace-style (delq 'lines-tail whitespace-style))
+    (push 'lines-tail whitespace-style))
+  (call-interactively #'whitespace-mode))
+
 
 ;; ·  183   MIDDLE DOT
 ;; ¶  182   PILCROW SIGN
@@ -561,6 +570,7 @@ there's a region, all lines that region covers will be duplicated."
  ("<f7> s"              . toggle-enable-multibyte-characters)
  ("<f7> c"              . toggle-buffer-coding-system)
  ("<f7> w"              . toggle-truncate-lines)
+ ("<f7> l"              . whitespace-toggle-lines-tail)
  ("C-<left>"            . left-word)
  ("C-<right>"           . right-word)
  ("S-<backspace>"       . backward-kill-sexp)
