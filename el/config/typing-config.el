@@ -539,14 +539,25 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;;
 ;; Movimiento ;;
 ;;;;;;;;;;;;;;;;
+(defvar horizontal-alt 15)
+
+(defun forward-alt ()
+  (interactive)
+  (forward-char horizontal-alt))
+
+(defun backward-alt ()
+  (interactive)
+  (backward-char horizontal-alt))
+
 (defun hscroll-right ()
-     (interactive)
-     (right-char (min
-                  horizontal-jump
-                  (- (save-excursion
-                       (end-of-line)
-                       (current-column))
-                     (current-column)))))
+  (interactive)
+  (right-char (min
+               horizontal-jump
+               (- (save-excursion
+                    (end-of-line)
+                    (current-column))
+                  (current-column)))))
+
 (defun hscroll-left ()
   (interactive)
   (left-char (min
@@ -590,6 +601,8 @@ there's a region, all lines that region covers will be duplicated."
  ("M-s <next>"          . hscroll-right)
  ("C-<prior>"           . hscroll-left)
  ("M-s <prior>"         . hscroll-left)
+ ("M-<right>"           . forward-alt)
+ ("M-<left>"            . backward-alt)
  ("C-ñ"                 . find-next-unsafe-char))
 
 ;; Usa el clipboard del sistema

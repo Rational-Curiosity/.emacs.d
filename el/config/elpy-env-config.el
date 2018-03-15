@@ -93,7 +93,8 @@
 ;;           )))
 ;; ]
 
-(setq elpy-rpc-python-command python-command-version
+(setq elpy-rpc-ignored-buffer-size 300000
+      elpy-rpc-python-command python-command-version
       elpy-rpc-backend "jedi" ;; "jedi" or "rope"
       elpy-rpc-timeout 6
       elpy-company-post-completion-function #'elpy-company-post-complete-parens

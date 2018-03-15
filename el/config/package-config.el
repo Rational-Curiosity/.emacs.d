@@ -9,15 +9,16 @@
 ;; avoid automatic startup
 (setq package-enable-at-startup nil)
 ;; [ <repos> configure repositories
-;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
+;;(add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
 (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))
        (urls '("://melpa.org/packages/"
                "://stable.melpa.org/packages/"
-               "://marmalade-repo.org/packages/"))
-       (names '("melpa" "melpa-stable" "marmalade"))
+               "://marmalade-repo.org/packages/"
+               "://jorgenschaefer.github.io/packages/"))
+       (names '("melpa" "melpa-stable" "marmalade" "elpy"))
        (urls (mapcar (lambda (s) (concat (if no-ssl "http" "https") s)) urls)))
   (cl-mapcar (lambda (n u) (add-to-list 'package-archives (cons n u) t))
              names urls))
@@ -50,12 +51,37 @@
           (mapc #'package-install list-of-uninstalled)))))
   ;; Desinstalamos los que sobran
   ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-  (eval-and-when-daemon nil
+  (unless (daemonp)
     (package-autoremove)))
 
 ;; Se evalua al compilar pero no cuando corre el programa compilado
 ;; (eval-when-compile
 ;;   (require 'use-package))
+
+(defun package-emacswiki-update ()
+  (interactive)
+  ;; bookmark+
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-mac.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-mac.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-bmu.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-bmu.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-1.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-1.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-key.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-key.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-lit.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-lit.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-doc.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-doc.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-chg.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-chg.el" t)
+  (byte-recompile-directory "~/.emacs.d/el/packages/bookmark+" 0 t)
+  ;; thingatpt+
+  (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
+                 "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
+  (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
 
 
 (provide 'package-config)

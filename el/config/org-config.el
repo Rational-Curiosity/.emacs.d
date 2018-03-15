@@ -130,6 +130,7 @@
 (org-babel-do-load-languages
   'org-babel-load-languages
   '((C          . t)
+    (csharp     . t)
     (python     . t)
     (emacs-lisp . t)
     (java       . t)

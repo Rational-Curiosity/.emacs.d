@@ -18,8 +18,7 @@
 
 (message "Importing yasnippet-config")
 (setq yas-snippet-dirs
-      (list (expand-file-name "~/.emacs.d/cache/snippets")
-            'yas-installed-snippets-dir))
+      (list (expand-file-name "~/.emacs.d/cache/snippets")))
 
 ;; (define-key yas-minor-mode-map (kbd "<tab>") nil)
 ;; (define-key yas-minor-mode-map (kbd "TAB") nil)
