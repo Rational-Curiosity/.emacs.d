@@ -76,6 +76,7 @@
         (:startgrouptag) ("admin")       (:grouptags) ("@admin")       (:endgrouptag)
         (:startgrouptag) ("job")         (:grouptags) ("@job")         (:endgrouptag)
         (:startgrouptag) ("improvement") (:grouptags) ("@improvement") (:endgrouptag)
+        (:startgrouptag) ("health")      (:grouptags) ("@health")      (:endgrouptag)
         (:startgrouptag) ("home")        (:grouptags) ("@home")        (:endgrouptag)))
 ;;(:box t :foreground "#AAF")
 
@@ -105,6 +106,7 @@
       org-pretty-entities t
       org-use-property-inheritance t
       org-tags-column -80
+      org-cycle-include-plain-lists 'integrate
       org-tags-sort-function #'string>
       org-ellipsis "▼"
       org-use-speed-commands
@@ -917,7 +919,7 @@ SUFFIX - default .png"
            ("C-c v t"   . org-show-todo-tree)
            ("C-c v s"   . org-block-and-result-show-all) 
            ("C-c v h"   . org-block-and-result-hide-all) 
-           ("C-c s"     . org-sort-entries-by-tags-then-todo)
+           ("C-c M-s"   . org-sort-entries-by-tags-then-todo)
            ("C-c c"     . org-capture)
            ("C-c a"     . org-agenda)
            ("C-c C-l"   . org-store-link)
