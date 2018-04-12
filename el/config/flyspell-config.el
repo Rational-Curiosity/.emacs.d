@@ -2,6 +2,10 @@
 
 ;;; Commentary:
 
+;; Usage:
+;; (with-eval-after-load 'flyspell
+;;  (require 'flyspell-config))
+
 ;;; Code:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,6 +141,12 @@
 (define-key flyspell-mouse-map (kbd "<C-mouse-2>") #'undefined)
 (define-key flyspell-mouse-map [down-mouse-2] nil)
 (define-key flyspell-mouse-map [mouse-2] nil)
+;; Change mouse over help text
+(let ((item (aref (aref (symbol-function 'make-flyspell-overlay) 2) 12)))
+  (if (and (stringp item)
+           (string-equal item "mouse-2: correct word at point"))
+      (aset (aref (symbol-function 'make-flyspell-overlay) 2) 12 "C-mouse-2: correct word at point")))
+
 ;;(fset 'flyspell-emacs-popup 'flyspell-emacs-popup-textual)
 (bind-keys
  ("C-c i ." . cycle-ispell-languages)
