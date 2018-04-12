@@ -734,6 +734,7 @@ You can also customize this for each buffer, using something like
                         (let ((pos (point)))
                           (concat
                            (or (cdr (assoc (org-entry-get pos "TODO") order)) " ")
+                           (org-entry-get pos "PRIORITY")
                            (mapconcat
                             'identity
                             (sort
