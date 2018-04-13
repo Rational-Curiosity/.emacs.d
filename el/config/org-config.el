@@ -40,7 +40,21 @@
       org-bullets-bullet-list
       '("α" "β" "γ" "δ" "ε" "ζ")
       org-priority-faces
-      '((?A . "DodgerBlue1") (?B . "SteelBlue1") (?C . "LightSkyBlue1"))
+      '((?A . "#AF7AC5")
+        (?B . "#9B59B6")
+        (?C . "#884EA0")
+        (?D . "#76448A")
+        (?E . "#633974")
+        (?F . "#3498DB")
+        (?G . "#3498DB")
+        (?H . "#2E86C1")
+        (?I . "#2874A6")
+        (?J . "#21618C")
+        (?K . "#58D68D")
+        (?L . "#2ECC71")
+        (?M . "#28B463")
+        (?N . "#239B56")
+        (?O . "#1D8348"))
       org-emphasis-alist
       '(("*" (bold :foreground "#AAF") bold)
         ("/" (italic :foreground "#FF8") italic)
@@ -58,7 +72,10 @@
         ("ENOUGH" :foreground "green yellow" :weight bold)
         ("WAITING" :foreground "blue violet" :weight bold :underline t)
         ("HOLD" :foreground "dark violet" :weight bold :underline t)
-        ("CANCELLED" :foreground "dark green" :weight bold))
+        ("CANCELLED" :foreground "dark green" :weight bold)
+        ("BUG" :foreground "dark red" :weight bold)
+        ("VERIFY" :foreground "dark cyan" :weight bold)
+        ("UNDO" :foreground "dark green" :weight bold))
       ;; TAG faces
       org-tag-faces
       '(("@business"     :foreground "#e5786d")
@@ -187,10 +204,14 @@
       ;;org-clock-in-switch-to-state "STARTED"
       org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-        (sequence "STARTED(s!)" "|" "ENOUGH(e@/!)" "FINISHED(f!)")
-        (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))
+        (sequence "STARTED(s!)" "UNDO(u!)" "VERIFY(v@/!)" "|" "ENOUGH(e@/!)" "FINISHED(f!)")
+        (sequence "BUG(b@/!)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))
       org-archive-location "archived.org::* From %s"
-      org-archive-file-header-format nil)
+      org-archive-file-header-format nil
+      ;; PRIORITIES
+      org-highest-priority ?A
+      org-default-priority ?H
+      org-lowest-priority ?O)
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Convert options ;;
@@ -227,8 +248,10 @@
                  ((use-first-row-styles . t)))))
       ;; Convert to other formats
       org-odt-convert-processes
-      '(("LibreOffice"
-         "soffice --headless --convert-to %f%x --outdir %d %i")
+      `(("LibreOffice"
+         ,(if (eq system-type 'cygwin)
+              "soffice --headless --convert-to %f%x --outdir C:/cygwin64/%d C:/cygwin64/%i"
+            "soffice --headless --convert-to %f%x --outdir %d %i"))
         ("unoconv"
          "unoconv -f %f -o %d %i"))
       org-odt-convert-process (cond
@@ -720,21 +743,28 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;;;;;
 (defun org-sort-entries-by-tags-then-todo ()
   (interactive)
-  (let ((order '(("TODO"      . "a")
-                 ("NEXT"      . "b")
-                 ("DONE"      . "z")
-                 ("STARTED"   . "c")
-                 ("FINISHED"  . "y")
-                 ("ENOUGH"    . "o")
+  (let ((order '(
+                 ("BUG"       . "a")
+                 ("STARTED"   . "b")
+                 ("NEXT"      . "c")
+                 ("VERIFY"    . "d")
+                 ("TODO"      . "e")
+                 ("UNDO"      . "f")
                  ("WAITING"   . "h")
                  ("HOLD"      . "i")
-                 ("CANCELLED" . "x"))))
+                 ("ENOUGH"    . "o")
+                 ("CANCELLED" . "x")
+                 ("FINISHED"  . "y")
+                 ("DONE"      . "z")
+                 )))
     (org-sort-entries nil ?f
                       (lambda ()
                         (let ((pos (point)))
                           (concat
+                           (if (org-entry-is-todo-p)
+                               (org-entry-get pos "PRIORITY")
+                             "Z")
                            (or (cdr (assoc (org-entry-get pos "TODO") order)) " ")
-                           (org-entry-get pos "PRIORITY")
                            (mapconcat
                             'identity
                             (sort
@@ -914,7 +944,12 @@ SUFFIX - default .png"
 ;; Keys ;;
 ;;;;;;;;;;
 
+(add-hook 'org-mode-hook '(lambda()
+                            (set
+                             (make-local-variable 'semantic-mode) nil)))
+
 (bind-keys :map org-mode-map
+           ("M-."       . org-priority)
            ("C-c v e"   . org-show-entry)
            ("C-c TAB"   . org-show-subtree)
            ("C-c v t"   . org-show-todo-tree)
