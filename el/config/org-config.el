@@ -40,21 +40,23 @@
       org-bullets-bullet-list
       '("α" "β" "γ" "δ" "ε" "ζ")
       org-priority-faces
-      '((?A . "#AF7AC5")
-        (?B . "#9B59B6")
-        (?C . "#884EA0")
-        (?D . "#76448A")
-        (?E . "#633974")
-        (?F . "#3498DB")
-        (?G . "#3498DB")
-        (?H . "#2E86C1")
-        (?I . "#2874A6")
-        (?J . "#21618C")
-        (?K . "#58D68D")
-        (?L . "#2ECC71")
-        (?M . "#28B463")
-        (?N . "#239B56")
-        (?O . "#1D8348"))
+      '((?A . "#C39BD3")
+        (?B . "#AF7AC5")
+        (?C . "#9B59B6")
+        (?D . "#884EA0")
+        (?E . "#76448A")
+
+        (?F . "#85C1E9")
+        (?G . "#5DADE2")
+        (?H . "#3498DB")
+        (?I . "#2E86C1")
+        (?J . "#2874A6")
+
+        (?K . "#82E0AA")
+        (?L . "#58D68D")
+        (?M . "#2ECC71")
+        (?N . "#28B463")
+        (?O . "#239B56"))
       org-emphasis-alist
       '(("*" (bold :foreground "#AAF") bold)
         ("/" (italic :foreground "#FF8") italic)
@@ -202,6 +204,8 @@
       org-log-done 'time ; 'time - solo guarda el tiempo
       ;; ]
       ;;org-clock-in-switch-to-state "STARTED"
+      org-columns-default-format
+      "%51ITEM %8EFFORT(Estimate){:} %8CLOCKSUM(Clocked) %9TODO(State)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
       org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
         (sequence "STARTED(s!)" "UNDO(u!)" "VERIFY(v@/!)" "|" "ENOUGH(e@/!)" "FINISHED(f!)")
@@ -212,6 +216,8 @@
       org-highest-priority ?A
       org-default-priority ?H
       org-lowest-priority ?O)
+
+(setcdr (assoc 'state org-log-note-headings) "%-12S -> %-12s at %t")
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Convert options ;;
@@ -699,10 +705,11 @@ You can also customize this for each buffer, using something like
       org-agenda-scheduled-leaders '("Sche" "S-%3dd")
       org-agenda-deadline-leaders  '("Dead" "D+%3dd" "D-%3dd")
       org-agenda-sorting-strategy
-      '((agenda habit-down time-up todo-state-up priority-down category-keep)
+      '((agenda habit-down time-up user-defined-up category-keep)
         (todo priority-down category-keep)
         (tags priority-down category-keep)
         (search category-keep))
+      org-agenda-cmp-user-defined 'org-agenda-cmp-user-defined-function
       org-agenda-deadline-faces
       '((1.01 . '(:foreground "magenta" :bold t))
         (1.0 . org-warning)
@@ -741,37 +748,60 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
-(defun org-sort-entries-by-tags-then-todo ()
-  (interactive)
-  (let ((order '(
-                 ("BUG"       . "a")
-                 ("STARTED"   . "b")
-                 ("NEXT"      . "c")
-                 ("VERIFY"    . "d")
-                 ("TODO"      . "e")
-                 ("UNDO"      . "f")
-                 ("WAITING"   . "h")
-                 ("HOLD"      . "i")
-                 ("ENOUGH"    . "o")
-                 ("CANCELLED" . "x")
-                 ("FINISHED"  . "y")
-                 ("DONE"      . "z")
+(defun org-entry-to-key (&optional pos)
+  (let ((entry-pos (or pos (point)))
+        (order '(;; Todo
+                 ("BUG"       . 48) ;; ?0
+                 ("STARTED"   . 49)
+                 ("NEXT"      . 50)
+                 ("VERIFY"    . 51)
+                 ("TODO"      . 52)
+                 ("UNDO"      . 53)
+                 ;; Hold
+                 ("WAITING"   . 65) ;; ?A
+                 ("HOLD"      . 66)
+                 ;; Done
+                 ("ENOUGH"    . 71) ;; 97 ?a
+                 ("CANCELLED" . 72)
+                 ("FINISHED"  . 73)
+                 ("DONE"      . 74)
                  )))
-    (org-sort-entries nil ?f
-                      (lambda ()
-                        (let ((pos (point)))
-                          (concat
-                           (if (org-entry-is-todo-p)
-                               (org-entry-get pos "PRIORITY")
-                             "Z")
-                           (or (cdr (assoc (org-entry-get pos "TODO") order)) " ")
-                           (mapconcat
-                            'identity
-                            (sort
-                             (split-string
-                              (or (org-entry-get pos "TAGS") "") ":" t)
-                             'string<)
-                            " ")))))))
+    (let ((todo (org-entry-get entry-pos "TODO"))
+          (priority (org-entry-get entry-pos "PRIORITY"))
+          (effort (org-entry-get entry-pos "EFFORT"))
+          (tags (mapconcat
+                 'identity
+                 (sort
+                  (split-string
+                   (or (org-entry-get entry-pos "TAGS") "") ":" t)
+                  'string<)
+                 " ")))
+      (concat
+       ;; first fast entries
+       (if (and effort (< (org-duration-string-to-minutes effort) 10))
+           " "
+         "~")
+       ;; then sort by priority only something to do entries
+       (if (< (cdr (assoc todo order)) 65)
+           priority
+         "~")
+       ;; then sort by todo keyword
+       (byte-to-string (or (cdr (assoc todo order)) 32)) ;; ?\ 
+       ;; then sort by sorted tags
+       tags
+       ;; then sort by priority
+       priority))))
+
+(defun org-agenda-cmp-user-defined-function (a b)
+  (let ((a-pos (get-text-property 0 'org-marker a))
+        (b-pos (get-text-property 0 'org-marker b)))
+    (if (string< (org-entry-to-key a-pos) (org-entry-to-key b-pos))
+        -1
+      1)))
+
+(defun org-sort-entries-user-defined ()
+  (interactive)
+  (org-sort-entries nil ?f 'org-entry-to-key 'string<))
 
 (require 'config-lib)
 (defun org-af (&optional prefix suffix)
@@ -908,7 +938,6 @@ SUFFIX - default .png"
 (defun org-auto-redisplay-inline-images ()
   (when org-inline-image-overlays
     (org-redisplay-inline-images)))
-
 (add-hook 'org-babel-after-execute-hook 'org-auto-redisplay-inline-images)
 
 (defun copy-buffer-file-name-org-link ()
@@ -955,7 +984,7 @@ SUFFIX - default .png"
            ("C-c v t"   . org-show-todo-tree)
            ("C-c v s"   . org-block-and-result-show-all) 
            ("C-c v h"   . org-block-and-result-hide-all) 
-           ("C-c M-s"   . org-sort-entries-by-tags-then-todo)
+           ("C-c M-s"   . org-sort-entries-user-defined)
            ("C-c c"     . org-capture)
            ("C-c a"     . org-agenda)
            ("C-c C-l"   . org-store-link)
