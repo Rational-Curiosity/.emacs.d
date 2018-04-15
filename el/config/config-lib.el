@@ -51,6 +51,20 @@
   "Ensures FUNC exist and eval with ARGS."
   (list 'and (list 'fboundp func) (list 'apply func (list 'quote args))))
 
+;; write message in *Messages* buffer with colors
+;; Thanks to: https://emacs.stackexchange.com/a/20178
+(defun message-color (format &rest args)
+  "Acts like `message' but preserves string properties in the *Messages* buffer."
+  (let ((message-log-max nil))
+    (apply 'message format args))
+  (with-current-buffer (get-buffer "*Messages*")
+    (save-excursion
+      (goto-char (point-max))
+      (let ((inhibit-read-only t))
+        (unless (zerop (current-column)) (insert "\n"))
+        (insert (apply 'format format args))
+        (insert "\n")))))
+
 ;; Silent messages
 ;; Usage:
 ;; (advice-add '<orig-fun> :around #'message-silent-advice)
@@ -123,6 +137,50 @@ Otherwise return a list of files which regex match."
     (if first
         (car matched)
       matched)))
+
+
+(defun bug-check-function-bytecode (function bytecode &optional inhibit-log)
+  "Check if FUNCTION has BYTECODE.  If INHIBIT-LOG is non-nil inhibit log when differs."
+  (if (string-equal
+       (aref (symbol-function function) 1)
+       bytecode)
+      t
+    (unless inhibit-log
+      (message-color #("WARN bug fixed for different version of %s see %s"
+                       0 4 (face warning))
+                     (find-function-library function)
+                     load-file-name))
+    nil))
+
+
+(require 'help-fns)
+(defun bug-function-bytecode (function)
+  "Write the bytecode of FUNCTION (a symbol).
+When called from lisp, FUNCTION may also be a function object."
+  (interactive
+   (let* ((fn (function-called-at-point))
+          (enable-recursive-minibuffers t)
+          (val (completing-read
+                (if fn
+                    (format "Bytecode of function (default %s): " fn)
+                  "Bytecode of function: ")
+                #'help--symbol-completion-table
+                (lambda (f) (fboundp f))
+                t nil nil
+                (and fn (symbol-name fn)))))
+     (unless (equal val "")
+       (setq fn (intern val)))
+     (unless (and fn (symbolp fn))
+       (user-error "You didn't specify a function symbol"))
+     (unless (fboundp fn) 
+       (user-error "Symbol's function definition is void: %s" fn))
+     (list fn)))
+  (condition-case nil
+      (insert (let ((print-escape-newlines t))
+                (prin1-to-string (aref (symbol-function function) 1))))
+    (error
+     (user-error "Missing function bytecode, maybe %s is a built-in function in 'C source code'" fn))))
+
 
 
 (provide 'config-lib)
