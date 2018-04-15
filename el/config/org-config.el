@@ -666,12 +666,13 @@ You can also customize this for each buffer, using something like
 (setq org-directory (loop for folder in
                           `("~/var/Dropbox/Orgzly"
                             ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
-                            "~/Prog/org"
-                            "~")
+                            "~/Prog/org")
                           when (file-exists-p folder)
                           return folder)
-      org-default-notes-file (concat org-directory "/.notes.org")
-      org-agenda-files `(,org-directory)
+      org-default-notes-file (concat (or org-directory "~") "/.notes.org")
+      org-agenda-files (if org-directory
+                           `(,org-directory)
+                         nil)
       ;; <property>
       org-agenda-property-list '("REQUIRED")
       ;; <Calendar>
