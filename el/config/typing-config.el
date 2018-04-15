@@ -182,13 +182,19 @@ prompt the user for a coding system."
                               (setq-default tab-width 4)
                               (setq tab-width 4)
                               (cond
-                               ((string-equal mode-name "C++/l")
+                               ;; ‘mode-name’
+                               ;; Usually a string, but can use any of the constructs for
+                               ;; ‘mode-line-format’, which see.
+                               ;; Format with ‘format-mode-line’ to produce a string value.
+                               ;; Don't use ‘string-equal’ to compare
+                               ((or (equal mode-name "C++/l")
+                                    (equal mode-name "C++//l"))
                                 (set (make-local-variable 'whitespace-line-column) 100))
                                ((or
-                                 (string-equal mode-name "Py")
-                                 (string-equal mode-name "Python"))
+                                 (equal mode-name "Py")
+                                 (equal mode-name "Python"))
                                 (set (make-local-variable 'whitespace-line-column) 79))
-                               ((string-equal mode-name "Emacs-Lisp")
+                               ((equal mode-name "Emacs-Lisp")
                                 (set (make-local-variable 'whitespace-line-column) 100))
                                ;;(t (set (make-local-variable 'whitespace-line-column) 80))
                                )

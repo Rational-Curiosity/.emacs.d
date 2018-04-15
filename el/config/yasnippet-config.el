@@ -22,7 +22,7 @@
 
 ;; (define-key yas-minor-mode-map (kbd "<tab>") nil)
 ;; (define-key yas-minor-mode-map (kbd "TAB") nil)
-k;;(define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
+;;(define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
 (define-key yas-keymap [tab] nil)
 (define-key yas-keymap (kbd "TAB") nil)
 (define-key yas-keymap [(control tab)] #'yas-next-field-or-maybe-expand)
