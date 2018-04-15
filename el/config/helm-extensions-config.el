@@ -10,6 +10,7 @@
 (require 'helm)
 (require 'helm-config)
 (require 'helm-files)
+(require 'helm-command)
 
 (setq helm-display-header-line nil
       helm-split-window-inside-p t
@@ -18,7 +19,8 @@
       helm-scroll-amount 8
       helm-buffer-max-length 20
       helm-autoresize-max-height 40
-      helm-autoresize-min-height 5)
+      helm-autoresize-min-height 5
+      helm-M-x-always-save-history t)
 
 (set-face-attribute 'helm-selection nil :background "purple")
 (set-face-attribute 'helm-source-header nil :height 1.0)
