@@ -28,6 +28,8 @@
 (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
 (set-face-attribute 'org-warning nil :foreground "gold")
 (set-face-attribute 'org-tag nil :bold nil)
+(set-face-attribute 'org-level-1 nil :bold t)
+(set-face-attribute 'org-level-2 nil :bold t :foreground "light sea green")
 
 (defface my-face-org-keystroke
   '((t (:inherit shadow
@@ -66,18 +68,21 @@
         ("+" (:strike-through t)))
       ;; TODO keyword faces
       org-todo-keyword-faces
-      '(("TODO" :foreground "orange red" :weight bold)
-        ("NEXT" :foreground "gold" :weight bold)
-        ("DONE" :foreground "forest green" :weight bold)
-        ("STARTED" :foreground "deep sky blue" :weight bold)
-        ("FINISHED" :foreground "dark olive green" :weight bold)
-        ("ENOUGH" :foreground "green yellow" :weight bold)
-        ("WAITING" :foreground "blue violet" :weight bold :underline t)
-        ("HOLD" :foreground "dark violet" :weight bold :underline t)
-        ("CANCELLED" :foreground "dark green" :weight bold)
-        ("BUG" :foreground "dark red" :weight bold)
-        ("VERIFY" :foreground "dark cyan" :weight bold)
-        ("UNDO" :foreground "dark green" :weight bold))
+      '(("TODO" :foreground "orange red" :weight bold) ;; TODO
+        ("NEXT" :foreground "gold" :weight bold) ;; NEXT
+        ("DONE" :foreground "forest green" :weight bold) ;; DONE
+        ("PLAN" :foreground "deep sky blue" :weight bold)
+        ("STAR" :foreground "sky blue" :weight bold) ;; STARTED
+        ("REOP" :foreground "indian red" :weight bold) ;; REOPENED
+        ("FINI" :foreground "dark olive green" :weight bold) ;; FINISHED
+        ("ENOU" :foreground "green yellow" :weight bold) ;; ENOUGH
+        ("DELE" :foreground "light green" :weight bold) ;; DELEGATED
+        ("WAIT" :foreground "blue violet" :weight bold :underline t) ;; WAITING
+        ("HOLD" :foreground "dark violet" :weight bold :underline t) ;; HOLD
+        ("CANC" :foreground "dark green" :weight bold) ;; CANCELED
+        ("FIXM" :foreground "dark red" :weight bold) ;; FIXME
+        ("VERI" :foreground "dodger blue" :weight bold) ;; VERIFY
+        ("UNDO" :foreground "royal blue" :weight bold)) ;; UNDO
       ;; TAG faces
       org-tag-faces
       '(("@business"     :foreground "#e5786d")
@@ -204,12 +209,18 @@
       org-log-done 'time ; 'time - solo guarda el tiempo
       ;; ]
       ;;org-clock-in-switch-to-state "STARTED"
+      org-clock-out-when-done t
       org-columns-default-format
-      "%51ITEM %8EFFORT(Estimate){:} %8CLOCKSUM(Clocked) %9TODO(State)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
+      "%51ITEM %8EFFORT(Estimate){:} %8CLOCKSUM(Clocked) %4TODO(State)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
       org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-        (sequence "STARTED(s!)" "UNDO(u!)" "VERIFY(v@/!)" "|" "ENOUGH(e@/!)" "FINISHED(f!)")
-        (sequence "BUG(b@/!)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))
+      '(;; Basic
+        (sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+        ;; Actions
+        (sequence "UNDO(u!)" "VERI(v@/!)" "|" "ENOU(e@/!)" "DELE(l@/!)")
+        ;; States
+        (sequence "STAR(s!)" "PLAN(p!)" "WAIT(w@/!)" "|" "FINI(f!)")
+        ;; Problems
+        (sequence "FIXM(b@/!)" "REOP(r@/!)" "HOLD(h@/!)" "|" "CANC(c@/!)"))
       org-archive-location "archived.org::* From %s"
       org-archive-file-header-format nil
       ;; PRIORITIES
@@ -217,7 +228,7 @@
       org-default-priority ?H
       org-lowest-priority ?O)
 
-(setcdr (assoc 'state org-log-note-headings) "%-12S -> %-12s at %t")
+(setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Convert options ;;
@@ -749,45 +760,67 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
+(defun org-entry-is-todo-get-subtree (pos property)
+  (save-excursion
+    (goto-char pos)
+    (save-restriction
+      (org-narrow-to-subtree)
+      (goto-char (point-max))
+      (save-match-data
+        (cl-loop while (re-search-backward org-heading-regexp nil t)
+                 when (org-entry-is-todo-p)
+                 collect (org-entry-get (point) property))))))
+
+
 (defun org-entry-to-key (&optional pos)
   (let ((entry-pos (or pos (point)))
         (order '(;; Todo
-                 ("BUG"       . 48) ;; ?0
-                 ("STARTED"   . 49)
-                 ("NEXT"      . 50)
-                 ("VERIFY"    . 51)
-                 ("TODO"      . 52)
-                 ("UNDO"      . 53)
+                 (nil    . 32)
+                 ("FIXM" . 49) ;; 48 ?0
+                 ("REOP" . 50)
+                 ("VERI" . 51)
+                 ("PLAN" . 52)
+                 ("STAR" . 53)
+                 ("NEXT" . 54)
+                 ("TODO" . 55)
+                 ("UNDO" . 56)
                  ;; Hold
-                 ("WAITING"   . 65) ;; ?A
-                 ("HOLD"      . 66)
+                 ("WAIT" . 65) ;; ?A
+                 ("HOLD" . 66)
                  ;; Done
-                 ("ENOUGH"    . 71) ;; 97 ?a
-                 ("CANCELLED" . 72)
-                 ("FINISHED"  . 73)
-                 ("DONE"      . 74)
+                 ("ENOU" . 71) ;; 97 ?a
+                 ("DELE" . 72)
+                 ("CANC" . 73)
+                 ("FINI" . 74)
+                 ("DONE" . 75)
                  )))
-    (let ((todo (org-entry-get entry-pos "TODO"))
+    (let ((todo (cdr (assoc (org-entry-get entry-pos "TODO") order)))
           (priority (org-entry-get entry-pos "PRIORITY"))
-          (effort (org-entry-get entry-pos "EFFORT"))
           (tags (mapconcat
                  'identity
                  (sort
                   (split-string
                    (or (org-entry-get entry-pos "TAGS") "") ":" t)
                   'string<)
-                 " ")))
+                 " "))
+          (effort-list (cl-loop for minutes in (org-entry-is-todo-get-subtree entry-pos "EFFORT")
+                                when minutes
+                                collect (org-duration-string-to-minutes minutes))))
       (concat
-       ;; first fast entries
-       (if (and effort (< (org-duration-string-to-minutes effort) 10))
+       ;; not todo
+       (if (= todo 32)
+           " "
+         "~")
+       ;; todo first fast entries
+       (if (and effort-list (< (apply 'min effort-list) 10))
            " "
          "~")
        ;; then sort by priority only something to do entries
-       (if (< (cdr (assoc todo order)) 65)
+       (if (< todo 65)
            priority
          "~")
        ;; then sort by todo keyword
-       (byte-to-string (or (cdr (assoc todo order)) 32)) ;; ?\ 
+       (byte-to-string todo) ;; ?\ 
        ;; then sort by sorted tags
        tags
        ;; then sort by priority
@@ -796,9 +829,13 @@ You can also customize this for each buffer, using something like
 (defun org-agenda-cmp-user-defined-function (a b)
   (let ((a-pos (get-text-property 0 'org-marker a))
         (b-pos (get-text-property 0 'org-marker b)))
-    (if (string< (org-entry-to-key a-pos) (org-entry-to-key b-pos))
-        -1
-      1)))
+    (let ((a-key (with-current-buffer (marker-buffer a-pos)
+                   (org-entry-to-key a-pos)))
+          (b-key (with-current-buffer (marker-buffer b-pos)
+                   (org-entry-to-key b-pos))))
+        (if (string< a-key b-key)
+            -1
+          1))))
 
 (defun org-sort-entries-user-defined ()
   (interactive)
