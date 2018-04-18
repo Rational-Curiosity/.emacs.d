@@ -277,6 +277,8 @@
 ;; smartparens-mode
 (add-hook 'prog-mode-hook #'smartparens-mode)
 (add-hook 'prog-mode-hook #'show-smartparens-mode)
+(add-hook 'org-mode-hook #'smartparens-mode)
+(add-hook 'org-mode-hook #'show-smartparens-mode)
 (with-eval-after-load 'smartparens
   (require 'smartparens-custom-config))
 ;; flycheck-mode

@@ -58,6 +58,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (eq system-type 'cygwin)
   (add-to-list 'recentf-exclude "\\\\")
+  (setq cygwin-root-path (if (executable-find "cygpath")
+                             (substring (shell-command-to-string "cygpath -m /") 0 -1)
+                           "/cygwin64"))
   ;; coding
   (defun get-buffer-file-coding-system-local (process)
     (if (ede-current-project)
@@ -96,13 +99,16 @@
       (replace-regexp-in-string "\\\\" "/" filename nil t)))
   ;; shell-command
   (defun shell-command-advice (orig-fun command &rest args)
-    (if (string-match "^java" command)
+    (if (or
+         (string-match "^java" command)
+         (string-match "^soffice" command))
         (apply orig-fun (replace-regexp-in-string
                          "\\([^<>]\\) +/"
-                         "\\1 /cygwin64/"
+                         (concat "\\1 " cygwin-root-path "/")
                          command) args)
       (apply orig-fun command args)))
   (advice-add 'shell-command :around #'shell-command-advice)
+  (advice-add 'shell-command-to-string :around #'shell-command-advice)
   (advice-add 'org-babel-eval :around #'shell-command-advice)
   ;; find-file
   ;; (defun find-file-advice (orig-fun filename &rest args)
@@ -130,7 +136,8 @@
   (defun ffap-string-at-point-advice (orig-fun &rest args)
     (path-style-windows-to-linux (apply orig-fun args)))
   (require 'ffap)
-  (advice-add 'ffap-string-at-point :around #'ffap-string-at-point-advice))
+  (advice-add 'ffap-string-at-point :around #'ffap-string-at-point-advice)
+  (global-set-key (kbd "C-v") 'yank))
 
 
 (provide 'machine-config)

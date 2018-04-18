@@ -129,6 +129,8 @@
       org-startup-with-inline-images t
       org-pretty-entities t
       org-use-property-inheritance t
+      org-use-sub-superscripts nil
+      org-export-with-sub-superscripts '{}
       org-tags-column -80
       org-cycle-include-plain-lists 'integrate
       org-tags-sort-function #'string>
@@ -212,6 +214,8 @@
       org-clock-out-when-done t
       org-columns-default-format
       "%51ITEM %8EFFORT(Estimate){:} %8CLOCKSUM(Clocked) %4TODO(State)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
+      org-clock-into-drawer "LOGCLOCK"
+      org-log-into-drawer "LOGSTATE"
       org-todo-keywords
       '(;; Basic
         (sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
@@ -263,12 +267,15 @@
                  ((use-banding-column-styles . t)))
                 ("TableWithHeaderRow" "Custom"
                  ((use-first-row-styles . t)))))
+      ;; Convert formulas
+      org-latex-to-mathml-convert-command
+      "java -jar %j -unicode -force -df %o %I"
+      org-latex-to-mathml-jar-file
+      (expand-file-name "~/.emacs.d/cache/java/mathtoweb.jar")
       ;; Convert to other formats
       org-odt-convert-processes
       `(("LibreOffice"
-         ,(if (eq system-type 'cygwin)
-              "soffice --headless --convert-to %f%x --outdir C:/cygwin64/%d C:/cygwin64/%i"
-            "soffice --headless --convert-to %f%x --outdir %d %i"))
+         "soffice --headless --convert-to %f%x --outdir %d %i")
         ("unoconv"
          "unoconv -f %f -o %d %i"))
       org-odt-convert-process (cond
