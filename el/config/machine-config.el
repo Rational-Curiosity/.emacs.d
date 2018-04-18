@@ -99,14 +99,20 @@
       (replace-regexp-in-string "\\\\" "/" filename nil t)))
   ;; shell-command
   (defun shell-command-advice (orig-fun command &rest args)
-    (if (or
+    (cond
+     ((string-match "^WINWORD" command)
+      (apply orig-fun (replace-regexp-in-string
+                       "$/"
+                       cygwin-root-path
+                       command) args))
+     ((or
          (string-match "^java" command)
          (string-match "^soffice" command))
-        (apply orig-fun (replace-regexp-in-string
-                         "\\([^<>]\\) +/"
-                         (concat "\\1 " cygwin-root-path "/")
-                         command) args)
-      (apply orig-fun command args)))
+      (apply orig-fun (replace-regexp-in-string
+                       "\\([^<>] +\"?\\)/"
+                       (concat "\\1" cygwin-root-path "/")
+                       command) args))
+     (t (apply orig-fun command args))))
   (advice-add 'shell-command :around #'shell-command-advice)
   (advice-add 'shell-command-to-string :around #'shell-command-advice)
   (advice-add 'org-babel-eval :around #'shell-command-advice)

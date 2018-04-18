@@ -274,11 +274,16 @@
       (expand-file-name "~/.emacs.d/cache/java/mathtoweb.jar")
       ;; Convert to other formats
       org-odt-convert-processes
-      `(("LibreOffice"
+      `(,`("WINWORD"
+           ,(concat "WINWORD /q /t$/"
+                    (expand-file-name user-emacs-directory)
+                    "cache/docx/normal.dotm \"$/%i\" /mSaveAsDocx"))
+        ("LibreOffice"
          "soffice --headless --convert-to %f%x --outdir %d %i")
         ("unoconv"
          "unoconv -f %f -o %d %i"))
       org-odt-convert-process (cond
+                               ((executable-find "WINWORD") "WINWORD")
                                ((executable-find "soffice") "LibreOffice")
                                ((executable-find "unoconv") "unoconv")
                                (t nil))
