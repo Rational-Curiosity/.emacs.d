@@ -59,7 +59,13 @@
 (require 'smart-mode-line)
 (setq sml/no-confirm-load-theme t
       sml/name-width '(17 . 55)
-      sml/mode-width 'right)
+      sml/mode-width 'right
+      ;; Ruta completa en la barra de título
+      frame-title-format
+      '((:eval (if buffer-file-name
+                   (sml/replacer  buffer-file-name)
+                 "%b"))))
+
 
 ;; example of variable format
 ;; (defun variable-name-width (frame)

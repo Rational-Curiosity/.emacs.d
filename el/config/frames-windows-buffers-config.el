@@ -338,11 +338,6 @@ Don't show on windows buffers currently showed."
 (if (fboundp 'tooltip-bar-mode) (tooltip-bar-mode -1))
 ;; Deshabilida la barra de menús
 (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-;; Ruta completa en la barra de título
-(setq frame-title-format
-      '((:eval (if buffer-file-name
-                   (sml/replacer (abbreviate-file-name (file-truename buffer-file-name)))
-                 "%b"))))
 ;; Ajusta el tamaño de la ventana a la resolución.
 ;; (defun set-frame-size-according-to-resolution ()
 ;;   (interactive)
