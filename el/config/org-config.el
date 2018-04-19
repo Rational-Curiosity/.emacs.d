@@ -833,10 +833,10 @@ You can also customize this for each buffer, using something like
          "~")
        ;; then sort by todo keyword
        (byte-to-string todo) ;; ?\ 
-       ;; then sort by sorted tags
-       tags
        ;; then sort by priority
-       priority))))
+       priority
+       ;; then sort by sorted tags
+       tags))))
 
 (defun org-agenda-cmp-user-defined-function (a b)
   (let ((a-pos (get-text-property 0 'org-marker a))
@@ -1028,20 +1028,21 @@ SUFFIX - default .png"
                              (make-local-variable 'semantic-mode) nil)))
 
 (bind-keys :map org-mode-map
-           ("M-."       . org-priority)
-           ("C-c v e"   . org-show-entry)
-           ("C-c TAB"   . org-show-subtree)
-           ("C-c v t"   . org-show-todo-tree)
-           ("C-c v s"   . org-block-and-result-show-all) 
-           ("C-c v h"   . org-block-and-result-hide-all) 
-           ("C-c M-s"   . org-sort-entries-user-defined)
-           ("C-c c"     . org-capture)
-           ("C-c a"     . org-agenda)
-           ("C-c C-l"   . org-store-link)
-           ("C-c L"     . org-insert-link-global)
-           ("C-c O"     . org-open-at-point-global)
-           ("C-c p"     . org-publish)
-           ("C-c C-x D" . org-archive-done-tasks))
+           ("M-."         . org-priority)
+           ("C-c v e"     . org-show-entry)
+           ("C-c TAB"     . org-show-subtree)
+           ("C-c v t"     . org-show-todo-tree)
+           ("C-c v s"     . org-block-and-result-show-all) 
+           ("C-c v h"     . org-block-and-result-hide-all) 
+           ("C-c M-s"     . org-sort-entries-user-defined)
+           ("C-c c"       . org-capture)
+           ("C-c a"       . org-agenda)
+           ("C-c C-l"     . org-store-link)
+           ("C-c L"       . org-insert-link-global)
+           ("C-c O"       . org-open-at-point-global)
+           ("C-c p"       . org-publish)
+           ("C-c C-x D"   . org-archive-done-tasks)
+           ("C-c C-x C-k" . org-toggle-link-display))
 
 
 (provide 'org-config)
