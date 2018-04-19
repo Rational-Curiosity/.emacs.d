@@ -31,6 +31,15 @@
 (set-face-attribute 'org-level-1 nil :bold t)
 (set-face-attribute 'org-level-2 nil :bold t :foreground "light sea green")
 
+(set-face-attribute 'org-block-begin-line nil
+                    :underline "#A7A6AA" :foreground "#388EFF" :background "#333333")
+
+(set-face-attribute 'org-block nil
+                    :background "#555555")
+
+(set-face-attribute 'org-block-end-line nil
+                    :overline "#A7A6AA" :foreground "#388EFF" :background "#333333")
+
 (defface my-face-org-keystroke
   '((t (:inherit shadow
                  :box (:line-width -2 ;neg. in order to keep the same size of lines
@@ -128,6 +137,7 @@
       org-startup-folded 'content
       org-startup-with-inline-images t
       org-pretty-entities t
+      org-src-fontify-natively t
       org-use-property-inheritance t
       org-use-sub-superscripts nil
       org-export-with-sub-superscripts '{}
