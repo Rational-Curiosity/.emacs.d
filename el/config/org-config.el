@@ -141,6 +141,7 @@
       org-use-property-inheritance t
       org-use-sub-superscripts nil
       org-export-with-sub-superscripts '{}
+      org-export-allow-bind-keywords nil
       org-tags-column -80
       org-cycle-include-plain-lists 'integrate
       org-tags-sort-function #'string>
@@ -249,6 +250,20 @@
 ;;;;;;;;;;;;;;;;;;;;;
 (require 'ox)
 (setq org-html-validation-link nil)
+(defun org-element-find-all (key)
+  (let ((alist '())
+        (pattern (concat "^[ \t]*#\\+\\(" key "\\):")))
+    (org-with-wide-buffer
+     (goto-char (point-min))
+     (while (re-search-forward
+             pattern nil t)
+       (let ((element (org-element-at-point)))
+         (when (eq (org-element-type element) 'keyword)
+           (let ((val (org-element-property :value element)))
+             (if (equal (org-element-property :key element)
+                        key)
+                 (push (read (format "%s" val)) alist))))))
+     alist)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to Markdown ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -284,10 +299,8 @@
       (expand-file-name "~/.emacs.d/cache/java/mathtoweb.jar")
       ;; Convert to other formats
       org-odt-convert-processes
-      `(,`("WINWORD"
-           ,(concat "WINWORD /q /t$/"
-                    (expand-file-name user-emacs-directory)
-                    "cache/docx/normal.dotm \"$/%i\" /mSaveAsDocx"))
+      `(("WINWORD"
+         ,(concat "WINWORD /q \"$/%i\" /mFormatAll"))
         ("LibreOffice"
          "soffice --headless --convert-to %f%x --outdir %d %i")
         ("unoconv"
@@ -298,6 +311,21 @@
                                ((executable-find "unoconv") "unoconv")
                                (t nil))
       org-odt-preferred-output-format (and org-odt-convert-process "doc"))
+(defun org-odt-export-update-convert-processes ()
+  (interactive)
+  (setq org-odt-convert-processes
+        `(("WINWORD"
+           ,(concat "WINWORD /q \"$/%i\" /m" (or (car (org-element-find-all "MACRO"))
+                                       "FormatAll")))
+          ("LibreOffice"
+           "soffice --headless --convert-to %f%x --outdir %d %i")
+          ("unoconv"
+           "unoconv -f %f -o %d %i"))))
+(defun org-export-update (backend)
+  (cond
+   ((eq 'odt backend)
+    (org-odt-export-update-convert-processes))))
+(add-hook 'org-export-before-processing-hook 'org-export-update)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert pytex environments ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -797,7 +825,6 @@ You can also customize this for each buffer, using something like
 (defun org-entry-to-key (&optional pos)
   (let ((entry-pos (or pos (point)))
         (order '(;; Todo
-                 (nil    . 32)
                  ("FIXM" . 49) ;; 48 ?0
                  ("REOP" . 50)
                  ("VERI" . 51)
@@ -816,37 +843,59 @@ You can also customize this for each buffer, using something like
                  ("FINI" . 74)
                  ("DONE" . 75)
                  )))
-    (let ((todo (cdr (assoc (org-entry-get entry-pos "TODO") order)))
-          (priority (org-entry-get entry-pos "PRIORITY"))
-          (tags (mapconcat
-                 'identity
-                 (sort
-                  (split-string
-                   (or (org-entry-get entry-pos "TAGS") "") ":" t)
-                  'string<)
-                 " "))
-          (effort-list (cl-loop for minutes in (org-entry-is-todo-get-subtree entry-pos "EFFORT")
-                                when minutes
-                                collect (org-duration-string-to-minutes minutes))))
-      (concat
-       ;; not todo
-       (if (= todo 32)
-           " "
-         "~")
-       ;; todo first fast entries
-       (if (and effort-list (< (apply 'min effort-list) 10))
-           " "
-         "~")
-       ;; then sort by priority only something to do entries
-       (if (< todo 65)
+    (let ((todo (cdr (assoc (org-entry-get entry-pos "TODO") order))))
+      (cond
+       ((not todo)
+        " ")
+       ((< todo 65)
+        ;;
+        ;; todo
+        ;;
+        (let ((effort-list (cl-loop for minutes in (org-entry-is-todo-get-subtree entry-pos "EFFORT")
+                                    when minutes
+                                    collect (org-duration-string-to-minutes minutes)))
+              (priority (org-entry-get entry-pos "PRIORITY"))
+              (tags (mapconcat 'identity
+                               (sort (split-string
+                                      (or (org-entry-get entry-pos "TAGS") "") ":" t)
+                                     'string<) " ")))
+          (concat
+           ;; type of todo
+           "0"
+           ;; effort condition
+           (if (and effort-list (< (apply 'min effort-list) 10))
+               " "
+             "~")
            priority
-         "~")
-       ;; then sort by todo keyword
-       (byte-to-string todo) ;; ?\ 
-       ;; then sort by priority
-       priority
-       ;; then sort by sorted tags
-       tags))))
+           (byte-to-string todo)
+           tags)))
+       ((< todo 71)
+        ;;
+        ;; blocked
+        ;;
+        (let ((priority (org-entry-get entry-pos "PRIORITY"))
+              (tags (mapconcat 'identity
+                               (sort (split-string
+                                      (or (org-entry-get entry-pos "TAGS") "") ":" t)
+                                     'string<) " ")))
+          (concat
+           "1"
+           (byte-to-string todo)
+           priority
+           tags)))
+       (t
+        ;;
+        ;; done
+        ;;
+        (let ((closed (let ((closed-time (org-entry-get entry-pos "CLOSED")))
+                        (if closed-time
+                            (number-to-string
+                             (- most-positive-fixnum
+                                (round (org-time-string-to-seconds closed-time))))
+                          " "))))
+          (concat
+           "2"
+           closed)))))))
 
 (defun org-agenda-cmp-user-defined-function (a b)
   (let ((a-pos (get-text-property 0 'org-marker a))
