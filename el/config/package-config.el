@@ -9,16 +9,17 @@
 ;; avoid automatic startup
 (setq package-enable-at-startup nil)
 ;; [ <repos> configure repositories
-;;(add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
+;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))
-       (urls '("://melpa.org/packages/"
+       (urls '("://orgmode.org/elpa/"
+               "://melpa.org/packages/"
                "://stable.melpa.org/packages/"
                "://marmalade-repo.org/packages/"
                "://jorgenschaefer.github.io/packages/"))
-       (names '("melpa" "melpa-stable" "marmalade" "elpy"))
+       (names '("org" "melpa" "melpa-stable" "marmalade" "elpy"))
        (urls (mapcar (lambda (s) (concat (if no-ssl "http" "https") s)) urls)))
   (cl-mapcar (lambda (n u) (add-to-list 'package-archives (cons n u) t))
              names urls))

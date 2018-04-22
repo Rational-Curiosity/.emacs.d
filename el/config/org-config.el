@@ -38,6 +38,7 @@
                     :background "#555555")
 
 (set-face-attribute 'org-block-end-line nil
+                    :underline nil
                     :overline "#A7A6AA" :foreground "#388EFF" :background "#333333")
 
 (defface my-face-org-keystroke
@@ -788,15 +789,23 @@ You can also customize this for each buffer, using something like
           (org-agenda-ndays 7)
           (org-agenda-log-mode-items '(state))
           (org-agenda-skip-function
-           '(org-agenda-skip-entry-if 'notregexp ":STYLE: *habit"))))
+           '(org-agenda-skip-entry-if
+             'notregexp
+             ":STYLE: *habit"))))
         ("c" "[c]alendar" cfw:open-org-calendar-command)
+        ("n" "[n]ot closed timestamp"
+         ((alltodo ""
+                   ((org-agenda-skip-function
+                     '(org-agenda-skip-entry-if
+                       'regexp
+                       "CLOSED: \\[[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]"))))))
         ("u" "[u]nscheduled tasks"
          ((alltodo ""
-           ((org-agenda-skip-function
-           '(org-agenda-skip-entry-if
-             'scheduled 'deadline
-             ;;'todo '("DONE" "CANCELLED" "FINISHED" "ENOUGH")
-             ))))))
+                   ((org-agenda-skip-function
+                     '(org-agenda-skip-entry-if
+                       'scheduled 'deadline
+                       ;;'todo '("DONE" "CANCELLED" "FINISHED" "ENOUGH")
+                       ))))))
         ("A" "[A]ll scheduled or not"
          ((agenda "")
           (alltodo ""
