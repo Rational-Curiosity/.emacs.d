@@ -32,14 +32,14 @@
 (set-face-attribute 'org-level-2 nil :bold t :foreground "light sea green")
 
 (set-face-attribute 'org-block-begin-line nil
-                    :underline "#A7A6AA" :foreground "#388EFF" :background "#333333")
+                    :underline "#A7A6AA" :foreground "#388EFF" :background "#222210")
 
 (set-face-attribute 'org-block nil
-                    :background "#555555")
+                    :background "#292929")
 
 (set-face-attribute 'org-block-end-line nil
                     :underline nil
-                    :overline "#A7A6AA" :foreground "#388EFF" :background "#333333")
+                    :overline "#A7A6AA" :foreground "#388EFF" :background "#222210")
 
 (defface my-face-org-keystroke
   '((t (:inherit shadow
@@ -907,15 +907,23 @@ You can also customize this for each buffer, using something like
            closed)))))))
 
 (defun org-agenda-cmp-user-defined-function (a b)
-  (let ((a-pos (get-text-property 0 'org-marker a))
-        (b-pos (get-text-property 0 'org-marker b)))
-    (let ((a-key (with-current-buffer (marker-buffer a-pos)
-                   (org-entry-to-key a-pos)))
-          (b-key (with-current-buffer (marker-buffer b-pos)
-                   (org-entry-to-key b-pos))))
-        (if (string< a-key b-key)
-            -1
-          1))))
+  (let ((a-pos (or (get-text-property 1 'org-marker a)
+                   (get-text-property 1 'org-hd-marker a)))
+        (b-pos (or (get-text-property 1 'org-marker b)
+                   (get-text-property 1 'org-hd-marker b))))
+    (if (and a-pos b-pos)
+        (let ((a-key (with-current-buffer (marker-buffer a-pos)
+                       (org-entry-to-key a-pos)))
+              (b-key (with-current-buffer (marker-buffer b-pos)
+                       (org-entry-to-key b-pos))))
+          (if (string< a-key b-key)
+              -1
+            1))
+      ;; (message "A pos: %s heading: %s entry: %s" a-pos (text-property-any 0 (length a) 'org-heading t a) a)
+      ;; (message "B pos: %s heading: %s entry: %s" b-pos (text-property-any 0 (length b) 'org-heading t b) b)
+      (if (string< a b)
+          -1
+        1))))
 
 (defun org-sort-entries-user-defined ()
   (interactive)
