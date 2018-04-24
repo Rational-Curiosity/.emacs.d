@@ -218,6 +218,7 @@
                              ("w" . 2400)
                              ("m" . 9600)
                              ("y" . 96000))
+      org-effort-threshold 20
       org-enforce-todo-dependencies t
       ;; [ 'note Graba el tiempo y una nota cuando se realiza una tarea
       org-log-done 'time ; 'time - solo guarda el tiempo
@@ -872,7 +873,7 @@ You can also customize this for each buffer, using something like
            ;; type of todo
            "0"
            ;; effort condition
-           (if (and effort-list (< (apply 'min effort-list) 10))
+           (if (and effort-list (< (apply 'min effort-list) org-effort-threshold))
                " "
              "~")
            priority

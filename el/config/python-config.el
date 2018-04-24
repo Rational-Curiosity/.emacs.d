@@ -96,6 +96,15 @@ if __name__ == \"__main__\":
 ")))))
 
 
+(defun python-insert-start-debuger (arg)
+  (interactive "P")
+  (if arg
+      (save-excursion
+        (goto-char (point-min))
+        (while (re-search-forward "[^\n][ \t]*import +pdb *; *pdb.set_trace *() *#?[^\n]*" nil t)
+          (replace-match "" nil nil)))
+    (insert "import pdb; pdb.set_trace()")))
+
 (defun run-python-in-directory ()
   (interactive)
   (let ((default-directory (read-directory-name "working folder: ")))
