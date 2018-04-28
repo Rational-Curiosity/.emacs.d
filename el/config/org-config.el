@@ -48,6 +48,11 @@
                                    :style pressed-button)))) "Face for keystrokes"
                                    :group 'org-faces)
 
+
+(org-link-set-parameters
+ "file"
+ :face (lambda (path) (if (file-exists-p path) 'org-link 'org-warning)))
+
 (setq org-hide-emphasis-markers nil
       org-bullets-bullet-list
       '("α" "β" "γ" "δ" "ε" "ζ")
@@ -135,10 +140,10 @@
 ;;;;;;;;;;;;;;;;;;;;;
 
 (setq ;org-hide-block-startup t
+      org-descriptive-links nil ;; nil display the full links
       org-startup-folded 'content
       org-startup-with-inline-images t
       org-pretty-entities t
-      org-src-fontify-natively t
       org-use-property-inheritance t
       org-use-sub-superscripts nil
       org-export-with-sub-superscripts '{}
@@ -155,11 +160,13 @@
 ;; Babel block options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(setq org-babel-sh-command "bash"
+(setq org-edit-src-content-indentation 0
+      org-babel-sh-command "bash"
       org-babel-python-command "python3"
       ;; No pregunta al usuario antes de evaluar un bloque de código
       org-confirm-babel-evaluate nil
       org-src-fontify-natively t
+      org-src-tab-acts-natively t
       org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar")
       org-babel-default-header-args:plantuml
       '((:results . "file")
@@ -211,7 +218,12 @@
 ;; TODO options ;;
 ;;;;;;;;;;;;;;;;;;
 (require 'org-clock)
-(setq org-time-clocksum-use-effort-durations t
+(setq org-duration-units '(("min" . 1)
+                           ("h" . 60)
+                           ("d" . 480)
+                           ("w" . 2400)
+                           ("m" . 9600)
+                           ("y" . 96000))
       org-effort-durations '(("min" . 1)
                              ("h" . 60)
                              ("d" . 480)
@@ -251,7 +263,6 @@
 ;; Convert options ;;
 ;;;;;;;;;;;;;;;;;;;;;
 (require 'ox)
-(setq org-html-validation-link nil)
 (defun org-element-find-all (key)
   (let ((alist '())
         (pattern (concat "^[ \t]*#\\+\\(" key "\\):")))
@@ -708,11 +719,12 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;
 ;; Links ;;
 ;;;;;;;;;;;
-
-(setq org-return-follows-link t)
+(setq org-html-validation-link nil
+      org-return-follows-link t)
 (delete '("\\.pdf\\'" . default) org-file-apps)
 (add-to-list 'org-file-apps '("\\.pdf::\\([0-9]+\\)\\'" . "evince \"%s\" -p %1"))
 (add-to-list 'org-file-apps '("\\.png\\'" . "eog \"%s\""))
+(bound-and-eval 'config-04)
 
 ;;;;;;;;;;;;
 ;; Agenda ;;
@@ -1096,6 +1108,36 @@ SUFFIX - default .png"
   (interactive)
   (call-interactively #'org-show-block-all)
   (call-interactively #'org-babel-show-result-all))
+
+;; [ Thanks to: https://gist.github.com/alphapapa/84ec3396442915ca277b
+(require 's)
+(defun org-read-structure-template ()
+  "Read org-mode structure template with completion.  Returns template string."
+  (let* ((templates (map 'list 'second org-structure-template-alist))
+         (prefixes (map 'list (lambda (tp)
+                                ;; Get template and pre-whitespace prefix for completion
+                                (reverse (s-match (rx (group
+                                                       (1+ (not (any "\n" space))))
+                                                      (1+ anything))
+                                                  tp)))
+                        templates))
+         (prefix (completing-read "Template: " prefixes nil t))
+         (template (second (assoc prefix prefixes))))
+    template))
+
+(defun org-insert-structure-template-or-enclose-region ()
+  "Insert structure block template.  When region is active, enclose region in block."
+  (interactive)
+  (let* ((template (org-read-structure-template))
+         (text "")
+         enclosed-text)
+    (when (use-region-p)
+      (setq text (buffer-substring-no-properties (region-beginning) (region-end)))
+      (delete-region (region-beginning) (region-end)))
+    (setq enclosed-text (s-replace "?" text (s-replace " ?\n" " \n?" template)))
+    (insert enclosed-text)
+    (backward-char (- (length enclosed-text) (length (s-shared-start enclosed-text template))))))
+;; ]
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
@@ -1118,6 +1160,7 @@ SUFFIX - default .png"
            ("C-c L"       . org-insert-link-global)
            ("C-c O"       . org-open-at-point-global)
            ("C-c p"       . org-publish)
+           ("C-c C-v <"   . org-insert-structure-template-or-enclose-region)
            ("C-c C-x D"   . org-archive-done-tasks)
            ("C-c C-x C-k" . org-toggle-link-display))
 
