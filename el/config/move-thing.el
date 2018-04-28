@@ -35,10 +35,12 @@
     (advice-remove 'undo-boundary #'rollback-on-error-inc)))
 (require 'rect)
 (require 'ring)
+;; (fset 'mt-bounds-of-thing-at-point
+;;       (if (require 'thingatpt+ nil t)
+;;           #'tap-bounds-of-thing-at-point
+;;         #'bounds-of-thing-at-point))
 (fset 'mt-bounds-of-thing-at-point
-      (if (require 'thingatpt+ nil t)
-          #'tap-bounds-of-thing-at-point
-        #'bounds-of-thing-at-point))
+      #'bounds-of-thing-at-point)
 
 (defun mt-bounds-of-thing-at-point-or-region (thing)
   (if (use-region-p)
@@ -247,23 +249,25 @@
 
 (defun mt-forward-thing (arg &optional thing)
   (setq thing (or thing mt-to-thing))
-  (dotimes (i arg)
-    (let (bounds)
+  (let (bounds)
+    (dotimes (i arg)
       (while (not (and
                    (set 'bounds (mt-bounds-of-thing-at-point thing))
                    (not (= (point) (cdr bounds)))))
         (forward-char 1))
-      (goto-char (1- (cdr bounds))))))
+      (goto-char (cdr bounds)))
+    bounds))
 
 (defun mt-backward-thing (arg &optional thing)
   (setq thing (or thing mt-to-thing))
-  (dotimes (i arg)
-    (let (bounds)
+  (let (bounds)
+    (dotimes (i arg)
       (while (not (and
                    (set 'bounds (mt-bounds-of-thing-at-point thing))
                    (not (= (point) (car bounds)))))
         (backward-char 1))
-      (goto-char (car bounds)))))
+      (goto-char (car bounds)))
+    bounds))
 
 
 ;; #     #
@@ -342,7 +346,7 @@
       (mt-insert-rectangle from 1 column)
       (mt-push-mark (car from-sbs))
       (goto-char (car to-bs)))))
-(advice-add 'mt-move-thing-backward :around #'rollback-on-error-advice)
+(advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice)
 
 (defun mt-interchange-thing-down (arg)
   (let* ((column (current-column))
@@ -363,14 +367,14 @@
         (mt-insert-rectangle from 1 column)
         (mt-push-mark (car from-sbs))
         (goto-char pos)))))
-(advice-add 'mt-move-thing-forward :around #'rollback-on-error-advice)
+(advice-add 'mt-interchange-thing-down :around #'rollback-on-error-advice)
 
 (defun mt-interchange-thing-backward (arg)
-  (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
-         (from (mt-kill-rectangle-or-bounds from-sbs)))
+  (let ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing)))
     (goto-char (car (cdr from-sbs)))
     (mt-backward-thing arg mt-to-thing)
     (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+           (from (mt-kill-rectangle-or-bounds from-sbs))
            (to (mt-kill-bounds to-bs)))
       (goto-char (- (car (cdr from-sbs)) (length to)))
       ;; (undo-boundary)  ; <undo>
@@ -379,13 +383,13 @@
       (mt-insert-rectangle from 1)
       (mt-push-mark (car from-sbs))
       (goto-char (car to-bs)))))
-(advice-add 'mt-move-thing-backward :around #'rollback-on-error-advice)
+(advice-add 'mt-interchange-thing-backward :around #'rollback-on-error-advice)
 
 (defun mt-interchange-thing-forward (arg)
   (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs)))
     (goto-char (car (cdr from-sbs)))
-    (mt-forward-thing arg mt-to-thing)
+    (goto-char (car (mt-forward-thing arg mt-to-thing)))
     (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
            (to (mt-kill-bounds to-bs)))
       (goto-char (car (cdr from-sbs)))
@@ -396,7 +400,7 @@
         (mt-insert-rectangle from 1)
         (mt-push-mark (car from-sbs))
         (goto-char pos)))))
-(advice-add 'mt-move-thing-forward :around #'rollback-on-error-advice)
+(advice-add 'mt-interchange-thing-forward :around #'rollback-on-error-advice)
 
 (defun mt-shift-points-left (bounds)
   (let* ((strings (mapcar
