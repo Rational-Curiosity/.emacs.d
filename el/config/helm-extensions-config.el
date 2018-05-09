@@ -12,6 +12,10 @@
 (require 'helm-files)
 (require 'helm-command)
 
+;; Fix helm-occur load org
+(require 'helm-utils)
+(require 'helm-bug)
+
 (setq helm-display-header-line nil
       helm-split-window-inside-p t
       helm-move-to-line-cycle-in-source t

@@ -142,7 +142,10 @@ Otherwise return a list of files which regex match."
 (defun bug-check-function-bytecode (function bytecode-base64 &optional inhibit-log)
   "Check if FUNCTION has BYTECODE-BASE64.  If INHIBIT-LOG is non-nil inhibit log when differs."
   (if (string-equal
-       (base64-encode-string (aref (symbol-function function) 1) t)
+       (condition-case nil
+           (base64-encode-string (aref (symbol-function function) 1) t)
+         (error
+          (user-error "Missing function bytecode, maybe %s is a built-in function in 'C source code' or not bytecompiled" function)))
        bytecode-base64)
       t
     (unless inhibit-log
@@ -175,10 +178,12 @@ When called from lisp, FUNCTION may also be a function object."
      (unless (fboundp fn) 
        (user-error "Symbol's function definition is void: %s" fn))
      (list fn)))
-  (condition-case nil
-      (insert "\"" (base64-encode-string (aref (symbol-function function) 1) t) "\"")
-    (error
-     (user-error "Missing function bytecode, maybe %s is a built-in function in 'C source code'" function))))
+  (insert "\""
+          (condition-case nil
+              (base64-encode-string (aref (symbol-function function) 1) t)
+            (error
+             (user-error "Missing function bytecode, maybe %s is a built-in function in 'C source code' or not bytecompiled" function)))
+          "\""))
 
 ;; escape special characters
 ;; (let ((print-escape-newlines t))
