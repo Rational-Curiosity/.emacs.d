@@ -16,6 +16,7 @@
 ;;;;;;;;;;;;;
 ;; Buffers ;;
 ;;;;;;;;;;;;;
+(setq revert-without-query '("\\.calc\\.py\\'"))
 
 (defun buffers-from-file (&optional frame)
   "Get buffers from file in FRAME."

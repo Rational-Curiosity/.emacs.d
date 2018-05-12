@@ -38,6 +38,7 @@
              '("⚐" 'face 'mode-line-error))
 
 (setq projectile-mode-line " Projectile"
+      auto-revert-mode-text "Ar"
       rm-blacklist
       '(" Server" " hl-p" " WK" " Fly" " company" " Helm" " Undo-Tree"
         " Abbrev" " yas" " ws" " Projectile" " drag" " ||" " Spnxd"
