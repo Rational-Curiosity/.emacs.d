@@ -145,7 +145,9 @@ Otherwise return a list of files which regex match."
        (condition-case nil
            (base64-encode-string (aref (symbol-function function) 1) t)
          (error
-          (user-error "Missing function bytecode, maybe %s is a built-in function in 'C source code' or not bytecompiled" function)))
+          (unless inhibit-log
+            (message-color #("WARN missing function bytecode, maybe %s is a built-in function in 'C source code' or not bytecompiled"
+                             0 4 (face warning)) function))))
        bytecode-base64)
       t
     (unless inhibit-log
