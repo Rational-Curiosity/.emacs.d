@@ -17,6 +17,7 @@
 ;;; Code:
 
 (message "Importing yasnippet-config")
+(require 'yasnippet-snippets)
 (setq yas-snippet-dirs
       (list (expand-file-name "~/.emacs.d/cache/snippets")))
 
@@ -52,6 +53,7 @@ MAKE-FIELDS - t or nil"
           indent)
        "\n"))))
 
+(yasnippet-snippets-initialize)
 (yas-reload-all)
 
 (provide 'yasnippet-config)
