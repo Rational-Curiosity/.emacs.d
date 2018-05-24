@@ -119,6 +119,16 @@
         (setq pos 0))
       (cl-decf pos))))
 
+(defun my-org-not-abbrev-p (id action context)
+  "Check whether current line isn't an abbrev when ID ACTION CONTEXT."
+  (if (eq context 'code)
+      (save-excursion
+        (beginning-of-line)
+        (if (looking-at "[\t ]*<$")
+            nil
+          t))
+    nil))
+
 (sp-pair "<" ">" :actions '(wrap insert autoskip))
 ;;(sp-local-pair 'c++-mode "<" nil :when '(sp-in-comment-p))
 (sp-local-pair 'shell-script-mode "<" nil :post-handlers '(("[d1]" "SPC")))
@@ -126,13 +136,15 @@
 (sp-local-pair 'common-lisp-mode "'" nil :actions nil)
 (sp-local-pair 'lisp-interaction-mode "'" nil :actions nil)
 (sp-local-pair 'emacs-lisp-mode "'" nil :actions nil)
+(sp-with-modes '(org-mode)
+  (sp-local-pair "<" nil :post-handlers '(("[d1]" "<") ("[d1]" "SPC"))
+                 :when '(my-org-not-abbrev-p)))
 (sp-with-modes '(c-mode c++-mode)
   (sp-local-pair "{" nil
                  :post-handlers '(:add my-open-block-c-mode))
   (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC") ("* ||\n[i]" "RET")))
   (sp-local-pair "<" nil :post-handlers '(("[d1]" "<") ("[d1]" "SPC"))
-                 :when '(my-c-include-line-p my-pre-text-code-p)
-                 ))
+                 :when '(my-c-include-line-p my-pre-text-code-p)))
 
 (defhydra hydra-sp-change (:foreign-keys run)
   "SP"
