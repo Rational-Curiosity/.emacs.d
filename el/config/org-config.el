@@ -875,7 +875,7 @@ You can also customize this for each buffer, using something like
         ;;
         (let ((effort-list (cl-loop for minutes in (org-entry-is-todo-get-subtree entry-pos "EFFORT")
                                     when minutes
-                                    collect (org-duration-string-to-minutes minutes)))
+                                    collect (org-duration-to-minutes minutes)))
               (priority (org-entry-get entry-pos "PRIORITY"))
               (tags (mapconcat 'identity
                                (sort (split-string
