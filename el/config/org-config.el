@@ -19,7 +19,7 @@
 (message "Importing org-config")
 ;; Corrector ortográfico
 (add-hook 'org-mode-hook 'flyspell-mode)
-(plist-put org-format-latex-options :scale 1.)
+;; (plist-put org-format-latex-options :scale 1.) ;; default
 
 ;;;;;;;;;;;
 ;; Faces ;;
@@ -369,15 +369,47 @@
 ;; (add-to-list 'org-latex-packages-alist
 ;; '("AUTO" "babel" nil))
 (require 'ox-latex)
-(setq org-latex-image-default-width nil
+(setq org-latex-listings 'minted ;; xor 'listings
+      org-latex-listings-options
+      '(("basicstyle" "\\small\\ttfamily")
+        ("breaklines" "true")
+        ("captionpos" "b")
+        ("extendedchars" "true")
+        ("tabsize" "4")
+        ("columns" "fixed")
+        ("keepspaces" "true")
+        ("showstringspaces" "false")
+        ("breaklines" "true")
+        ("frame" "tb")
+        ("framerule" "0.5pt")
+        ("framexleftmargin" "0.5em")
+        ("framexrightmargin" "0.5em")
+        ("xleftmargin" "0.5em")
+        ("xrightmargin" "0.5em")
+        ("mathescape" "false")
+        ("escapeinside" "{\\%*}{*)}")
+        ("showspaces" "false")
+        ("showstringspaces" "false")
+        ("numbers" "none")
+        ("numberstyle" "\\tiny\\ttfamily")
+        ("commentstyle" "\\color{red}")
+        ("keywordstyle" "\\color{blue}\\bfseries")
+        ("stringstyle" "\\color{green}"))
+      org-latex-pdf-process
+      '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
       org-latex-packages-alist
-'(("verbose,a4paper,headheight=5mm,footskip=7mm,left=19mm,right=16mm,top=37mm,bottom=23mm" "geometry" nil)
-  ("AUTO" "babel" nil)
-  ("" "color" nil)
-  ("" "multirow" nil)
-  ("" "multicol" nil)
-  ("" "titlesec" nil)
-  "
+      '(("verbose,a4paper,headheight=5mm,footskip=7mm,left=19mm,right=16mm,top=37mm,bottom=23mm" "geometry" nil)
+        ("AUTO" "babel" nil)
+        ("" "multirow" nil)
+        ("" "multicol" nil)
+        ("" "titlesec" nil)
+        ;; ("" "listings")
+        ;; xor
+        ("" "minted")
+        ("" "color" nil)
+        "
 \\makeatletter
 \\@ifpackageloaded{titlesec}{
 \\definecolor{partcolor}{rgb}{0,0,0.1}
@@ -391,9 +423,16 @@
 \\titleformat{\\subsubsection}[hang]{\\normalsize\\it}{\\llap{\\bf\\color{blue}\\thesubsubsection.}}{4pt}{\\color{ssstcolor}}
 }{\\relax}
 \\makeatother
-"))
+")
+      ;; org-latex-image-default-width nil
+      )
 ;; ]
 
+
+(when (and (eq org-latex-listings 'minted)
+           (not (executable-find "pygmentize")))
+  (message-color #("WARN pygmentize not found, add to path or run 'apt install python-pygments'."
+                       0 4 (face warning))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to beamer presentation ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
