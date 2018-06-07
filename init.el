@@ -138,6 +138,10 @@
   (let ((default-directory "~/.emacs.d/el"))
     (normal-top-level-add-subdirs-to-load-path))
   (require 'config-lib))
+;; [ bugs
+(require 'bytecomp-bug)
+;; ]
+
 
 ;;(modify-frame-parameters nil '((wait-for-wm . nil)))
 (custom-set-variables
