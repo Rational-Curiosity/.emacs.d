@@ -38,7 +38,7 @@
 ;; =================================
 ;; PDB configuration
 ;; =================================
-  (setq gud-pdb-command-name "pdb3"))
+  (setq gud-pdb-command-name "python3 -m pdb"))
 ;; =================================
 ;; GDB configuration
 ;; =================================
