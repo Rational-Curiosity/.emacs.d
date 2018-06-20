@@ -1,13 +1,14 @@
 (when (bug-check-function-bytecode
        'byte-compile-cond-jump-table
        "wwEhiUBAAUBBAkFAxImJiYmJiQYHhfcABgdHxVU/hfcAxscGC8jJyssGDp6DNgAGDUdTgjkABg1HJgayB8wgsgLMILIDzQYJIYjOBgchiM/QIYgIGNHSAyKIKcsGCJ6DcQDLBgieQUCyAdMGCMUisggGB4mD0gCJQMwgsgaJQLIIiUFAsgfUBgYhiNUGCAYHBgsjiAiJARgGCISlANbJCSKIgqsA1wYJCSKICAFVhLwACAFUVYS8ANjZIYjR0gYIIogGBkHEoYgptgIBQbaCgnMAiNQCIYiJg+kAidcBCSKIxIkRtgKC7QDaxCGI1AMhiAYGCkKJEoc=")
-  (defun byte-compile-cond-jump-table-info (clauses default-sym)
+  (defconst byte-compile--default-val (cons nil nil) "A unique object.")
+
+  (defun byte-compile-cond-jump-table-info (clauses)
     "If CLAUSES is a `cond' form where:
 The condition for each clause is of the form (TEST VAR VALUE).
 VAR is a variable.
 TEST and VAR are the same throughout all conditions.
 VALUE satisfies `macroexp-const-p'.
-
 Return a list of the form ((TEST . VAR)  ((VALUE BODY) ...))"
     (let ((cases '())
           (ok t)
@@ -33,15 +34,16 @@ Return a list of the form ((TEST . VAR)  ((VALUE BODY) ...))"
                           (not (assq obj2 cases)))
                      (push (list (if (consp obj2) (eval obj2) obj2) body) cases)
                    (if (and (macroexp-const-p condition) condition)
-                       (progn (push (list default-sym (or body `(,condition))) cases)
+                       (progn (push (list byte-compile--default-val
+                                          (or body `(,condition)))
+                                    cases)
                               (throw 'break t))
                      (setq ok nil)
                      (throw 'break nil))))))
            (list (cons prev-test prev-var) (nreverse cases)))))
 
   (defun byte-compile-cond-jump-table (clauses)
-    (let* ((default-sym (gensym "byte-compile--cond-default-sym"))
-           (table-info (byte-compile-cond-jump-table-info clauses default-sym))
+    (let* ((table-info (byte-compile-cond-jump-table-info clauses))
            (test (caar table-info))
            (var (cdar table-info))
            (cases (cadr table-info))
@@ -49,11 +51,12 @@ Return a list of the form ((TEST . VAR)  ((VALUE BODY) ...))"
       (when (and cases (not (= (length cases) 1)))
         ;; TODO: Once :linear-search is implemented for `make-hash-table'
         ;; set it to `t' for cond forms with a small number of cases.
-        (setq jump-table (make-hash-table :test test
-                                          :purecopy t
-                                          :size (if (assq default-sym cases)
-                                                    (1- (length cases))
-                                                  (length cases)))
+        (setq jump-table (make-hash-table
+                          :test test
+                          :purecopy t
+                          :size (if (assq byte-compile--default-val cases)
+                                    (1- (length cases))
+                                  (length cases)))
               default-tag (byte-compile-make-tag)
               donetag (byte-compile-make-tag))
         ;; The structure of byte-switch code:
@@ -85,9 +88,10 @@ Return a list of the form ((TEST . VAR)  ((VALUE BODY) ...))"
         (let ((byte-compile-depth byte-compile-depth))
           (byte-compile-goto 'byte-goto default-tag))
 
-        (when (assq default-sym cases)
-          (setq default-case (cadr (assq default-sym cases))
-                cases (butlast cases 1)))
+        (let ((default-match (assq byte-compile--default-val cases)))
+          (when default-match
+            (setq default-case (cadr default-match)
+                  cases (butlast cases))))
 
         (dolist (case cases)
           (setq tag (byte-compile-make-tag)
