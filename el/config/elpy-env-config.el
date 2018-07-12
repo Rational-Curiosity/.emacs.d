@@ -115,6 +115,7 @@
 (elpy-modules-global-init)
 
 (define-key elpy-mode-map (kbd "M-TAB") nil)
+(define-key elpy-mode-map (kbd "M-*") nil)
 (define-key elpy-mode-map (kbd "<M-down>") nil)
 (define-key elpy-mode-map (kbd "<M-up>") nil)
 (define-key elpy-mode-map (kbd "<C-left>") nil)
