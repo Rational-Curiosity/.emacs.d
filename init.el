@@ -151,7 +151,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (auctex company-auctex projectile org org-plus-contrib pyvenv smart-mode-line smartparens which-key yasnippet-snippets csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg org-super-agenda company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck helm helm-core irony elpy highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go srefactor free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags transpose-frame string-inflection smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
+    (yasnippet-snippets srefactor auctex company-auctex projectile org org-plus-contrib pyvenv smart-mode-line smartparens which-key csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg org-super-agenda company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree yasnippet vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst plantuml-mode stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck helm helm-core irony elpy highlight-indentation find-file-in-project ivy company-go dart-mode go-mode ob-dart ob-go free-keys rtags company-irony-c-headers company-irony helm-flyspell helm-gtags transpose-frame string-inflection smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors minimap hydra htmlize helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -400,7 +400,8 @@
 (with-eval-after-load 'plantuml-mode
   (require 'plantuml-config))
 
-(defvar org-replace-disputed-keys t)
+(defcustom org-replace-disputed-keys t
+  "")
 (with-eval-after-load 'org
   (require 'org-config)
   (require 'org-super-agenda-config)

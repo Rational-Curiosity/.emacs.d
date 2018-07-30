@@ -41,6 +41,7 @@
 (require 'python)
 (require 'python-config)
 (require 'elpy)
+(require 'elpy-bug)
 (setcar (cdr (assq 'elpy-mode minor-mode-alist)) "Ep")
 
 (defun elpy-version ()
