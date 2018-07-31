@@ -29,6 +29,10 @@
                "^=" "|="))
 (add-to-list 'rotate-text-symbols
              '("static_cast" "dynamic_cast" "const_cast" "reinterpret_cast"))
+(add-to-list 'rotate-text-symbols
+             '("false" "true"))
+(add-to-list 'rotate-text-symbols
+             '("None" "False" "True"))
 
 
 (bind-keys
