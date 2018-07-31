@@ -74,6 +74,14 @@
         (inhibit-message t))
     (apply orig-fun args)))
 
+;; Inhibit messages on echo
+;; Usage:
+;; (advice-add '<orig-fun> :around #'message-inhibit-advice)
+(defun message-inhibit-advice (orig-fun &rest args)
+  "Inhibit message and eval ORIG-FUN with ARGS."
+  (let ((inhibit-message t))
+    (apply orig-fun args)))
+
 ;; Truncate messages
 ;; Usage:
 ;; (advice-add '<orig-fun> :around #'message-truncate-advice)

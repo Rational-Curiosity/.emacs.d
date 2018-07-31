@@ -575,6 +575,12 @@ there's a region, all lines that region covers will be duplicated."
 
 (require 'string-inflection)
 
+
+;;;;;;;;;;;;
+;; Prompt ;;
+;;;;;;;;;;;;
+(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
