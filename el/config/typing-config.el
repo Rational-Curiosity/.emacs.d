@@ -290,26 +290,31 @@ prompt the user for a coding system."
 ;; $(sudo fc-cache -rfv)
 (eval-and-when-daemon frame
   (with-selected-frame frame
-    (if (member "Iosevka Term" (font-family-list))
-        (progn
-          (set-face-attribute 'default nil
-                              :family "Iosevka Term"
-                              :height 100
-                              :foundry "unknown"
-                              :weight 'light
-                              :slant 'normal
-                              :width 'normal)
-          (when (member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-                        (font-family-list))
-            (set-fontset-font "fontset-default" '(#x2190 . #x230F)
-                              (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-            (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                              (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))))
+    (cond
+     ((member "Iosevka Term" (font-family-list)) ;; Iosevka case
+      (set-face-attribute 'default nil
+                          :family "Iosevka Term"
+                          :height 100
+                          :foundry "unknown"
+                          :weight 'light
+                          :slant 'normal
+                          :width 'normal))
+     ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+      (set-face-attribute 'default nil
+                          :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
+                          :height 100))
+     (t ;; default case
       (set-face-attribute 'default nil
                           :height 100
                           :weight 'light
                           :slant 'normal
-                          :width 'normal))
+                          :width 'normal)))
+    (when (member "DejaVu Sans Mono monospacified for Iosevka Term Light"
+                       (font-family-list))
+           (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                             (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
+           (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                             (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light")))
     ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
     ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
     ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
