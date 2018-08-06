@@ -56,9 +56,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Machine operating system ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(when (eq system-type 'cygwin)
+(cond
+ ((eq system-type 'windows-nt)
+  (defun path-style-linux-to-windows (filename)
+    (if (string-match "^/" filename)
+        (concat "c:/cygwin64" filename)
+      filename))
+  (defun figlet-get-font-dir-advice (orig-fun &rest args)
+    (path-style-linux-to-windows (apply orig-fun args)))
+  (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice))
+ ((eq system-type 'cygwin)
   (add-to-list 'recentf-exclude "\\\\")
-  (setq cygwin-root-path (if (executable-find "cygpath")
+  (setq recentf-save-file "recentf_cygwin"
+        cygwin-root-path (if (executable-find "cygpath")
                              (substring (shell-command-to-string "cygpath -m /") 0 -1)
                            "/cygwin64"))
   ;; coding
@@ -106,8 +116,8 @@
                        cygwin-root-path
                        command) args))
      ((or
-         (string-match "^java" command)
-         (string-match "^soffice" command))
+       (string-match "^java" command)
+       (string-match "^soffice" command))
       (apply orig-fun (replace-regexp-in-string
                        "\\([^<>] +\"?\\)/"
                        (concat "\\1" cygwin-root-path "/")
@@ -143,7 +153,7 @@
     (path-style-windows-to-linux (apply orig-fun args)))
   (require 'ffap)
   (advice-add 'ffap-string-at-point :around #'ffap-string-at-point-advice)
-  (global-set-key (kbd "C-v") 'yank))
+  (global-set-key (kbd "C-v") 'yank)))
 
 
 (provide 'machine-config)

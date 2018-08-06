@@ -58,9 +58,13 @@
 ;;                 mode-line-misc-info
 ;;                 mode-line-end-spaces))
 (require 'smart-mode-line)
-(setq sml/no-confirm-load-theme t
+(setq line-number-display-limit nil
+      line-number-display-limit-width 2000
+      sml/no-confirm-load-theme t
+      sml/shorten-directory t
       sml/name-width '(17 . 55)
-      sml/mode-width 'right
+      sml/shorten-modes nil
+      sml/mode-width 'full
       ;; Ruta completa en la barra de título
       frame-title-format
       '((:eval (if buffer-file-name

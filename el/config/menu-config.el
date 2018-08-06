@@ -1,3 +1,12 @@
+;;; menu-config.el --- menu Configurations
+
+;;; Commentary:
+
+;; Usage:
+;; (require 'menu-config)
+
+;;; Code:
+
 (require 'recentf)
 (setq recentf-max-saved-items 500
       recentf-max-menu-items 30
@@ -14,3 +23,4 @@
 
 
 (provide 'menu-config)
+;;; menu-config.el ends here

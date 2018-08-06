@@ -16,7 +16,11 @@
 (require 'helm-utils)
 (require 'helm-bug)
 
-(setq helm-display-header-line nil
+(setq helm-input-idle-delay 1.0 ;; fix windows freeze
+      helm-cycle-resume-delay 2.0
+      helm-follow-input-idle-delay 1.0
+      ;; config
+      helm-display-header-line nil
       helm-split-window-inside-p t
       helm-move-to-line-cycle-in-source t
       helm-ff-file-name-history-use-recentf t

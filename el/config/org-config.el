@@ -1180,7 +1180,6 @@ SUFFIX - default .png"
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-
 (add-hook 'org-mode-hook '(lambda()
                             (set
                              (make-local-variable 'semantic-mode) nil)))

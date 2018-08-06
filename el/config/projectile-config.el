@@ -70,6 +70,9 @@
 (require 'projectile)
 ;;(require 'projectile-bug)
 
+;; before loading helm-projectile.el
+(defcustom helm-projectile-fuzzy-match nil
+  "")
 (require 'helm-projectile)
 ;; [ Sólo requerido para algunos ficheros
 ;;(projectile-global-mode)

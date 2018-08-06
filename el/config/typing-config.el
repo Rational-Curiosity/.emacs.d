@@ -299,6 +299,10 @@ prompt the user for a coding system."
                           :weight 'light
                           :slant 'normal
                           :width 'normal))
+     ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+      (set-face-attribute 'default nil
+                          :font "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
+                          :height 100))
      ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
       (set-face-attribute 'default nil
                           :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
@@ -309,12 +313,23 @@ prompt the user for a coding system."
                           :weight 'light
                           :slant 'normal
                           :width 'normal)))
-    (when (member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-                       (font-family-list))
-           (set-fontset-font "fontset-default" '(#x2190 . #x230F)
-                             (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-           (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                             (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light")))
+    (cond
+     ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
+              (font-family-list))
+      (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                        (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
+      (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                        (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light")))
+     ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+      (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                        (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
+      (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                        (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1")))
+     ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+      (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                        (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))
+      (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                        (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))))
     ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
     ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
     ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
