@@ -57,6 +57,9 @@
 ;; Machine operating system ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (cond
+ ;;;;;;;;;;;;;
+ ;; Windows ;;
+ ;;;;;;;;;;;;;
  ((eq system-type 'windows-nt)
   (defun path-style-linux-to-windows (filename)
     (if (string-match "^/" filename)
@@ -64,7 +67,17 @@
       filename))
   (defun figlet-get-font-dir-advice (orig-fun &rest args)
     (path-style-linux-to-windows (apply orig-fun args)))
-  (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice))
+  (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice)
+  (with-eval-after-load 'ede-config
+    (defun helm-ag-case()
+      (interactive)
+      (call-interactively 'helm-ag))
+    (defun helm-grep-case()
+      (inte)
+      (call-interactively 'helm-grep))))
+ ;;;;;;;;;;;;
+ ;; Cygwin ;;
+ ;;;;;;;;;;;;
  ((eq system-type 'cygwin)
   (add-to-list 'recentf-exclude "\\\\")
   (setq recentf-save-file "recentf_cygwin"

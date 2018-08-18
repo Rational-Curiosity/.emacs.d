@@ -64,12 +64,28 @@
       sml/shorten-directory t
       sml/name-width '(17 . 55)
       sml/shorten-modes nil
-      sml/mode-width 'full
+      sml/mode-width 'right
       ;; Ruta completa en la barra de título
       frame-title-format
       '((:eval (if buffer-file-name
                    (sml/replacer  buffer-file-name)
                  "%b"))))
+
+;; [ Cycle mode justification
+(require 'ring)
+(defvar sml-mode-justification-ring nil)
+(let ((justifications '(-24 -21 -18 -15 -12 -9 -6 -3 0)))
+  (setq sml-mode-justification-ring (make-ring (length justifications)))
+  (dolist (elem justifications) (ring-insert sml-mode-justification-ring elem)))
+
+(defun sml-cycle-mode-justification ()
+  "Cycle smart mode line mode justifications in ring."
+  (interactive)
+  (let ((justification (ring-ref sml-mode-justification-ring -1)))
+    (ring-insert sml-mode-justification-ring justification)
+    (set 'sml/extra-filler justification)
+    (message "sml/extra-filler %s" justification)))
+;; ]
 
 
 ;; example of variable format
@@ -90,6 +106,10 @@
 ;;           (lambda (frame)
 ;;             (face-remap-add-relative
 ;;              'mode-line '((:background "dim gray") mode-line))))
+
+(bind-keys
+ ("<f7> j" . sml-cycle-mode-justification))
+
 
 
 (provide 'mode-line-config)

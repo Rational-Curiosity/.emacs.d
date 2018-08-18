@@ -16,9 +16,9 @@
 (require 'helm-utils)
 (require 'helm-bug)
 
-(setq helm-input-idle-delay 1.0 ;; fix windows freeze
-      helm-cycle-resume-delay 2.0
-      helm-follow-input-idle-delay 1.0
+(setq helm-input-idle-delay 0.01
+      helm-cycle-resume-delay 1.0
+      ;;helm-follow-input-idle-delay 1.0
       ;; config
       helm-display-header-line nil
       helm-split-window-inside-p t
