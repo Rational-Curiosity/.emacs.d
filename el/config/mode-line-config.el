@@ -74,7 +74,7 @@
 ;; [ Cycle mode justification
 (require 'ring)
 (defvar sml-mode-justification-ring nil)
-(let ((justifications '(-24 -21 -18 -15 -12 -9 -6 -3 0)))
+(let ((justifications '(-27 -24 -21 -18 -15 -12 -9 -6 -3 0)))
   (setq sml-mode-justification-ring (make-ring (length justifications)))
   (dolist (elem justifications) (ring-insert sml-mode-justification-ring elem)))
 

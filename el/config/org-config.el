@@ -325,7 +325,7 @@
       ;; Convert to other formats
       org-odt-convert-processes
       `(("WINWORD"
-         ,(concat "WINWORD /q \"$/%i\" /mFormatAll"))
+         ,(concat "WINWORD /q \"%i\" /mFormatAll"))
         ("LibreOffice"
          "soffice --headless --convert-to %f%x --outdir %d %i")
         ("unoconv"
@@ -340,8 +340,11 @@
   (interactive)
   (setq org-odt-convert-processes
         `(("WINWORD"
-           ,(concat "WINWORD /q \"$/%i\" /m" (or (car (org-element-find-all "MACRO"))
-                                       "FormatAll")))
+           ,(concat "WINWORD /q \""
+                    (concat (file-name-sans-extension buffer-file-name) ".odt")
+                    "\" /m"
+                    (or (car (org-element-find-all "MACRO"))
+                        "FormatAll")))
           ("LibreOffice"
            "soffice --headless --convert-to %f%x --outdir %d %i")
           ("unoconv"

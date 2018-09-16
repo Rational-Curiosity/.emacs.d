@@ -57,10 +57,17 @@
 ;; Machine operating system ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (cond
+ ;;;;;;;;;;;
+ ;; Linux ;;
+ ;;;;;;;;;;;
+ ((eq system-type 'gnu/linux)
+  ;; Python
+  (setq python-shell-interpreter "python3"))
  ;;;;;;;;;;;;;
  ;; Windows ;;
  ;;;;;;;;;;;;;
  ((eq system-type 'windows-nt)
+  ;; Paths
   (defun path-style-linux-to-windows (filename)
     (if (string-match "^/" filename)
         (concat "c:/cygwin64" filename)
@@ -68,13 +75,17 @@
   (defun figlet-get-font-dir-advice (orig-fun &rest args)
     (path-style-linux-to-windows (apply orig-fun args)))
   (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice)
+  ;; ag
   (with-eval-after-load 'ede-config
-    (defun helm-ag-case()
+    (defun helm-ag-case ()
+      "Detect whether we are inside a project and run according."
       (interactive)
-      (call-interactively 'helm-ag))
-    (defun helm-grep-case()
-      (inte)
-      (call-interactively 'helm-grep))))
+      (cond
+       ((and (featurep 'projectile) (not (string-equal (projectile-project-name) "-")))
+        (helm-ag (projectile-project-root)))
+       (t (call-interactively 'helm-ag)))))
+  ;; Python
+  (setq python-shell-interpreter "python"))
  ;;;;;;;;;;;;
  ;; Cygwin ;;
  ;;;;;;;;;;;;
@@ -125,8 +136,8 @@
     (cond
      ((string-match "^WINWORD" command)
       (apply orig-fun (replace-regexp-in-string
-                       "$/"
-                       cygwin-root-path
+                       "/q \""
+                       (concat "/q \"" cygwin-root-path)
                        command) args))
      ((or
        (string-match "^java" command)
@@ -166,7 +177,9 @@
     (path-style-windows-to-linux (apply orig-fun args)))
   (require 'ffap)
   (advice-add 'ffap-string-at-point :around #'ffap-string-at-point-advice)
-  (global-set-key (kbd "C-v") 'yank)))
+  (global-set-key (kbd "C-v") 'yank)
+  ;; Python
+  (setq python-shell-interpreter "python3")))
 
 
 (provide 'machine-config)

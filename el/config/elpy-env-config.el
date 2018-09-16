@@ -45,13 +45,16 @@
 (setcar (cdr (assq 'elpy-mode minor-mode-alist)) "Ep")
 
 (defun elpy-version ()
-  (setq elpy-syntax-check-command python-syntax-check-command
-        python-check-command elpy-syntax-check-command)
-  (cond
-   ((or
-     (string-equal python-shell-interpreter "ipython")
-     (string-equal python-shell-interpreter "ipython3"))
-    (elpy-use-ipython python-shell-interpreter))))
+  (when python-syntax-check-command
+    (setq elpy-syntax-check-command python-syntax-check-command
+          python-check-command elpy-syntax-check-command))
+  ;; Deprecated
+  ;; (cond
+  ;;  ((or
+  ;;    (string-equal python-shell-interpreter "ipython")
+  ;;    (string-equal python-shell-interpreter "ipython3"))
+  ;;   (elpy-use-ipython python-shell-interpreter)))
+  )
 (elpy-version)
 (advice-add 'toggle-python-version :after #'elpy-version)
 

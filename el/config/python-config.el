@@ -21,8 +21,11 @@
 (require 'flycheck)
 
 (setq py-custom-temp-directory temporary-file-directory
-      python-shell-interpreter "python3"
-      python-shell-interpreter-args "-i"
+      python-shell-interpreter-args (cond
+                                     ((or (string-equal python-shell-interpreter "ipython")
+                                          (string-equal python-shell-interpreter "ipython3"))
+                                      "-i --simple-prompt")
+                                     (t "-i"))
       python-indent-guess-indent-offset nil)
 
 (defvar python-command-version (cond
