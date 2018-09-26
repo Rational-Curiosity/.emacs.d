@@ -85,7 +85,12 @@
         (helm-ag (projectile-project-root)))
        (t (call-interactively 'helm-ag)))))
   ;; Python
-  (setq python-shell-interpreter "python"))
+  (setq python-shell-interpreter "python")
+  ;; UTF 8
+  ;;(modify-coding-system-alist 'file "" 'utf-8)
+  ;;(modify-coding-system-alist 'process "" 'utf-8)
+  ;; Bugs
+  (require 'emacs-win-bug))
  ;;;;;;;;;;;;
  ;; Cygwin ;;
  ;;;;;;;;;;;;

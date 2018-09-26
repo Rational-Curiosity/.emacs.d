@@ -38,7 +38,11 @@
 ;; =================================
 ;; PDB configuration
 ;; =================================
-  (setq gud-pdb-command-name "python3 -m pdb"))
+  (setq gud-pdb-command-name
+        (if (or (string-equal python-shell-interpreter "python3")
+                (string-equal python-shell-interpreter "ipython3"))
+            "python3 -m pdb"
+          "python -m pdb")))
 ;; =================================
 ;; GDB configuration
 ;; =================================

@@ -808,7 +808,7 @@ You can also customize this for each buffer, using something like
       calendar-week-start-day 1
       calendar-day-name-array     ["domingo" "lunes" "martes"
                                    "miércoles" "jueves" "viernes" "sábado"]
-      calendar-day-abbrev-array   ["dom" "lun" "mar" "míe" "jue" "vie" "sáb"]
+      calendar-day-abbrev-array   ["dom" "lun" "mar" "mié" "jue" "vie" "sáb"]
       calendar-day-header-array   ["D" "L" "M" "X" "J" "V" "S"]
       calendar-month-name-array   ["Enero" "Febrero" "Marzo" "Abril" "Mayo"
                                    "Junio" "Julio" "Agosto" "Septiembre"

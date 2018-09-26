@@ -45,7 +45,7 @@
 ;; ]
 ;; Java autocomplete
 ;;(require 'semantic/db-javap)
-;;(require 'semantic-bug)
+(require 'semantic-bug)
 (require 'semantic-parse-dir)
 
 ;;(setq-default semantic-symref-tool "grep")
