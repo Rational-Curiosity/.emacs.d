@@ -1,4 +1,4 @@
-;;; ediff-config.el --- Configure ediff
+;;; diff-config.el --- Configure diff tools
 
 ;;; Commentary:
 
@@ -26,7 +26,9 @@
 (setq ediff-window-setup-function 'ediff-setup-windows-plain
       ediff-split-window-function 'split-window-horizontally
       ediff-diff-ok-lines-regexp
-      "^\\([0-9,]+[acd][0-9,]+?$\\|[<>] \\|---\\|.*Warning *:\\|.*No +newline\\|.*missing +newline\\|.*No +hay +ningún +carácter +de +nueva +línea +al +final +del +fichero\\|^?$\\)")
+      "^\\([0-9,]+[acd][0-9,]+
+?$\\|[<>] \\|---\\|.*Warning *:\\|.*No +newline\\|.*missing +newline\\|.*No +hay +ningún +carácter +de +nueva +línea +al +final +del +fichero\\|^
+?$\\)")
 
 (defun diff-revert-buffer-with-file (&optional arg)
   "Compare the current modified buffer with the saved version.
@@ -40,11 +42,18 @@ ARG - `C-u' differ with prompted file.
     (let ((diff-switches "-u")) ;; unified diff
       (diff-buffer-with-file (current-buffer))))
    (t
-    (ediff-current-file))))
+    (vdiff-current-file))))
+
+(require 'vdiff)
 
 (bind-keys
- ("C-c D"     . diff-revert-buffer-with-file))
+ ("C-c d R"     . diff-revert-buffer-with-file)
+ ("C-c d m"     . vdiff-hydra/body)
+ ("C-c d 3 f"   . vdiff-files3)
+ ("C-c d f"     . vdiff-files)
+ ("C-c d 3 b"   . vdiff-buffers3)
+ ("C-c d b"     . vdiff-buffers))
 
 
-(provide 'ediff-config)
-;;; ediff-config.el ends here
+(provide 'diff-config)
+;;; diff-config.el ends here

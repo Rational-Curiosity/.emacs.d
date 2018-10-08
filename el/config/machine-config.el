@@ -67,6 +67,9 @@
  ;; Windows ;;
  ;;;;;;;;;;;;;
  ((eq system-type 'windows-nt)
+  ;; Clean environment PATH
+  (setenv "PATH" (mapconcat 'identity (remove-if (lambda (s) (string-match-p "\\\\MKS\\\\" s)) (delete "" (split-string (getenv "PATH") ";"))) ";"))
+  (set 'exec-path (delete "" (split-string (getenv "PATH") ";")))
   ;; Paths
   (defun path-style-linux-to-windows (filename)
     (if (string-match "^/" filename)

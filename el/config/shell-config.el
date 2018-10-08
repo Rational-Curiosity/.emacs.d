@@ -49,10 +49,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Variables de entorno ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;(set 'exec-path (getenv "PATH"))
-;; Asigna el valor a variables necesarias
-;; al usar la shell de emacs.
-;;(setenv "PATH" (getenv "PATH"))
 ;; Locales
 (setenv "LANG" "es_ES.UTF-8")
 (setenv "LC_ALL" "")
