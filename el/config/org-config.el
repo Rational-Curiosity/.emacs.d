@@ -413,11 +413,12 @@
         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
       org-latex-packages-alist
-      '(("verbose,a4paper,headheight=5mm,footskip=7mm,left=19mm,right=16mm,top=37mm,bottom=23mm" "geometry" nil)
+      '(
+        ;; ("verbose,a4paper,headheight=5mm,footskip=7mm,left=19mm,right=16mm,top=37mm,bottom=23mm" "geometry" nil)  ;; problems with beamer class
         ("AUTO" "babel" nil)
         ("" "multirow" nil)
         ("" "multicol" nil)
-        ("" "titlesec" nil)
+        ;; ("" "titlesec" nil)  ;; problems with beamer class
         ;; ("" "listings")
         ;; xor
         ("" "minted")
