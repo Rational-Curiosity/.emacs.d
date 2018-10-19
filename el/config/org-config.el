@@ -408,6 +408,8 @@
         ("commentstyle" "\\color{red}")
         ("keywordstyle" "\\color{blue}\\bfseries")
         ("stringstyle" "\\color{green}"))
+      org-latex-minted-options
+      '(("bgcolor" "blockbg"))
       org-latex-pdf-process
       '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
@@ -425,6 +427,7 @@
         ("" "color" nil)
         "
 \\makeatletter
+\\definecolor{blockbg}{rgb}{0.95,0.95,0.95}
 \\@ifpackageloaded{titlesec}{
 \\definecolor{partcolor}{rgb}{0,0,0.1}
 \\definecolor{sectcolor}{rgb}{0,0,0.3}
@@ -439,6 +442,8 @@
 \\makeatother
 ")
       ;; org-latex-image-default-width nil
+      org-beamer-outline-frame-options "allowframebreaks=0.9"
+      org-beamer-frame-default-options "allowframebreaks=0.9"
       )
 ;; ]
 
@@ -451,7 +456,7 @@
 ;; Convert to beamer presentation ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'ox-beamer)
-
+(require 'ox-beamer-bug)
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to html ;;
 ;;;;;;;;;;;;;;;;;;;;;
