@@ -88,7 +88,13 @@
         (helm-ag (projectile-project-root)))
        (t (call-interactively 'helm-ag)))))
   ;; Python
-  (setq python-shell-interpreter "python")
+  (setq python-shell-interpreter (or (executable-find "c:/Python37/python.exe")
+                                     "python")
+        elpy-rpc-python-command (or (executable-find "py")
+                                    (executable-find "pythonw")
+                                    "python"))
+  (with-eval-after-load 'org-config
+    (setq org-babel-python-command python-shell-interpreter))
   ;; UTF 8
   ;;(modify-coding-system-alist 'file "" 'utf-8)
   ;;(modify-coding-system-alist 'process "" 'utf-8)

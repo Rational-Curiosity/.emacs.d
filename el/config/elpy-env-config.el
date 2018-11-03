@@ -58,7 +58,7 @@
 (elpy-version)
 (advice-add 'toggle-python-version :after #'elpy-version)
 
-(advice-add 'elpy-goto-definition :before #'push-mark)
+(advice-add 'elpy-goto-location :before #'push-mark)
 
 ;; [ backend rope insert parents always
 ;; (defun elpy-company-post-complete-parens (annotation name)
@@ -98,9 +98,9 @@
 ;; ]
 
 (setq elpy-rpc-ignored-buffer-size 300000
+      elpy-company-add-completion-from-shell t
       elpy-rpc-python-command python-command-version
-      elpy-rpc-backend "jedi" ;; "jedi" or "rope"
-      elpy-rpc-timeout 6
+      elpy-rpc-timeout 5
       elpy-company-post-completion-function #'elpy-company-post-complete-parens
       elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest")
       elpy-modules '(elpy-module-sane-defaults
