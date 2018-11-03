@@ -97,10 +97,11 @@
 ;; (add-hook 'window-size-change-functions 'variable-name-width)
 
 
-(sml/setup)
 ;; (setq sml/theme 'dark)
-;; (setq sml/theme 'light)
-;; (setq sml/theme 'respectful)
+(if (display-graphic-p)
+    (setq sml/theme 'respectful)
+  (setq sml/theme 'light))
+(sml/setup)
 
 ;; (add-hook 'after-make-frame-functions
 ;;           (lambda (frame)
