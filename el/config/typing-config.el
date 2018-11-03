@@ -226,15 +226,22 @@ prompt the user for a coding system."
 ;; ⇥ 8677  RIGHTWARDS ARROW TO BAR
 ;; ⇨ 8680  RIGHTWARDS WHITE ARROW
 (eval-and-when-daemon frame
-  (if (display-graphic-p frame)
+  (setq whitespace-display-mappings
+        '(;; (space-mark   ?\     [? ]) ;; use space not dot
+          (newline-mark 10   [8629 10] [36 10])
+          (tab-mark     9    [8676 32 8677 32] [92 9]))))
+(defun whitespace-toggle-marks ()
+  (interactive)
+  (if (bound-and-true-p whitespace-mode)
+      (call-interactively #'whitespace-mode))
+  (if (member '(newline-mark 10   [36 10]) whitespace-display-mappings)
       (setq whitespace-display-mappings
-            '(;; (space-mark   ?\     [? ]) ;; use space not dot
-              (newline-mark 10   [8629 10] [36 10])
+            '((newline-mark 10   [8629 10] [36 10])
               (tab-mark     9    [8676 32 8677 32] [92 9])))
     (setq whitespace-display-mappings
-          '(;; (space-mark   ?\     [? ])  ;; use space not dot
-            (newline-mark 10   [36 10])
-            (tab-mark     9    [46 95 46 32])))))
+          '((newline-mark 10   [36 10])
+            (tab-mark     9    [46 95 46 32]))))
+  (call-interactively #'whitespace-mode))
 
 (defmacro save-line (&rest body)
   `(let* ((origin (point))
@@ -288,52 +295,53 @@ prompt the user for a coding system."
 ;;;;;;;;;;
 ;; set a default font
 ;; $(sudo fc-cache -rfv)
-(eval-and-when-daemon frame
-  (with-selected-frame frame
-    (cond
-     ((member "Iosevka Term" (font-family-list)) ;; Iosevka case
-      (set-face-attribute 'default nil
-                          :family "Iosevka Term"
-                          :height 100
-                          :foundry "unknown"
-                          :weight 'light
-                          :slant 'normal
-                          :width 'normal))
-     ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
-      (set-face-attribute 'default nil
-                          :font "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                          :height 100))
-     ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
-      (set-face-attribute 'default nil
-                          :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                          :height 100))
-     (t ;; default case
-      (set-face-attribute 'default nil
-                          :height 100
-                          :weight 'light
-                          :slant 'normal
-                          :width 'normal)))
-    (cond
-     ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-              (font-family-list))
-      (set-fontset-font "fontset-default" '(#x2190 . #x230F)
-                        (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-      (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                        (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light")))
-     ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
-      (set-fontset-font "fontset-default" '(#x2190 . #x230F)
-                        (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
-      (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                        (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1")))
-     ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
-      (set-fontset-font "fontset-default" '(#x2190 . #x230F)
-                        (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))
-      (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                        (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))))
-    ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
-    ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
-    ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
-    ))
+(when (display-graphic-p)
+  (eval-and-when-daemon frame
+    (with-selected-frame frame
+      (cond
+       ((member "Iosevka Term" (font-family-list)) ;; Iosevka case
+        (set-face-attribute 'default nil
+                            :family "Iosevka Term"
+                            :height 100
+                            :foundry "unknown"
+                            :weight 'light
+                            :slant 'normal
+                            :width 'normal))
+       ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+        (set-face-attribute 'default nil
+                            :font "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
+                            :height 100))
+       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+        (set-face-attribute 'default nil
+                            :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
+                            :height 100))
+       (t ;; default case
+        (set-face-attribute 'default nil
+                            :height 100
+                            :weight 'light
+                            :slant 'normal
+                            :width 'normal)))
+      (cond
+       ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
+                (font-family-list))
+        (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                          (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
+        (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                          (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light")))
+       ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+        (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                          (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
+        (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                          (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1")))
+       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+        (set-fontset-font "fontset-default" '(#x2190 . #x230F)
+                          (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))
+        (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
+                          (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))))
+      ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
+      ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
+      ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
+      )))
 ;;;;;;;;;;;;
 ;; Moving ;;
 ;;;;;;;;;;;;
@@ -614,9 +622,12 @@ there's a region, all lines that region covers will be duplicated."
  ("<f7> c"              . toggle-buffer-coding-system)
  ("<f7> w"              . toggle-truncate-lines)
  ("<f7> l"              . whitespace-toggle-lines-tail)
+ ("<f7> RET"            . whitespace-toggle-marks)
+ ("M-s c b"             . backward-kill-word)
  ("C-<left>"            . left-word)
  ("C-<right>"           . right-word)
  ("S-<backspace>"       . backward-kill-sexp)
+ ("M-s s b"             . backward-kill-sexp)
  ("M-s DEL"             . backward-kill-sexp)
  ("S-<delete>"          . kill-sexp)
  ("M-s <deletechar>"    . kill-sexp)
@@ -624,7 +635,9 @@ there's a region, all lines that region covers will be duplicated."
  ("M-s *"               . duplicate-current-line-or-region)
  ("M-s SPC"             . set-mark-command)
  ("M-SPC"               . fixup-whitespace)
+ ("M-s a SPC"           . fixup-whitespace)
  ("C-S-<backspace>"     . kill-whole-line)
+ ("M-s c s b"     . kill-whole-line)
  ("M-s <insertchar>"    . kill-whole-line)
  ("<M-dead-circumflex>" . delete-indentation)
  ("S-<next>"            . scroll-other-window)
