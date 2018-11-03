@@ -18,6 +18,7 @@
 ;; (setq-default projectile-mode-line
 ;;  '(:eval (format "{%s}" (projectile-project-name))))
 
+(require 'ring)
 (require 'rich-minority)
 
 (defface mode-line-correct
@@ -72,7 +73,6 @@
                  "%b"))))
 
 ;; [ Cycle mode justification
-(require 'ring)
 (defvar sml-mode-justification-ring nil)
 (let ((justifications '(-27 -24 -21 -18 -15 -12 -9 -6 -3 0)))
   (setq sml-mode-justification-ring (make-ring (length justifications)))
@@ -97,11 +97,33 @@
 ;; (add-hook 'window-size-change-functions 'variable-name-width)
 
 
-;; (setq sml/theme 'dark)
-(if (display-graphic-p)
-    (setq sml/theme 'respectful)
-  (setq sml/theme 'light))
-(sml/setup)
+(defvar sml-theme-ring nil)
+(eval-and-when-daemon frame
+  (with-selected-frame frame
+    (if (display-graphic-p frame)
+        (progn
+          ;; Set theme
+          (setq sml/theme 'respectful)
+          ;; Fill ring
+          (let ((themes '(dark light respectful)))
+            (setq sml-theme-ring (make-ring (length themes)))
+            (dolist (elem themes) (ring-insert sml-theme-ring elem))))
+      ;; Set theme
+      (setq sml/theme 'light)
+      (let ((themes '(respectful dark light)))
+        (setq sml-theme-ring (make-ring (length themes)))
+        (dolist (elem themes) (ring-insert sml-theme-ring elem))))
+    (sml/setup)))
+
+;; [ Cycle themes
+(defun sml-cycle-themes ()
+  "Cycle mode line themes in ring."
+  (interactive)
+  (let ((theme (ring-ref sml-theme-ring -1)))
+    (ring-insert sml-theme-ring theme)
+    (sml/apply-theme theme :silent)
+    (message "%s mode line theme loaded" theme)))
+;; ]
 
 ;; (add-hook 'after-make-frame-functions
 ;;           (lambda (frame)
@@ -109,7 +131,8 @@
 ;;              'mode-line '((:background "dim gray") mode-line))))
 
 (bind-keys
- ("<f7> j" . sml-cycle-mode-justification))
+ ("<f6> m" . sml-cycle-themes)
+ ("<f6> j" . sml-cycle-mode-justification))
 
 
 

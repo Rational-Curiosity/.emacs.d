@@ -295,8 +295,8 @@ prompt the user for a coding system."
 ;;;;;;;;;;
 ;; set a default font
 ;; $(sudo fc-cache -rfv)
-(when (display-graphic-p)
-  (eval-and-when-daemon frame
+(eval-and-when-daemon frame
+  (when (display-graphic-p frame)
     (with-selected-frame frame
       (cond
        ((member "Iosevka Term" (font-family-list)) ;; Iosevka case

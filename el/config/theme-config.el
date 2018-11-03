@@ -34,7 +34,7 @@
 ;; ]
 
 (bind-keys
- ("<f7> b" . cycle-themes))
+ ("<f6> t" . cycle-themes))
 
 
 (provide 'theme-config)
