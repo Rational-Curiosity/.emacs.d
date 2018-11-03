@@ -161,7 +161,9 @@ Otherwise return a list of files which regex match."
     (unless inhibit-log
       (message-color #("WARN bug fixed for different version of %s see %s"
                        0 4 (face warning))
-                     (find-function-library function)
+                     (if (fboundp 'find-function-library)
+                         (find-function-library function)
+                       (symbol-name function))
                      load-file-name))
     nil))
 
