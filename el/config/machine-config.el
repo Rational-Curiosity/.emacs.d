@@ -67,6 +67,8 @@
  ;; Windows ;;
  ;;;;;;;;;;;;;
  ((eq system-type 'windows-nt)
+  ;; Coding system
+  (setq default-process-coding-system '(utf-8-dos . utf-8-dos))
   ;; Clean environment PATH
   (setenv "PATH" (mapconcat 'identity (remove-if (lambda (s) (string-match-p "\\\\MKS\\\\" s)) (delete "" (split-string (getenv "PATH") ";"))) ";"))
   (set 'exec-path (delete "" (split-string (getenv "PATH") ";")))
@@ -88,8 +90,7 @@
         (helm-ag (projectile-project-root)))
        (t (call-interactively 'helm-ag)))))
   ;; Python
-  (setq python-shell-interpreter (or (executable-find "c:/Python37/python.exe")
-                                     "python")
+  (setq python-shell-interpreter "python"
         elpy-rpc-python-command (or (executable-find "py")
                                     (executable-find "pythonw")
                                     "python"))
