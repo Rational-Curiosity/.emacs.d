@@ -58,7 +58,7 @@
 (elpy-version)
 (advice-add 'toggle-python-version :after #'elpy-version)
 
-(advice-add 'elpy-goto-location :before #'push-mark)
+;; (advice-add 'elpy-goto-location :before #'push-mark)
 
 ;; [ backend rope insert parents always
 ;; (defun elpy-company-post-complete-parens (annotation name)
@@ -104,17 +104,17 @@
       elpy-company-post-completion-function #'elpy-company-post-complete-parens
       elpy-test-discover-runner-command `(,elpy-rpc-python-command "-m" "unittest")
       elpy-modules '(elpy-module-sane-defaults
-                          elpy-module-company
-                          elpy-module-eldoc
-                          ;; [ flymake xor flycheck
-                          ;; elpy-module-flymake
-                          ;; ]
-                          ;; [ poor performance
-                          ;; elpy-module-highlight-indentation
-                          ;; ]
-                          elpy-module-pyvenv
-                          elpy-module-yasnippet
-                          elpy-module-django))
+                     elpy-module-company
+                     elpy-module-eldoc
+                     ;; [ flymake xor flycheck
+                     ;; elpy-module-flymake
+                     ;; ]
+                     ;; [ poor performance
+                     ;; elpy-module-highlight-indentation
+                     ;; ]
+                     elpy-module-pyvenv
+                     elpy-module-yasnippet
+                     elpy-module-django))
 
 (elpy-modules-global-init)
 
@@ -124,6 +124,10 @@
 (define-key elpy-mode-map (kbd "<M-up>") nil)
 (define-key elpy-mode-map (kbd "<C-left>") nil)
 (define-key elpy-mode-map (kbd "<C-right>") nil)
+(define-key elpy-mode-map (kbd "M-.") #'elpy-goto-definition)
+(define-key elpy-mode-map (kbd "C-c M-.") #'elpy-goto-definition-other-window)
+(define-key elpy-mode-map (kbd "M-,") #'elpy-goto-assignment)
+(define-key elpy-mode-map (kbd "C-c M-,") #'elpy-goto-assignment-other-window)
 (define-key elpy-mode-map (kbd "<C-down>") #'forward-paragraph)
 (define-key elpy-mode-map (kbd "<C-up>") #'backward-paragraph)
 (define-key elpy-mode-map [(control tab)] #'elpy-company-backend);python-mode-map
