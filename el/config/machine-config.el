@@ -68,7 +68,7 @@
  ;;;;;;;;;;;;;
  ((eq system-type 'windows-nt)
   ;; Coding system
-  (setq default-process-coding-system '(utf-8-dos . utf-8-dos))
+  (setq default-process-coding-system '(windows-1252-dos . windows-1252-dos))
   ;; Clean environment PATH
   (setenv "PATH" (mapconcat 'identity (remove-if (lambda (s) (string-match-p "\\\\MKS\\\\" s)) (delete "" (split-string (getenv "PATH") ";"))) ";"))
   (set 'exec-path (delete "" (split-string (getenv "PATH") ";")))
