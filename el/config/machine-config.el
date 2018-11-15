@@ -94,6 +94,11 @@
         elpy-rpc-python-command (or (executable-find "py")
                                     (executable-find "pythonw")
                                     "python"))
+  (with-eval-after-load 'elpy
+    (let ((time (* 15 60)))
+      (run-with-timer time time 'elpy-rpc-restart-max 7 "python.exe")
+      (message "Limiting python's interpreters every %i seconds" time)))
+  ;; Org
   (with-eval-after-load 'org-config
     (setq org-babel-python-command python-shell-interpreter))
   ;; UTF 8

@@ -201,6 +201,26 @@ When called from lisp, FUNCTION may also be a function object."
 ;; (let ((print-escape-newlines t))
 ;;   (prin1-to-string "..."))
 
+(defun process-get-attrs (pid attrs-process)
+  (let ((process-attrs (process-attributes pid)))
+    (cons `(pid . ,pid) (mapcar (lambda (attr) (assoc attr process-attrs)) attrs-process))))
+
+(defun processes-named (name attrs-processes)
+  (cl-remove-if-not (lambda (attrs-process) (string-equal name (cdr (assoc 'comm attrs-process)))) attrs-processes))
+
+(defun processes-children (pid attrs-processes)
+  (cl-remove-if-not (lambda (attrs-process) (= pid (cdr (assoc 'ppid attrs-process)))) attrs-processes))
+
+(defun processes-children-all (pid attrs-processes)
+  (let ((pids (list pid))
+        (children)
+        (processes))
+    (while pids
+      (setq children nil)
+      (mapc (lambda (pid) (setq children (append children (processes-children pid attrs-processes)))) pids)
+      (setq processes (append processes children))
+      (setq pids (mapcar (lambda (attrs-process) (cdr (assoc 'pid attrs-process))) children)))
+    processes))
 
 
 (provide 'config-lib)

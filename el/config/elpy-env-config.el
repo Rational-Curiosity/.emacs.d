@@ -58,6 +58,28 @@
 (elpy-version)
 (advice-add 'toggle-python-version :after #'elpy-version)
 
+
+(defun elpy-rpc-restart-max (num python)
+  ;; [ Limit python's processes of all emacs
+  ;; (let ((attrs-processes (mapcar (lambda (x) (process-get-attrs x '(ppid comm))) (list-system-processes)))
+  ;;       (emacs-processes))
+  ;;   (mapc (lambda (x) (setq emacs-processes (append emacs-processes (processes-children-all (cdr (assoc 'pid x)) attrs-processes)))) (processes-named "emacs.exe" attrs-processes))
+  ;;   (processes-named "python.exe" emacs-processes))
+  ;; ]
+  ;; [ Limit python's processes of every emacs
+  (let ((processes (length (processes-named
+                            python
+                            (processes-children-all
+                             (emacs-pid)
+                             (mapcar (lambda (x) (process-get-attrs x '(ppid comm)))
+                                     (list-system-processes)))))))
+   (when
+      (< num processes)
+    (elpy-rpc-restart)
+    (message "elpy-env-config: %i pythons found, rpc restarted at %s" processes (format-time-string "%Y-%m-%d %H:%M:%S.%N"))))
+  ;; ]
+  )
+
 ;; (advice-add 'elpy-goto-location :before #'push-mark)
 
 ;; [ backend rope insert parents always
