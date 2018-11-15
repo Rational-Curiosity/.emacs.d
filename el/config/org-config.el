@@ -32,14 +32,14 @@
 (set-face-attribute 'org-level-2 nil :bold t :foreground "light sea green")
 
 (set-face-attribute 'org-block-begin-line nil
-                    :underline "#A7A6AA" :foreground "#388EFF" :background "#222210")
+                    :underline "#A7A6AA")  ;; :foreground "#388EFF" :background "#222210")
 
-(set-face-attribute 'org-block nil
-                    :background "#292929")
+;; (set-face-attribute 'org-block nil
+;;                     :background "#292929")
 
 (set-face-attribute 'org-block-end-line nil
                     :underline nil
-                    :overline "#A7A6AA" :foreground "#388EFF" :background "#222210")
+                    :overline "#A7A6AA") ;; :foreground "#388EFF" :background "#222210")
 
 (defface my-face-org-keystroke
   '((t (:inherit shadow
