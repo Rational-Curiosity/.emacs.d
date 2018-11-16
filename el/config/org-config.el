@@ -169,7 +169,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Babel block options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(setenv "GRAPHVIZ_DOT" (executable-find "dot"))
 (setq org-edit-src-content-indentation 0
       org-babel-sh-command "bash"
       org-babel-python-command "python3"
