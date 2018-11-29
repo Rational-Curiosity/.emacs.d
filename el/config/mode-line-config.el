@@ -38,7 +38,7 @@
 (add-to-list 'rm-text-properties
              '("⚐" 'face 'mode-line-error))
 
-(setq projectile-mode-line " Projectile"
+(setq projectile-mode-line-prefix ""
       auto-revert-mode-text "Ar"
       rm-blacklist
       '(" Server" " hl-p" " WK" " Fly" " company" " Helm" " Undo-Tree"
