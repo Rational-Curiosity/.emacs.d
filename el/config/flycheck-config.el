@@ -94,10 +94,8 @@
 (when (member "extra" flycheck-gcc-warnings)
   (delete "extra" flycheck-gcc-warnings))
 
-(bind-keys :map flycheck-mode-map
-           ("C-e" . helm-flycheck)
-           ("C-c ! t w" . flycheck-toggle-warnings)
-           ("C-c ! t i" . flycheck-toggle-includes))
+;; Error notification
+(add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode)
 
 ;; Mode-line
 (defun my-flycheck-mode-line-status-text (&optional status)
@@ -122,6 +120,13 @@
             (`interrupted "-")
             (`suspicious "?"))))
 (setq-default flycheck-mode-line '(:eval (my-flycheck-mode-line-status-text)))
+
+;; Keys
+(bind-keys :map flycheck-mode-map
+           ("C-e" . helm-flycheck)
+           ("C-c ! t w" . flycheck-toggle-warnings)
+           ("C-c ! t i" . flycheck-toggle-includes))
+
 
 (provide 'flycheck-config)
 ;;; flycheck-config.el ends here

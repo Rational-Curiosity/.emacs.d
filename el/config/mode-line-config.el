@@ -39,10 +39,11 @@
              '("⚐" 'face 'mode-line-error))
 
 (setq projectile-mode-line-prefix ""
+      anaconda-mode-lighter ""
       auto-revert-mode-text "Ar"
       rm-blacklist
       '(" Server" " hl-p" " WK" " Fly" " company" " Helm" " Undo-Tree"
-        " Abbrev" " yas" " ws" " Projectile" " drag" " ||" " Spnxd"
+        " Abbrev" " yas" " ws" " drag" " ||" " Spnxd"
         " hlt" " Hi" " MMap"))
 
 ;; example of mode-line-format

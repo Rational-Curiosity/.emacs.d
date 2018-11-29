@@ -106,6 +106,11 @@
   (require 'company-emacs-eclim)
   (company-emacs-eclim-setup))
 
+;;;;;;;;;;;;
+;; Python ;;
+;;;;;;;;;;;;
+(add-to-list 'company-backends '(company-anaconda :with company-capf))
+
 (bind-keys
  ("<f7> ," . toggle-company-semantic)
  ("C-c y"  . company-yasnippet))
