@@ -17,6 +17,8 @@
 ;;; Code:
 
 (message "Importing sphinx-doc")
+(setcar (cdr (assq 'sphinx-doc-mode minor-mode-alist)) "")
+
 ;;;;;;;;;;;;;;;;
 ;; Sphinx doc ;;
 ;;;;;;;;;;;;;;;;

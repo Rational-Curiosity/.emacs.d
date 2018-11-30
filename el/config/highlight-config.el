@@ -5,6 +5,7 @@
 ;;; Code:
 
 (require 'hi-lock)
+(setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) "")
 
 ;; Faces
 

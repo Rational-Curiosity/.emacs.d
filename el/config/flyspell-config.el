@@ -13,6 +13,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'ispell)
 (require 'flyspell)
+(setq flyspell-mode-line-string "")
 ;;;;;;;;;;;
 ;; Faces ;;
 ;;;;;;;;;;;

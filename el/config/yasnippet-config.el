@@ -17,6 +17,8 @@
 ;;; Code:
 
 (message "Importing yasnippet-config")
+(setcar (cdr (assq 'yas-minor-mode minor-mode-alist)) "ⓨ")
+
 (require 'yasnippet-snippets)
 (setq yas-snippet-dirs
       (list (expand-file-name "~/.emacs.d/cache/snippets")))

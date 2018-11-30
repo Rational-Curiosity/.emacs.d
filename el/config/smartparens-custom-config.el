@@ -17,7 +17,7 @@
 ;;; Code:
 
 (message "Importing smartparens-custom-config")
-(setcar (cdr (assq 'smartparens-mode minor-mode-alist)) "()")
+(setcar (cdr (assq 'smartparens-mode minor-mode-alist)) "")
 
 (setq ;;sp-autoinsert-pair nil
  sp-highlight-pair-overlay nil)

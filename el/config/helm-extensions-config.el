@@ -16,7 +16,8 @@
 (require 'helm-utils)
 (require 'helm-bug)
 
-(setq helm-input-idle-delay 0.01
+(setq helm-completion-mode-string ""
+      helm-input-idle-delay 0.01
       helm-cycle-resume-delay 1.0
       ;;helm-follow-input-idle-delay 1.0
       ;; config

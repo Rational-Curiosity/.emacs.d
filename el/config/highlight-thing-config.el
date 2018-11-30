@@ -17,6 +17,8 @@
 ;;; Code:
 
 (message "Importing highlight-thing-config")
+(setcar (cdr (assq 'highlight-thing-mode minor-mode-alist)) "")
+
 (setq highlight-thing-what-thing 'symbol
       highlight-thing-limit-to-defun nil
       highlight-thing-case-sensitive-p t

@@ -8,6 +8,7 @@
 ;;; Code:
 
 (message "Importing projectile-config")
+(setq projectile-mode-line-prefix "")
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
 ;;;;;;;;;;;;;;;;
@@ -67,7 +68,6 @@
 ;;      (advice-add 'projectile-get-other-files :around #'bug-projectile-get-other-files)))
 ;;;;;;;;;;
 ;;;;;
-(require 'projectile)
 ;;(require 'projectile-bug)
 
 ;; before loading helm-projectile.el

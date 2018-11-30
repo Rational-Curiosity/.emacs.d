@@ -15,6 +15,7 @@
 (require 'company-capf)
 (require 'company-c-headers)
 (require 'company-yasnippet)
+(setq company-lighter-base "Ⓒ")
 (add-hook 'after-init-hook 'global-company-mode)
 ;; [ disable slow 'company-semantic'. comment with ede-project
 ;;(delete 'company-semantic company-backends)
@@ -109,7 +110,8 @@
 ;;;;;;;;;;;;
 ;; Python ;;
 ;;;;;;;;;;;;
-(add-to-list 'company-backends '(company-anaconda :with company-capf))
+(with-eval-after-load 'anaconda-mode
+  (add-to-list 'company-backends '(company-anaconda :with company-capf)))
 
 (bind-keys
  ("<f7> ," . toggle-company-semantic)

@@ -14,11 +14,30 @@
 
 ;;; Code:
 
-;; example of eval inside mode-line
-;; (setq-default projectile-mode-line
-;;  '(:eval (format "{%s}" (projectile-project-name))))
+(require 'cyphejor)
+(setq
+ cyphejor-rules
+ '(:upcase
+   ("bookmark"    "→")
+   ("buffer"      "β")
+   ("diff"        "Δ")
+   ("dired"       "δ")
+   ("emacs"       "ε")
+   ("inferior"    "i" :prefix)
+   ("interaction" "i" :prefix)
+   ("interactive" "i" :prefix)
+   ("lisp"        "λ" :postfix)
+   ("menu"        "▤" :postfix)
+   ("mode"        "")
+   ("package"     "↓")
+   ("python"      "π")
+   ("c"           "ȼ")
+   ("shell"       "sh" :postfix)
+   ("text"        "ξ")
+   ("wdired"      "↯δ")))
+(cyphejor-mode)
 
-(require 'ring)
+
 (require 'rich-minority)
 
 (defface mode-line-correct
@@ -38,13 +57,26 @@
 (add-to-list 'rm-text-properties
              '("⚐" 'face 'mode-line-error))
 
-(setq projectile-mode-line-prefix ""
-      anaconda-mode-lighter ""
+(setcar (cdr (assq 'abbrev-mode minor-mode-alist)) "ⓐ")
+(setq anaconda-mode-lighter ""
       auto-revert-mode-text "Ar"
-      rm-blacklist
-      '(" Server" " hl-p" " WK" " Fly" " company" " Helm" " Undo-Tree"
-        " Abbrev" " yas" " ws" " drag" " ||" " Spnxd"
-        " hlt" " Hi" " MMap"))
+      rm-blacklist '(" Projectile"))
+
+(defun mode-line-sort-minors ()
+  (interactive)
+  (dolist (minor (cl-remove-if-not (lambda (x) (assq x minor-mode-alist))
+                                   '(abbrev-mode yas-minor-mode company-mode)))
+    (let ((tmp (assq minor minor-mode-alist)))
+      (setq minor-mode-alist
+            (remove-nth-element (cl-position tmp minor-mode-alist) minor-mode-alist))
+      (setcdr (last minor-mode-alist) (list tmp)))))
+(dolist (package '("abbrev" "yasnippet" "company"))
+  (with-eval-after-load package
+    (mode-line-sort-minors)))
+;; [ <examples>
+;; example of eval inside mode-line
+;; (setq-default projectile-mode-line
+;;  '(:eval (format "{%s}" (projectile-project-name))))
 
 ;; example of mode-line-format
 ;; (setq-default mode-line-format
@@ -59,13 +91,30 @@
 ;;                 " " mode-line-modes
 ;;                 mode-line-misc-info
 ;;                 mode-line-end-spaces))
+
+;; example of variable format
+;; (defun variable-name-width (frame)
+;;   (set (make-local-variable 'sml/name-width)
+;;        (min 55       ; maximum name length
+;;             (max 17  ; minimum name length
+;;                  (- (window-body-width) 47)))))
+;; (add-hook 'window-size-change-functions 'variable-name-width)
+
+;; example wait until make
+;; (add-hook 'after-make-frame-functions
+;;           (lambda (frame)
+;;             (face-remap-add-relative
+;;              'mode-line '((:background "dim gray") mode-line))))
+;; ] <examples>
+
+;; [ <smart-mode-line>
 (require 'smart-mode-line)
 (setq line-number-display-limit nil
       line-number-display-limit-width 2000
       sml/no-confirm-load-theme t
       sml/shorten-directory t
       sml/name-width '(17 . 55)
-      sml/shorten-modes nil
+      sml/shorten-modes t
       sml/mode-width 'right
       ;; Ruta completa en la barra de título
       frame-title-format
@@ -74,6 +123,7 @@
                  "%b"))))
 
 ;; [ Cycle mode justification
+(require 'ring)
 (defvar sml-mode-justification-ring nil)
 (let ((justifications '(-27 -24 -21 -18 -15 -12 -9 -6 -3 0)))
   (setq sml-mode-justification-ring (make-ring (length justifications)))
@@ -87,15 +137,6 @@
     (set 'sml/extra-filler justification)
     (message "sml/extra-filler %s" justification)))
 ;; ]
-
-
-;; example of variable format
-;; (defun variable-name-width (frame)
-;;   (set (make-local-variable 'sml/name-width)
-;;        (min 55       ; maximum name length
-;;             (max 17  ; minimum name length
-;;                  (- (window-body-width) 47)))))
-;; (add-hook 'window-size-change-functions 'variable-name-width)
 
 
 (defvar sml-theme-ring nil)
@@ -122,14 +163,10 @@
   (interactive)
   (let ((theme (ring-ref sml-theme-ring -1)))
     (ring-insert sml-theme-ring theme)
-    (sml/apply-theme theme :silent)
+    (sml/apply-theme theme nil t)
     (message "%s mode line theme loaded" theme)))
 ;; ]
-
-;; (add-hook 'after-make-frame-functions
-;;           (lambda (frame)
-;;             (face-remap-add-relative
-;;              'mode-line '((:background "dim gray") mode-line))))
+;; ] <smart-mode-line>
 
 (bind-keys
  ("<f6> m" . sml-cycle-themes)

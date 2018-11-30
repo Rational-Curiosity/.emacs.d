@@ -7,6 +7,12 @@
 
 ;;; Code:
 
+(defun remove-nth-element (nth list)
+  (if (zerop nth) (cdr list)
+    (let ((last (nthcdr (1- nth) list)))
+      (setcdr last (cddr last))
+      list)))
+
 (require 'cl-lib)
 ;; [ get current function name
 ;; thanks to: https://emacs.stackexchange.com/a/2312

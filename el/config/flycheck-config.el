@@ -101,7 +101,7 @@
 (defun my-flycheck-mode-line-status-text (&optional status)
   "Get a text describing STATUS for use in the mode line."
   (format
-   "[%s]" (pcase (or status flycheck-last-status-change)
+   "{%s}" (pcase (or status flycheck-last-status-change)
             (`not-checked "")
             (`no-checker "∅")
             (`running "↻")
