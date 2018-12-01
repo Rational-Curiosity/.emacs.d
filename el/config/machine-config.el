@@ -90,11 +90,11 @@
         (helm-ag (projectile-project-root)))
        (t (call-interactively 'helm-ag)))))
   ;; Python
-  (setq python-shell-interpreter "python"
-        elpy-rpc-python-command (or (executable-find "py")
-                                    (executable-find "pythonw")
-                                    "python"))
+  (setq python-shell-interpreter "python")
   (with-eval-after-load 'elpy
+    (setq elpy-rpc-python-command (or (executable-find "py")
+                                      (executable-find "pythonw")
+                                      "python"))
     (let ((time (* 15 60)))
       (run-with-timer time time 'elpy-rpc-restart-max 7 "python.exe")
       (message "Limiting python's interpreters every %i seconds" time)))
