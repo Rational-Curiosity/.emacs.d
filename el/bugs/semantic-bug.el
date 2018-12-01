@@ -20,15 +20,6 @@
 ;;                 (set 'semantic-fetch-tags-limit number))))))
 ;;   (apply orig-fun args))
 ;; <xor>
-(defun et/semantic-remove-hooks ()
-    (remove-hook 'completion-at-point-functions
-                 'semantic-analyze-completion-at-point-function)
-    (remove-hook 'completion-at-point-functions
-                 'semantic-analyze-notc-completion-at-point-function)
-    (remove-hook 'completion-at-point-functions
-                 'semantic-analyze-nolongprefix-completion-at-point-function))
-(add-hook 'semantic-mode-hook #'et/semantic-remove-hooks)
-
 (when (bug-check-function-bytecode
        'semantic-fetch-tags
        "CIOwAMbHIYOwAMbIIYOwAAnJPYSwAAmDsAAKyl0ay4kbHMwgiAnNt4KvAM4gFAnPPYM6ANAgiIJCANEgiNLTDCKIyxWCrwAOJINUANRlZCIUgpQAZA4lWYWCAA4m1T2FggDW1yAeJ9gOJ4VyANnaDiciDiiFfADZ2w4oItxSKd3eIx4p1GVkIhQOKYOTAN8OKSGIKcuJiR4qHiseLOAgiCsMHi3h4g4tIogp4wwhiCsOLoc=")
@@ -44,6 +35,16 @@
     (apply orig-fun args))
   (advice-add 'semantic-fetch-tags :around #'semantic-fetch-tags-advice))
 ;; ]
+
+;; crazy error
+;; (defun et/semantic-remove-hooks ()
+;;     (remove-hook 'completion-at-point-functions
+;;                  'semantic-analyze-completion-at-point-function)
+;;     (remove-hook 'completion-at-point-functions
+;;                  'semantic-analyze-notc-completion-at-point-function)
+;;     (remove-hook 'completion-at-point-functions
+;;                  'semantic-analyze-nolongprefix-completion-at-point-function))
+;; (add-hook 'semantic-mode-hook #'et/semantic-remove-hooks)
 
 
 (provide 'semantic-bug)

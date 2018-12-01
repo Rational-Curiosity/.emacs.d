@@ -630,6 +630,7 @@ there's a region, all lines that region covers will be duplicated."
  ("M-s º"               . indent-region)
  ("M-A"                 . align-regexp)
  ("M-C"                 . string-inflection-all-cycle)
+ ("<f7> d"              . toggle-debug-on-error)
  ("<f7> s"              . toggle-enable-multibyte-characters)
  ("<f7> c"              . toggle-buffer-coding-system)
  ("<f7> w"              . toggle-truncate-lines)

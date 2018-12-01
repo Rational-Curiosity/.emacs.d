@@ -64,12 +64,12 @@
 
 (defun mode-line-sort-minors ()
   (interactive)
-  (dolist (minor (cl-remove-if-not (lambda (x) (assq x minor-mode-alist))
-                                   '(abbrev-mode yas-minor-mode company-mode)))
-    (let ((tmp (assq minor minor-mode-alist)))
-      (setq minor-mode-alist
-            (remove-nth-element (cl-position tmp minor-mode-alist) minor-mode-alist))
-      (setcdr (last minor-mode-alist) (list tmp)))))
+  (dolist (minor '(abbrev-mode yas-minor-mode company-mode))
+    (let ((pos (cl-position-if (lambda (x) (eq minor (car x))) minor-mode-alist)))
+      (when pos
+       (setcdr (last minor-mode-alist) (list (elt minor-mode-alist pos)))
+       (setq minor-mode-alist
+             (remove-nth-element pos minor-mode-alist))))))
 (dolist (package '("abbrev" "yasnippet" "company"))
   (with-eval-after-load package
     (mode-line-sort-minors)))

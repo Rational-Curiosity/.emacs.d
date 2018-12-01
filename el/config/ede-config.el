@@ -40,7 +40,6 @@
 ;; (advice-add 'projectile-project-name :around #'ede-add-to-projectile-project-name)
 ;; ]
 
-(require 'projectile)
 ;; This functions works without project
 (defun helm-ag-case ()
   "Detect whether we are inside a project and run according."
@@ -58,22 +57,22 @@
     (call-interactively 'helm-projectile-grep))
    (t (call-interactively 'find-grep))))
 
-(require 'ede)
 ;; Teclas
 (bind-keys
-           ("M-r" . helm-ag-case)
-           ("M-R" . (lambda ()
-                      (interactive)
-                      (mark-thing 'symbol)
-                      (helm-ag-case)))
-           ("M-f" . helm-grep-case)
-           ("M-F" . (lambda ()
-                      (interactive)
-                      (mark-thing 'symbol)
-                      (helm-grep-case))))
+ ("M-r" . helm-ag-case)
+ ("M-R" . (lambda ()
+            (interactive)
+            (mark-thing 'symbol)
+            (helm-ag-case)))
+ ("M-f" . helm-grep-case)
+ ("M-F" . (lambda ()
+            (interactive)
+            (mark-thing 'symbol)
+            (helm-grep-case))))
 
 (global-ede-mode 1)
-(ede-enable-generic-projects)
+;; Unknown error
+;; (ede-enable-generic-projects)
 
 
 (provide 'ede-config)

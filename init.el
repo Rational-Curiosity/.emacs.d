@@ -290,21 +290,36 @@
 (add-hook 'org-mode-hook #'show-smartparens-mode)
 (with-eval-after-load 'smartparens
   (require 'smartparens-custom-config))
-;; elisp-mode
-(setq eldoc-minor-mode-string "")
 ;; flycheck-mode
 (add-hook 'prog-mode-hook #'flycheck-mode)
-(with-eval-after-load 'flycheck  ;; trick
-  (with-current-buffer "*scratch*"
-    (lisp-interaction-mode))
+(with-eval-after-load 'flycheck
   (require 'flycheck-config)
-  (require 'semantic-config)
   (require 'srefactor-config))
-;; [ <c-c++> Programación en c y c++
+;; [ <c-c++>
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (add-hook 'prog-mode-hook #'projectile-mode)
-(require 'ede)
-(add-hook 'prog-mode-hook #'ede-minor-mode)
+(with-eval-after-load 'projectile
+  ;; after semantic
+  (require 'projectile-config))
+(add-hook 'prog-mode-hook (lambda ()
+                            (require 'ede)
+                            (ede-minor-mode)))
+(with-eval-after-load 'ede
+  (require 'ede-config))
+;; Snippets
+(add-hook 'prog-mode-hook #'yas-minor-mode)
+(add-hook 'org-mode-hook #'yas-minor-mode)
+(with-eval-after-load 'yasnippet
+  (require 'yasnippet-config))
+;; [ elisp-mode
+(setq eldoc-minor-mode-string "")
+;; last hook then first loaded
+(add-hook 'prog-mode-hook #'semantic-mode)
+(with-eval-after-load 'semantic
+  (require 'semantic-config)
+  (with-current-buffer "*scratch*"
+    (lisp-interaction-mode)))
+;; ]
 ;; cmake-mode
 (setq auto-mode-alist
       (append '(;;("CMakeLists\\.txt\\'" . cmake-mode) ; por defecto
@@ -325,7 +340,6 @@
 (with-eval-after-load 'cc-mode
   (require 'c-c++-config)
   (require 'gud-config)
-  (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
   (require 'speedbar-config)
@@ -334,8 +348,6 @@
   ;; Después de ede-projects-config
   (require 'cmake-make-config)
   ;; [[ Despues de semantic
-  (require 'projectile-config)
-  (require 'ede-config)
   ;; [ rtags: Jumping around code
   (when (executable-find "rdm")
     (add-hook 'c-mode-hook   #'rtags-start-process-unless-running)
@@ -359,12 +371,6 @@
 ;; java
 (with-eval-after-load 'eclim
   (require 'eclim-config))
-
-;; Snippets
-(add-hook 'prog-mode-hook #'yas-minor-mode)
-(add-hook 'org-mode-hook #'yas-minor-mode)
-(with-eval-after-load 'yasnippet
-  (require 'yasnippet-config))
 
 ;; Realmente solo se carga cuando se necesita
 (with-eval-after-load 'rst
