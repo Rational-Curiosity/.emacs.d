@@ -247,26 +247,60 @@
     (mt-forward-line 1 column))
   arg)
 
-(defun mt-forward-thing (arg &optional thing)
-  (setq thing (or thing mt-to-thing))
-  (let (bounds)
-    (dotimes (i arg)
-      (while (not (and
-                   (set 'bounds (mt-bounds-of-thing-at-point thing))
-                   (not (= (point) (cdr bounds)))))
-        (forward-char 1))
-      (goto-char (cdr bounds)))
+(defun mt-forward-thing (arg &optional thing delimiter len)
+  (setq thing (or thing mt-to-thing)
+        len (or len 1))
+  (let (bounds
+        pos
+        (pos-ini (point)))
+    (if delimiter
+        (dotimes (i arg)
+          (while (not (and
+                       (set 'bounds (mt-bounds-of-thing-at-point thing))
+                       (set 'pos (point))
+                       (not (= pos (cdr bounds)))
+                       (< pos-ini pos)
+                       (string-match-p delimiter
+                                       (buffer-substring-no-properties
+                                        (car bounds)
+                                        (+ len (car bounds))))))
+            (forward-char 1))
+          (goto-char (cdr bounds)))
+      (dotimes (i arg)
+        (while (not (and
+                     (set 'bounds (mt-bounds-of-thing-at-point thing))
+                     (set 'pos (point))
+                     (not (= pos (cdr bounds)))
+                     (< pos-ini pos)))
+          (forward-char 1))
+        (goto-char (cdr bounds))))
     bounds))
 
-(defun mt-backward-thing (arg &optional thing)
-  (setq thing (or thing mt-to-thing))
-  (let (bounds)
-    (dotimes (i arg)
-      (while (not (and
-                   (set 'bounds (mt-bounds-of-thing-at-point thing))
-                   (not (= (point) (car bounds)))))
-        (backward-char 1))
-      (goto-char (car bounds)))
+(defun mt-backward-thing (arg &optional thing delimiter len)
+  (setq thing (or thing mt-to-thing)
+        len (or len 1))
+  (let (bounds
+        pos
+        (pos-ini (point)))
+    (if delimiter
+        (dotimes (i arg)
+          (while (not (and
+                       (set 'bounds (mt-bounds-of-thing-at-point thing))
+                       (set 'pos (point))
+                       (not (= pos (car bounds)))
+                       (> pos-ini pos)
+                       (string-match-p delimiter
+                                       (buffer-substring-no-properties
+                                        (car bounds)
+                                        (+ len (car bounds))))))
+            (backward-char 1))
+          (goto-char (car bounds)))
+      (dotimes (i arg)
+        (while (not (and
+                     (set 'bounds (mt-bounds-of-thing-at-point thing))
+                     (not (= (point) (car bounds)))))
+          (backward-char 1))
+        (goto-char (car bounds))))
     bounds))
 
 
@@ -372,7 +406,16 @@
 (defun mt-interchange-thing-backward (arg)
   (let ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing)))
     (goto-char (car (cdr from-sbs)))
-    (mt-backward-thing arg mt-to-thing)
+    (mt-backward-thing arg mt-to-thing
+                       (and (eq mt-to-thing 'sexp)
+                            (let* ((pos (car (cdr from-sbs)))
+                                   (delimiter (buffer-substring-no-properties
+                                               pos (1+ pos))))
+                              (if (member
+                                   delimiter
+                                   '("\"" "'" "(" "{" "["))
+                                  delimiter
+                                "[^\"'({[]"))))
     (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
            (from (mt-kill-rectangle-or-bounds from-sbs))
            (to (mt-kill-bounds to-bs)))
@@ -389,7 +432,14 @@
   (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs)))
     (goto-char (car (cdr from-sbs)))
-    (goto-char (car (mt-forward-thing arg mt-to-thing)))
+    (goto-char (car (mt-forward-thing arg mt-to-thing
+                                      (and (eq mt-to-thing 'sexp)
+                                           (let ((delimiter (substring (car from) 0 1)))
+                                             (if (member
+                                                  delimiter
+                                                  '("\"" "'" "(" "{" "["))
+                                                 delimiter
+                                               "[^\"'({[]"))))))
     (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
            (to (mt-kill-bounds to-bs)))
       (goto-char (car (cdr from-sbs)))
