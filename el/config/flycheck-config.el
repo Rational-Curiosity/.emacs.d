@@ -86,14 +86,13 @@
     (add-to-list 'flycheck-gcc-warnings "extra"))
   (flycheck-buffer))
 
-;; Flycheck with helm
-(require 'helm-flycheck) ;; Not necessary if using ELPA package
-
 (when (member "extra" flycheck-clang-warnings)
   (delete "extra" flycheck-clang-warnings))
 (when (member "extra" flycheck-gcc-warnings)
   (delete "extra" flycheck-gcc-warnings))
 
+;; Flycheck with helm
+(require 'helm-flycheck) ;; Not necessary if using ELPA package
 ;; Error notification
 (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode)
 
