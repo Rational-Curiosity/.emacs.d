@@ -12,7 +12,10 @@
 ;;(add-to-list 'load-path "~/.emacs.d/elpa/elpa/company-c-headers-20150801.901")
 (require 'company)
 (require 'company-template)
+;; [
 (require 'company-capf)
+(require 'minibuffer-bug)
+;; ]
 (require 'company-c-headers)
 (require 'company-yasnippet)
 (setq company-lighter-base "Ⓒ")
