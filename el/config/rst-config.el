@@ -20,7 +20,8 @@
 ;;;;;;;;;;;;
 ;; Sphinx ;;
 ;;;;;;;;;;;;
-(require 'sphinx-frontend-config)
+(with-eval-after-load 'sphinx-doc
+  (require 'sphinx-frontend-config))
 
 
 (provide 'rst-config)
