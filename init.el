@@ -154,7 +154,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (commenter concurrent ctable epc nim-mode cyphejor flycheck-popup-tip pythonic company-anaconda anaconda-mode org org-plus-contrib rtags org-super-agenda projectile which-key vdiff smartparens yasnippet smart-mode-line yasnippet-snippets plantuml-mode string-inflection srefactor auctex company-auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck helm helm-core irony company-go dart-mode go-mode ob-dart ob-go free-keys company-irony-c-headers company-irony helm-flyspell helm-gtags transpose-frame smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
+    (flycheck-nimsuggest commenter concurrent ctable epc nim-mode cyphejor flycheck-popup-tip pythonic company-anaconda anaconda-mode org org-plus-contrib rtags org-super-agenda projectile which-key vdiff smartparens yasnippet smart-mode-line yasnippet-snippets plantuml-mode string-inflection srefactor auctex company-auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck helm helm-core irony company-go dart-mode go-mode ob-dart ob-go free-keys company-irony-c-headers company-irony helm-flyspell helm-gtags transpose-frame smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -297,6 +297,10 @@
   (require 'srefactor-config))
 ;; [ nim
 (add-hook 'nim-mode-hook 'nimsuggest-mode)
+;; autoloaded
+;; (add-hook 'nimsuggest-mode-hook 'flycheck-nimsuggest-setup)
+(with-eval-after-load 'nim-mode
+  (require 'nim-config))
 ;; ]
 ;; [ <c-c++>
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))

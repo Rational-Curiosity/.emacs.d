@@ -34,7 +34,8 @@
    ("c"           "ȼ")
    ("shell"       "sh" :postfix)
    ("text"        "ξ")
-   ("wdired"      "↯δ")))
+   ("wdired"      "↯δ")
+   ("nim"         "ℵ")))
 (cyphejor-mode)
 
 
