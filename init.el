@@ -296,7 +296,7 @@
   (require 'flycheck-config)
   (require 'srefactor-config))
 ;; [ nim
-(add-hook 'nim-mode-hook 'nimsuggest-mode)
+(add-hook 'nim-mode-hook #'nimsuggest-mode)
 ;; autoloaded
 ;; (add-hook 'nimsuggest-mode-hook 'flycheck-nimsuggest-setup)
 (with-eval-after-load 'nim-mode
@@ -490,7 +490,7 @@
   "Command line arg `--agenda'.  SWITCH ignored."
   (require 'org))
 (add-to-list 'command-switch-alist '("--agenda" . argument--agenda))
-;; Usage: emacs -diff file/dir1 file/dir2
+;; Usage: emacs --diff file/dir1 file/dir2
 (defun argument--diff (switch)
   "Command line arg `--diff'.  SWITCH ignored."
   (let ((arg1 (pop command-line-args-left))
@@ -508,5 +508,14 @@
      (t
       (message "Files or directories required")))))
 (add-to-list 'command-switch-alist '("--diff" . argument--diff))
+;; Usage: emacs --debug-on-entry el-file func-name
+(defun argument--debug-on-entry (switch)
+  "Command line arg `--debug-on-entry'.  SWITCH ignored."
+  (let ((arg1 (pop command-line-args-left))
+        (arg2 (pop command-line-args-left)))
+    (eval `(with-eval-after-load ,arg1
+             (message "Debugging: %s::%s" ,arg1
+                      (debug-on-entry (intern ,arg2)))))))
+(add-to-list 'command-switch-alist '("--debug-on-entry" . argument--debug-on-entry))
 
 ;;; init.el ends here
