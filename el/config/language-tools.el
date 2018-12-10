@@ -60,24 +60,24 @@ If no ITEMS `language-items-number'."
           (nreverse matches)
         (error "Translation not found")))))
 
-(require 'subr-x)
-(defun language-get-phonemic-script-and-translation (word from to &optional items)
-  "Get ITEMS posible translations of WORD from FROM to TO, with phonemic script."
-  (with-current-buffer
-      (language-url-request-to-buffer word from to)
-    (goto-char (point-min))
-    (if (re-search-forward language-phonemic-script-regex nil t)
-        (let ((matches ())
-              (items-number (or items language-items-number))
-              (phonemic-script (decode-coding-string (match-string 1) 'utf-8)))
-          (while (and (re-search-forward language-translation-regex-wordreference nil t)
-                      (< 0 items-number))
-            (let ((item (string-trim (match-string 1))))
-              (unless (member item matches)
-                (cl-decf items-number)
-                (push item matches))))
-          (cons phonemic-script (nreverse matches)))
-      (error "Phonemic script not found"))))
+;; (require 'subr-x)
+;; (defun language-get-phonemic-script-and-translation (word from to &optional items)
+;;   "Get ITEMS posible translations of WORD from FROM to TO, with phonemic script."
+;;   (with-current-buffer
+;;       (language-url-request-to-buffer word from to)
+;;     (goto-char (point-min))
+;;     (if (re-search-forward language-phonemic-script-regex nil t)
+;;         (let ((matches ())
+;;               (items-number (or items language-items-number))
+;;               (phonemic-script (decode-coding-string (match-string 1) 'utf-8)))
+;;           (while (and (re-search-forward language-translation-regex-wordreference nil t)
+;;                       (< 0 items-number))
+;;             (let ((item (string-trim (match-string 1))))
+;;               (unless (member item matches)
+;;                 (cl-decf items-number)
+;;                 (push item matches))))
+;;           (cons phonemic-script (nreverse matches)))
+;;       (error "Phonemic script not found"))))
 
 (defun language-goto-insertion-point ()
   "Goto proper insertion point."
@@ -123,8 +123,9 @@ By default insert it, with prefix display a message with it."
   (cond
    ((equal items '(4))
     (let ((translation
-           (language-get-phonemic-script-and-translation
-            (thing-at-point 'word 'no-properties) "en" "es" 3)))
+           `(,(language-get-phonemic-script (thing-at-point 'word 'no-properties)) .
+             ,(language-get-translation
+               (thing-at-point 'word 'no-properties) "en" "es" 3))))
       (message
        (concat "/"
                (decode-coding-string-to-current (car translation))
@@ -133,8 +134,9 @@ By default insert it, with prefix display a message with it."
                           (cdr translation) ", ")))))
    (t
     (let ((translation
-           (language-get-phonemic-script-and-translation
-            (thing-at-point 'word 'no-properties) "en" "es" items)))
+           `(,(language-get-phonemic-script (thing-at-point 'word 'no-properties)) .
+             ,(language-get-translation
+               (thing-at-point 'word 'no-properties) "en" "es" items))))
       (language-goto-insertion-point)
       (insert
        (concat " /"
