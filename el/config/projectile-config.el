@@ -70,10 +70,7 @@
 ;;;;;
 ;;(require 'projectile-bug)
 
-;; before loading helm-projectile.el
-(defcustom helm-projectile-fuzzy-match nil
-  "")
-(require 'helm-projectile)
+(require 'counsel-projectile)
 ;; [ Sólo requerido para algunos ficheros
 ;;(projectile-global-mode)
 ;; ]
@@ -92,9 +89,8 @@
         projectile-root-top-down-recurring
         projectile-root-bottom-up
         projectile-root-top-down)
-      projectile-completion-system 'helm
-      projectile-switch-project-action 'helm-projectile)
-(helm-projectile-on)
+      projectile-completion-system 'ivy
+      projectile-switch-project-action 'counsel-projectile)
 
 
 (provide 'projectile-config)

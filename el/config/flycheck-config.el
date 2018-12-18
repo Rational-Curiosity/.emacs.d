@@ -91,8 +91,6 @@
 (when (member "extra" flycheck-gcc-warnings)
   (delete "extra" flycheck-gcc-warnings))
 
-;; Flycheck with helm
-(require 'helm-flycheck) ;; Not necessary if using ELPA package
 ;; Error notification
 (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode)
 
@@ -122,7 +120,6 @@
 
 ;; Keys
 (bind-keys :map flycheck-mode-map
-           ("C-e" . helm-flycheck)
            ("C-c ! t w" . flycheck-toggle-warnings)
            ("C-c ! t i" . flycheck-toggle-includes))
 

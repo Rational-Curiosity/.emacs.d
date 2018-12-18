@@ -68,8 +68,7 @@
 ;;     'company-backends 'company-rtags))
 ;; (setq rtags-autostart-diagnostics t)
 ;; (rtags-enable-standard-keybindings)
-(setq rtags-use-helm t
-      ;; No marca errores, lo dejamos a flycheck
+(setq ;; No marca errores, lo dejamos a flycheck
       rtags-spellcheck-enabled nil
       rtags-timeout 10000)
 
