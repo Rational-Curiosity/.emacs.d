@@ -114,7 +114,7 @@
 ;; Python ;;
 ;;;;;;;;;;;;
 (with-eval-after-load 'anaconda-mode
-  (add-to-list 'company-backends '(company-anaconda :with company-capf)))
+  (add-to-list 'company-backends '(company-anaconda)))  ;; :with company-capf)))
 
 (bind-keys
  ("<f7> ," . toggle-company-semantic)

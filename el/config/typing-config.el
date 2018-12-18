@@ -621,6 +621,14 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 (advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
 
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Goto last change ;;
+;;;;;;;;;;;;;;;;;;;;;;
+(require 'goto-chg)
+
+(global-set-key [(control ?.)] 'goto-last-change)
+(global-set-key [(control ?,)] 'goto-last-change-reverse)
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;

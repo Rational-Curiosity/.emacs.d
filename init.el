@@ -152,9 +152,10 @@
  '(custom-safe-themes
    (quote
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
+ '(org-trello-current-prefix-keybinding "C-c o" nil (org-trello))
  '(package-selected-packages
    (quote
-    (flycheck-nimsuggest commenter concurrent ctable epc nim-mode cyphejor flycheck-popup-tip pythonic company-anaconda anaconda-mode org org-plus-contrib rtags org-super-agenda projectile which-key vdiff smartparens yasnippet smart-mode-line yasnippet-snippets plantuml-mode string-inflection srefactor auctex company-auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck helm helm-core irony company-go dart-mode go-mode ob-dart ob-go free-keys company-irony-c-headers company-irony helm-flyspell helm-gtags transpose-frame smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
+    (dumb-jump org org-plus-contrib projectile yasnippet-snippets flycheck-haskell haskell-mode hy-mode goto-chg flycheck-nimsuggest commenter concurrent ctable epc nim-mode cyphejor flycheck-popup-tip pythonic company-anaconda anaconda-mode rtags org-super-agenda which-key vdiff smartparens yasnippet smart-mode-line plantuml-mode string-inflection srefactor auctex company-auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt vimish-fold avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred org-trello ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck helm helm-core irony company-go dart-mode go-mode ob-dart ob-go free-keys company-irony-c-headers company-irony helm-flyspell helm-gtags transpose-frame smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize helm-projectile helm-flycheck helm-company helm-bind-key helm-ag graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -279,6 +280,10 @@
 ;; (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
 (with-eval-after-load 'highlight-indent-guides
   (require 'highlight-indent-guides-config))
+;; dumb-jump-mode
+(add-hook 'prog-mode-hook #'dumb-jump-mode)
+(with-eval-after-load 'dumb-jump
+  (require 'dumb-jump-config))
 ;; rainbow-delimiters-mode (before smartparens-mode)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 (with-eval-after-load 'rainbow-delimiters
@@ -292,6 +297,7 @@
   (require 'smartparens-custom-config))
 ;; flycheck-mode
 (add-hook 'prog-mode-hook #'flycheck-mode)
+(add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)
 (with-eval-after-load 'flycheck
   (require 'flycheck-config)
   (require 'srefactor-config))
@@ -387,6 +393,8 @@
   (message "Importing markdown-mode+")
   (require 'markdown-mode+))
 
+;; <ahk> Programación en AutoHotKey
+(add-to-list 'auto-mode-alist '("\\.hy\\'" . hy-mode))
 ;; Bloque python: solo se carga cuando se necesita
 (add-hook 'python-mode-hook #'anaconda-mode)
 ;; [ anaconda-eldoc instead of sphinx
