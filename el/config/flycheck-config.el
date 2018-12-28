@@ -17,6 +17,12 @@
 ;;; Code:
 
 (message "Importing flycheck-config")
+;;;;;;;;;;;
+;; Julia ;;
+;;;;;;;;;;;
+(with-eval-after-load 'julia-mode
+  (require 'flycheck-julia)
+  (flycheck-julia-setup))
 ;;;;;;;;;;;;;;
 ;; Flycheck ;;
 ;;;;;;;;;;;;;;
