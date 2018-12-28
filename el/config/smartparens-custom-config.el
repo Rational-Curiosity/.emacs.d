@@ -19,8 +19,10 @@
 (message "Importing smartparens-custom-config")
 (setcar (cdr (assq 'smartparens-mode minor-mode-alist)) "")
 
+(require 'smartparens-org)
 (setq ;;sp-autoinsert-pair nil
  sp-highlight-pair-overlay nil)
+
 
 (defun my-open-block-c-mode (id action context)
   "Insert a c block of code when ID ACTION CONTEXT."
