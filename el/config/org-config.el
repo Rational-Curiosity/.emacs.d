@@ -1183,7 +1183,7 @@ SUFFIX - default .png"
          (template (second (assoc prefix prefixes))))
     template))
 
-(defun org-insert-structure-template-or-enclose-region ()
+(defun org-babel-insert-structure-template-or-enclose-region ()
   "Insert structure block template.  When region is active, enclose region in block."
   (interactive)
   (let* ((template (org-read-structure-template))
@@ -1217,7 +1217,7 @@ SUFFIX - default .png"
            ("C-c L"       . org-insert-link-global)
            ("C-c O"       . org-open-at-point-global)
            ("C-c p"       . org-publish)
-           ("C-c C-v <"   . org-insert-structure-template-or-enclose-region)
+           ("C-c C-v <"   . org-babel-insert-structure-template-or-enclose-region)
            ("C-c C-x D"   . org-archive-done-tasks)
            ("C-c C-x C-k" . org-toggle-link-display))
 
