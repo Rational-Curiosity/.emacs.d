@@ -1167,34 +1167,35 @@ SUFFIX - default .png"
   (call-interactively #'org-show-block-all)
   (call-interactively #'org-babel-show-result-all))
 
+;;;;;;;;;;;;;;;;;;;
+;; Org templates ;;
+;;;;;;;;;;;;;;;;;;;
+(require 'org-tempo)
 ;; [ Thanks to: https://gist.github.com/alphapapa/84ec3396442915ca277b
 (require 's)
 (defun org-read-structure-template ()
   "Read org-mode structure template with completion.  Returns template string."
-  (let* ((templates (map 'list 'second org-structure-template-alist))
-         (prefixes (map 'list (lambda (tp)
-                                ;; Get template and pre-whitespace prefix for completion
-                                (reverse (s-match (rx (group
-                                                       (1+ (not (any "\n" space))))
-                                                      (1+ anything))
-                                                  tp)))
-                        templates))
-         (prefix (completing-read "Template: " prefixes nil t))
-         (template (second (assoc prefix prefixes))))
-    template))
+  (let* ((templates (map 'list 'cdr org-structure-template-alist))
+         (template (completing-read "Template: " templates nil t)))
+    (car (rassoc template org-structure-template-alist))))
 
 (defun org-babel-insert-structure-template-or-enclose-region ()
   "Insert structure block template.  When region is active, enclose region in block."
   (interactive)
   (let* ((template (org-read-structure-template))
-         (text "")
-         enclosed-text)
-    (when (use-region-p)
-      (setq text (buffer-substring-no-properties (region-beginning) (region-end)))
-      (delete-region (region-beginning) (region-end)))
-    (setq enclosed-text (s-replace "?" text (s-replace " ?\n" " \n?" template)))
-    (insert enclosed-text)
-    (backward-char (- (length enclosed-text) (length (s-shared-start enclosed-text template))))))
+         (text ""))
+    (if (use-region-p)
+        (progn
+          (setq text (buffer-substring-no-properties (region-beginning) (region-end)))
+          (delete-region (region-beginning) (region-end))
+          (insert (concat "<" template))
+          (org-tempo-complete-tag)
+          (when (char-equal ?  (char-before (point)))
+            (forward-line)
+            (end-of-line))
+          (insert text))
+      (insert (concat "<" template))
+      (org-tempo-complete-tag))))
 ;; ]
 ;;;;;;;;;;
 ;; Keys ;;
