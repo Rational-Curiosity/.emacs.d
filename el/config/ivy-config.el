@@ -13,7 +13,7 @@
 (setq ivy-use-virtual-buffers nil
       enable-recursive-minibuffers t
       ivy-count-format "(%d/%d) ")
-(global-set-key "\C-s" 'swiper)
+(global-set-key (kbd "M-i") 'swiper)
 (global-set-key (kbd "C-c C-r") 'ivy-resume)
 (global-set-key (kbd "M-x") 'counsel-M-x)
 (global-set-key (kbd "M-X") 'counsel-command-history)
