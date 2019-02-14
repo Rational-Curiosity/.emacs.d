@@ -55,7 +55,7 @@
                 (prettify-symbols-mode)))
 
     (bind-keys
-     ("<f7> t"  . prettify-symbols-mode))))
+     ("<f7> p"  . prettify-symbols-mode))))
 
 
 (provide 'prettify-symbols-config)

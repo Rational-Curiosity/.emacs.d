@@ -33,8 +33,27 @@
     (message "%s theme loaded" theme)))
 ;; ]
 
+;; [ transparency
+(defun toggle-transparency ()
+   (interactive)
+   (let ((alpha (frame-parameter nil 'alpha)))
+     (set-frame-parameter
+      nil 'alpha
+      (if (eql (cond ((numberp alpha) alpha)
+                     ((numberp (cdr alpha)) (cdr alpha))
+                     ;; Also handle undocumented (<active> <inactive>) form.
+                     ((numberp (cadr alpha)) (cadr alpha)))
+               100)
+          '(85 . 50) '(100 . 100)))))
+
+(set-frame-parameter (selected-frame) 'alpha '(85 . 50))
+(add-to-list 'default-frame-alist '(alpha . (85 . 50)))
+;; ]
+
+
 (bind-keys
- ("<f6> t" . cycle-themes))
+ ("<f6> t" . cycle-themes)
+ ("<f7> t" . toggle-transparency))
 
 
 (provide 'theme-config)
