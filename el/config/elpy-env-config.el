@@ -17,9 +17,10 @@
 
 ;; Install python dependencies
 ;;;; Python3
-;; sudo apt install flake8
-;; sudo apt install python3-flake8
-;; sudo apt install python3-jedi
+;; sudo pip3 install flake8
+;; sudo pip3 install jedi
+;; sudo pip3 install pylint
+;; sudo pip3 install mypy
 ;; sudo pip3 install rope_py3k
 ;; sudo pip3 install importmagic
 ;; sudo pip3 install autopep8

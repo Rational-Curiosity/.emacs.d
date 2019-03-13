@@ -456,7 +456,7 @@
 ;; Convert to beamer presentation ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'ox-beamer)
-(require 'ox-beamer-bug)
+;; (require 'ox-beamer-bug)
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to html ;;
 ;;;;;;;;;;;;;;;;;;;;;
