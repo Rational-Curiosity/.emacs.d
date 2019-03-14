@@ -59,8 +59,7 @@
              '("⚐" 'face 'mode-line-error))
 
 (setcar (cdr (assq 'abbrev-mode minor-mode-alist)) "ⓐ")
-(setq anaconda-mode-lighter ""
-      auto-revert-mode-text "Ar"
+(setq auto-revert-mode-text "Ar"
       rm-blacklist '(" Projectile"))
 
 (defun mode-line-sort-minors ()

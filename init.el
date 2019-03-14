@@ -154,7 +154,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (helm-core org org-plus-contrib org-trello rtags swiper which-key yasnippet-snippets helm-company helm-ag pythonic vdiff projectile smartparens vimish-fold format-all flycheck-julia julia-mode counsel-projectile ivy counsel dumb-jump flycheck-haskell haskell-mode hy-mode goto-chg flycheck-nimsuggest commenter concurrent ctable epc nim-mode cyphejor flycheck-popup-tip company-anaconda anaconda-mode org-super-agenda yasnippet smart-mode-line plantuml-mode string-inflection srefactor auctex company-auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck irony company-go dart-mode go-mode ob-dart ob-go free-keys company-irony-c-headers company-irony transpose-frame smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
+    (helm helm-projectile helm-core org org-plus-contrib org-trello rtags swiper which-key yasnippet-snippets helm-company helm-ag pythonic vdiff projectile smartparens vimish-fold format-all flycheck-julia julia-mode counsel-projectile ivy counsel dumb-jump flycheck-haskell haskell-mode hy-mode goto-chg flycheck-nimsuggest commenter concurrent ctable epc nim-mode cyphejor flycheck-popup-tip company-anaconda anaconda-mode org-super-agenda yasnippet smart-mode-line plantuml-mode string-inflection srefactor auctex company-auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode company-lua flymake-lua lua-mode ht cursor-chg company-emacs-eclim eclim memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy thing-cmds protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode async bind-key cmake-mode company dash epl let-alist pkg-info popup rich-minority s seq web-completion-data flycheck irony company-go dart-mode go-mode ob-dart ob-go free-keys company-irony-c-headers company-irony transpose-frame smooth-scrolling rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region emacs-cl dash-functional company-web company-shell company-c-headers cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -405,7 +405,8 @@
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
-  (require 'python-config))
+  (require 'python-config)
+  (require 'anaconda-config))
 ;; ]
 ;; <xor>
 ;; [ ELPY
