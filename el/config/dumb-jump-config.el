@@ -8,7 +8,7 @@
 
 ;;; Code:
 
-(setq dumb-jump-selector 'ivy)
+(setq dumb-jump-selector 'helm)
 
 (defhydra dumb-jump-hydra (:color blue :columns 3)
     "Dumb Jump"

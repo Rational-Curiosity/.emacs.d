@@ -89,7 +89,7 @@
         projectile-root-top-down-recurring
         projectile-root-bottom-up
         projectile-root-top-down)
-      projectile-completion-system 'ivy
+      projectile-completion-system 'helm
       projectile-switch-project-action 'counsel-projectile)
 
 

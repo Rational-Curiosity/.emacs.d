@@ -183,6 +183,17 @@
 ;;              ("C-x D" . (lambda ()
 ;;                           (interactive)
 ;;                           (insert "[0-9]\\{8\\}")))))
+(with-eval-after-load 'flycheck
+;;;;;;;;;;;;;;
+;; flycheck ;;
+;;;;;;;;;;;;;;
+  (define-key flycheck-mode-map (kbd "C-e") 'helm-flycheck)
+
+;;;;;;;;;;;;;;
+;; flyspell ;;
+;;;;;;;;;;;;;;
+  (define-key flycheck-mode-map (kbd "S-C-e") 'helm-flyspell-correct))
+
 
 ;;;;;;;;;;;;;;;
 ;;  company  ;;
