@@ -62,7 +62,8 @@
  ;;;;;;;;;;;
  ((eq system-type 'gnu/linux)
   ;; Python
-  (setq python-shell-interpreter "python3"))
+  (setq python-shell-interpreter (or (executable-find "pypy3")
+                                     "python3")))
  ;;;;;;;;;;;;;
  ;; Windows ;;
  ;;;;;;;;;;;;;

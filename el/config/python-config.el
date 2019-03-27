@@ -20,55 +20,47 @@
 (require 'python) ;; inferior-python-mode-map
 (require 'flycheck)
 
+
+(defun ipython-to-python-ring-save (&optional arg)
+  (interactive "P")
+  (if (use-region-p)
+      (let* ((ipython-str (filter-buffer-substring (region-beginning) (region-end)))
+             (python-str (ipython-to-python-text ipython-str)))
+        (kill-new python-str)
+        (setq deactivate-mark t))))
+
+(if (string-equal "i" (substring-no-properties python-shell-interpreter 0 1))
+    ;; ipython or ipython3
+    (progn
+      (define-key inferior-python-mode-map (kbd "M-w") #'ipython-to-python-ring-save)
+      (setq python-shell-interpreter-args "-i --simple-prompt"
+            python-command-version (substring-no-properties python-shell-interpreter 1)))
+  ;; python or python3
+  (setq python-shell-interpreter-args "-i"
+        python-command-version python-shell-interpreter))
+
+
 (setq py-custom-temp-directory temporary-file-directory
-      python-shell-interpreter-args (cond
-                                     ((or (string-equal python-shell-interpreter "ipython")
-                                          (string-equal python-shell-interpreter "ipython3"))
-                                      "-i --simple-prompt")
-                                     (t "-i"))
       python-indent-guess-indent-offset nil)
 
-(defvar python-command-version (cond
-                                ((or
-                                  (string-equal python-shell-interpreter "python3")
-                                  (string-equal python-shell-interpreter "ipython3"))
-                                 "python3")
-                                (t "python")))
 (defvar python-syntax-check-command (executable-find "flake8"))
 
 (defun toggle-python-version ()
   (interactive)
-  (cond
-   ((string-equal python-shell-interpreter "python3")
-    (setq python-shell-interpreter "python"
-          python-command-version "python"
-          python-syntax-check-command
-          (or (executable-find "~/.emacs.d/cache/python/flake82")
-              "flake8")))
-   ((string-equal python-shell-interpreter "ipython3")
-    (setq python-shell-interpreter "ipython"
-          python-command-version "python"
-          python-syntax-check-command
-          (or (executable-find "~/.emacs.d/cache/python/flake82")
-              "flake8")))
-   ((string-equal python-shell-interpreter "python")
-    (setq python-shell-interpreter "python3"
-          python-command-version "python3"
-          python-syntax-check-command
-          (or (executable-find "~/.emacs.d/cache/python/flake83")
-              "flake8")))
-   ((string-equal python-shell-interpreter "ipython")
-    (setq python-shell-interpreter "ipython3"
-          python-command-version "python3"
-          python-syntax-check-command
-          (or (executable-find "~/.emacs.d/cache/python/flake83")
-              "flake8")))
-   (t (setq python-shell-interpreter "python3"
-            python-command-version "python3"
-            python-syntax-check-command
-            (or (executable-find "~/.emacs.d/cache/python/flake83")
-              "flake8"))))
-  (setq flycheck-python-flake8-executable python-syntax-check-command))
+  (if (string-equal "3" (substring-no-properties python-shell-interpreter -1))
+      (setq python-shell-interpreter (substring-no-properties python-shell-interpreter 0 -1)
+            python-command-version (if (string-equal "i" (substring-no-properties python-shell-interpreter 0 1))
+                                       (substring-no-properties python-shell-interpreter 1)
+                                     python-shell-interpreter)
+            python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake82")
+                                            "flake8"))
+    (setq python-shell-interpreter (concat python-shell-interpreter "3")
+          python-command-version (if (string-equal "i" (substring-no-properties python-shell-interpreter 0 1))
+                                     (substring-no-properties python-shell-interpreter 1)
+                                   python-shell-interpreter)
+          python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake83")
+                                          "flake8"))))
+
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
@@ -128,13 +120,6 @@ if __name__ == \"__main__\":
      (replace-regexp-in-string
       "   .+: " "... " string)))))
 
-(defun ipython-to-python-ring-save (&optional arg)
-  (interactive "P")
-  (if (use-region-p)
-      (let* ((ipython-str (filter-buffer-substring (region-beginning) (region-end)))
-             (python-str (ipython-to-python-text ipython-str)))
-        (kill-new python-str)
-        (setq deactivate-mark t))))
 
 (defun python-import-to-multiline ()
   (interactive)
@@ -192,12 +177,6 @@ if __name__ == \"__main__\":
            ("C-c d h" . sphinx-build-html)
            ("<f7> p"  . toggle-python-version))
 
-(cond
- ((or
-   (string-equal python-shell-interpreter "ipython")
-   (string-equal python-shell-interpreter "ipython3"))
-  (define-key inferior-python-mode-map (kbd "M-w")
-    #'ipython-to-python-ring-save)))
 
 (provide 'python-config)
 ;;; python-config.el ends here
