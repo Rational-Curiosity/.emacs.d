@@ -161,6 +161,14 @@
                               t t)))
     (funcall 'shell-command command-replaced output-buffer error-buffer)))
 
+;; fish-mode
+(add-hook 'fish-mode-hook (lambda ()
+                            (add-hook 'before-save-hook 'fish_indent-before-save)))
+;; fish-completion-mode
+(when (and (executable-find "fish")
+           (require 'fish-completion nil t))
+  (global-fish-completion-mode))
+
 (bind-keys
  ("C-M-!"   . insert-from-function)
  ("M-!"     . shell-execute)
