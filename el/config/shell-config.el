@@ -174,6 +174,17 @@
  ("M-!"     . shell-execute)
  ("M-s RET" . shell-execute)
  ("C-!"     . execute))
+
+(with-eval-after-load 'shell
+  (bind-keys :map shell-mode-map
+             ("C-c C-k" . term-char-mode)
+             ("C-c C-j" . term-line-mode)))
+
+(with-eval-after-load 'esh-mode
+  (bind-keys :map eshell-mode-map
+             ("C-c C-k" . term-char-mode)
+             ("C-c C-j" . term-line-mode)))
+
 ;; (global-set-key (kbd "M-!") 'shell-execute)
 ;; (global-set-key (kbd "M-s RET") 'shell-execute)
 
