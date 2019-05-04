@@ -68,12 +68,7 @@
 ;;      (advice-add 'projectile-get-other-files :around #'bug-projectile-get-other-files)))
 ;;;;;;;;;;
 ;;;;;
-;;(require 'projectile-bug)
 
-(require 'counsel-projectile)
-;; [ Sólo requerido para algunos ficheros
-;;(projectile-global-mode)
-;; ]
 
 (setq projectile-globally-ignored-file-suffixes
       '(".o" ".d" ".crt" ".key" ".txt" "~")
@@ -89,7 +84,6 @@
         projectile-root-top-down-recurring
         projectile-root-bottom-up
         projectile-root-top-down)
-      projectile-completion-system 'helm
       projectile-switch-project-action 'counsel-projectile)
 
 

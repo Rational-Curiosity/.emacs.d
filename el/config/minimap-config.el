@@ -48,7 +48,6 @@
     (minimap-create)))
 (global-set-key (kbd "<f7> m") 'minimap-toggle)
 
-(require 'minimap-bug)
 
 (provide 'minimap-config)
 ;;; minimap-config.el ends here

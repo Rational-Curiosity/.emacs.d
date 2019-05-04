@@ -150,11 +150,11 @@ prompt the user for a coding system."
                  ("Ü" . "U")) string)
     (set 'string (replace-regexp-in-string (car map) (cdr map) string nil t))))
 
-;;;;;;;;;;;;;;
-;; Sangrado ;;
-;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;
+;; Indentation ;;
+;;;;;;;;;;;;;;;;;
 
-;; Solo con espacios, sin tabulador
+;; Only spaces without tabs
 (setq-default indent-tabs-mode nil
               tab-width 4
               sh-indent-for-case-label 0
@@ -171,17 +171,17 @@ prompt the user for a coding system."
 (c-set-offset 'label '*)
 (c-set-offset 'case-label '0)
 (c-set-offset 'access-label '/)
-;; Números de línea
+;; Line numbers
 (add-hook 'prog-mode-hook #'linum-mode)
 (setq linum-format "%d")
-;; Mostrar nueva linea y tabulador
+;; Show new line and tab characters
 (require 'whitespace-bug)
 (with-eval-after-load 'whitespace
   (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) "")
   (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) "")
   (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) "")
-  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) "")
-  )
+  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) ""))
+
 (add-hook 'prog-mode-hook #'(lambda ()
                               (interactive)
                               ;; use make-local-variable with all variables
@@ -209,6 +209,7 @@ prompt the user for a coding system."
                               (whitespace-mode)))
 (add-hook 'csv-mode-hook #'whitespace-mode)
 (setq whitespace-style '(face tab newline tab-mark newline-mark))
+
 (defun whitespace-toggle-lines-tail ()
   (interactive)
   (if (bound-and-true-p whitespace-mode)
@@ -357,12 +358,6 @@ prompt the user for a coding system."
 ;;;;;;;;;;;;
 ;; Moving ;;
 ;;;;;;;;;;;;
-;;(require 'drag-stuff)
-;;(setq drag-stuff-modifier '(meta shift control))
-;; ;;(drag-stuff-mode t)
-;;(drag-stuff-global-mode t)
-
-;;(require 'move-token)
 (require 'move-thing)
 (move-thing-mode t)
 

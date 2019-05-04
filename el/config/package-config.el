@@ -1,4 +1,4 @@
-;;; package-config.el --- Configure company
+;;; package-config.el --- package configurations and improvements
 
 ;;; Commentary:
 
@@ -24,18 +24,7 @@
   (cl-mapcar (lambda (n u) (add-to-list 'package-archives (cons n u) t))
              names urls))
 
-;; (when (< emacs-major-version 24)
-;;   ;; For important compatibility libraries like cl-lib
-;;   (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
-;; ] <repos>
-;; remove duplicates not necesary with add-to-list
-;; (delete-dups  package-archives)
-;; manual startup
 (package-initialize)
-
-;; (unless (package-installed-p 'use-package)
-;;   (package-refresh-contents)
-;;   (package-install 'use-package))
 
 (with-eval-after-load 'custom
   ;; Instalamos los paquetes que falten
@@ -54,10 +43,6 @@
   ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
   (unless (daemonp)
     (package-autoremove)))
-
-;; Se evalua al compilar pero no cuando corre el programa compilado
-;; (eval-when-compile
-;;   (require 'use-package))
 
 (defun package-emacswiki-update ()
   (interactive)

@@ -81,15 +81,6 @@
   (defun figlet-get-font-dir-advice (orig-fun &rest args)
     (path-style-linux-to-windows (apply orig-fun args)))
   (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice)
-  ;; ag
-  (with-eval-after-load 'ede-config
-    (defun helm-ag-case ()
-      "Detect whether we are inside a project and run according."
-      (interactive)
-      (cond
-       ((and (featurep 'projectile) (not (string-equal (projectile-project-name) "-")))
-        (helm-ag (projectile-project-root)))
-       (t (call-interactively 'helm-ag)))))
   ;; Python
   (setq python-shell-interpreter "python")
   (with-eval-after-load 'elpy

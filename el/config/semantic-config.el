@@ -30,6 +30,7 @@
 ;; (require 'semantic/symref)
 ;; Include semantic-symref-results-mode-map and related
 (require 'semantic/symref/list)
+(require 'semantic/wisent/python)
 ;; [ Autocomplete with gcc headers
 ;; inside company-extensions-config.el
 ;; (require 'semantic/bovine/gcc)
@@ -84,43 +85,25 @@ Improve default ia jump at point."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(bind-keys :map semantic-mode-map
-           ([(control return)] . semantic-ia-complete-symbol)
-           ("C-c , a" . semantic-complete-analyze-inline)
-           ("C-c , s" . semantic-ia-show-summary)
-           ("C-c , d" . semantic-ia-show-doc)
-           ("C-c , c" . semantic-ia-describe-class)
-           ("M-," . semantic-analyze-proto-impl-toggle) ; "C-c , p"
-           ("M-." . semantic-complete-jump-at-point) ; "C-c , j"
-           ("M-Ç" . semantic-symref)
-           ("M-ç" . semantic-symref-symbol)
-           ;; senator
-           ("C-c , +" . senator-fold-tag)
-           ("C-c , -" . senator-unfold-tag)
-           ("C-c , ." . senator-fold-tag-toggle))
+;; (bind-keys :map semantic-mode-map
+;;            ([(control return)] . semantic-ia-complete-symbol)
+;;            ("C-c , a" . semantic-complete-analyze-inline)
+;;            ("C-c , s" . semantic-ia-show-summary)
+;;            ("C-c , d" . semantic-ia-show-doc)
+;;            ("C-c , c" . semantic-ia-describe-class)
+;;            ("M-," . semantic-analyze-proto-impl-toggle) ; "C-c , p"
+;;            ("M-." . ido-semantic-complete-jump) ; "C-c , j"
+;;            ("M--" . semantic-analyze-possible-completions)
+;;            ("M-Ç" . semantic-symref)
+;;            ("M-ç" . semantic-symref-symbol)
+;;            ;; senator
+;;            ("C-c , +" . senator-fold-tag)
+;;            ("C-c , -" . senator-unfold-tag)
+;;            ("C-c , ." . senator-fold-tag-toggle))
 (bind-keys :map semantic-symref-results-mode-map
            ("e" . semantic-symref-list-expand-all)
            ("c" . semantic-symref-list-contract-all))
-;; Interacción con global
-;; [ Extremadamente lento para proyectos grandes
-;;   y numerosos problemas de versiones
-;; (semanticdb-enable-gnu-global-databases 'c-mode t)
-;; (semanticdb-enable-gnu-global-databases 'c++-mode t)
-;; ]
-;; Integración con imenu
-;; (defun my-semantic-hook ()
-;;   (imenu-add-to-menubar "TAGS"))
-;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
 
-;; Configuracion de autocompletado
-;; (defun my-c-mode-cedet-hook ()
-;; ;; Mustra opciones después de . o >
-;; ;  (local-set-key "." 'semantic-complete-self-insert)
-;; ;  (local-set-key ">" 'semantic-complete-self-insert)
-;; ;; Facilita autocompletados a auto-complete y gtags
-;;   (add-to-list 'ac-sources 'ac-source-gtags)
-;;   (add-to-list 'ac-sources 'ac-source-semantic))
-;; (add-hook 'c-mode-common-hook 'my-c-mode-cedet-hook)
 (semantic-mode 1)
 
 (require 'srecode)

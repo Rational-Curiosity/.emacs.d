@@ -163,7 +163,7 @@
   ("M-q" nil "quit"))
 (bind-keys
  ("C-c i m" . hydra-spell/body))
-(define-key flyspell-mode-map (kbd "C-;") 'helm-flyspell-correct)
+
 
 (provide 'flyspell-config)
 ;;; flyspell-config.el ends here

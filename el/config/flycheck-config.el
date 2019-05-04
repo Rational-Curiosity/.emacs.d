@@ -103,9 +103,6 @@
 (when (member "extra" flycheck-gcc-warnings)
   (delete "extra" flycheck-gcc-warnings))
 
-;; Error notification
-(add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode)
-
 ;; Mode-line
 (defun my-flycheck-mode-line-status-text (&optional status)
   "Get a text describing STATUS for use in the mode line."

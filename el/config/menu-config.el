@@ -15,9 +15,7 @@
 ;; There are machine dependent configurations
 (with-eval-after-load 'machine-config
   (recentf-mode 1))
-;; [ Se encarga helm
-;;(global-set-key "\C-x\ \C-r" 'recentf-open-files)
-;; ]
+(global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (set 'tool-bar-max-label-size 12)
 (set 'tool-bar-style 'image)
 
