@@ -16,7 +16,7 @@
 ;; ]
 (require 'company-c-headers)
 (require 'company-yasnippet)
-(setq company-lighter-base "Ⓒ")
+(setcar (cdr (assq 'company-mode minor-mode-alist)) "C")
 (add-hook 'after-init-hook 'global-company-mode)
 ;; [ disable slow 'company-semantic'. comment with ede-project
 ;;(delete 'company-semantic company-backends)

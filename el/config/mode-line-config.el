@@ -59,7 +59,7 @@
 (add-to-list 'rm-text-properties
              '("⚐" 'face 'mode-line-error))
 
-(setcar (cdr (assq 'abbrev-mode minor-mode-alist)) "ⓐ")
+(setcar (cdr (assq 'abbrev-mode minor-mode-alist)) "A")
 (setq auto-revert-mode-text "Ar"
       rm-blacklist '(" Projectile"))
 

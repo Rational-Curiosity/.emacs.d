@@ -17,7 +17,7 @@
 ;;; Code:
 
 (message "Importing yasnippet-config")
-(setcar (cdr (assq 'yas-minor-mode minor-mode-alist)) "ⓨ")
+(setcar (cdr (assq 'yas-minor-mode minor-mode-alist)) "Y")
 
 (require 'yasnippet-snippets)
 (setq yas-snippet-dirs
