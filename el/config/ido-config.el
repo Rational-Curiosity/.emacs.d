@@ -51,11 +51,11 @@
         (last-command last-command)
         (buffer-modified (buffer-modified-p))
         (hippie-expand-function (or hippie-expand-function 'hippie-expand)))
-    (cl-flet ((ding)) ; avoid the (ding) when hippie-expand exhausts its options.
+    (cl-letf (((symbol-function 'ding) (lambda ()))) ; avoid the (ding) when hippie-expand exhausts its options.
       (while (progn
-               (funcall hippie-expand-function nil)
-               (setq last-command 'hippie-expand-completions)
-               (not (equal he-num -1)))))
+                   (funcall hippie-expand-function nil)
+                   (setq last-command 'hippie-expand-completions)
+                   (not (equal he-num -1)))))
     ;; Evaluating the completions modifies the buffer, however we will finish
     ;; up in the same state that we began.
     (set-buffer-modified-p buffer-modified)
@@ -76,7 +76,8 @@
   (interactive)
   (ido-hippie-expand-with 'hippie-expand))
 
-(setcdr (last completion-at-point-functions) '(hippie-completion-at-point))
+;; Dangerous
+;; (setcdr (last completion-at-point-functions) '(hippie-completion-at-point))
 
 ;; semantic with ido
 (defun ido-semantic-complete-jump (sym)

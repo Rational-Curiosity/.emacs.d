@@ -50,8 +50,6 @@
 
 
 (require 'eww)
-;;(require 'eww-bug)
-
 
 (setq eww-search-prefix "https://www.google.com/search?q="
       eww-download-directory "~/Descargas")

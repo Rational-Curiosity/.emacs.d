@@ -34,7 +34,7 @@
 ;; Opciones ;;
 ;;;;;;;;;;;;;;
 (setq-default dirtrack-list '("\033\\[00;34m\\([^\033]+\\)" 1 nil))
-(require 'comint-bug)
+(require 'comint)
 (setq comint-scroll-to-bottom-on-input t  ; always insert at the bottom
       comint-scroll-to-bottom-on-output t ; always add output at the bottom
       comint-scroll-show-maximum-output t ; scroll to show max possible output

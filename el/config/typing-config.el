@@ -175,7 +175,6 @@ prompt the user for a coding system."
 (add-hook 'prog-mode-hook #'linum-mode)
 (setq linum-format "%d")
 ;; Show new line and tab characters
-(require 'whitespace-bug)
 (with-eval-after-load 'whitespace
   (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) "")
   (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) "")

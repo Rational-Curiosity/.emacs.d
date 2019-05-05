@@ -75,10 +75,60 @@
 ;; (advice-add 'rtags-start-process-unless-running :before
 ;;             (lambda () (message "Loading rdm")))
 
+(defhydra hydra-rtags (:foreign-keys run :hint nil)
+  "
+^Find^             ^Actions^             ^Info
+^^^^^^^^-----------------------------------------------
+_._: symbol at.    _R_: rename symbol    _V_: p. enum at.
+_,_: refs at.      _X_: fixit at.        _D_: diagnostics
+_/_: all refs at.  _F_: fixit            _G_: guess fun at.
+_v_: virtuals at.  _Y_: cycle overlays   _P_: p. dependencies
+_>_: symbol        _-_: back pos         _M_: symbol info
+_<_: refs          _+_: forward pos      _S_: summary
+_;_: file          _p_: set project      _B_: show rtags buf
+^ ^                _e_: reparse file     _T_: taglist
+^ ^                _E_: preprocess file
+^ ^                _O_: goto offset
+^ ^                _I_: imenu
+"
+  ("." rtags-find-symbol-at-point)
+  ("," rtags-find-references-at-point)
+  ("v" rtags-find-virtuals-at-point)
+  ("V" rtags-print-enum-value-at-point)
+  ("/" rtags-find-all-references-at-point)
+  ("Y" rtags-cycle-overlays-on-screen)
+  (">" rtags-find-symbol)
+  ("<" rtags-find-references)
+  ("-" rtags-location-stack-back)
+  ("+" rtags-location-stack-forward)
+  ("D" rtags-diagnostics)
+  ("G" rtags-guess-function-at-point)
+  ("p" rtags-set-current-project)
+  ("P" rtags-print-dependencies)
+  ("e" rtags-reparse-file)
+  ("E" rtags-preprocess-file)
+  ("R" rtags-rename-symbol)
+  ("M" rtags-symbol-info)
+  ("S" rtags-display-summary)
+  ("O" rtags-goto-offset)
+  (";" rtags-find-file)
+  ("F" rtags-fixit)
+  ("X" rtags-fix-fixit-at-point)
+  ("B" rtags-show-rtags-buffer)
+  ("I" rtags-imenu)
+  ("T" rtags-taglist)
+  ("M-q" nil "quit"))
+(bind-keys :map c-mode-base-map
+           ("C-:" . hydra-rtags/body))
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
 (mapc (lambda (x)
         (define-key c-mode-base-map
           (kbd (concat "C-c r " (car x))) (cdr x)))
-      '(("." . rtags-find-symbol-at-point)
+      '(("m" . hydra-rtags/body)
+        ("." . rtags-find-symbol-at-point)
         ("," . rtags-find-references-at-point)
         ("v" . rtags-find-virtuals-at-point)
         ("V" . rtags-print-enum-value-at-point)

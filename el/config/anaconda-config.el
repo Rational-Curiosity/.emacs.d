@@ -49,6 +49,30 @@
 
 (advice-add 'set-python-interpreter-args :after #'set-anaconda-mode-lighter)
 
+
+(defhydra hydra-anaconda (:foreign-keys run :hint nil)
+  "
+^Find^             ^Other window^  ^Other frame
+^^^^^^^^----------------------------------------
+definitions: _._   _d_             _D_
+references:  _,_   _r_             _R_
+assignments: _=_   _a_             _A_
+show doc:    _s_
+"
+  ("." anaconda-mode-find-definitions)
+  ("d" anaconda-mode-find-definitions-other-window)
+  ("D" anaconda-mode-find-definitions-other-frame)
+  ("," anaconda-mode-find-references)
+  ("r" anaconda-mode-find-references-other-window)
+  ("R" anaconda-mode-find-references-other-frame)
+  ("=" anaconda-mode-find-assignments)
+  ("a" anaconda-mode-find-assignments-other-window)
+  ("A" anaconda-mode-find-assignments-other-frame)
+  ("s" anaconda-mode-show-doc)
+  ("M-q" nil "quit"))
+(bind-keys :map anaconda-mode-map
+           ("C-:" . hydra-anaconda/body))
+
 (define-key anaconda-mode-map (kbd "M-r") nil)
 
 

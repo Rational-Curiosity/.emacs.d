@@ -71,6 +71,7 @@
 ;; first of all
 (load "config" t)
 
+(load-all-in-directory "~/.emacs.d/el/bugs/")
 ;; [ <Always required>
 
 (require 'ido-config)
@@ -239,10 +240,10 @@
 
 ;; [ python
 (setq python-shell-interpreter "python3")
-(add-hook 'python-mode-hook #'detect-python-project-version)
-(add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-mode))
-(add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-eldoc-mode))
 (with-eval-after-load 'python
+  (add-hook 'python-mode-hook #'detect-python-project-version)
+  (add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-mode))
+  (add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-eldoc-mode))
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)

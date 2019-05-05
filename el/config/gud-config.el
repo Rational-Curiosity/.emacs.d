@@ -47,10 +47,6 @@
 ;; GDB configuration
 ;; =================================
 ;;;;;;;;;;
-;; Bugs ;;
-;;;;;;;;;;
-(require 'gdb-bug)
-;;;;;;;;;;
 ;;;;;;
 (with-eval-after-load 'gdb-mi
 

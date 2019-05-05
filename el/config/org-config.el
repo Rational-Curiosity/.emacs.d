@@ -304,7 +304,7 @@
 ;; Convert to LibreOffice ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'ox-odt nil t)
-(require 'ox-odt-bug)
+
 (setq org-odt-fontify-srcblocks t
       org-odt-create-custom-styles-for-srcblocks t
       org-odt-table-styles
@@ -456,7 +456,7 @@
 ;; Convert to beamer presentation ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'ox-beamer)
-;; (require 'ox-beamer-bug)
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to html ;;
 ;;;;;;;;;;;;;;;;;;;;;
