@@ -11,6 +11,7 @@
 (require 'ido)
 ;; ido mode
 (setq ido-enable-flex-matching t
+      ido-max-prospects 20
       ido-use-filename-at-point 'guess
       ido-create-new-buffer 'always
       ido-use-virtual-buffers t)
@@ -36,7 +37,6 @@
   (let ((bounds (bounds-of-thing-at-point 'symbol))
         (expands (hippie-expand-completions)))
     (when (and bounds expands)
-      (message "%s" expands)
       (let* ((beg (car bounds))
              (end (cdr bounds))
              (symbol (buffer-substring-no-properties beg end)))
@@ -134,6 +134,14 @@
                           acc))))
     acc))
 
+;; ido recentf
+(defun ido-recentf-open ()
+  "Use `ido-completing-read' to find a recent file."
+  (interactive)
+  (if (find-file (ido-completing-read "Find recent file: " recentf-list))
+      (message "Opening file...")
+    (message "Aborting")))
+
 ;; smex
 (smex-initialize) ; Can be omitted. This might cause a (minimal) delay
                   ; when Smex is auto-initialized on its first run.
@@ -143,8 +151,9 @@
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 
 (bind-keys
- ("M-i" . ido-occur-at-point)
- ("M-I" . ido-occur-from-isearch))
+ ("M-i"     . ido-occur-at-point)
+ ("M-I"     . ido-occur-from-isearch)
+ ("C-x C-r" . ido-recentf-open))
 
 
 (provide 'ido-config)

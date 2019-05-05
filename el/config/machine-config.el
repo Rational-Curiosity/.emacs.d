@@ -61,9 +61,7 @@
  ;; Linux ;;
  ;;;;;;;;;;;
  ((eq system-type 'gnu/linux)
-  ;; Python
-  (setq python-shell-interpreter (or (executable-find "pypy3")
-                                     "python3")))
+  )
  ;;;;;;;;;;;;;
  ;; Windows ;;
  ;;;;;;;;;;;;;
@@ -82,7 +80,6 @@
     (path-style-linux-to-windows (apply orig-fun args)))
   (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice)
   ;; Python
-  (setq python-shell-interpreter "python")
   (with-eval-after-load 'elpy
     (setq elpy-rpc-python-command (or (executable-find "py")
                                       (executable-find "pythonw")

@@ -23,12 +23,6 @@
 (with-eval-after-load 'julia-mode
   (require 'flycheck-julia)
   (flycheck-julia-setup))
-;;;;;;;;;;;;
-;; Python ;;
-;;;;;;;;;;;;
-(setq flycheck-python-flake8-executable "flake8"
-      flycheck-python-pylint-executable "pylint"
-      flycheck-python-mypy-executable "mypy")
 ;;;;;;;;;;;;;;
 ;; Flycheck ;;
 ;;;;;;;;;;;;;;

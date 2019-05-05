@@ -57,6 +57,13 @@
   "Ensures FUNC exist and eval with ARGS."
   (list 'and (list 'fboundp func) (list 'apply func (list 'quote args))))
 
+;; Return function that check bound before
+(defun lambda-bound-and-eval (func &rest args)
+  "Return lambda that ensures FUNC exist and eval with ARGS."
+  (lexical-let ((func func)
+                (args args))
+    (lambda () (and (fboundp func) (apply func args)))))
+
 ;; write message in *Messages* buffer with colors
 ;; Thanks to: https://emacs.stackexchange.com/a/20178
 (defun message-color (format &rest args)
@@ -152,7 +159,7 @@ Otherwise return a list of files which regex match."
         (car matched)
       matched)))
 
-
+;; bugs
 (defun bug-check-function-bytecode (function bytecode-base64 &optional inhibit-log)
   "Check if FUNCTION has BYTECODE-BASE64.  If INHIBIT-LOG is non-nil inhibit log when differs."
   (if (string-equal
@@ -193,7 +200,7 @@ When called from lisp, FUNCTION may also be a function object."
        (setq fn (intern val)))
      (unless (and fn (symbolp fn))
        (user-error "You didn't specify a function symbol"))
-     (unless (fboundp fn) 
+     (unless (fboundp fn)
        (user-error "Symbol's function definition is void: %s" fn))
      (list fn)))
   (insert "\""

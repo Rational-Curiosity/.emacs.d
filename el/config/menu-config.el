@@ -11,13 +11,12 @@
 (setq recentf-max-saved-items 500
       recentf-max-menu-items 30
       recentf-exclude '("\\.emacs\\.d/elpa/.*\\.el\\'" "\\.el\\.gz\\'")
-      recentf-filename-handlers '(file-truename abbreviate-file-name))
+      recentf-filename-handlers '(file-truename abbreviate-file-name)
+      tool-bar-max-label-size 12
+      tool-bar-style 'image)
 ;; There are machine dependent configurations
 (with-eval-after-load 'machine-config
   (recentf-mode 1))
-(global-set-key "\C-x\ \C-r" 'recentf-open-files)
-(set 'tool-bar-max-label-size 12)
-(set 'tool-bar-style 'image)
 
 
 (provide 'menu-config)

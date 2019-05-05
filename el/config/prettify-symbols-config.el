@@ -12,13 +12,13 @@
 (require 'config-lib)
 
 (eval-and-when-daemon frame
-  (when (display-graphic-p frame)
     (setq prettify-symbols-unprettify-at-point 'right-edge)
 
     (add-hook 'emacs-lisp-mode-hook
               (lambda ()
-                (push '("nil" . ?∅) prettify-symbols-alist)
-                (prettify-symbols-mode)))
+                (when (display-graphic-p)
+                  (push '("nil" . ?∅) prettify-symbols-alist)
+                  (prettify-symbols-mode))))
 
     (add-hook 'c-mode-common-hook
               (lambda ()
@@ -26,17 +26,27 @@
                 (push '("false" . ?✘) prettify-symbols-alist)
                 (push '("!"     . ?¬) prettify-symbols-alist)
                 (push '("="     . ?≔) prettify-symbols-alist)
-                (push '("&&"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?∧)) prettify-symbols-alist)
-                (push '("||"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?∨)) prettify-symbols-alist)
-                (push '("!="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≠)) prettify-symbols-alist)
-                (push '("<="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≤)) prettify-symbols-alist)
-                (push '(">="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≥)) prettify-symbols-alist)
-                (push '("=="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≡)) prettify-symbols-alist)
-                (push '("->"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?→)) prettify-symbols-alist)
-                (push '("::"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?⊃)) prettify-symbols-alist)
-                (push '("::~"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bc . Br) ?⊃ (Bc . Bl) ?~)) prettify-symbols-alist)
-                (push '(">::"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bl . Bl) ?> (Bc . Bl) ?⊃)) prettify-symbols-alist)
-                (push '("->*"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bc . Br) ?→ (Br . Br) ?*)) prettify-symbols-alist)
+                (if (display-graphic-p)
+                    (progn
+                      (push '("&&"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?∧)) prettify-symbols-alist)
+                      (push '("||"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?∨)) prettify-symbols-alist)
+                      (push '("!="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≠)) prettify-symbols-alist)
+                      (push '("<="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≤)) prettify-symbols-alist)
+                      (push '(">="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≥)) prettify-symbols-alist)
+                      (push '("=="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≡)) prettify-symbols-alist)
+                      (push '("->"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?→)) prettify-symbols-alist)
+                      (push '("::"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?⊃)) prettify-symbols-alist)
+                      (push '("::~"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bc . Br) ?⊃ (Bc . Bl) ?~)) prettify-symbols-alist)
+                      (push '(">::"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bl . Bl) ?> (Bc . Bl) ?⊃)) prettify-symbols-alist)
+                      (push '("->*"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bc . Br) ?→ (Br . Br) ?*)) prettify-symbols-alist))
+                  (push '("&&"    . ?∧) prettify-symbols-alist)
+                  (push '("||"    . ?∨) prettify-symbols-alist)
+                  (push '("!="    . ?≠) prettify-symbols-alist)
+                  (push '("<="    . ?≤) prettify-symbols-alist)
+                  (push '(">="    . ?≥) prettify-symbols-alist)
+                  (push '("=="    . ?≡) prettify-symbols-alist)
+                  (push '("->"    . ?→) prettify-symbols-alist)
+                  (push '("::"    . ?⊃) prettify-symbols-alist))
                 (prettify-symbols-mode)))
 
     (add-hook 'python-mode-hook
@@ -46,16 +56,24 @@
                 (push '("None"  . ?∅) prettify-symbols-alist)
                 (push '("!"     . ?¬) prettify-symbols-alist)
                 (push '("="     . ?≔) prettify-symbols-alist)
-                (push '("and"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bc . Bc) ?∧)) prettify-symbols-alist)
-                (push '("or"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?∨)) prettify-symbols-alist)
-                (push '("!="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≠)) prettify-symbols-alist)
-                (push '("<="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≤)) prettify-symbols-alist)
-                (push '(">="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≥)) prettify-symbols-alist)
-                (push '("=="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≡)) prettify-symbols-alist)
+                (if (display-graphic-p)
+                    (progn
+                      (push '("and"   . (?\s (Br . Bl) ?\s (Br . Bl) ?\s (Bc . Bc) ?∧)) prettify-symbols-alist)
+                      (push '("or"    . (?\s (Br . Bl) ?\s (Bc . Bc) ?∨)) prettify-symbols-alist)
+                      (push '("!="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≠)) prettify-symbols-alist)
+                      (push '("<="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≤)) prettify-symbols-alist)
+                      (push '(">="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≥)) prettify-symbols-alist)
+                      (push '("=="    . (?\s (Br . Bl) ?\s (Bc . Bc) ?≡)) prettify-symbols-alist))
+                  (push '("and"   . ?∧) prettify-symbols-alist)
+                  (push '("or"    . ?∨) prettify-symbols-alist)
+                  (push '("!="    . ?≠) prettify-symbols-alist)
+                  (push '("<="    . ?≤) prettify-symbols-alist)
+                  (push '(">="    . ?≥) prettify-symbols-alist)
+                  (push '("=="    . ?≡) prettify-symbols-alist))
                 (prettify-symbols-mode)))
 
     (bind-keys
-     ("<f7> p"  . prettify-symbols-mode))))
+     ("<f7> p"  . prettify-symbols-mode)))
 
 
 (provide 'prettify-symbols-config)

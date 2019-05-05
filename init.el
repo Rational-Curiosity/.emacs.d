@@ -31,7 +31,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (crm-custom ido-at-point epl pkg-info ido-completing-read+ smex ido-occur projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable cyphejor yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
+    (anaconda-mode pythonic rtags company-c-headers company company-anaconda company-rtags crm-custom ido-at-point epl pkg-info ido-completing-read+ smex ido-occur projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable cyphejor yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -74,6 +74,9 @@
 ;; [ <Always required>
 
 (require 'ido-config)
+
+(when (load "company" t)
+  (require 'company-extensions-config))
 
 (require 'hydra-config)
 
@@ -209,7 +212,7 @@
     ;; Do nothing, don't want to run checks until I save.
     ))
 
-;; cc-mode
+;; [ cc-mode
 (with-eval-after-load 'cc-mode
   (require 'c-c++-config)
   (require 'gud-config)
@@ -217,7 +220,14 @@
   (require 'srefactor-config)
   ;; Después de semantic
   ;; Después de ede-projects-config
-  (require 'cmake-make-config))
+  (require 'cmake-make-config)
+  ;; rtags: Jumping and Completion (after semantic)
+  (when (load "rtags" t)
+      (when (executable-find "rdm")
+        (add-hook 'c-mode-hook   #'rtags-start-process-unless-running)
+        (add-hook 'c++-mode-hook #'rtags-start-process-unless-running))
+    (require 'rtags-config)))
+;; ]
 
 ;; Realmente solo se carga cuando se necesita
 (with-eval-after-load 'rst
@@ -228,12 +238,20 @@
   (require 'markdown-mode+))
 
 ;; [ python
-(with-eval-after-load 'python-mode
+(setq python-shell-interpreter "python3")
+(add-hook 'python-mode-hook #'detect-python-project-version)
+(add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-mode))
+(add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-eldoc-mode))
+(with-eval-after-load 'python
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
-  (require 'python-config))
+  (require 'python-config)
+  ;; ANACONDA
+  (when (load "anaconda-mode" t)
+    (require 'anaconda-config)))
 ;; ]
+
 
 ;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
 (autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)

@@ -20,7 +20,9 @@
 (require 'python) ;; inferior-python-mode-map
 (require 'flycheck)
 
-
+;;;;;;;;;;;;;
+;; Helpers ;;
+;;;;;;;;;;;;;
 (defun ipython-to-python-ring-save (&optional arg)
   (interactive "P")
   (if (use-region-p)
@@ -29,37 +31,101 @@
         (kill-new python-str)
         (setq deactivate-mark t))))
 
-(if (string-equal "i" (substring-no-properties python-shell-interpreter 0 1))
+(defun pypy-to-python-ring-save (&optional arg)
+  (interactive "P")
+  (if (use-region-p)
+      (let* ((pypy-str (filter-buffer-substring (region-beginning) (region-end)))
+             (python-str (pypy-to-python-text pypy-str)))
+        (kill-new python-str)
+        (setq deactivate-mark t))))
+
+(defun set-python-interpreter-args ()
+  (cond
+   ((string-match-p "ipython" python-shell-interpreter)
     ;; ipython or ipython3
-    (progn
-      (define-key inferior-python-mode-map (kbd "M-w") #'ipython-to-python-ring-save)
-      (setq python-shell-interpreter-args "-i --simple-prompt"
-            python-command-version (substring-no-properties python-shell-interpreter 1)))
-  ;; python or python3
-  (setq python-shell-interpreter-args "-i"
-        python-command-version python-shell-interpreter))
+    (define-key inferior-python-mode-map (kbd "M-w") #'ipython-to-python-ring-save)
+    (setq python-shell-interpreter-args "-i --simple-prompt"))
+   ((string-match-p "pypy" python-shell-interpreter)
+    (define-key inferior-python-mode-map (kbd "M-w") #'pypy-to-python-ring-save)
+    (setq python-shell-interpreter-args "-i -S"))
+   (t
+    ;; python or python3
+    (define-key inferior-python-mode-map (kbd "M-w") nil)
+    (setq python-shell-interpreter-args "-i"))))
 
+(defun set-python-interpreter (interpreter)
+  (if (string-match-p "[^0-9]3[.0-9]*$" interpreter)
+      (setq python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python3/flake8")
+                                            "flake8")
+            flycheck-python-flake8-executable python-syntax-check-command
+            flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python3/pylint")
+                                                  "pylint")
+            flycheck-python-mypy-executable (or (executable-find "~/.emacs.d/cache/python3/mypy")
+                                                "mypy"))
+    (setq python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake8")
+                                          "flake8")
+          flycheck-python-flake8-executable python-syntax-check-command
+          flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python/pylint")
+                                                "pylint")
+          flycheck-python-mypy-executable nil))
+  (setq python-shell-interpreter interpreter)
+  (set-python-interpreter-args))
 
-(setq py-custom-temp-directory temporary-file-directory
-      python-indent-guess-indent-offset nil)
-
-(defvar python-syntax-check-command (executable-find "flake8"))
+(defun detect-python-project-version ()
+  (let* ((python-version-filename ".python-version")
+         (python-version-directory (locate-dominating-file default-directory python-version-filename)))
+    (when python-version-directory
+      (message "%s file founded in %s" python-version-filename python-version-directory)
+      (with-temp-buffer
+        (insert-file-contents (concat python-version-directory python-version-filename))
+        (cond
+         ((search-forward-regexp "^[^0-9]*3[.0-9]*$" nil t)
+          (set-python-interpreter (or (executable-find (match-string 0))
+                                      (executable-find "pypy3")
+                                      (executable-find "python3"))))
+         ((search-forward-regexp "^[^0-9]*2[.0-9]*$" nil t)
+          (set-python-interpreter (or (executable-find (match-string 0))
+                                      (executable-find "pypy")
+                                      (executable-find "python")))))))))
 
 (defun toggle-python-version ()
   (interactive)
-  (if (string-equal "3" (substring-no-properties python-shell-interpreter -1))
-      (setq python-shell-interpreter (substring-no-properties python-shell-interpreter 0 -1)
-            python-command-version (if (string-equal "i" (substring-no-properties python-shell-interpreter 0 1))
-                                       (substring-no-properties python-shell-interpreter 1)
-                                     python-shell-interpreter)
-            python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake82")
-                                            "flake8"))
-    (setq python-shell-interpreter (concat python-shell-interpreter "3")
-          python-command-version (if (string-equal "i" (substring-no-properties python-shell-interpreter 0 1))
-                                     (substring-no-properties python-shell-interpreter 1)
-                                   python-shell-interpreter)
-          python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake83")
-                                          "flake8"))))
+  (if (string-match-p "[^0-9]3[.0-9]*$" python-shell-interpreter)
+      (setq python-shell-interpreter (or
+                                      (executable-find (replace-regexp-in-string "\\([^0-9]\\)3[.0-9]*$" "\\1"
+                                                                                 python-shell-interpreter))
+                                      (executable-find "pypy")
+                                      "python")
+            python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake8")
+                                            "flake8")
+            flycheck-python-flake8-executable python-syntax-check-command
+            flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python/pylint")
+                                                  "pylint")
+            flycheck-python-mypy-executable nil)
+    (setq python-shell-interpreter (or
+                                    (executable-find (concat python-shell-interpreter "3"))
+                                    (executable-find "pypy3")
+                                    "python3")
+          python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python3/flake8")
+                                          "flake8")
+          flycheck-python-flake8-executable python-syntax-check-command
+          flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python3/pylint")
+                                                "pylint")
+          flycheck-python-mypy-executable (or (executable-find "~/.emacs.d/cache/python3/mypy")
+                                              "mypy")))
+  (set-python-interpreter-args))
+
+;;;;;;;;;;;;;;;;;;;
+;; Configuration ;;
+;;;;;;;;;;;;;;;;;;;
+(setq py-custom-temp-directory temporary-file-directory
+      python-indent-guess-indent-offset nil)
+
+(set-python-interpreter (or (executable-find "pypy3")
+                            (executable-find "python3")
+                            (executable-find "pypy")
+                            (executable-find "python")
+                            "python"))
 
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
@@ -114,12 +180,17 @@ if __name__ == \"__main__\":
   (replace-regexp-in-string
    "-*\n.*Traceback (most recent call last)" "Traceback (most recent call last):"
    (replace-regexp-in-string
-    "In \[[0-9]+\]: " ">>> "
+    "^In \\[[0-9]+\\]: " ">>> "
     (replace-regexp-in-string
-     "Out\[[0-9+]\]: " ""
+     "^Out\\[[0-9]+\\]: " ""
      (replace-regexp-in-string
-      "   .+: " "... " string)))))
+      "^  +\\.\\.\\.: " "... " string)))))
 
+(defun pypy-to-python-text (string)
+   (replace-regexp-in-string
+    "^>>>> " ">>> "
+     (replace-regexp-in-string
+      "^\\.\\.\\.\\. " "... " string)))
 
 (defun python-import-to-multiline ()
   (interactive)
