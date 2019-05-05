@@ -246,7 +246,7 @@ if __name__ == \"__main__\":
            ("C-c t d" . python-doctest-to-message)
            ("C-c t t" . python-timeit-to-message)
            ("C-c d h" . sphinx-build-html)
-           ("<f7> p"  . toggle-python-version))
+           ("<f7> v"  . toggle-python-version))
 
 
 (provide 'python-config)
