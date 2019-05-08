@@ -118,7 +118,12 @@
 ;;;;;;;;;;;;;;;;;;;
 ;; Configuration ;;
 ;;;;;;;;;;;;;;;;;;;
-(setq py-custom-temp-directory temporary-file-directory
+(setq python-shell-extra-pythonpaths (let ((python-paths (getenv "PYTHONPATH")))
+                                       (and
+                                        python-paths
+                                        (mapcar 'expand-file-name
+                                                (split-string python-paths ":"))))
+      py-custom-temp-directory temporary-file-directory
       python-indent-guess-indent-offset nil)
 
 (set-python-interpreter (or (executable-find "pypy3")

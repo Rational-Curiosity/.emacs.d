@@ -14,30 +14,31 @@
 
 ;;; Code:
 
-(require 'cyphejor)
-(setq
- cyphejor-rules
- '(:upcase
-   ("bookmark"    "→")
-   ("buffer"      "β")
-   ("diff"        "Δ")
-   ("dired"       "δ")
-   ("emacs"       "ε")
-   ("inferior"    "i" :prefix)
-   ("interaction" "i" :prefix)
-   ("interactive" "i" :prefix)
-   ("lisp"        "λ" :postfix)
-   ("menu"        "▤" :postfix)
-   ("mode"        "")
-   ("package"     "↓")
-   ("python"      "π")
-   ("c"           "ȼ")
-   ("shell"       "sh" :postfix)
-   ("text"        "ξ")
-   ("wdired"      "↯δ")
-   ("fish"        "🐟")
-   ("nim"         "ℵ")))
-(cyphejor-mode)
+
+(when (load "cyphejor" t)
+  (setq
+   cyphejor-rules
+   '(:upcase
+     ("bookmark"    "→")
+     ("buffer"      "β")
+     ("diff"        "Δ")
+     ("dired"       "δ")
+     ("emacs"       "ε")
+     ("inferior"    "i" :prefix)
+     ("interaction" "i" :prefix)
+     ("interactive" "i" :prefix)
+     ("lisp"        "λ" :postfix)
+     ("menu"        "▤" :postfix)
+     ("mode"        "")
+     ("package"     "↓")
+     ("python"      "π")
+     ("c"           "ȼ")
+     ("shell"       "sh" :postfix)
+     ("text"        "ξ")
+     ("wdired"      "↯δ")
+     ("fish"        "🐟")
+     ("nim"         "ℵ")))
+  (cyphejor-mode))
 
 
 (require 'rich-minority)

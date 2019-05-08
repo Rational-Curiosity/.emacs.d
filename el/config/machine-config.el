@@ -51,7 +51,9 @@
   (remove-hook 'objc-mode-hook 'irony-mode)
   (remove-hook 'c-mode-hook 'rtags-start-process-unless-running)
   (remove-hook 'c++-mode-hook 'rtags-start-process-unless-running)
-  (require 'gtags-config)))
+  (require 'gtags-config))
+ ((string-equal (system-name) "Ubuntu-18")
+  (bound-and-eval 'config-20)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Machine operating system ;;

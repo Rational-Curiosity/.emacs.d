@@ -31,7 +31,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (anaconda-mode pythonic rtags company-c-headers company company-anaconda company-rtags crm-custom ido-at-point epl pkg-info ido-completing-read+ smex ido-occur projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable cyphejor yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
+    (popup flycheck-popup-tip tern company-tern xref-js2 js2-mode js2-refactor anaconda-mode pythonic rtags company-c-headers company company-anaconda company-rtags crm-custom ido-at-point epl pkg-info ido-completing-read+ smex ido-occur projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -103,6 +103,8 @@
 
 (require 'regions-config)
 
+(require 'eshell-config)
+
 (require 'shell-config)
 
 (require 'tramp-config)
@@ -169,7 +171,9 @@
 (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)
 (with-eval-after-load 'flycheck
   (require 'flycheck-config)
-  (require 'srefactor-config))
+  (require 'srefactor-config)
+  (when (load "flycheck-popup-tip" t)
+    (add-hook 'flycheck-mode-hook #'flycheck-popup-tip-mode)))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (add-hook 'prog-mode-hook #'projectile-mode)
 (with-eval-after-load 'projectile
@@ -224,10 +228,10 @@
   (require 'cmake-make-config)
   ;; rtags: Jumping and Completion (after semantic)
   (when (load "rtags" t)
-      (when (executable-find "rdm")
-        (add-hook 'c-mode-hook   #'rtags-start-process-unless-running)
-        (add-hook 'c++-mode-hook #'rtags-start-process-unless-running))
-    (require 'rtags-config)))
+    (require 'rtags-config)
+    (when (executable-find "rdm")
+      (add-hook 'c-mode-hook   #'rtags-start-process-unless-running)
+      (add-hook 'c++-mode-hook #'rtags-start-process-unless-running))))
 ;; ]
 
 ;; Realmente solo se carga cuando se necesita
@@ -241,16 +245,33 @@
 ;; [ python
 (setq python-shell-interpreter "python3")
 (with-eval-after-load 'python
-  (add-hook 'python-mode-hook #'detect-python-project-version)
-  (add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-mode))
-  (add-hook 'python-mode-hook (lambda-bound-and-eval 'anaconda-eldoc-mode))
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
   (require 'python-config)
+  (add-hook 'python-mode-hook #'detect-python-project-version)
   ;; ANACONDA
   (when (load "anaconda-mode" t)
-    (require 'anaconda-config)))
+    (require 'anaconda-config)
+    (add-hook 'python-mode-hook #'anaconda-mode)
+    (add-hook 'python-mode-hook #'anaconda-eldoc-mode)))
+;; ]
+
+
+;; [ javascript
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.jsx?\\'" . js2-jsx-mode))
+(with-eval-after-load 'js
+  (require 'semantic-config)
+  ;; stickfunc improved
+  (require 'stickyfunc-enhance)
+  (when (load "js2-mode" t)
+    ;; (add-hook 'js-mode-hook #'js2-minor-mode)
+    (add-hook 'js2-mode-hook #'js2-refactor-mode)
+    (add-to-list 'interpreter-mode-alist '("node" . js2-jsx-mode))
+    (require 'javascript-config)
+    (when (executable-find "tern")
+      (add-hook 'js2-mode-hook #'tern-mode))))
 ;; ]
 
 
