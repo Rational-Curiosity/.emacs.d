@@ -77,7 +77,7 @@
 (with-eval-after-load 'esh-mode
   (when (bug-check-function-bytecode
          'eshell-send-input
-         "wMECIojAwgIihw==")
+         "CIUGAAE/xokZGomFFADHCCHIPT8/hVUBiYQiAGALWYMoAGRiiIIzAMkEIQtiiMoBIbYCAYRDAAyDPwCJhEMAy8whiImDawDNCyGIDIRWAA0OJVWDYgABP4VVAc4IzyKCVQHQCA0OJSOCVQELYFWDdwDR0iGCVQHT1DEMAdUxywDWC2BTIrIB19gLYFMjiNkLYFMiiYXEAM0LIYjWDQ4lUyKyAtHaIYjbMr8A09wCIYO5AN0CIYiCvgDeAgQiiDCFxADfILIBMDCCUwEwxmRiiOAgFeAgFiXgIBYmYBYn4CATigtiiG6G8ADP4dMCIrIBKYiJP4X9ANHSIYhkYrYC0dIhiOLj0yKyAYJTAcZkYojgIBXgIBYl4CAWJmAWJ+AgE4oLYohuhjABz+HTAiKyASmIiT+FPQHR0iGIZGK2AuQBIc9Q4dMCIrYC0dIhiMoCIbIBsgEqhw==")
     (defun eshell-send-input (&optional use-region queue-p no-newline)
       "Send the input received to Eshell for parsing and processing.
 After `eshell-last-output-end', sends all text from that marker to

@@ -60,8 +60,15 @@
         (concat acc esh-sep it))
     acc))
 
+;; Below I implement a "prompt number" section
+(setq esh-prompt-num 0)
+(add-hook 'eshell-mode-hook (lambda ()
+                              (make-local-variable 'esh-prompt-num)
+                              (setq-default esh-prompt-num 0)))
+
 (defun esh-prompt-func ()
   "Build `eshell-prompt-function'"
+  (setq esh-prompt-num (incf esh-prompt-num))
   (concat esh-header
           (-reduce-from 'esh-acc "" eshell-funcs)
           "\n"
@@ -86,12 +93,6 @@
              (if (display-graphic-p) "⏳" "τ")  ;  (clock icon)
              (format-time-string "%H:%M" (current-time))
              '(:foreground "forest green"))
-
-;; Below I implement a "prompt number" section
-(setq esh-prompt-num 0)
-(add-hook 'eshell-exit-hook (lambda () (setq esh-prompt-num 0)))
-(advice-add 'eshell-send-input :before
-            (lambda (&rest args) (setq esh-prompt-num (incf esh-prompt-num))))
 
 (esh-section esh-num
              "☰"  ;  (list icon)
