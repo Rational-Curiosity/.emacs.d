@@ -772,7 +772,6 @@ You can also customize this for each buffer, using something like
 ;; Publish ;;
 ;;;;;;;;;;;;;
 (require 'ox-publish)
-(bound-and-eval 'config-03)
 
 ;;;;;;;;;;;
 ;; Links ;;
@@ -782,7 +781,6 @@ You can also customize this for each buffer, using something like
 (delete '("\\.pdf\\'" . default) org-file-apps)
 (add-to-list 'org-file-apps '("\\.pdf::\\([0-9]+\\)\\'" . "evince \"%s\" -p %1"))
 (add-to-list 'org-file-apps '("\\.png\\'" . "eog \"%s\""))
-(bound-and-eval 'config-04)
 
 ;;;;;;;;;;;;
 ;; Agenda ;;

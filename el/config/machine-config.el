@@ -12,16 +12,6 @@
 ;; Machine name ;;
 ;;;;;;;;;;;;;;;;;;
 (cond
- ;;;;;;;;;;;;;;;;;
- ;; JOB machine ;;
- ;;;;;;;;;;;;;;;;;
- ((string-equal (system-name) (getenv "JOB_MACHINE_NAME"))
-  (bound-and-eval 'config-01))
- ;;;;;;;;;;;;;;;;;;;
- ;; Almis machine ;;
- ;;;;;;;;;;;;;;;;;;;
- ((string-equal (system-name) "madntb60")
-  (bound-and-eval 'config-10))
  ;;;;;;;;;;;;;;;;;;;
  ;; OOOOO machine ;;
  ;;;;;;;;;;;;;;;;;;;
@@ -51,9 +41,7 @@
   (remove-hook 'objc-mode-hook 'irony-mode)
   (remove-hook 'c-mode-hook 'rtags-start-process-unless-running)
   (remove-hook 'c++-mode-hook 'rtags-start-process-unless-running)
-  (require 'gtags-config))
- ((string-equal (system-name) "Ubuntu-18")
-  (bound-and-eval 'config-20)))
+  (require 'gtags-config)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Machine operating system ;;
