@@ -6,11 +6,16 @@
 ;;;;;;;;;;;;;;;;;
 ;; Emacs Shell ;;
 ;;;;;;;;;;;;;;;;;
-(setq eshell-prefer-lisp-functions t)
+(with-eval-after-load 'em-term
+  (add-to-list 'eshell-visual-commands "htop")
+  (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
+  (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show")))
+(setq eshell-prefer-lisp-functions t
+      eshell-destroy-buffer-when-process-dies t
+      eshell-cmpl-cycle-completions nil)
 
-(with-eval-after-load 'em-hist
-  (advice-add 'eshell-previous-matching-input-from-input :before (lambda (arg) (goto-char (point-max))))
-  (advice-add 'eshell-next-matching-input-from-input :before (lambda (arg) (goto-char (point-max)))))
+(advice-add 'eshell-previous-matching-input-from-input :before (lambda (arg) (goto-char (point-max))))
+(advice-add 'eshell-next-matching-input-from-input :before (lambda (arg) (goto-char (point-max))))
 
 (with-eval-after-load 'ag
   (defun ag-advice (orig-fun string &optional directory)
@@ -275,6 +280,12 @@
 (defun pcomplete/man ()
   "Completion rules for the `man' command."
   (pcomplete-here pcomplete-man-user-commands))
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
+(advice-add 'eshell-cmpl-initialize :after (lambda ()
+                                             (define-key eshell-mode-map [tab] 'completion-at-point)))
 
 
 (provide 'eshell-config)
