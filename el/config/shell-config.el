@@ -14,25 +14,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (setq shell-file-name "bash")
 ;;;;;;;;;;;;;
-;; Filtros ;;
+;; Filters ;;
 ;;;;;;;;;;;;;
 ;; Make URLs clickable
 (add-hook 'shell-mode-hook (lambda () (goto-address-mode 1)))
 ;; Make file paths clickable
 (add-hook 'shell-mode-hook 'compilation-shell-minor-mode)
-;; Actualiza 'default-directory' mirando el prompt
+;; Update 'default-directory' parsing prompt
 (add-hook 'shell-mode-hook #'dirtrack-mode)
-;; Colorea los avisos
-(add-hook 'shell-mode-hook #'hl-advices)
-;;;;;;;;;;;;;;;;;;;;
-;; Autocompletado ;;
-;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;
+;; Autocomplete ;;
+;;;;;;;;;;;;;;;;;;
 (require 'bash-completion)
 (bash-completion-setup)
 
-;;;;;;;;;;;;;;
-;; Opciones ;;
-;;;;;;;;;;;;;;
+;;;;;;;;;;;;;
+;; Options ;;
+;;;;;;;;;;;;;
 (setq-default dirtrack-list '("\033\\[00;34m\\([^\033]+\\)" 1 nil))
 (require 'comint)
 (setq comint-scroll-to-bottom-on-input t  ; always insert at the bottom
