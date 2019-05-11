@@ -14,12 +14,14 @@
 ;; Do not include in this file:
 ;; (require 'javascript-mode)
 
+;;;; Install dependencies
+;; sudo apt install npm
+;; sudo npm install -g tern
+
 ;;; Code:
 
 (message "Importing javascript-config")
 
-;; Better imenu
-(add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
 
 (when (load "js2-refactor" t)
   (js2r-add-keybindings-with-prefix "C-c C-r")
@@ -27,12 +29,7 @@
 
   ;; js-mode (which js2 is based on) binds "M-." which conflicts with xref, so
   ;; unbind it.
-  (define-key js-mode-map (kbd "M-.") nil)
-)
-
-(when (load "xref-js2" t)
-  (add-hook 'js2-mode-hook (lambda ()
-                             (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t))))
+  (define-key js-mode-map (kbd "M-.") nil))
 
 (when (load "company-tern" t)
   (add-to-list 'company-backends 'company-tern)

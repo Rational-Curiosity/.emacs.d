@@ -40,7 +40,7 @@
 ;; (advice-add 'projectile-project-name :around #'ede-add-to-projectile-project-name)
 ;; ]
 
-(global-ede-mode 1)
+;;(global-ede-mode 1)
 ;; Unknown error
 ;; (ede-enable-generic-projects)
 

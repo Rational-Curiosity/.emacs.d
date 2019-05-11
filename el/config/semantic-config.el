@@ -30,7 +30,6 @@
 ;; (require 'semantic/symref)
 ;; Include semantic-symref-results-mode-map and related
 (require 'semantic/symref/list)
-(require 'semantic/wisent/python)
 ;; [ Autocomplete with gcc headers
 ;; inside company-extensions-config.el
 ;; (require 'semantic/bovine/gcc)

@@ -31,7 +31,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ido-at-point popup flycheck-popup-tip tern company-tern xref-js2 js2-mode js2-refactor anaconda-mode pythonic rtags company-c-headers company company-anaconda company-rtags crm-custom epl pkg-info ido-completing-read+ smex ido-occur projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
+    (ac-php-core xcscope company-php php-mode ido-at-point popup flycheck-popup-tip tern company-tern xref-js2 js2-mode js2-refactor anaconda-mode pythonic rtags company-c-headers company company-anaconda company-rtags crm-custom epl pkg-info ido-completing-read+ smex ido-occur projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -49,7 +49,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                        ;;
-;;        Paquetes        ;;
+;;        Packages        ;;
 ;;                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'package-config)
@@ -141,9 +141,10 @@
 (require 'csv-config)
 
 (require 'minimap-config)
-;; ] <Always required>
 
 (require 'figlet-config)
+;; ] <Always required>
+
 
 ;; [ <Not always required>
 (with-eval-after-load 'ispell
@@ -200,6 +201,8 @@
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
+  (require 'gud-config)
+  (require 'speedbar-config)
   (with-current-buffer "*scratch*"
     (lisp-interaction-mode)))
 ;; ]
@@ -221,11 +224,11 @@
     ))
 
 ;; [ cc-mode
-(with-eval-after-load 'cc-mode
+(defun c-c++-config ()
+  ;; run only once
+  (remove-hook 'c-mode-hook 'c-c++-config)
+  (remove-hook 'c++-mode-hook 'c-c++-config)
   (require 'c-c++-config)
-  (require 'gud-config)
-  (require 'speedbar-config)
-  (require 'srefactor-config)
   ;; Después de semantic
   ;; Después de ede-projects-config
   (require 'cmake-make-config)
@@ -235,9 +238,11 @@
     (when (executable-find "rdm")
       (add-hook 'c-mode-hook   #'rtags-start-process-unless-running)
       (add-hook 'c++-mode-hook #'rtags-start-process-unless-running))))
+(add-hook 'c-mode-hook   'c-c++-config)
+(add-hook 'c++-mode-hook 'c-c++-config)
 ;; ]
 
-;; Realmente solo se carga cuando se necesita
+;; loads only when necessary
 (with-eval-after-load 'rst
   (require 'rst-config))
 
@@ -248,9 +253,7 @@
 ;; [ python
 (setq python-shell-interpreter "python3")
 (with-eval-after-load 'python
-  (require 'semantic-config)
-  ;; stickfunc improved
-  (require 'stickyfunc-enhance)
+  (require 'semantic/wisent/python)
   (require 'python-config)
   (add-hook 'python-mode-hook #'detect-python-project-version)
   ;; ANACONDA
@@ -265,18 +268,24 @@
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.jsx?\\'" . js2-jsx-mode))
 (with-eval-after-load 'js
-  (require 'semantic-config)
-  ;; stickfunc improved
-  (require 'stickyfunc-enhance)
   (when (load "js2-mode" t)
     ;; (add-hook 'js-mode-hook #'js2-minor-mode)
     (add-hook 'js2-mode-hook #'js2-refactor-mode)
+    ;; Better imenu
+    (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (add-to-list 'interpreter-mode-alist '("node" . js2-jsx-mode))
     (require 'javascript-config)
+    (when (load "xref-js2" t)
+      (add-hook 'js2-mode-hook (lambda ()
+                                 (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t))))
     (when (and (executable-find "tern") (load "tern" t))
       (add-hook 'js2-mode-hook #'tern-mode))))
 ;; ]
 
+;; [ php
+(with-eval-after-load 'php-mode
+  (require 'php-config))
+;; ]
 
 ;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
 (autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
@@ -292,14 +301,15 @@
 (with-eval-after-load 'plantuml-mode
   (require 'plantuml-config))
 
+;; [ org
 (defcustom org-replace-disputed-keys t
   "")
 (with-eval-after-load 'org
   (require 'org-config)
   (require 'org-super-agenda-config)
   (require 'org-appt))
-(unless (getenv "JOB_FOLDER")
-  (add-hook 'org-mode-hook #'org-super-agenda-mode))
+(add-hook 'org-mode-hook #'org-super-agenda-mode)
+;; ]
 
 (with-eval-after-load 'android-mode
   (require 'android-config))
@@ -309,7 +319,7 @@
 ;; (with-eval-after-load 'cscope-minor-mode
 ;;   (require 'xcscope-config))
 
-;; <ahk> Programación en AutoHotKey
+;; <ahk> AutoHotKey programming
 (add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
 
 ;; [ <flyspell>

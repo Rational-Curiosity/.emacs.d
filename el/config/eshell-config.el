@@ -94,13 +94,24 @@
              (format-time-string "%H:%M" (current-time))
              '(:foreground "forest green"))
 
+(esh-section esh-user
+             (if (display-graphic-p) "👤" "υ")
+             (eshell-user-name)
+             '(:foreground "blue"))
+
+(esh-section esh-sysname
+             (if (display-graphic-p) "💻" "σ")
+             (system-name)
+             '(:foreground "red"))
+
 (esh-section esh-num
              "☰"  ;  (list icon)
              (number-to-string esh-prompt-num)
              '(:foreground "brown"))
 
-;; Separator between esh-sections
-(setq esh-sep "  "  ; or " | "
+
+(setq ;; Separator between esh-sections
+      esh-sep "  "  ; or " | "
 
       ;; Separator between an esh-section icon and form
       esh-section-delim " "
@@ -111,13 +122,16 @@
       ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
       ;; your login, these can be the same.
       eshell-prompt-string "└─» "   ; or "└─> "
-      eshell-prompt-regexp (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} "))   ; or "└─> "
-
-;; Choose which eshell-funcs to enable
-(setq eshell-funcs (list esh-dir esh-git esh-python esh-clock esh-num))
-
-;; Enable the new eshell prompt
-(setq eshell-prompt-function 'esh-prompt-func)
+      eshell-prompt-regexp (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} ")   ; or "└─> "
+      ;; Choose which eshell-funcs to enable
+      eshell-funcs (list esh-dir esh-git esh-python esh-clock esh-user esh-sysname esh-num)
+      ;; Enable the new eshell prompt
+      eshell-prompt-function 'esh-prompt-func
+      eshell-banner-message (format
+                             "Emacs version %s on %s. Compilation %s  %s  %s
+"
+                             emacs-version system-type system-configuration system-configuration-options
+                             system-configuration-features))
 
 ;;;;;;;;;;;;;;;;
 ;; Completion ;;
@@ -285,8 +299,10 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(require 'eshell-ido-pcomplete)
 (advice-add 'eshell-cmpl-initialize :after (lambda ()
-                                             (define-key eshell-mode-map [tab] 'completion-at-point)))
+                                             (define-key eshell-mode-map [tab] 'eshell-ido-pcomplete)
+                                             (define-key eshell-mode-map (kbd "<C-return>") 'find-file-at-point)))
 
 
 (provide 'eshell-config)

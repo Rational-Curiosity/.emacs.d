@@ -117,12 +117,11 @@
         (compilation-execute (concat "make -k -f " file " " make-target-last " ")))))))
 
 ;; Teclas
-(require 'cc-mode)
-(bind-keys :map c++-mode-map
-           ("C-c m c" . compile-cmake-make))
-(bind-keys :map c-mode-map
-           ("C-c m c" . compile-cmake-make))
-
+(with-eval-after-load 'cc-mode
+  (bind-keys :map c++-mode-map
+             ("C-c m c" . compile-cmake-make))
+  (bind-keys :map c-mode-map
+             ("C-c m c" . compile-cmake-make)))
 
 (provide 'cmake-make-config)
 ;;; cmake-make-config.el ends here

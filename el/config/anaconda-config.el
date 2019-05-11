@@ -15,8 +15,8 @@
 ;; (require 'anaconda-mode)
 
 
-;; Install python dependencies
-;;;; Python3
+;;;; Install python dependencies
+;;;;;; Python3
 ;; sudo pip3 install flake8
 ;; sudo pip3 install jedi
 ;; sudo pip3 install pylint
@@ -25,7 +25,7 @@
 ;; sudo pip3 install importmagic
 ;; sudo pip3 install autopep8
 ;; sudo pip3 install yapf
-;;;; Python
+;;;;;; Python
 ;; sudo apt install flake8
 ;; sudo pip install flake8 --upgrade
 ;; sudo apt install python-jedi
