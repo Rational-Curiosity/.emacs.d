@@ -25,8 +25,7 @@
       highlight-thing-exclude-thing-under-point t
       highlight-thing-delay-seconds 0.4)
 
-(custom-set-faces
- '(highlight-thing ((t (:background "dark slate gray")))))
+(face-spec-set 'highlight-thing '((t (:background "dark slate gray" :inherit nil))))
 
 
 (provide 'highlight-thing-config)

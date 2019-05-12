@@ -10,6 +10,12 @@
 (require 'ag)
 (require 'ido)
 (require 'ido-occur)
+;; Colors
+(face-spec-set 'ido-subdir '((t (:foreground "#66ff00"))))
+(face-spec-set 'ido-first-match '((t (:foreground "#ccff66"))))
+(face-spec-set 'ido-only-match '((t (:foreground "#ffcc33"))))
+(face-spec-set 'ido-indicator '((t (:foreground "#ffffff"))))
+(face-spec-set 'ido-incomplete-regexp '((t (:foreground "#ffffff"))))
 ;; ido mode
 (setq ido-enable-flex-matching t
       ido-max-prospects 20

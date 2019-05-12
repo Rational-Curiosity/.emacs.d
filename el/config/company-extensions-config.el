@@ -41,21 +41,16 @@
 (define-key company-template-nav-map (kbd "<C-tab>") #'company-template-forward-field)
 (define-key company-template-nav-map [(control tab)] #'company-template-forward-field)
 
-(custom-set-faces
- '(company-preview
-   ((t (:foreground "darkgray" :underline t))))
- '(company-preview-common
-   ((t (:inherit company-preview))))
- '(company-tooltip
-   ((t (:background "lightgray" :foreground "black"))))
- '(company-tooltip-selection
-   ((t (:background "steelblue" :foreground "white"))))
- '(company-tooltip-common
-   ((((type x)) (:inherit company-tooltip :weight bold))
-    (t (:inherit company-tooltip))))
- '(company-tooltip-common-selection
-   ((((type x)) (:inherit company-tooltip-selection :weight bold))
-    (t (:inherit company-tooltip-selection)))))
+;; Colors
+(face-spec-set 'company-preview '((t (:foreground "darkgray" :underline t))))
+(face-spec-set 'company-preview-common '((t (:inherit company-preview))))
+(face-spec-set 'company-tooltip '((t (:background "lightgray" :foreground "black"))))
+(face-spec-set 'company-tooltip-selection '((t (:background "steelblue" :foreground "white"))))
+(face-spec-set 'company-tooltip-common '((((type x)) (:inherit company-tooltip :weight bold))
+                                         (t (:inherit company-tooltip))))
+(face-spec-set 'company-tooltip-common-selection
+               '((((type x)) (:inherit company-tooltip-selection :weight bold))
+                 (t (:inherit company-tooltip-selection))))
 
 
 ;; company-c-headers
