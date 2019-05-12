@@ -76,7 +76,9 @@
 
 (esh-section esh-dir
              (if (display-graphic-p) "📂" "")  ;  (faicon folder)
-             (abbreviate-file-name (eshell/pwd))
+             (let ((name (eshell/pwd)))
+               (rename-buffer (format "*esh:%s*" (file-name-nondirectory name)) t)
+               (abbreviate-file-name name))
              '(:foreground "gold" :bold ultra-bold :underline t))
 
 (esh-section esh-git
@@ -299,9 +301,18 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(defun eshell-send-input-rename ()
+  (interactive)
+  (call-interactively 'eshell-send-input)
+  (let ((proc-running (eshell-interactive-process)))
+    (when proc-running
+      (rename-buffer (format "*esh:%s·%s*"
+                             (file-name-nondirectory (eshell/pwd))
+                             (process-name proc-running)) t))))
 (require 'eshell-ido-pcomplete)
 (advice-add 'eshell-cmpl-initialize :after (lambda ()
                                              (define-key eshell-mode-map [tab] 'eshell-ido-pcomplete)
+                                             (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
                                              (define-key eshell-mode-map (kbd "<C-return>") 'find-file-at-point)))
 
 
