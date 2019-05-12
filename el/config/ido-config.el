@@ -9,6 +9,7 @@
 
 (require 'ag)
 (require 'ido)
+(require 'ido-occur)
 ;; ido mode
 (setq ido-enable-flex-matching t
       ido-max-prospects 20
@@ -150,7 +151,11 @@
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is your old M-x.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
-
+;; ido keys
+(advice-add 'ido-setup-completion-map :after (lambda ()
+                                               (define-key ido-completion-map (kbd "C-v") 'ido-preview)
+                                               (define-key ido-completion-map (kbd "C-s") 'ido-preview-next)
+                                               (define-key ido-completion-map (kbd "C-r") 'ido-preview-prev)))
 (bind-keys
  ("M-i"     . ido-occur-at-point)
  ("M-I"     . ido-occur-from-isearch)
