@@ -31,7 +31,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ac-php-core xcscope company-php php-mode ido-at-point popup flycheck-popup-tip tern company-tern xref-js2 js2-mode js2-refactor anaconda-mode pythonic rtags company-c-headers company company-anaconda company-rtags crm-custom epl pkg-info ido-completing-read+ smex projectile yasnippet-snippets fish-mode lv org org-plus-contrib org-super-agenda plantuml-mode rich-minority which-key org-trello vdiff smartparens vimish-fold format-all flycheck-julia flycheck-haskell haskell-mode goto-chg ctable yasnippet smart-mode-line string-inflection srefactor auctex csharp-mode hierarchy json-reformat json-snatcher xahk-mode json-navigator json-mode flymake-lua lua-mode ht cursor-chg memoize highlight-indent-guides flymake ox-gfm undo-tree vlf smartscan highlight-thing f hide-comnt avy protobuf-mode csv-mode markdown-mode+ gnuplot gnuplot-mode sphinx-doc sphinx-frontend deferred request request-deferred ox-rst stickyfunc-enhance org-agenda-property ox-twbs markdown-mode bind-key cmake-mode dash let-alist s seq web-completion-data flycheck go-mode ob-dart ob-go free-keys transpose-frame rebox2 rainbow-delimiters org-bullets multiple-cursors hydra htmlize graphviz-dot-mode figlet expand-region dash-functional cmake-font-lock clang-format bash-completion android-mode ag))))
+    (ac-php-core ag anaconda-mode android-mode auctex avy bash-completion bind-key clang-format cmake-font-lock cmake-mode company company-anaconda company-c-headers company-php company-rtags company-tern crm-custom csharp-mode csv-mode ctable cursor-chg dash dash-functional deferred epl expand-region f figlet fish-mode flycheck flycheck-haskell flycheck-julia flycheck-popup-tip flymake flymake-lua format-all free-keys gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt hierarchy highlight-indent-guides highlight-thing ht htmlize hydra ido-at-point ido-completing-read+ js2-mode js2-refactor json-mode json-navigator json-reformat json-snatcher let-alist lua-mode lv markdown-mode markdown-mode+ memoize multiple-cursors ob-dart ob-go org org-agenda-property org-bullets org-plus-contrib org-super-agenda org-trello ox-gfm ox-rst ox-twbs php-mode pkg-info plantuml-mode popup projectile protobuf-mode pythonic rainbow-delimiters rebox2 request request-deferred rich-minority rtags s seq smart-mode-line smartparens smartscan smex sphinx-doc sphinx-frontend srefactor stickyfunc-enhance string-inflection tern transpose-frame undo-tree vdiff vimish-fold vlf web-completion-data which-key xahk-mode xcscope xref-js2 xterm-color yasnippet yasnippet-snippets))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -103,11 +103,13 @@
 
 (require 'regions-config)
 
-(with-eval-after-load 'esh-mode
-  (require 'eshell-config))
+(require 'term-config)
 
 (with-eval-after-load 'shell
   (require 'shell-config))
+
+(with-eval-after-load 'esh-mode
+  (require 'eshell-config))
 
 (require 'tramp-config)
 

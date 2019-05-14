@@ -13,6 +13,15 @@
 ;;                             ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (setq shell-file-name "bash")
+;;;;;;;;;;;;
+;; Colors ;;
+;;;;;;;;;;;;
+(setq comint-output-filter-functions
+      (remove 'ansi-color-process-output comint-output-filter-functions))
+
+(add-hook 'shell-mode-hook
+          (lambda () (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t)))
+(setenv "TERM" "xterm-256color")
 ;;;;;;;;;;;;;
 ;; Filters ;;
 ;;;;;;;;;;;;;

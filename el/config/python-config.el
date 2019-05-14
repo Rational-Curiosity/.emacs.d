@@ -256,4 +256,3 @@ if __name__ == \"__main__\":
 
 (provide 'python-config)
 ;;; python-config.el ends here
-

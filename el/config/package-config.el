@@ -25,6 +25,9 @@
              names urls))
 
 (package-initialize)
+(defun package--save-selected-packages-advice (orig-fun value)
+  (funcall orig-fun (sort value 'string-lessp)))
+(advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
 
 (with-eval-after-load 'custom
   ;; Instalamos los paquetes que falten

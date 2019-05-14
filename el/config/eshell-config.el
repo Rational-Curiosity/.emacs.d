@@ -1,32 +1,48 @@
-(if (daemonp)
-    (setenv "EDITOR" "emacsclient -c -n")
-  (setenv "EDITOR" "emacs"))
-;; (setenv "PAGER" "cat")
+;;; eshell-config.el --- Configure and improve eshell
 
+;;; Commentary:
+
+;; Usage:
+;; (with-eval-after-load 'esh-mode
+;;   (require 'eshell-config))
+;; never:
+;; (require 'eshell-config)
+
+;;; Code:
+
+;;;;;;;;;;;;
+;; Colors ;;
+;;;;;;;;;;;;
+(add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
+(setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
+(setenv "TERM" "xterm-256color")
 ;;;;;;;;;;;;;;;;;
 ;; Emacs Shell ;;
 ;;;;;;;;;;;;;;;;;
 (with-eval-after-load 'em-term
   (add-to-list 'eshell-visual-commands "htop")
+  (add-to-list 'eshell-visual-commands "ag")
   (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
   (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show")))
-(setq eshell-prefer-lisp-functions t
-      eshell-destroy-buffer-when-process-dies t
+(setq eshell-prefer-lisp-functions nil
+      eshell-destroy-buffer-when-process-dies nil
       eshell-cmpl-cycle-completions nil)
 
-(advice-add 'eshell-previous-matching-input-from-input :before (lambda (arg) (goto-char (point-max))))
-(advice-add 'eshell-next-matching-input-from-input :before (lambda (arg) (goto-char (point-max))))
-
-(with-eval-after-load 'ag
-  (defun ag-advice (orig-fun string &optional directory)
-    (funcall orig-fun string (or directory default-directory)))
-  (advice-add 'ag :around 'ag-advice))
-
+;;;;;;;;
+;; ag ;;
+;;;;;;;;
+(defun eshell/ag (&rest args)
+  "Use Emacs grep facility instead of calling external grep."
+  (ag/search (mapconcat #'shell-quote-argument args " ") default-directory))
 ;;;;;;;;;;;;;
 ;; Filters ;;
 ;;;;;;;;;;;;;
-;; Make URLs clickable
-(add-hook 'eshell-mode-hook (lambda () (goto-address-mode 1)))
+;; Make URLs clickable & ag
+(add-hook 'eshell-mode-hook (lambda ()
+                              (goto-address-mode 1)
+                              (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
+                              (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
+                              (add-to-list 'eshell-complex-commands "ag")))
 ;; Colorize advices
 (add-hook 'eshell-post-command-hook (lambda () (unhl-advices) (hl-advices)))
 
@@ -138,8 +154,77 @@
 ;;;;;;;;;;;;;;;;
 ;; Completion ;;
 ;;;;;;;;;;;;;;;;
-;;**** Git Completion
+;; [ <python completion>
+(when (executable-find "python")
+
+  (defun pcmpl-python-commands ()
+    (with-temp-buffer
+      (call-process-shell-command "python" nil (current-buffer) nil "--help")
+      (goto-char 0)
+      (let (commands)
+        (while (re-search-forward "^-\\([[:word:]-.]+\\)" nil t)
+          (push (match-string 1) commands))
+        (mapconcat 'identity commands ""))))
+
+  (defconst pcmpl-python-commands (pcmpl-python-commands)
+    "List of `python' commands.")
+
+  (defun pcmpl-python-packages ()
+    (with-temp-buffer
+      (call-process-shell-command "python" nil (current-buffer) nil "-m" "pip" "freeze")
+      (goto-char 0)
+      (let (packages)
+        (while (re-search-forward "^\\([[:word:]-.]+\\)=" nil t)
+          (push (match-string 1) packages))
+        (sort packages 'string<))))
+
+  (defun pcomplete/python ()
+    "Completion for `python'."
+    ;; Completion for the command argument.
+    (pcomplete-opt pcmpl-python-commands)
+    (cond
+     ((pcomplete-match "-m" 1)
+      (pcomplete-here (pcmpl-python-packages)))
+     (t
+      (while (pcomplete-here (pcomplete-entries)))))))
+;; ] <python completion>
+;; [ <python3 completion>
+(when (executable-find "python3")
+
+  (defun pcmpl-python3-commands ()
+    (with-temp-buffer
+      (call-process-shell-command "python3" nil (current-buffer) nil "--help")
+      (goto-char 0)
+      (let (commands)
+        (while (re-search-forward "^-\\([[:word:]-.]+\\)" nil t)
+          (push (match-string 1) commands))
+        (mapconcat 'identity commands ""))))
+
+  (defconst pcmpl-python3-commands (pcmpl-python3-commands)
+    "List of `python3' commands.")
+
+  (defun pcmpl-python3-packages ()
+    (with-temp-buffer
+      (call-process-shell-command "python3" nil (current-buffer) nil "-m" "pip" "freeze")
+      (goto-char 0)
+      (let (packages)
+        (while (re-search-forward "^\\([[:word:]-.]+\\)=" nil t)
+          (push (match-string 1) packages))
+        (sort packages 'string<))))
+
+  (defun pcomplete/python3 ()
+    "Completion for `python3'."
+    ;; Completion for the command argument.
+    (pcomplete-opt pcmpl-python3-commands)
+    (cond
+     ((pcomplete-match "-m" 1)
+      (pcomplete-here (pcmpl-python3-packages)))
+     (t
+      (while (pcomplete-here (pcomplete-entries)))))))
+;; ] <python3 completion>
+;; [ <Git Completion>
 (when (executable-find "git")
+
   (defun pcmpl-git-commands ()
     "Return the most common git commands by parsing the git output."
     (with-temp-buffer
@@ -190,8 +275,8 @@
                                (pcmpl-git-get-refs "tags"))))
      (t
       (while (pcomplete-here (pcomplete-entries)))))))
-
-;;**** Bzr Completion
+;; ] <Git Completion>
+;; [ <Bzr Completion>
 (when (executable-find "bzr")
 
   (defun pcmpl-bzr-commands ()
@@ -216,7 +301,8 @@
       (pcomplete-here* pcmpl-bzr-commands))
      (t
       (while (pcomplete-here (pcomplete-entries)))))))
-;;**** Mercurial (hg) Completion
+;; ] <Bzr Completion>
+;; [ <Mercurial (hg) Completion>
 (when (executable-find "hg")
 
   (defun pcmpl-hg-commands ()
@@ -251,15 +337,15 @@
       (pcomplete-here* pcmpl-hg-commands))
      (t
       (while (pcomplete-here (pcomplete-entries)))))))
-
-;;;; sudo completion
+;; ] <Mercurial (hg) Completion>
+;; [ <sudo completion>
 (defun pcomplete/sudo ()
   "Completion rules for the `sudo' command."
   (let ((pcomplete-ignore-case t))
     (pcomplete-here (funcall pcomplete-command-completion-function))
     (while (pcomplete-here (pcomplete-entries)))))
-
-;;;; systemctl completion
+;; ] <sudo completion>
+;; [ <systemctl completion>
 (defcustom pcomplete-systemctl-commands
   '("disable" "enable" "status" "start" "restart" "stop" "reenable"
     "list-units" "list-unit-files")
@@ -286,8 +372,8 @@
          (pcomplete-here pcomplete-systemctl-commands)
          (pcomplete-here pcomplete-systemd-user-units))
         (t (pcomplete-here pcomplete-systemd-units))))
-
-;;;; man completion
+;; ] <systemctl completion>
+;; [ <man completion>
 (defvar pcomplete-man-user-commands
   (split-string
    (shell-command-to-string
@@ -297,10 +383,34 @@
 (defun pcomplete/man ()
   "Completion rules for the `man' command."
   (pcomplete-here pcomplete-man-user-commands))
+;; ] <man completion>
 
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(defun eshell-key-up (arg)
+  (interactive "p")
+  (if (eq (point)
+          (point-max))
+      (progn
+        (if (not (memq last-command '(eshell-key-up
+                                      eshell-key-down
+                                      eshell-previous-matching-input-from-input
+                                      eshell-next-matching-input-from-input)))
+            ;; Starting a new search
+            (setq eshell-matching-input-from-input-string
+                  (buffer-substring (save-excursion (eshell-bol) (point))
+                                    (point))
+                  eshell-history-index nil))
+        (eshell-previous-matching-input
+         (concat "^" (regexp-quote eshell-matching-input-from-input-string))
+         arg))
+    (line-move-1 (- arg))))
+
+(defun eshell-key-down (arg)
+  (interactive "p")
+  (eshell-key-up (- arg)))
+
 (defun eshell-send-input-rename ()
   (interactive)
   (call-interactively 'eshell-send-input)
@@ -317,3 +427,4 @@
 
 
 (provide 'eshell-config)
+;;; eshell-config.el ends here
