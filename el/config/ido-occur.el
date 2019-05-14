@@ -56,7 +56,7 @@
   :group 'ido-occur)
 
 (defvar ido-occur--line-number 0
-  "buffer line")
+  "Buffer line, `nil' means disable highlight")
 
 (defun ido-occur--lines-as-string (buffer)
   "Get all lines with properties of the `BUFFER'."
@@ -122,21 +122,23 @@ When non-nil, QUERY is the initial search pattern."
 
          (line-number (string-to-number (car (split-string line)))))
     (forward-line (- line-number ido-occur--line-number))
+    (setq ido-occur--line-number 0)
     (move-to-column new-column)))
 
 (defun ido-preview ()
   (interactive)
-  (let ((line-number (string-to-number (car (split-string (car ido-matches))))))
-    (with-selected-window (minibuffer-selected-window)
-      (forward-line (- line-number ido-occur--line-number))
-      (let ((start (point-at-bol))
-            (end (save-excursion
-                   (end-of-line)
-                   (when (not (eobp))
-                     (forward-char 1))
-                   (point))))
-        (pulse-momentary-highlight-region start end)))
-    (setq ido-occur--line-number line-number)))
+  (when (< 0 ido-occur--line-number)
+    (let ((line-number (string-to-number (car (split-string (car ido-matches))))))
+      (with-selected-window (minibuffer-selected-window)
+        (forward-line (- line-number ido-occur--line-number))
+        (let ((start (point-at-bol))
+              (end (save-excursion
+                     (end-of-line)
+                     (when (not (eobp))
+                       (forward-char 1))
+                     (point))))
+          (pulse-momentary-highlight-region start end)))
+      (setq ido-occur--line-number line-number))))
 
 (defun ido-preview-prev ()
   (interactive)
