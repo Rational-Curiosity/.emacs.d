@@ -615,6 +615,17 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 (advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
 
+;;;;;;;;;;;;;;;
+;; Kill ring ;;
+;;;;;;;;;;;;;;;
+(defun kill-ring-insert ()
+  (interactive)
+  (let ((to_insert (completing-read "Yank : "
+                                    (delete-duplicates kill-ring :test #'equal))))
+    (when (and to_insert (region-active-p))
+      ;; the currently highlighted section is to be replaced by the yank
+      (delete-region (region-beginning) (region-end)))
+    (insert to_insert)))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Goto last change ;;
@@ -627,6 +638,7 @@ there's a region, all lines that region covers will be duplicated."
 ;; Keys ;;
 ;;;;;;;;;;
 (bind-keys
+ ("M-y"                 . kill-ring-insert)
  ("<f1> E"              . manual-entry)
  ("C-M-º"               . indent-region)
  ("M-s º"               . indent-region)
