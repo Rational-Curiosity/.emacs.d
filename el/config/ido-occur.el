@@ -55,9 +55,6 @@
   :type 'list
   :group 'ido-occur)
 
-(defvar ido-occur--line-number 0
-  "Buffer line, `nil' means disable highlight")
-
 (defun ido-occur--lines-as-string (buffer)
   "Get all lines with properties of the `BUFFER'."
   (with-current-buffer buffer
@@ -101,29 +98,33 @@ and from end of `BUFFER' to beginning of `BUFFER'."
   "Strip text properties from `TXT'."
   (set-text-properties 0 (length txt) nil txt) txt)
 
+(defvar ido-occur--line-number 0
+  "Buffer line.")
+
 (defun ido-occur--run (&optional query)
   "Yet another `occur' with `ido'.
 When non-nil, QUERY is the initial search pattern."
   (setq ido-occur--line-number (line-number-at-pos))
-  (let* ((initial-column (current-column))
+  (unwind-protect
+      (let* ((initial-column (current-column))
 
-         (line (ido-occur--strip-text-properties
-                (ido-completing-read ido-occur--prompt
-                                     (ido-occur--lines-as-list (current-buffer)
-                                                               ido-occur--line-number)
-                                     nil
-                                     nil
-                                     query)))
-         (line-length (length line))
+             (line (ido-occur--strip-text-properties
+                    (ido-completing-read ido-occur--prompt
+                                         (ido-occur--lines-as-list (current-buffer)
+                                                                   ido-occur--line-number)
+                                         nil
+                                         nil
+                                         query)))
+             (line-length (length line))
 
-         (new-column (if (<= line-length initial-column)
-                         line-length
-                       initial-column))
+             (new-column (if (<= line-length initial-column)
+                             line-length
+                           initial-column))
 
-         (line-number (string-to-number (car (split-string line)))))
-    (forward-line (- line-number ido-occur--line-number))
-    (setq ido-occur--line-number 0)
-    (move-to-column new-column)))
+             (line-number (string-to-number (car (split-string line)))))
+        (forward-line (- line-number ido-occur--line-number))
+        (move-to-column new-column))
+    (setq ido-occur--line-number 0)))
 
 (defun ido-preview ()
   (interactive)
