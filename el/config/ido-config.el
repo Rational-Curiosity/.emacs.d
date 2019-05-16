@@ -17,11 +17,11 @@
 (face-spec-set 'ido-indicator '((t (:foreground "#ffffff"))))
 (face-spec-set 'ido-incomplete-regexp '((t (:foreground "#ffffff"))))
 ;; ido mode
-(setq ido-enable-flex-matching t
+(setq ido-enable-flex-matching nil
       ido-max-prospects 20
       ido-use-filename-at-point 'guess
       ido-create-new-buffer 'always
-      ido-use-virtual-buffers t)
+      ido-use-virtual-buffers nil)
 
 (ido-mode 1)
 (ido-everywhere 1)
