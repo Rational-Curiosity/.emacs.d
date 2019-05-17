@@ -171,6 +171,17 @@
 (add-hook 'org-mode-hook #'show-smartparens-mode)
 (with-eval-after-load 'smartparens
   (require 'smartparens-custom-config))
+
+;;;;;;;;;;;;;
+;; Systems ;;
+;;;;;;;;;;;;;
+(with-eval-after-load 'magit-popup
+  (require 'magit-popup-config)
+  (require 'docker-config))
+
+;;;;;;;;;;;;;;;;;
+;; Programming ;;
+;;;;;;;;;;;;;;;;;
 ;; flycheck-mode
 (add-hook 'prog-mode-hook #'flycheck-mode)
 (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)
