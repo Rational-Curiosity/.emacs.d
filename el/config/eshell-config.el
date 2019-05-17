@@ -10,6 +10,9 @@
 
 ;;; Code:
 
+(message "Importing eshell-config")
+
+(require 'eshell-ido-pcomplete)
 ;;;;;;;;;;;;
 ;; Colors ;;
 ;;;;;;;;;;;;
@@ -28,6 +31,138 @@
       eshell-destroy-buffer-when-process-dies nil
       eshell-cmpl-cycle-completions nil)
 
+;;;;;;;;;;;;;;;;;;;;;;
+;; Custom functions ;;
+;;;;;;;;;;;;;;;;;;;;;;
+(defun start-process-stderr (name buffer program &rest program-args)
+  (unless (fboundp 'make-process)
+    (error "Emacs was compiled without subprocess support"))
+  (apply #'make-process
+         (append (list :name name :buffer buffer :stderr (get-buffer-create "*stderr*"))
+                 (if program
+                     (list :command (cons program program-args))))))
+
+(defun start-file-process-stderr (name buffer program &rest program-args)
+  (let ((fh (find-file-name-handler default-directory 'start-file-process-stderr)))
+    (if fh (apply fh 'start-file-process-stderr name buffer program program-args)
+      (apply 'start-process-stderr name buffer program program-args))))
+
+(defun eshell-gather-process-output-stderr (command args)
+  "Gather the output from COMMAND + ARGS."
+  (unless (and (file-executable-p command)
+               (file-regular-p (file-truename command)))
+    (error "%s: not an executable file" command))
+  (let* ((delete-exited-processes
+          (if eshell-current-subjob-p
+              eshell-delete-exited-processes
+            delete-exited-processes))
+         (process-environment (eshell-environment-variables))
+         proc decoding encoding changed)
+    (cond
+     ((fboundp 'start-file-process)
+      (setq proc
+            (let ((process-connection-type
+                   (unless (eshell-needs-pipe-p command)
+                     process-connection-type))
+                  (command (file-local-name (expand-file-name command))))
+              (apply 'start-file-process-stderr
+                     (file-name-nondirectory command) nil command args)))
+      (eshell-record-process-object proc)
+      (set-process-buffer proc (current-buffer))
+      (if (eshell-interactive-output-p)
+          (set-process-filter proc 'eshell-output-filter)
+        (set-process-filter proc 'eshell-insertion-filter))
+      (set-process-sentinel proc 'eshell-sentinel)
+      (run-hook-with-args 'eshell-exec-hook proc)
+      (when (fboundp 'process-coding-system)
+        (let ((coding-systems (process-coding-system proc)))
+          (setq decoding (car coding-systems)
+                encoding (cdr coding-systems)))
+        ;; If start-process decided to use some coding system for
+        ;; decoding data sent from the process and the coding system
+        ;; doesn't specify EOL conversion, we had better convert CRLF
+        ;; to LF.
+        (if (vectorp (coding-system-eol-type decoding))
+            (setq decoding (coding-system-change-eol-conversion decoding 'dos)
+                  changed t))
+        ;; Even if start-process left the coding system for encoding
+        ;; data sent from the process undecided, we had better use the
+        ;; same one as what we use for decoding.  But, we should
+        ;; suppress EOL conversion.
+        (if (and decoding (not encoding))
+            (setq encoding (coding-system-change-eol-conversion decoding 'unix)
+                  changed t))
+        (if changed
+            (set-process-coding-system proc decoding encoding))))
+     (t
+      ;; No async subprocesses...
+      (let ((oldbuf (current-buffer))
+            (interact-p (eshell-interactive-output-p))
+            lbeg lend line proc-buf exit-status)
+        (and (not (markerp eshell-last-sync-output-start))
+             (setq eshell-last-sync-output-start (point-marker)))
+        (setq proc-buf
+              (set-buffer (get-buffer-create eshell-scratch-buffer)))
+        (erase-buffer)
+        (set-buffer oldbuf)
+        (run-hook-with-args 'eshell-exec-hook command)
+        (setq exit-status
+              (apply 'call-process-region
+                     (append (list eshell-last-sync-output-start (point)
+                                   command t
+                                   (list eshell-scratch-buffer nil) nil)
+                             args)))
+        ;; When in a pipeline, record the place where the output of
+        ;; this process will begin.
+        (and eshell-in-pipeline-p
+             (set-marker eshell-last-sync-output-start (point)))
+        ;; Simulate the effect of the process filter.
+        (when (numberp exit-status)
+          (set-buffer proc-buf)
+          (goto-char (point-min))
+          (setq lbeg (point))
+          (while (eq 0 (forward-line 1))
+            (setq lend (point)
+                  line (buffer-substring-no-properties lbeg lend))
+            (set-buffer oldbuf)
+            (if interact-p
+                (eshell-output-filter nil line)
+              (eshell-output-object line))
+            (setq lbeg lend)
+            (set-buffer proc-buf))
+          (set-buffer oldbuf))
+        (eshell-update-markers eshell-last-output-end)
+        ;; Simulate the effect of eshell-sentinel.
+        (eshell-close-handles (if (numberp exit-status) exit-status -1))
+        (eshell-kill-process-function command exit-status)
+        (or eshell-in-pipeline-p
+            (setq eshell-last-sync-output-start nil))
+        (if (not (numberp exit-status))
+            (error "%s: external command failed: %s" command exit-status))
+        (setq proc t))))
+    proc))
+
+;;;;;;;;;;;;;;;
+;; Functions ;;
+;;;;;;;;;;;;;;;
+(defun eshell-send-input-rename ()
+  (interactive)
+  (call-interactively 'eshell-send-input)
+  (let ((proc-running (eshell-interactive-process)))
+    (when proc-running
+      (rename-buffer (format "*esh:%s·%s*"
+                             (file-name-nondirectory (eshell/pwd))
+                             (process-name proc-running)) t))))
+
+(defun eshell-send-input-rename-stderr ()
+  (interactive)
+  (cl-letf (((symbol-function 'eshell-gather-process-output) 'eshell-gather-process-output-stderr))
+    (call-interactively 'eshell-send-input))
+  (let ((proc-running (eshell-interactive-process)))
+    (when proc-running
+      (rename-buffer (format "*esh:%s·%s*"
+                             (file-name-nondirectory (eshell/pwd))
+                             (process-name proc-running)) t))))
 ;;;;;;;;
 ;; ag ;;
 ;;;;;;;;
@@ -411,19 +546,12 @@
   (interactive "p")
   (eshell-key-up (- arg)))
 
-(defun eshell-send-input-rename ()
-  (interactive)
-  (call-interactively 'eshell-send-input)
-  (let ((proc-running (eshell-interactive-process)))
-    (when proc-running
-      (rename-buffer (format "*esh:%s·%s*"
-                             (file-name-nondirectory (eshell/pwd))
-                             (process-name proc-running)) t))))
-(require 'eshell-ido-pcomplete)
-(advice-add 'eshell-cmpl-initialize :after (lambda ()
-                                             (define-key eshell-mode-map [tab] 'eshell-ido-pcomplete)
-                                             (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
-                                             (define-key eshell-mode-map (kbd "<C-return>") 'find-file-at-point)))
+(defun eshell-cmpl-initialize-advice ()
+  (define-key eshell-mode-map [tab] 'eshell-ido-pcomplete)
+  (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
+  (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr)
+  (define-key eshell-mode-map (kbd "<C-return>") 'find-file-at-point))
+(advice-add 'eshell-cmpl-initialize :after 'eshell-cmpl-initialize-advice)
 
 
 (provide 'eshell-config)

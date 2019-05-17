@@ -158,10 +158,12 @@
 ;; This is your old M-x.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 ;; ido keys
-(advice-add 'ido-setup-completion-map :after (lambda ()
-                                               (define-key ido-completion-map (kbd "C-v") 'ido-preview)
-                                               (define-key ido-completion-map (kbd "C-s") 'ido-preview-next)
-                                               (define-key ido-completion-map (kbd "C-r") 'ido-preview-prev)))
+(defun ido-setup-completion-map-advice ()
+  (define-key ido-completion-map (kbd "C-v") 'ido-preview)
+  (define-key ido-completion-map (kbd "C-s") 'ido-preview-next)
+  (define-key ido-completion-map (kbd "C-r") 'ido-preview-prev))
+(advice-add 'ido-setup-completion-map :after 'ido-setup-completion-map-advice)
+
 (bind-keys
  ("M-i"     . ido-occur-at-point)
  ("M-I"     . ido-occur-from-isearch)
