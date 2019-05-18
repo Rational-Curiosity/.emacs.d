@@ -10,16 +10,24 @@
 (require 'ag)
 (require 'ido)
 (require 'ido-occur)
+
 ;; Colors
 (face-spec-set 'ido-subdir '((t (:foreground "#66ff00"))))
 (face-spec-set 'ido-first-match '((t (:foreground "#ccff66"))))
 (face-spec-set 'ido-only-match '((t (:foreground "#ffcc33"))))
 (face-spec-set 'ido-indicator '((t (:foreground "#ffffff"))))
 (face-spec-set 'ido-incomplete-regexp '((t (:foreground "#ffffff"))))
+
+(defface ido-substring-match-face
+  '((t (:foreground "#ffd700" :bold t :underline t)))
+  "Face used by ido-config for the matched part.")
 ;; ido mode
 (setq ido-enable-flex-matching nil
+      ido-enable-regexp t
+      ido-enable-prefix nil
       ido-max-prospects 20
       ido-use-filename-at-point 'guess
+      ido-use-url-at-point t
       ido-create-new-buffer 'always
       ido-use-virtual-buffers nil)
 
@@ -39,7 +47,39 @@
 (require 'ido-at-point)
 (ido-at-point-mode)
 
-;; hippy-expand with ido
+;;;;;;;;;;;;;;;;;;;;;;
+;; Custom functions ;;
+;;;;;;;;;;;;;;;;;;;;;;
+(defun ido-completions-advice (orig-fun name)
+  "Colorize ido-completions text result."
+  (let ((text (funcall orig-fun name)))
+    (if (and (/= 0 (length name))
+             (/= 0 (length text)))
+        (let ((regexp (if ido-enable-regexp name (regexp-quote name)))
+              (beg (if (string-match "^ \\[[^]]*\\]" text)
+                       (match-end 0)
+                     0))
+              (count 0) pos)
+          (setq pos beg)
+          (while (string-match regexp text pos)
+            (ignore-errors
+              (add-face-text-property (match-beginning 0)
+                                      (match-end 0)
+                                      'ido-substring-match-face
+                                      nil text))
+            (setq pos (match-end 0)
+                  count (1+ count)))
+          (if (= 0 beg)
+              (concat " [" (int-to-string count) "]" text)
+            (concat (substring text 0 beg)
+                    "[" (int-to-string count) "]"
+                    (substring text beg))))
+      text)))
+(advice-add 'ido-completions :around 'ido-completions-advice)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; hippy-expand with ido ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun hippie-completion-at-point ()
   (let ((bounds (bounds-of-thing-at-point 'symbol))
         (expands (hippie-expand-completions)))
@@ -86,7 +126,9 @@
 ;; Dangerous
 ;; (setcdr (last completion-at-point-functions) '(hippie-completion-at-point))
 
-;; semantic with ido
+;;;;;;;;;;;;;;;;;;;;;;;
+;; Semantic with ido ;;
+;;;;;;;;;;;;;;;;;;;;;;;
 (defun ido-semantic-complete-jump (sym)
   (interactive (list
                 (thing-at-point 'symbol)))
@@ -142,7 +184,9 @@
                           acc))))
     acc))
 
-;; ido recentf
+;;;;;;;;;;;;;;;;;
+;; ido recentf ;;
+;;;;;;;;;;;;;;;;;
 (defun ido-recentf-open ()
   "Use `ido-completing-read' to find a recent file."
   (interactive)
@@ -150,7 +194,9 @@
       (message "Opening file...")
     (message "Aborting")))
 
-;; smex
+;;;;;;;;;;
+;; smex ;;
+;;;;;;;;;;
 (smex-initialize) ; Can be omitted. This might cause a (minimal) delay
                   ; when Smex is auto-initialized on its first run.
 (global-set-key (kbd "M-x") 'smex)
