@@ -77,6 +77,17 @@
       text)))
 (advice-add 'ido-completions :around 'ido-completions-advice)
 
+(defun self-insert-command-advice (orig-fun N)
+  (if (<= 0 N)
+      (funcall orig-fun N)
+    (setq N (- N))
+    (funcall orig-fun N)
+    (backward-char N)
+    (dotimes (i N)
+      (insert "\\")
+      (forward-char))))
+(advice-add 'self-insert-command :around 'self-insert-command-advice)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; hippy-expand with ido ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
