@@ -59,7 +59,7 @@
               (beg (if (string-match "^ \\[[^]]*\\]" text)
                        (match-end 0)
                      0))
-              (count 0) pos)
+              pos)
           (setq pos beg)
           (while (string-match regexp text pos)
             (ignore-errors
@@ -67,14 +67,13 @@
                                       (match-end 0)
                                       'ido-substring-match-face
                                       nil text))
-            (setq pos (match-end 0)
-                  count (1+ count)))
+            (setq pos (match-end 0)))
           (if (= 0 beg)
-              (concat " [" (int-to-string count) "]" text)
+              (concat " [" (int-to-string (length ido-matches)) "]" text)
             (concat (substring text 0 beg)
-                    "[" (int-to-string count) "]"
+                    "[" (int-to-string (length ido-matches)) "]"
                     (substring text beg))))
-      text)))
+      (concat " [" (int-to-string (length ido-matches)) "]" text))))
 (advice-add 'ido-completions :around 'ido-completions-advice)
 
 (defun self-insert-command-advice (orig-fun N)
