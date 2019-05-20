@@ -226,12 +226,15 @@ When called from lisp, FUNCTION may also be a function object."
 ;; (let ((print-escape-newlines t))
 ;;   (prin1-to-string "..."))
 
+;;;;;;;;;;;;;;;
+;; Processes ;;
+;;;;;;;;;;;;;;;
 (defun process-get-attrs (pid attrs-process)
   (let ((process-attrs (process-attributes pid)))
     (cons `(pid . ,pid) (mapcar (lambda (attr) (assoc attr process-attrs)) attrs-process))))
 
-(defun processes-named (name attrs-processes)
-  (cl-remove-if-not (lambda (attrs-process) (string-equal name (cdr (assoc 'comm attrs-process)))) attrs-processes))
+(defun processes-named (names attrs-processes)
+  (cl-remove-if-not (lambda (attrs-process) (member (cdr (assoc 'comm attrs-process)) names)) attrs-processes))
 
 (defun processes-children (pid attrs-processes)
   (cl-remove-if-not (lambda (attrs-process) (= pid (cdr (assoc 'ppid attrs-process)))) attrs-processes))
@@ -246,6 +249,31 @@ When called from lisp, FUNCTION may also be a function object."
       (setq processes (append processes children))
       (setq pids (mapcar (lambda (attrs-process) (cdr (assoc 'pid attrs-process))) children)))
     processes))
+
+(defmacro processes-run-with-timer-cond-body (secs repeat process-names
+                                                 processes-number-variable
+                                                 processes-number-condition
+                                                 &rest body)
+  (declare (indent 5))
+  `(run-with-timer
+    ,secs ,repeat
+    (lambda ()
+      ;; [ Limit python's processes of all emacs
+      ;; (let ((attrs-processes (mapcar (lambda (x) (process-get-attrs x '(ppid comm))) (list-system-processes)))
+      ;;       (emacs-processes))
+      ;;   (mapc (lambda (x) (setq emacs-processes (append emacs-processes (processes-children-all (cdr (assoc 'pid x)) attrs-processes)))) (processes-named "emacs.exe" attrs-processes))
+      ;;   (processes-named "python.exe" emacs-processes))
+      ;; ]
+      ;; Limit python's processes of every emacs
+      (let ((,processes-number-variable (length (processes-named
+                                                 ,process-names
+                                                 (processes-children-all
+                                                  (emacs-pid)
+                                                  (mapcar (lambda (x) (process-get-attrs x '(ppid comm)))
+                                                          (list-system-processes)))))))
+        (when
+            ,processes-number-condition
+          ,@body)))))
 
 
 (provide 'config-lib)

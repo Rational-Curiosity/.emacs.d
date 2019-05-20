@@ -39,6 +39,7 @@
 ;;; Code:
 
 (require 'python-config)
+(require 'config-lib)
 (message "Importing anaconda-config")
 
 (defun set-anaconda-mode-lighter ()
@@ -48,6 +49,14 @@
 (set-anaconda-mode-lighter)
 
 (advice-add 'set-python-interpreter-args :after #'set-anaconda-mode-lighter)
+
+;; Limit python processes
+(let ((elap (* 10 60)))
+  (processes-run-with-timer-cond-body elap elap '("python" "python3") processes
+                                      (< 10 processes)
+    (anaconda-mode-stop)
+    (message "anaconda-config: %i pythons found (>10) stopped at %s"
+             processes (format-time-string "%Y-%m-%d %H:%M:%S.%N"))))
 
 
 (defhydra hydra-anaconda (:foreign-keys run :hint nil)
