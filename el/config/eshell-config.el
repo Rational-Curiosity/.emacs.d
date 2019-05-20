@@ -24,6 +24,7 @@
 ;;;;;;;;;;;;;;;;;
 (with-eval-after-load 'em-term
   (add-to-list 'eshell-visual-commands "htop")
+  (add-to-list 'eshell-visual-commands "atop")
   (add-to-list 'eshell-visual-commands "ag")
   (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
   (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show")))
@@ -189,7 +190,10 @@
 (require 'vc-git)
 
 
+;; pyvenv package
 (defvar pyvenv-virtual-env-name nil)
+;; virtualenvwrapper package
+(defvar venv-current-name nil)
 
 (defmacro with-face (STR &rest PROPS)
   "Return STR propertized with PROPS."
@@ -226,7 +230,7 @@
           eshell-prompt-string))
 
 (esh-section esh-dir
-             (if (display-graphic-p) "📂" "")  ;  (faicon folder)
+             (if (display-graphic-p) "📂" "δ")  ;  (faicon folder)
              (let ((name (eshell/pwd)))
                (rename-buffer (format "*esh:%s*" (file-name-nondirectory name)) t)
                (abbreviate-file-name name))
@@ -239,8 +243,8 @@
              '(:foreground "pink"))
 
 (esh-section esh-python
-             "\xe928"  ;  (python icon)
-             pyvenv-virtual-env-name)
+             (if (display-graphic-p) "⛶" "π")  ;  (python icon)
+             (or pyvenv-virtual-env-name venv-current-name))
 
 (esh-section esh-clock
              (if (display-graphic-p) "⏳" "τ")  ;  (clock icon)
@@ -274,8 +278,9 @@
 
       ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
       ;; your login, these can be the same.
-      eshell-prompt-string "└─» "   ; or "└─> "
-      eshell-prompt-regexp (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} ")   ; or "└─> "
+      eshell-prompt-string "└─» "  ; or "└─> "
+      eshell-prompt-regexp
+      (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|" eshell-prompt-regexp)  ; or "└─> "
       ;; Choose which eshell-funcs to enable
       eshell-funcs (list esh-dir esh-git esh-python esh-clock esh-user esh-sysname esh-num)
       ;; Enable the new eshell prompt
