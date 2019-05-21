@@ -234,7 +234,7 @@
              (let ((name (eshell/pwd)))
                (rename-buffer (format "*esh:%s*" (file-name-nondirectory name)) t)
                (abbreviate-file-name name))
-             '(:foreground "gold" :bold ultra-bold :underline t))
+             '(:foreground "gold" :weight ultra-bold :underline t))
 
 (esh-section esh-git
              "⎇"  ;  (git icon)
@@ -280,9 +280,10 @@
       ;; your login, these can be the same.
       eshell-prompt-string "└─» "  ; or "└─> "
       eshell-prompt-regexp
-      (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|" eshell-prompt-regexp)  ; or "└─> "
+      (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|^[^#$
+]* [#$] ")  ; or "└─> "
       ;; Choose which eshell-funcs to enable
-      eshell-funcs (list esh-dir esh-git esh-python esh-clock esh-user esh-sysname esh-num)
+      eshell-funcs (list esh-dir esh-python esh-git esh-user esh-sysname esh-clock esh-num)
       ;; Enable the new eshell prompt
       eshell-prompt-function 'esh-prompt-func
       eshell-banner-message (format
@@ -290,6 +291,34 @@
 "
                              emacs-version system-type system-configuration system-configuration-options
                              system-configuration-features))
+
+;;;;;;;;;;;;;;;;;
+;; Post prompt ;;
+;;;;;;;;;;;;;;;;;
+(defvar-local eshell-current-command-start-time nil)
+
+(defun eshell-current-command-start ()
+  (setq eshell-current-command-start-time (current-time)))
+
+(defun eshell-current-command-stop ()
+  (when eshell-current-command-start-time
+    (eshell-interactive-print
+     (propertize
+      (format ">  Exit code: %i   Elapsed time: %.3fs  <"
+             eshell-last-command-status
+             (float-time
+              (time-subtract (current-time)
+                             eshell-current-command-start-time)))
+      'font-lock-face '(:foreground "goldenrod1")))
+    (setq eshell-current-command-start-time nil)))
+
+(defun eshell-current-command-time-track ()
+  (add-hook 'eshell-pre-command-hook #'eshell-current-command-start nil t)
+  (add-hook 'eshell-post-command-hook #'eshell-current-command-stop nil t))
+
+(add-hook 'eshell-mode-hook #'eshell-current-command-time-track)
+;; To uninstall
+;; (remove-hook 'eshell-mode-hook #'eshell-current-command-time-track)
 
 ;;;;;;;;;;;;;;;;
 ;; Completion ;;
@@ -554,8 +583,7 @@
 (defun eshell-cmpl-initialize-advice ()
   (define-key eshell-mode-map [tab] 'eshell-ido-pcomplete)
   (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
-  (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr)
-  (define-key eshell-mode-map (kbd "<C-return>") 'find-file-at-point))
+  (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr))
 (advice-add 'eshell-cmpl-initialize :after 'eshell-cmpl-initialize-advice)
 
 
