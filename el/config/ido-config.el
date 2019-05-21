@@ -50,31 +50,137 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
-(defun ido-completions-advice (orig-fun name)
-  "Colorize ido-completions text result."
-  (let ((text (funcall orig-fun name)))
-    (if (and (/= 0 (length name))
-             (/= 0 (length text)))
-        (let ((regexp (if ido-enable-regexp name (regexp-quote name)))
-              (beg (if (string-match "^ \\[[^]]*\\]" text)
-                       (match-end 0)
-                     0))
-              pos)
-          (setq pos beg)
-          (while (string-match regexp text pos)
-            (ignore-errors
-              (add-face-text-property (match-beginning 0)
-                                      (match-end 0)
-                                      'ido-substring-match-face
-                                      nil text))
-            (setq pos (match-end 0)))
-          (if (= 0 beg)
-              (concat " [" (int-to-string (length ido-matches)) "]" text)
-            (concat (substring text 0 beg)
-                    "[" (int-to-string (length ido-matches)) "]"
-                    (substring text beg))))
-      (concat " [" (int-to-string (length ido-matches)) "]" text))))
-(advice-add 'ido-completions :around 'ido-completions-advice)
+(bug-check-function-bytecode 'ido-completions
+                             "CIlAOoURAIlAQUfGVoURAAnHQwGDJAAKgyQAyMnGyssGBiWICoNqAAKDagDMA0AhiUcCzQMhoIjIyQLKBghHxlWDUAALg0wAw4JRAM6CUQDPBgeiJYgDg2EAAomiBVCgiAKiBUFCsgW2AgKEqQAMg3wA0A04hlcB0YJXAQ4sg4sA0g04hlcB04JXAQ4tg5oA1A04hlcB1YJXAQ4ug6UA1g04glcB14JXAQuDtADYA0BQglcBAkGEBwEOL4TJAMwDQCFHBEdVgt0A2QTMBUAhIojaycwFQCEizARAIZiD5ADXgvsA2w04hu0A3A04zARAId0NOIb6AN4NOFEKP4UDAd8NOFCCVwEOMMlWgxQBDjBUghUB4EPh4uHj5OXm5+jpBgsGCyLqItTrJQYJIiJBIg4xO4VOAQ4xRwYGR1aFTgHcDTgOMQYHR8dP3g04UQ1AAg1BQFK2goc=")
+(defun ido-completions (name)
+  "Return the string that is displayed after the user's text.
+Modified from `icomplete-completions'."
+  (let* ((comps ido-matches)
+         (ind (and (consp (car comps)) (> (length (cdr (car comps))) 1)
+                   ido-merged-indicator))
+         first)
+
+    (if (and ind ido-use-faces)
+        (put-text-property 0 1 'face 'ido-indicator ind))
+
+    (if (and ido-use-faces comps)
+        (let* ((fn (ido-name (car comps)))
+               (ln (length fn)))
+          (setq first (copy-sequence fn))
+          (put-text-property 0 ln 'face
+                             (if (= (length comps) 1)
+                                 (if ido-incomplete-regexp
+                                     'ido-incomplete-regexp
+                                   'ido-only-match)
+                               'ido-first-match)
+                             first)
+          (if ind (setq first (concat first ind)))
+          (setq comps (cons first (cdr comps)))))
+
+    (cond ((null comps)
+           (cond
+            (ido-show-confirm-message
+             (or (nth 10 ido-decorations) " [Confirm]"))
+            (ido-directory-nonreadable
+             (or (nth 8 ido-decorations) " [Not readable]"))
+            (ido-directory-too-big
+             (or (nth 9 ido-decorations) " [Too big]"))
+            (ido-report-no-match
+             (nth 6 ido-decorations))  ;; [No match]
+            (t "")))
+          (ido-incomplete-regexp
+           (concat " " (car comps)))
+          ((null (cdr comps))		;one match
+           (concat (if (if (not ido-enable-regexp)
+                           (= (length (ido-name (car comps))) (length name))
+                         ;; We can't rely on the length of the input
+                         ;; for regexps, so explicitly check for a
+                         ;; complete match
+                         (string-match name (ido-name (car comps)))
+                         (string-equal (match-string 0 (ido-name (car comps)))
+                                       (ido-name (car comps))))
+                       ""
+                     ;; When there is only one match, show the matching file
+                     ;; name in full, wrapped in [ ... ].
+                     (concat
+                      (or (nth 11 ido-decorations) (nth 4 ido-decorations))
+                      (ido-name (car comps))
+                      (or (nth 12 ido-decorations) (nth 5 ido-decorations))))
+                   (if (not ido-use-faces) (nth 7 ido-decorations))))  ;; [Matched]
+          (t				;multiple matches
+           (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
+                  (alternatives
+                   (apply
+                    #'concat
+                    (cdr (apply
+                          #'nconc
+                          (mapcar
+                           (lambda (com)
+                             (setq com (ido-name com))
+                             (setq items (1- items))
+                             (cond
+                              ((< items 0) ())
+                              ((= items 0) (list (nth 3 ido-decorations))) ; " | ..."
+                              (t
+                               (list (or ido-separator (nth 2 ido-decorations)) ; " | "
+                                     (let ((str (substring com 0)))
+                                       (when ido-use-faces                                                  ;; +
+                                         (if (and
+                                              ;; ido-use-faces ;; -
+                                              (not (string= str first))
+                                              (ido-final-slash str))
+                                             (put-text-property 0 (length str) 'face 'ido-subdir str))
+                                         (if (/= 0 (length name))                                           ;; +
+                                             (let ((regexp (if ido-enable-regexp name (regexp-quote name))) ;; +
+                                                   (pos 0))                                                 ;; +
+                                               (while (string-match regexp str pos)                         ;; +
+                                                 (ignore-errors                                             ;; +
+                                                   (add-face-text-property (match-beginning 0)              ;; +
+                                                                           (match-end 0)                    ;; +
+                                                                           'ido-substring-match-face        ;; +
+                                                                           nil str))                          ;; +
+                                                 (setq pos (match-end 0))))))                               ;; +
+                                       str)))))
+                           comps))))))
+
+             (concat
+              ;; put in common completion item -- what you get by pressing tab
+              (if (and (stringp ido-common-match-string)
+                       (> (length ido-common-match-string) (length name)))
+                  (concat (nth 4 ido-decorations)   ;; [ ... ]
+                          (substring ido-common-match-string (length name))
+                          (nth 5 ido-decorations)))
+              " [" (int-to-string (length ido-matches)) "]" ;; +
+              ;; list all alternatives
+              (nth 0 ido-decorations)  ;; { ... }
+              alternatives
+              (nth 1 ido-decorations)))))))
+
+;; (defun ido-completions-advice (orig-fun name)
+;;   "Colorize ido-completions text result."
+;;   (let ((text (funcall orig-fun name)))
+;;     (if (and (/= 0 (length name))
+;;              (/= 0 (length text)))
+;;         (let ((regexp (if ido-enable-regexp name (regexp-quote name)))
+;;               (beg (if (string-match "^ \\[[^]]*\\]" text)
+;;                        (match-end 0)
+;;                      0))
+;;               pos)
+;;           (setq pos beg)
+;;           (while (string-match regexp text pos)
+;;             (ignore-errors
+;;               (add-face-text-property (match-beginning 0)
+;;                                       (match-end 0)
+;;                                       'ido-substring-match-face
+;;                                       nil text))
+;;             (setq pos (match-end 0)))
+;;           (if (= 0 beg)
+;;               (concat " [" (int-to-string (length ido-matches)) "]" text)
+;;             (concat (substring text 0 beg)
+;;                     "[" (int-to-string (length ido-matches)) "]"
+;;                     (substring text beg))))
+;;       (concat " [" (int-to-string (length ido-matches)) "]" text))))
+;; (advice-add 'ido-completions :around 'ido-completions-advice)
 
 (defun self-insert-command-advice (orig-fun N)
   (if (<= 0 N)
