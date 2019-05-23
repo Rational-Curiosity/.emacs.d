@@ -8,7 +8,6 @@
 ;;; Code:
 
 (message "Importing projectile-config")
-(setq projectile-mode-line-prefix "")
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
 ;;;;;;;;;;;;;;;;
@@ -70,13 +69,14 @@
 ;;;;;
 
 
-(setq projectile-globally-ignored-file-suffixes
+(setq projectile-mode-line-prefix ""
+      projectile-globally-ignored-file-suffixes
       '(".o" ".d" ".crt" ".key" ".txt" "~")
-      ;projectile-indexing-method 'native
-      ;projectile-enable-caching nil
-      ;projectile-file-exists-remote-cache-expire nil
-      ;projectile-require-project-root nil
-      projectile-find-dir-includes-top-level t ; el bug
+      ;; projectile-indexing-method 'native
+      ;; projectile-enable-caching nil
+      ;; projectile-file-exists-remote-cache-expire nil
+      ;; projectile-require-project-root nil
+      projectile-find-dir-includes-top-level t  ;; el bug
       projectile-project-root-files-top-down-recurring
       '("Makefile" "makefile" "CMakeLists.txt" "makefile.linux")
       projectile-project-root-files-functions
@@ -84,7 +84,9 @@
         projectile-root-top-down-recurring
         projectile-root-bottom-up
         projectile-root-top-down)
-      projectile-switch-project-action 'counsel-projectile)
+      ;; projectile-switch-project-action 'counsel-projectile
+      projectile-completion-system 'ido
+      projectile-mode-line-function (lambda () (concat "[" (projectile-project-name) "]")))
 
 
 (provide 'projectile-config)

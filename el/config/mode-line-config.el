@@ -19,6 +19,7 @@
   (setq
    cyphejor-rules
    '(:upcase
+     ("fundamental" "∅")
      ("bookmark"    "→")
      ("buffer"      "β")
      ("diff"        "Δ")
@@ -36,7 +37,7 @@
      ("shell"       "sh" :postfix)
      ("text"        "ξ")
      ("wdired"      "↯δ")
-     ("fish"        "🐟")
+     ("fish"        "φ")
      ("nim"         "ℵ")))
   (cyphejor-mode))
 
