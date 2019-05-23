@@ -1,4 +1,4 @@
-;;; magit-popup-config.el --- Configure and improve magit-popup
+;;; magit-popup-config.el --- Configure magit-popup
 
 ;;; Commentary:
 
@@ -14,9 +14,9 @@
 (message "Importing magit-popup-config")
 
 (face-spec-set 'magit-popup-argument
-               '((t (:foreground "forest green" :bold t :underline t))))
-(face-spec-set 'magit-popup-disabled-argument
-               '((t (:foreground "slate gray" :bold nil :underline nil))))
+               '((t (:foreground "forest green" :weight bold))))
+;; (face-spec-set 'magit-popup-disabled-argument
+;;                '((t (:foreground "slate gray" :weight light))))
 
 
 (provide 'magit-popup-config)
