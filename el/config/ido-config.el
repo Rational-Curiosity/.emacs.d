@@ -90,7 +90,7 @@ Modified from `icomplete-completions'."
             (t "")))
           (ido-incomplete-regexp
            (concat " " (car comps)))
-          ((null (cdr comps))		;one match
+          ((null (cdr comps))          ;one match
            (concat (if (if (not ido-enable-regexp)
                            (= (length (ido-name (car comps))) (length name))
                          ;; We can't rely on the length of the input
@@ -107,7 +107,7 @@ Modified from `icomplete-completions'."
                       (ido-name (car comps))
                       (or (nth 12 ido-decorations) (nth 5 ido-decorations))))
                    (if (not ido-use-faces) (nth 7 ido-decorations))))  ;; [Matched]
-          (t				;multiple matches
+          (t                           ;multiple matches
            (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
                   (alternatives
                    (apply

@@ -580,8 +580,21 @@
   (interactive "p")
   (eshell-key-up (- arg)))
 
+(defun eshell-insert-history ()
+  "Displays the eshell history to select and insert back into your eshell."
+  (interactive)
+  (insert (ido-completing-read "Eshell history: "
+                               (delete-dups
+                                (ring-elements eshell-history-ring)))))
+
+(defun eshell-ido-complete-dwim ()
+  (interactive)
+  (condition-case nil
+      (eshell-ido-pcomplete)
+    (error (eshell-insert-history))))
+
 (defun eshell-cmpl-initialize-advice ()
-  (define-key eshell-mode-map [tab] 'eshell-ido-pcomplete)
+  (define-key eshell-mode-map [tab] 'eshell-ido-complete-dwim)
   (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
   (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr))
 (advice-add 'eshell-cmpl-initialize :after 'eshell-cmpl-initialize-advice)
