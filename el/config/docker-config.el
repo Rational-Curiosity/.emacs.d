@@ -20,9 +20,9 @@
   'docker-container
   :man-page "docker-logs"
   :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
-  :options  '((?T "Tail" "--tail "))
+  :options  '((?T "Tail" "--tail="))
   :actions  '((?L "Logs" docker-container-logs-selection))
-  :default-arguments '("-f" "-t")
+  :default-arguments '("-f" "-t" "--tail=150")
   :setup-function #'docker-utils-setup-popup)
 
 

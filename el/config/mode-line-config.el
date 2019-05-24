@@ -110,10 +110,16 @@
 ;;              'mode-line '((:background "dim gray") mode-line))))
 ;; ] <examples>
 
+;; Show battery in mode line
+(eval-and-when-daemon frame
+  (display-battery-mode))
 ;; [ <smart-mode-line>
 (require 'smart-mode-line)
+;; Custom values
 (setq line-number-display-limit nil
       line-number-display-limit-width 2000
+      sml/battery-format "%p"
+      sml/show-client t
       sml/no-confirm-load-theme t
       sml/shorten-directory t
       sml/name-width '(17 . 55)
