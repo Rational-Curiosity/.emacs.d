@@ -98,28 +98,40 @@
   (delete "extra" flycheck-gcc-warnings))
 
 ;; Mode-line
-(defun my-flycheck-mode-line-status-text (&optional status)
+(defun flycheck-mode-line-status-text-color (&optional status)
   "Get a text describing STATUS for use in the mode line."
-  (format
-   "{%s}" (pcase (or status flycheck-last-status-change)
-            (`not-checked "")
-            (`no-checker "∅")
-            (`running "↻")
-            (`errored "✘")
-            (`finished
-             (let ((errors-warnings (flycheck-count-errors flycheck-current-errors)))
-               (let* ((errors (cdr (assq 'error errors-warnings)))
-                      (warnings (cdr (assq 'warning errors-warnings)))
-                      (errors-str (when errors (format "⚐%d" errors)))
-                      (warnings-str (when warnings (format "⚠%d" warnings))))
-                 (cond
-                  ((and errors warnings) (concat errors-str " " warnings-str))
-                  (warnings warnings-str)
-                  (errors errors-str)
-                  (t "✓ ")))))
-            (`interrupted "-")
-            (`suspicious "?"))))
-(setq-default flycheck-mode-line '(:eval (my-flycheck-mode-line-status-text)))
+  (let* ((face 'mode-line-notready)
+         (text (format
+                "{%s}" (pcase (or status flycheck-last-status-change)
+                         (`not-checked "")
+                         (`no-checker "∅")
+                         (`running "↻")
+                         (`errored "✘")
+                         (`finished
+                          (let ((errors-warnings (flycheck-count-errors flycheck-current-errors)))
+                            (let* ((errors (cdr (assq 'error errors-warnings)))
+                                   (warnings (cdr (assq 'warning errors-warnings)))
+                                   (errors-str (when errors (format "⚐%d" errors)))
+                                   (warnings-str (when warnings (format "⚠%d" warnings))))
+                              (cond
+                               ((and errors warnings)
+                                (setq face 'mode-line-error)
+                                (concat errors-str " " warnings-str))
+                               (warnings
+                                (setq face 'mode-line-warning)
+                                warnings-str)
+                               (errors
+                                (setq face 'mode-line-error)
+                                errors-str)
+                               (t
+                                (setq face 'mode-line-correct)
+                                "✓ ")))))
+                         (`interrupted "-")
+                         (`suspicious "?")))))
+    (propertize
+     text
+     'face face)))
+(setq-default flycheck-mode-line '(:eval (flycheck-mode-line-status-text-color)))
 
 ;; Keys
 (bind-keys :map flycheck-mode-map

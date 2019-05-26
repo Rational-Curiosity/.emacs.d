@@ -3,6 +3,10 @@
 ;;; Commentary:
 
 ;; Usage:
+;; (with-eval-after-load 'projectile
+;;   ;; after semantic
+;;   (require 'projectile-config))
+;; Never
 ;; (require 'projectile-config)
 
 ;;; Code:
@@ -68,8 +72,9 @@
 ;;;;;;;;;;
 ;;;;;
 
-
+(setq-default projectile--mode-line "")
 (setq projectile-mode-line-prefix ""
+      projectile-dynamic-mode-line nil
       projectile-globally-ignored-file-suffixes
       '(".o" ".d" ".crt" ".key" ".txt" "~")
       ;; projectile-indexing-method 'native
