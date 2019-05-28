@@ -10,12 +10,13 @@
 ;; (set 'custom-enabled-themes 'wheatgrass)
 (load-theme 'wombat t)
 
-(require 'cursor-chg)  ; Load this library
-(change-cursor-mode 1) ; On for overwrite/read-only/input mode
-(toggle-cursor-type-when-idle 1) ; On when idle
-(setq curchg-idle-cursor-type 'hbar
-      curchg-default-cursor-type 'bar
-      curchg-overwrite/read-only-cursor-type 'box)
+;; (require 'cursor-chg)  ; Load this library
+;; (change-cursor-mode 1) ; On for overwrite/read-only/input mode
+;; (toggle-cursor-type-when-idle 1) ; On when idle
+;; (setq curchg-idle-cursor-type 'hbar
+;;       curchg-default-cursor-type 'bar
+;;       curchg-overwrite/read-only-cursor-type 'box)
+(set-cursor-color "red")
 
 ;; [ Cycle themes
 (require 'ring)

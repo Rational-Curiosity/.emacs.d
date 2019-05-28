@@ -143,9 +143,13 @@
         (setq battery-mode-line-string
               (propertize (concat
                            (int-to-string percentage)
-                           (if (string-equal supplier "AC")
-                               (if (display-graphic-p) "🔌" ":")
-                             (if (display-graphic-p) "🔋" "-")))
+                           (cond ((string-equal supplier "AC")
+                                  (if (display-graphic-p) "🔌" ":"))
+                                 ((string-equal supplier "BAT")
+                                  (if (display-graphic-p) "🔋" "-"))
+                                 ((string-equal supplier "N/A")
+                                  "?")
+                                 (t supplier)))
                           'font-lock-face
                           (if (and (numberp percentage)
                                    (<= percentage battery-load-critical))
