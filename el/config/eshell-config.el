@@ -180,7 +180,8 @@
                               (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
                               (add-to-list 'eshell-complex-commands "ag")))
 ;; Colorize advices
-(add-hook 'eshell-post-command-hook (lambda () (unhl-advices) (hl-advices)))
+;; brute force...
+;; (add-hook 'eshell-post-command-hook (lambda () (unhl-advices) (hl-advices)))
 
 ;;;;;;;;;;;;
 ;; Prompt ;;

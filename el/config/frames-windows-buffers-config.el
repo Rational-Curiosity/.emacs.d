@@ -97,6 +97,10 @@
       hscroll-margin 2
       hscroll-step 1
       message-truncate-lines nil)
+(add-hook 'term-mode-hook
+          (lambda ()
+            (set (make-local-variable 'scroll-margin) 0)))
+
 
 (defun toggle-message-truncate-lines ()
   "Toggle truncate lines in messages."

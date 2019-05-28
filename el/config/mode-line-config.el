@@ -19,10 +19,10 @@
 ;; Faces ;;
 ;;;;;;;;;;;
 (defface mode-line-correct
-  '((t :foreground "brown4" :inherit (mode-line)))
+  '((t :foreground "green4" :inherit (mode-line)))
   "Correct" :group 'mode-line)
 (defface mode-line-notready
-  '((t :foreground "green4" :inherit (mode-line)))
+  '((t :foreground "brown4" :inherit (mode-line)))
   "Correct" :group 'mode-line)
 (defface mode-line-warning
   '((t :foreground "yellow4" :inherit (mode-line)))
@@ -98,7 +98,7 @@
      ("python"      "π")
      ("c"           "ȼ")
      ("org"         "Ω")
-     ("eshell"       "εsh" :postfix)
+     ("eshell"      "εsh" :postfix)
      ("shell"       "sh" :postfix)
      ("text"        "ξ")
      ("wdired"      "↯δ")
@@ -128,28 +128,32 @@
 ;; Battery mode line ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(eval-and-when-daemon frame
-  (display-battery-mode)
-  (bug-check-function-bytecode
+(require 'battery)
+(bug-check-function-bytecode
    'battery-update
    "CIUGAAggGcbHCZ5BIUAayAuDJgAKp4MmAAoMWIMmAMkLCSKCJwDKywqnhTQACg1YhTQAzM3OJRYQKs8ghw==")
-  (setq battery-mode-line-format "%p")
+(eval-and-when-daemon frame
+  (display-battery-mode)
+  (setq battery-mode-line-format "%p%L")
   (defun battery-update ()
     "Update battery status information in the mode line."
-    (let* ((data (and battery-status-function (funcall battery-status-function)))
-           (percentage (car (read-from-string (cdr (assq ?p data))))))
-      (setq battery-mode-line-string
-            (propertize (if (and battery-mode-line-format
-                                 (numberp percentage)
-                                 (<= percentage battery-mode-line-limit))
-                            (battery-format battery-mode-line-format data)
-                          "")
-                        'face
-                        (if (and (numberp percentage)
-                                 (<= percentage battery-load-critical))
-                            'error
-                          'mode-line-battery)
-                        'help-echo "Battery status information")))
+    (let ((data (and battery-status-function (funcall battery-status-function))))
+      (let ((percentage (truncate (car (read-from-string (cdr (assq ?p data))))))
+            (supplier (cdr (assq ?L data))))
+        (setq battery-mode-line-string
+              (propertize (concat
+                           (int-to-string percentage)
+                           (if (string-equal supplier "AC")
+                               (if (display-graphic-p) "🔌" ":")
+                             (if (display-graphic-p) "🔋" "-")))
+                          'font-lock-face
+                          (if (and (numberp percentage)
+                                   (<= percentage battery-load-critical))
+                              '(:foreground "red")
+                            `(:foreground ,(format "#%02i%02i00"
+                                                   (- 100 percentage)
+                                                   (- percentage 1))))
+                          'help-echo "Battery status information"))))
     (force-mode-line-update)))
 
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -290,6 +294,42 @@ mouse-3: Toggle minor modes"
     (if name
         (abbreviate-file-name name))))
 
+(defun shorten-path (path len abbrev-len)
+  (let ((path-old "")
+        (filename (file-name-nondirectory path))
+        (regexp (concat "\\(\\([A-Za-z]\\{"
+                        (int-to-string abbrev-len)
+                        "\\}\\)[A-Za-z]+\\).*\\'")))
+    (while (and (< len (length path))
+                (not (string-equal path path-old))
+                (string-equal filename (file-name-nondirectory path)))
+      (setq path-old path
+            path (replace-regexp-in-string regexp "\\2" path nil nil 1))))
+  (if (< len (length path))
+      (let ((len/2 (max 1 (/ len 2))))
+        (concat
+         (substring path 0 (- len/2 1))
+         "…"
+         (substring path (- len/2))))
+    path))
+
+(defvar mode-line-path-abbrev-len 2)
+
+(defun mode-line-buffer-identification-shorten ()
+  (let ((pre-filename (format-mode-line mode-line-pre-filename))
+        (post-filename (format-mode-line mode-line-post-filename))
+        (name (or (mode-line-abbreviate-file-name) (buffer-name))))
+    (let ((len (- (window-total-width)
+                  (string-width pre-filename)
+                  (string-width post-filename))))
+      (format (concat "%-" (int-to-string len) "s")
+              (if (<= (string-width name) len)
+                  name
+                (shorten-path name len mode-line-path-abbrev-len))))))
+
+;;;;;;;;;;;;;;;;
+;; Projectile ;;
+;;;;;;;;;;;;;;;;
 (with-eval-after-load 'projectile
   (defun projectile-mode-menu (event)
     (interactive "@e")
@@ -341,21 +381,21 @@ mouse-3: Toggle minor modes"
       (if name
           (mode-line-perform-projectile-replacement (abbreviate-file-name name))))))
 
-(defun mode-line-buffer-identification-shorten ()
-  (let ((pre-filename (format-mode-line mode-line-pre-filename))
-        (post-filename (format-mode-line mode-line-post-filename))
-        (name (or (mode-line-abbreviate-file-name) (buffer-name))))
-    (let* ((len (- (window-total-width)
-                   (string-width pre-filename)
-                   (string-width post-filename)))
-           (len/2 (/ len 2)))
-      (format (concat "%-" (int-to-string len) "s")
-              (if (<= (string-width name) len)
-                  name
-                (concat
-                 (substring-no-properties name 0 (- len/2 1))
-                 "…"
-                 (substring-no-properties name (- len/2))))))))
+;;;;;;;;;;;;;;;;;;;;;
+;; Version control ;;
+;;;;;;;;;;;;;;;;;;;;;
+(with-eval-after-load 'vc-hooks
+  (defun vc-mode-line-advice (&rest args)
+    "Color `vc-mode'."
+    (when (stringp vc-mode)
+      (let ((noback (replace-regexp-in-string (format "^ %s" (vc-backend buffer-file-name)) " " vc-mode)))
+        (setq vc-mode
+              (propertize noback
+                          'face (cond ((string-match "^ -" noback)    'mode-line-not-modified)
+                                      ((string-match "^ [:@]" noback) 'mode-line-read-only)
+                                      ((string-match "^ [!\\?]" noback) 'mode-line-modified)))))))
+  (advice-add 'vc-mode-line :after 'vc-mode-line-advice))
+
 
 
 (provide 'mode-line-config)

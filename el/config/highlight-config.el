@@ -34,7 +34,14 @@
   (highlight-regexp "\\_<debug\\_>" 'hi-green-b)
   (highlight-regexp "\\_<info\\_>" 'hi-blue-b)
   (highlight-regexp "\\_<information\\_>" 'hi-blue-b)
-  (highlight-regexp "\\_<assertion\\_>" 'hi-yellow))
+  (highlight-regexp "\\_<assertion\\_>" 'hi-yellow)
+  (highlight-regexp "\\_<ERROR\\_>" 'hi-red-b)
+  (highlight-regexp "\\_<WARN\\_>" 'hi-yellow-b)
+  (highlight-regexp "\\_<WARNING\\_>" 'hi-yellow-b)
+  (highlight-regexp "\\_<DEBUG\\_>" 'hi-green-b)
+  (highlight-regexp "\\_<INFO\\_>" 'hi-blue-b)
+  (highlight-regexp "\\_<INFORMATION\\_>" 'hi-blue-b)
+  (highlight-regexp "\\_<ASSERTION\\_>" 'hi-yellow))
 
 (defun unhl-advices ()
   "Unhighlight advices."
@@ -45,7 +52,52 @@
   (unhighlight-regexp "\\_<debug\\_>")
   (unhighlight-regexp "\\_<info\\_>")
   (unhighlight-regexp "\\_<information\\_>")
-  (unhighlight-regexp "\\_<assertion\\_>"))
+  (unhighlight-regexp "\\_<assertion\\_>")
+  (unhighlight-regexp "\\_<ERROR\\_>")
+  (unhighlight-regexp "\\_<WARN\\_>")
+  (unhighlight-regexp "\\_<WARNING\\_>")
+  (unhighlight-regexp "\\_<DEBUG\\_>")
+  (unhighlight-regexp "\\_<INFO\\_>")
+  (unhighlight-regexp "\\_<INFORMATION\\_>")
+  (unhighlight-regexp "\\_<ASSERTION\\_>"))
+
+(defun hl-apirest ()
+  (interactive)
+  (highlight-regexp "\\_<GET\\_>" 'hi-green-b)
+  (highlight-regexp "\\_<POST\\_>" 'hi-green-b)
+  (highlight-regexp "\\_<PUT\\_>" 'hi-green-b)
+  (highlight-regexp "\\_<PATCH\\_>" 'hi-green-b)
+  (highlight-regexp "\\_<DELETE\\_>" 'hi-green-b))
+
+(defun unhl-apirest ()
+  (interactive)
+  (unhighlight-regexp "\\_<GET\\_>")
+  (unhighlight-regexp "\\_<POST\\_>")
+  (unhighlight-regexp "\\_<PUT\\_>")
+  (unhighlight-regexp "\\_<PATCH\\_>")
+  (unhighlight-regexp "\\_<DELETE\\_>"))
+
+(defun hl-today ()
+  "Highlight today date."
+  (interactive)
+  (highlight-regexp (format-time-string "%Y-%m-%d") 'hi-blue))
+
+(defun unhl-today ()
+  "Highlight today date."
+  (interactive)
+  (unhighlight-regexp (format-time-string "%Y-%m-%d")))
+
+(defun hl-log ()
+  (interactive)
+  (hl-advices)
+  (hl-today)
+  (hl-apirest))
+
+(defun unhl-log ()
+  (interactive)
+  (unhl-advices)
+  (unhl-today)
+  (unhl-apirest))
 
 
 (provide 'highlight-config)
