@@ -16,7 +16,7 @@
 ;; (setq curchg-idle-cursor-type 'hbar
 ;;       curchg-default-cursor-type 'bar
 ;;       curchg-overwrite/read-only-cursor-type 'box)
-(set-cursor-color "red")
+(add-to-list 'default-frame-alist '(cursor-color . "red"))
 
 ;; [ Cycle themes
 (require 'ring)

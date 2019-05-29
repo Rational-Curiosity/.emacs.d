@@ -16,7 +16,14 @@
 ;; ]
 (require 'company-c-headers)
 (require 'company-yasnippet)
-(setcar (cdr (assq 'company-mode minor-mode-alist)) "C")
+
+(defface mode-line-company-mode
+  '((t :inherit (mode-line) :foreground "slate blue" :weight bold))
+  "Project name" :group 'mode-line)
+
+(setcar (cdr (assq 'company-mode minor-mode-alist)) (propertize "C"
+                                                                'face
+                                                                'mode-line-company-mode))
 (add-hook 'after-init-hook 'global-company-mode)
 ;; [ disable slow 'company-semantic'. comment with ede-project
 ;;(delete 'company-semantic company-backends)

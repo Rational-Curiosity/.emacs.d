@@ -17,7 +17,12 @@
 ;;; Code:
 
 (message "Importing yasnippet-config")
-(setcar (cdr (assq 'yas-minor-mode minor-mode-alist)) "Y")
+(defface mode-line-yasnippet-mode
+  '((t :inherit (mode-line) :foreground "medium slate blue" :weight bold))
+  "Project name" :group 'mode-line)
+(setcar (cdr (assq 'yas-minor-mode minor-mode-alist)) (propertize "Y"
+                                                                  'face
+                                                                  'mode-line-yasnippet-mode))
 
 (require 'yasnippet-snippets)
 (setq yas-snippet-dirs

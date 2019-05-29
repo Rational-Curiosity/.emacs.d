@@ -75,6 +75,10 @@
   '((t :inherit (mode-line) :foreground "SaddleBrown" :weight bold))
   "Project name" :group 'mode-line)
 
+(defface mode-line-abbrev-mode
+  '((t :inherit (mode-line) :foreground "light slate blue" :weight bold))
+  "Project name" :group 'mode-line)
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers packages ;;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -88,6 +92,7 @@
      ("diff"        "Δ")
      ("dired"       "δ")
      ("emacs"       "ε")
+     ("help"        "?")
      ("inferior"    "i" :prefix)
      ("interaction" "i" :prefix)
      ("interactive" "i" :prefix)
@@ -105,9 +110,15 @@
      ("fish"        "φ")
      ("nim"         "ℵ")))
   (cyphejor-mode))
-
-(setcar (cdr (assq 'abbrev-mode minor-mode-alist)) "A")
-(setq auto-revert-mode-text "Ar")
+(with-eval-after-load 'abbrev
+  (setcar (cdr (assq 'abbrev-mode minor-mode-alist)) (propertize "A"
+                                                                 'face
+                                                                 'mode-line-abbrev-mode)))
+(with-eval-after-load 'compile
+  (setcar (cdr (assq 'compilation-shell-minor-mode minor-mode-alist)) "Cs")
+  (setcar (cdr (assq 'compilation-minor-mode minor-mode-alist)) "Cp"))
+(with-eval-after-load 'autorevert
+  (setq auto-revert-mode-text "Ar"))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Sort minor modes ;;
