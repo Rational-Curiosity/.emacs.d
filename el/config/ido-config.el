@@ -132,15 +132,16 @@ Modified from `icomplete-completions'."
                                              (put-text-property 0 (length str) 'face 'ido-subdir str))
                                          (if (/= 0 (length name))                                           ;; +
                                              (let ((regexp (if ido-enable-regexp name (regexp-quote name))) ;; +
-                                                   (pos 0))                                                 ;; +
+                                                   (pos 0)                                                  ;; +
+                                                   end)                                                     ;; +
                                                (while (and (string-match regexp str pos)                    ;; +
-                                                           (< pos (match-end 0)))                           ;; +
+                                                           (< pos (setq end (match-end 0))))                ;; +
                                                  (ignore-errors                                             ;; +
                                                    (add-face-text-property (match-beginning 0)              ;; +
                                                                            (match-end 0)                    ;; +
                                                                            'ido-substring-match-face        ;; +
                                                                            nil str))                          ;; +
-                                                 (setq pos (match-end 0))))))                               ;; +
+                                                 (setq pos end)))))                                         ;; +
                                        str)))))
                            comps))))))
 
