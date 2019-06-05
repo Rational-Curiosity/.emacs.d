@@ -295,6 +295,14 @@
 (defun org-gfm-publish-to-gfm (plist filename pub-dir)
   (org-publish-org-to 'gfm filename ".md" plist pub-dir))
 
+;;;;;;;;;;;;;;;;;;;;;
+;; Convert to Wiki ;;
+;;;;;;;;;;;;;;;;;;;;;
+(require 'ox-mediawiki)
+;; Change dispatcher bind key because of conflict with markdown
+(setcar (org-export-backend-menu (-first (lambda (b) (string-equal "mw" (symbol-name (org-export-backend-name b))))
+        org-export-registered-backends)) ?M)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to reStructuredText ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
