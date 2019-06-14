@@ -11,6 +11,7 @@
 
 (with-eval-after-load 'magit-mode
   (defun vc-refresh-buffers ()
+    (interactive)
     (dolist (buffer (buffers-from-file))
       (with-current-buffer buffer
         (vc-refresh-state))))

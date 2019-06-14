@@ -58,7 +58,17 @@
     (message "anaconda-config: %i pythons found (>10) stopped at %s"
              processes (format-time-string "%Y-%m-%d %H:%M:%S.%N"))))
 
+(defun anaconda-mode-show-xrefs-advice (result display-action error-message)
+  (unless result
+    (pcase error-message
+      ("No definitions found" (call-interactively 'xref-find-definitions))
+      ("No references found" (call-interactively 'xref-find-references)))))
+(advice-add 'anaconda-mode-show-xrefs :after 'anaconda-mode-show-xrefs-advice)
 
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
 (defhydra hydra-anaconda (:foreign-keys run :hint nil)
   "
 ^Find^             ^Other window^  ^Other frame

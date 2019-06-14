@@ -199,6 +199,7 @@
   ;; after semantic
   (require 'projectile-config))
 (add-hook 'prog-mode-hook (lambda ()
+                            (require 'etags-config)
                             (require 'ede)
                             (ede-minor-mode)))
 (with-eval-after-load 'ede
