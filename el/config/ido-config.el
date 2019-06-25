@@ -29,7 +29,9 @@
       ido-use-filename-at-point 'guess
       ido-use-url-at-point t
       ido-create-new-buffer 'always
-      ido-use-virtual-buffers nil)
+      ido-use-virtual-buffers nil
+      ido-default-buffer-method 'selected-window
+      ido-default-file-method 'selected-window)
 
 (ido-mode 1)
 (ido-everywhere 1)

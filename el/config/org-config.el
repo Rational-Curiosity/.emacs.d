@@ -191,8 +191,6 @@
     (python     . t)
     (emacs-lisp . t)
     (java       . t)
-    (go         . t)
-    (dart       . t)
     (perl       . t)
     (awk        . t)
     (latex      . t)
@@ -802,12 +800,13 @@ You can also customize this for each buffer, using something like
 ;; ;;)
 (require 'org-agenda-property)
 
-(setq org-directory (loop for folder in
-                          `("~/var/Dropbox/Orgzly"
-                            ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
-                            "~/Prog/org")
-                          when (file-exists-p folder)
-                          return folder)
+(setq org-directory (or (loop for folder in
+                              `("~/var/Dropbox/Orgzly"
+                                ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
+                                "~/Prog/org")
+                              when (file-exists-p folder)
+                              return folder)
+                        org-directory)
       org-default-notes-file (concat (or org-directory "~") "/.notes.org")
       org-agenda-files (if org-directory
                            `(,org-directory)
@@ -893,6 +892,19 @@ You can also customize this for each buffer, using something like
                        ))))))
         ;;("u" "[u]nscheduled tasks" tags "-SCHEDULED={.+}/!+TODO|+NEXT|+STARTED|+WAITING|+HOLD")
         ))
+
+;;;;;;;;;;;
+;; Brain ;;
+;;;;;;;;;;;
+(require 'org-brain)
+
+(setq org-brain-path (or (loop for folder in
+                               '("~/var/Dropbox/Brain")
+                               when (file-exists-p folder)
+                               return folder)
+                         org-brain-path)
+      )
+
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;

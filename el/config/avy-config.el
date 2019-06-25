@@ -9,6 +9,7 @@
 
 ;; goto
 (require 'avy)
+(require 'link-hint)
 
 (setq avy-keys '(?q ?w ?e ?r ?t ?y ?u ?i ?o ?p
                     ?a ?s ?d ?f ?g ?h ?j ?k ?l
@@ -23,7 +24,9 @@
  ("M-g l"               . avy-goto-line)
  ("M-g w"               . avy-goto-word-1)
  ("M-g W"               . avy-goto-word-0)
- ("M-z"                 . avy-goto-char-timer))
+ ("M-z"                 . avy-goto-char-timer)
+ ("M-Z"                 . link-hint-open-link)
+ ("C-M-z"               . link-hint-copy-link))
 
 
 (provide 'avy-config)
