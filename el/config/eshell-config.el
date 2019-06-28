@@ -581,6 +581,16 @@
   (interactive "p")
   (eshell-key-up (- arg)))
 
+(with-eval-after-load 'em-hist
+  ;; eshell-next-input call this
+  (defun eshell-previous-input (arg)
+    "Cycle backwards through input history."
+    (interactive "*p")
+    (if (eq (point)
+            (point-max))
+        (eshell-previous-matching-input "." arg)
+      (line-move-1 (- arg)))))
+
 (defun eshell-insert-history ()
   "Displays the eshell history to select and insert back into your eshell."
   (interactive)
