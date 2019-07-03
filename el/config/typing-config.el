@@ -150,6 +150,38 @@ prompt the user for a coding system."
                  ("Ü" . "U")) string)
     (set 'string (replace-regexp-in-string (car map) (cdr map) string nil t))))
 
+;;;;;;;;;;
+;; Caps ;;
+;;;;;;;;;;
+(when (executable-find "xset")
+  (require 'dash)
+  (require 's)
+
+  (defun x-led-mask ()
+    "Get the current status of the LED mask from X."
+    (with-temp-buffer
+      (call-process "xset" nil t nil "q")
+      (let ((led-mask-string
+             (->> (buffer-string)
+                  s-lines
+                  (--first (s-contains? "LED mask" it))
+                  s-split-words
+                  -last-item)))
+        (string-to-number led-mask-string 16))))
+
+  (defun caps-lock-on (led-mask)
+    "Return non-nil if caps lock is on."
+    (eq (logand led-mask 1) 1))
+
+  (define-minor-mode caps-lock-show-mode
+    "Display whether caps lock is on."
+    :global t
+    :lighter (:eval (if (caps-lock-on (x-led-mask))
+                        (propertize "⇪" 'font-lock-face
+                                    '(:foreground "red" :weight bold))
+                      "")))
+  (caps-lock-show-mode))
+
 ;;;;;;;;;;;;;;;;;
 ;; Indentation ;;
 ;;;;;;;;;;;;;;;;;

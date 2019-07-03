@@ -125,7 +125,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 (defun mode-line-sort-minors ()
   (interactive)
-  (dolist (minor '(abbrev-mode yas-minor-mode company-mode))
+  (dolist (minor '(abbrev-mode yas-minor-mode company-mode caps-lock-show-mode))
     (let ((pos (cl-position-if (lambda (x) (eq minor (car x))) minor-mode-alist)))
       (when pos
        (setcdr (last minor-mode-alist) (list (elt minor-mode-alist pos)))
