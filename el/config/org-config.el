@@ -92,6 +92,7 @@
         ("FINI" :foreground "dark olive green" :weight bold) ;; FINISHED
         ("ENOU" :foreground "green yellow" :weight bold) ;; ENOUGH
         ("DELE" :foreground "light green" :weight bold) ;; DELEGATED
+        ("LINK" :foreground "violet" :weight bold) ;; LINKED
         ("WAIT" :foreground "blue violet" :weight bold :underline t) ;; WAITING
         ("HOLD" :foreground "dark violet" :weight bold :underline t) ;; HOLD
         ("CANC" :foreground "dark green" :weight bold) ;; CANCELED
@@ -251,11 +252,11 @@
       org-log-into-drawer "LOGSTATE"
       org-todo-keywords
       '(;; Basic
-        (sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+        (sequence "TODO(t)" "NEXT(n)" "STAR(s!)" "|" "DONE(d!)")
         ;; Actions
         (sequence "UNDO(u!)" "VERI(v@/!)" "|" "ENOU(e@/!)" "DELE(l@/!)")
         ;; States
-        (sequence "STAR(s!)" "PLAN(p!)" "WAIT(w@/!)" "|" "FINI(f!)")
+        (sequence "PLAN(p!)" "LINK(k@/!)" "WAIT(w@/!)" "|" "FINI(f!)")
         ;; Problems
         (sequence "FIXM(b@/!)" "REOP(r@/!)" "HOLD(h@/!)" "|" "CANC(c@/!)"))
       org-archive-location "archived.org::* From %s"
@@ -932,7 +933,8 @@ You can also customize this for each buffer, using something like
                  ("TODO" . 55)
                  ("UNDO" . 56)
                  ;; Hold
-                 ("WAIT" . 65) ;; ?A
+                 ("LINK" . 64) ;; ?A
+                 ("WAIT" . 65)
                  ("HOLD" . 66)
                  ;; Done
                  ("ENOU" . 71) ;; 97 ?a
