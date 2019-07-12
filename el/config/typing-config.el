@@ -683,6 +683,8 @@ there's a region, all lines that region covers will be duplicated."
  ("<f7> l"              . whitespace-toggle-lines-tail)
  ("<f7> RET"            . whitespace-toggle-marks)
  ("M-s c b"             . backward-kill-word)
+ ("M-n"                 . forward-paragraph)
+ ("M-p"                 . backward-paragraph)
  ("C-<left>"            . left-word)
  ("C-<right>"           . right-word)
  ("S-<backspace>"       . backward-kill-sexp)

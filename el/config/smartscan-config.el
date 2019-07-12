@@ -9,8 +9,8 @@
 
 (defvar smartscan-map
   (let ((m (make-sparse-keymap)))
-    (define-key m (kbd "C-n") 'smartscan-symbol-go-forward)
-    (define-key m (kbd "C-p") 'smartscan-symbol-go-backward)
+    (define-key m (kbd "C-c C-n") 'smartscan-symbol-go-forward)
+    (define-key m (kbd "C-c C-p") 'smartscan-symbol-go-backward)
     (define-key m (kbd "C-c C-r") 'smartscan-symbol-replace)
     m)
   "Keymap for `smartscan'.")

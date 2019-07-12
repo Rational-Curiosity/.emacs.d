@@ -142,6 +142,8 @@
 (define-key flyspell-mouse-map (kbd "<C-mouse-2>") #'undefined)
 (define-key flyspell-mouse-map [down-mouse-2] nil)
 (define-key flyspell-mouse-map [mouse-2] nil)
+(define-key flyspell-mode-map (kbd "C-.") nil)
+(define-key flyspell-mode-map (kbd "C-,") nil)
 ;; Change mouse over help text
 (let ((item (aref (aref (symbol-function 'make-flyspell-overlay) 2) 12)))
   (if (and (stringp item)
