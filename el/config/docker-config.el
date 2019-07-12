@@ -15,7 +15,8 @@
 
 (message "Importing docker-config")
 
-(magit-define-popup docker-container-logs-popup
+(with-eval-after-load 'magit-popup
+ (magit-define-popup docker-container-logs-popup
   "Popup for showing containers logs."
   'docker-container
   :man-page "docker-logs"
@@ -23,7 +24,7 @@
   :options  '((?T "Tail" "--tail="))
   :actions  '((?L "Logs" docker-container-logs-selection))
   :default-arguments '("-f" "-t" "--tail=150")
-  :setup-function #'docker-utils-setup-popup)
+  :setup-function #'docker-utils-setup-popup))
 
 
 (provide 'docker-config)

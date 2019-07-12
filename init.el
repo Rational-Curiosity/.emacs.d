@@ -74,6 +74,8 @@
 (load-all-in-directory "~/.emacs.d/el/bugs/")
 ;; [ <Always required>
 
+(require 'modal-config)
+
 (require 'ido-config)
 
 (when (load "company" t)
@@ -176,7 +178,9 @@
 ;; Systems ;;
 ;;;;;;;;;;;;;
 (with-eval-after-load 'magit-popup
-  (require 'magit-popup-config)
+  (require 'magit-popup-config))
+
+(with-eval-after-load 'docker
   (require 'docker-config))
 
 (with-eval-after-load 'transient
@@ -306,9 +310,9 @@
 ;; ]
 
 ;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
-(autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
-(add-to-list 'auto-mode-alist '("\\.py\\." . python-integrated-mode))
-(require 'python-integrated)
+;(autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
+;(add-to-list 'auto-mode-alist '("\\.py\\." . python-integrated-mode))
+;(require 'python-integrated)
 
 (add-to-list 'auto-mode-alist '("\\.ptx\\'" . latex-mode))
 (with-eval-after-load 'latex

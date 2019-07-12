@@ -18,6 +18,10 @@
         (vc-refresh-state))))
   (advice-add 'magit-refresh :after 'vc-refresh-buffers))
 
+(with-eval-after-load 'magit-status
+  (define-key magit-status-mode-map (kbd "z") #'avy-goto-char-timer))
+
+
 ;; SMerge hydra menu
 (defhydra hydra-smerge
   (:foreign-keys run :hint nil :pre (smerge-mode 1))
