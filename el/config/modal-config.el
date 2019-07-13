@@ -7,6 +7,7 @@
 
 ;;; Code:
 (require 'modal)
+(require 'indent)
 
 (setq modal-insert-cursor-type '(bar . 4)
       modal-cursor-type '(hbar . 7)
@@ -22,13 +23,18 @@
 ;; Keys ;;
 ;;;;;;;;;;
 
+(define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
+(define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
+(define-key indent-rigidly-map "f" #'indent-rigidly-right)
+(define-key indent-rigidly-map "b" #'indent-rigidly-left)
+
 ;; Modal editing
 
 ;; ' (handy as self-inserting symbol)
 ;; " (handy as self-inserting symbol)
 (modal-define-kbd ")" "<S-right>" "sp-forward-sexp")
 (modal-define-kbd "(" "<S-left>" "sp-backward-sexp")
-(modal-define-kbd "[" "C-)" "sp-rewrap-sexp-lc")
+(modal-define-kbd "[" "C-(" "sp-rewrap-sexp-lc")
 (modal-define-kbd "]" "C-)" "sp-unwrap-sexp-lc")
 (define-key modal-mode-map (kbd "º") #'er/expand-region)
 (define-key modal-mode-map (kbd "ª") #'er/contract-region)
@@ -108,6 +114,7 @@
 ;; u - reserved
 (modal-define-kbd "v" "C-v" "scroll-up-command")
 (modal-define-kbd "w" "C-w" "kill-region")
+(modal-define-kbd "x TAB" "C-x TAB" "indent-rigidly")
 (modal-define-kbd "x RET" "C-x C-o" "delete-blank-lines")
 (modal-define-kbd "x SPC" "M-SPC" "fixup-whitespace")
 (modal-define-kbd "x ;" "C-x C-;" "comment-line")
