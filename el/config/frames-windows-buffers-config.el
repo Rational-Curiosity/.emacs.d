@@ -138,7 +138,7 @@
 ;;           ad-do-it)))))
 ;; ]
 ;; message timestamp
-;; thanks: https://emacs.stackexchange.com/questions/32150/how-to-add-a-timestamp-to-each-entry-in-emacs-messages-buffer
+;; thanks to: https://emacs.stackexchange.com/questions/32150/how-to-add-a-timestamp-to-each-entry-in-emacs-messages-buffer
 (defun message-timestamp-advice (format-string &rest args)
   "Advice to run before `message' with FORMAT-STRING ARGS that prepend a timestamp to each message."
   (unless (string-equal format-string "%s%s")
