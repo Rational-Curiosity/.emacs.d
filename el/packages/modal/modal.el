@@ -67,7 +67,6 @@ This variable is considered when Modal is enabled globally via
 
 (defvar modal-mode-map (make-sparse-keymap)
   "This is Modal mode map, used to translate your keys.")
-(define-key modal-mode-map (kbd "i") #'modal-global-mode)
 
 ;;;###autoload
 (defun modal-define-key (actual-key target-key name)
@@ -151,13 +150,17 @@ This is used by `modal-global-mode'."
   modal-mode
   modal--maybe-activate)
 
+;; advices
 (defun modal--input-function-advice (fnc key)
   "Call FNC with KEY as argument only when `modal-mode' is disabled.
 
 Otherwise use `list'."
   (funcall (if modal-mode #'list fnc) key))
-
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
+
+;; keys
+(define-key modal-mode-map (kbd "i") #'modal-global-mode)
+(modal-define-kbd "u" "C-u" "universal-argument")
 
 
 (provide 'modal)

@@ -94,7 +94,7 @@
 (modal-define-kbd "f" "C-f" "forward-char")
 (modal-define-kbd "g" "C-g" "keyboard-quit")
 (modal-define-kbd "h" "M-h" "mark-paragraph")
-;; i
+;; i - reserved
 (modal-define-kbd "j" "M-j" "indent-new-comment-line")
 (modal-define-kbd "k" "C-k" "kill-line")
 (modal-define-kbd "l" "C-l" "recenter-top-bottom")
@@ -105,7 +105,7 @@
 (modal-define-kbd "r" "C-r" "isearch-backward")
 (modal-define-kbd "s" "C-s" "isearch-forward")
 (modal-define-kbd "t" "C-t" "transpose-chars")
-(modal-define-kbd "u" "C-u" "universal-argument")
+;; u - reserved
 (modal-define-kbd "v" "C-v" "scroll-up-command")
 (modal-define-kbd "w" "C-w" "kill-region")
 (modal-define-kbd "x RET" "C-x C-o" "delete-blank-lines")
@@ -158,7 +158,7 @@
 (modal-define-kbd "U" "M-u")
 (modal-define-kbd "V" "M-v")
 (modal-define-kbd "W" "M-w")
-;; X
+(modal-define-kbd "X" "M-x")
 (modal-define-kbd "Y" "M-y")
 (modal-define-kbd "Z" "C-x z")
 
