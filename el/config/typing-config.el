@@ -664,8 +664,21 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;;;;;;;;
 (require 'goto-chg)
 
-(global-set-key [(control ?.)] 'goto-last-change)
-(global-set-key [(control ?,)] 'goto-last-change-reverse)
+(global-set-key [(control ?/)] 'goto-last-change)
+(global-set-key [(control ??)] 'goto-last-change-reverse)
+
+;;;;;;;;;;;;
+;; Cycles ;;
+;;;;;;;;;;;;
+(require 'rotate-text)
+(require 'string-inflection)
+
+(defun rotate-or-inflection ()
+  (interactive)
+  (condition-case nil
+      (rotate-text)
+    (error (string-inflection-all-cycle))))
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
@@ -675,7 +688,7 @@ there's a region, all lines that region covers will be duplicated."
  ("C-M-º"               . indent-region)
  ("M-s º"               . indent-region)
  ("M-A"                 . align-regexp)
- ("M-C"                 . string-inflection-all-cycle)
+ ("M-C"                 . rotate-or-inflection)
  ("<f7> d"              . toggle-debug-on-error)
  ("<f7> s"              . toggle-enable-multibyte-characters)
  ("<f7> c"              . toggle-buffer-coding-system)

@@ -7,7 +7,6 @@
 
 ;;; Code:
 (require 'modal)
-(require 'indent)
 
 (setq modal-insert-cursor-type '(bar . 4)
       modal-cursor-type '(hbar . 7)
@@ -38,6 +37,7 @@
 (modal-define-kbd "]" "C-)" "sp-unwrap-sexp-lc")
 (define-key modal-mode-map (kbd "º") #'er/expand-region)
 (define-key modal-mode-map (kbd "ª") #'er/contract-region)
+(define-key modal-mode-map (kbd "&") #'rotate-or-inflection)
 (modal-define-kbd "?" "C-," "goto-last-change-reverse")
 (modal-define-kbd "." "M-." "definition-at-point")
 (modal-define-kbd "/" "C-." "goto-last-change")
@@ -89,6 +89,7 @@
 (define-key modal-mode-map (kbd "c m n") #'mc/mark-next-like-this)
 (define-key modal-mode-map (kbd "c m a") #'mc/mark-all-like-this-dwim)
 (modal-define-kbd "c n" "C-c C-n" "smartscan-symbol-go-forward")
+(define-key modal-mode-map (kbd "c o") #'operate-on-number-at-point-or-region)
 (modal-define-kbd "c p" "C-c C-p" "smartscan-symbol-go-backward")
 (modal-define-kbd "c r" "C-c M-s" "org-sort-entries-user-defined")
 (modal-define-kbd "c s" "C-c C-s" "org-schedule")
