@@ -364,6 +364,75 @@ Don't show on windows buffers currently showed."
 ;;
 ;; (set-frame-size-according-to-resolution)
 
+;; Call last keyboard macro in windows
+(defun kmacro-call-other-windows-all-frames (window &optional all-frames)
+  "Call last keyboard macro in windows other than WINDOW.
+
+Optional argument ALL-FRAMES nil or omitted means consider all windows
+on WINDOW’s frame, plus the minibuffer window if specified by the
+MINIBUF argument.  If the minibuffer counts, consider all windows on all
+frames that share that minibuffer too.  The following non-nil values of
+ALL-FRAMES have special meanings:
+
+- t means consider all windows on all existing frames.
+
+- ‘visible’ means consider all windows on all visible frames.
+
+- 0 (the number zero) means consider all windows on all visible and
+  iconified frames.
+
+- A frame means consider all windows on that frame only.
+
+Anything else means consider all windows on WINDOW’s frame and no
+others."
+  (interactive (list (selected-window) 'visible))
+  (save-excursion
+    (dolist (other-window (cdr (window-list-1 window 0 all-frames)))
+      (select-window other-window)
+      (kmacro-call-macro 1))))
+
+(defun kmacro-call-all-windows-all-frames (&optional all-frames)
+  "Call last keyboard macro in windows other than WINDOW.
+
+Optional argument ALL-FRAMES nil or omitted means consider all windows
+on WINDOW’s frame, plus the minibuffer window if specified by the
+MINIBUF argument.  If the minibuffer counts, consider all windows on all
+frames that share that minibuffer too.  The following non-nil values of
+ALL-FRAMES have special meanings:
+
+- t means consider all windows on all existing frames.
+
+- ‘visible’ means consider all windows on all visible frames.
+
+- 0 (the number zero) means consider all windows on all visible and
+  iconified frames.
+
+- A frame means consider all windows on that frame only.
+
+Anything else means consider all windows on WINDOW’s frame and no
+others."
+  (interactive (list 'visible))
+  (save-excursion
+    (dolist (window (window-list-1 nil 0 all-frames))
+      (select-window window)
+      (kmacro-call-macro 1))))
+
+(defun kmacro-call-other-windows-in-frame (&optional frame window)
+  "Call last keyboard macro in FRAME's windows other than WINDOW."
+  (interactive (list (selected-frame) (selected-window)))
+  (save-excursion
+    (dolist (other-window (cdr (window-list frame 0 window)))
+      (select-window other-window)
+      (kmacro-call-macro 1))))
+
+(defun kmacro-call-all-windows-in-frame (&optional frame)
+  "Call last keyboard macro in FRAME's windows."
+  (interactive (list (selected-frame)))
+  (save-excursion
+    (dolist (window (window-list frame 0))
+      (select-window window)
+      (kmacro-call-macro 1))))
+
 ;;(add-hook 'delete-frame-functions #'kill-buffers-group-choice)
 (require 'server)
 (defun save-buffers-kill-terminal-with-choice (&optional arg)
