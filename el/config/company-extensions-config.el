@@ -40,13 +40,13 @@
 (define-key company-active-map (kbd "RET") nil)
 (define-key company-active-map [tab] #'company-complete-selection)
 (define-key company-active-map (kbd "TAB") #'company-complete-selection)
-(define-key company-active-map [(control tab)] #'company-complete-common-or-cycle)
+(define-key company-active-map (kbd "<backtab>") #'company-complete-common-or-cycle)
 ;;(define-key company-mode-map [(control tab)] 'company-complete)
 ;; `company-complete` conflicts with `company-template-forward-field` with TAB #515
 (define-key company-template-nav-map [tab] nil)
 (define-key company-template-nav-map (kbd "TAB") nil)
-(define-key company-template-nav-map (kbd "<C-tab>") #'company-template-forward-field)
-(define-key company-template-nav-map [(control tab)] #'company-template-forward-field)
+(define-key company-template-nav-map (kbd "<backtab>") #'company-template-forward-field)
+(define-key company-template-nav-map [(shift tab)] #'company-template-forward-field)
 
 ;; Colors
 (face-spec-set 'company-preview '((t (:foreground "darkgray" :underline t))))
