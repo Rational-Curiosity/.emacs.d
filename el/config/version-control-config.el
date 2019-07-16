@@ -20,6 +20,8 @@
 
 (with-eval-after-load 'magit-status
   (define-key magit-status-mode-map (kbd "z") #'avy-goto-char-timer))
+(with-eval-after-load 'magit-process
+  (define-key magit-process-mode-map (kbd "z") #'avy-goto-char-timer))
 
 
 ;; SMerge hydra menu

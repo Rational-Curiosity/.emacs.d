@@ -68,6 +68,13 @@ This variable is considered when Modal is enabled globally via
 (defvar modal-mode-map (make-sparse-keymap)
   "This is Modal mode map, used to translate your keys.")
 
+(defvar modal-last-command nil
+  "Last command called by modal.")
+
+(defun modal-repeat ()
+  (interactive)
+  (call-interactively modal-last-command))
+
 ;;;###autoload
 (defun modal-define-key (actual-key target-key name)
   "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
@@ -82,11 +89,16 @@ This variable is considered when Modal is enabled globally via
         (defalias (make-symbol ,name)
           (lambda ()
             (interactive)
-            (let ((binding (key-binding ,target-key)))
-              (unless (or (memq binding '(nil undefined))
-                          (keymapp binding))
-                (set 'this-command binding)
-                (call-interactively binding))))
+            (cl-some (lambda (keymap)
+                       (unless (eq keymap modal-mode-map)
+                         (let ((binding (lookup-key keymap ,target-key)))
+                           (when (commandp binding)
+                             (set 'this-command binding)
+                             (call-interactively binding)
+                             (unless (eq 'modal-repeat binding)
+                               (set 'modal-last-command binding))
+                             t))))
+                     (current-active-maps)))
           ,docstring)))))
 
 ;;;###autoload
@@ -159,7 +171,8 @@ Otherwise use `list'."
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
 ;; keys
-(define-key modal-mode-map (kbd "i") #'modal-global-mode)
+(define-key modal-mode-map "i" #'modal-global-mode)
+(define-key modal-mode-map "Z" #'modal-repeat)
 (modal-define-kbd "u" "C-u" "universal-argument")
 
 
