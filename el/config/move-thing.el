@@ -29,8 +29,9 @@
             (apply orig-fun args)
           (error (primitive-undo rollback-on-error-counter
                                  buffer-undo-list)
-                 (error "%s rolled back (%i)"
-                        raised-error
+                 (error "%s: %s rolled back (%i)"
+                        orig-fun
+                        (error-message-string raised-error)
                         rollback-on-error-counter))))
     (advice-remove 'undo-boundary #'rollback-on-error-inc)))
 (require 'rect)
