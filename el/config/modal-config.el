@@ -8,14 +8,37 @@
 ;;; Code:
 (require 'modal)
 
-(setq modal-insert-cursor-type '(bar . 4)
-      modal-cursor-type '(hbar . 7)
+(setq modal-insert-cursor-type 'box
+      modal-cursor-type 'hollow
       modal-excluded-modes '(calc-mode
                              magit-popup-mode
                              magit-mode
                              magit-process-mode
                              magit-status-mode
                              docker-container-mode))
+
+
+(defun keyboard-esc-quit ()
+  "Exit the current \"mode\" (in a generalized sense of the word).
+This command can exit an interactive command such as `query-replace',
+can clear out a prefix argument or a region,
+can get out of the minibuffer or other recursive edit,
+cancel the use of the current buffer (for special-purpose buffers)."
+  (interactive)
+  (cond ((eq last-command 'mode-exited) nil)
+        ((region-active-p)
+         (deactivate-mark))
+        ((> (minibuffer-depth) 0)
+         (abort-recursive-edit))
+        (current-prefix-arg
+         nil)
+        ((> (recursion-depth) 0)
+         (exit-recursive-edit))
+        (buffer-quit-function
+         (funcall buffer-quit-function))
+        ((string-match "^ \\*" (buffer-name (current-buffer)))
+         (bury-buffer))
+        (t (keyboard-quit))))
 
 ;;;;;;;;;;
 ;; Keys ;;
@@ -66,6 +89,7 @@
 (define-key modal-mode-map (kbd "c ! n") #'flycheck-next-error)
 (define-key modal-mode-map (kbd "c ! p") #'flycheck-previous-error)
 (define-key modal-mode-map (kbd "c ! l") #'flycheck-list-errors)
+;; c - [ command prefix
 (modal-define-kbd "c b" "C-c C-b" "go-back")
 (modal-define-kbd "c c" "C-c C-c")
 (define-key modal-mode-map (kbd "c e w") #'er/mark-word)
@@ -89,10 +113,23 @@
 (define-key modal-mode-map (kbd "c o") #'operate-on-number-at-point-or-region)
 (modal-define-kbd "c p" "C-c C-p" "smartscan-symbol-go-backward")
 (modal-define-kbd "c r" "C-c M-s" "org-sort-entries-user-defined")
+(define-key modal-mode-map (kbd "c R") #'revert-buffer)
 (modal-define-kbd "c s" "C-c C-s" "org-schedule")
 (modal-define-kbd "c t" "C-c C-t" "org-todo")
 (modal-define-kbd "c u" "C-c C-u" "outline-up-heading")
 (modal-define-kbd "c v" "C-c C-v")
+(define-key modal-mode-map (kbd "c w t") #'transpose-frame)
+(define-key modal-mode-map (kbd "c w h") #'flop-frame)
+(define-key modal-mode-map (kbd "c w v") #'flip-frame)
+(define-key modal-mode-map (kbd "c w b") #'windmove-left)
+(define-key modal-mode-map (kbd "c w f") #'windmove-right)
+(define-key modal-mode-map (kbd "c w n") #'windmove-down)
+(define-key modal-mode-map (kbd "c w p") #'windmove-up)
+(define-key modal-mode-map (kbd "c w r") #'rotate-frame-clockwise)
+(define-key modal-mode-map (kbd "c w R") #'rotate-frame-anticlockwise)
+(define-key modal-mode-map (kbd "c w -") #'winner-undo)
+(define-key modal-mode-map (kbd "c w _") #'winner-redo)
+;; c - ] command prefix
 (modal-define-kbd "d" "<deletechar>" "delete-forward-char")
 (modal-define-kbd "e" "C-e" "move-end-of-line")
 (modal-define-kbd "f" "C-f" "forward-char")
@@ -112,22 +149,23 @@
 ;; u - reserved
 (modal-define-kbd "v" "C-v" "scroll-up-command")
 (modal-define-kbd "w" "C-w" "kill-region")
+;; x - [ command prefix
 (modal-define-kbd "x TAB" "C-x TAB" "indent-rigidly")
 (modal-define-kbd "x RET" "C-x C-o" "delete-blank-lines")
 (modal-define-kbd "x SPC" "C-x C-SPC" "pop-global-mark")
 (modal-define-kbd "x S-SPC" "C-x SPC" "rectangle-mark-mode")
 (modal-define-kbd "x ;" "C-x C-;" "comment-line")
+(modal-define-kbd "x (" "C-x (" "kmacro-start-macro")
+(modal-define-kbd "x )" "C-x )" "kmacro-end-macro")
+(modal-define-kbd "x +" "C-x +" "balance-windows")
 (modal-define-kbd "x 0" "C-x 0" "delete-window")
 (modal-define-kbd "x 1" "C-x 1" "delete-other-windows")
 (modal-define-kbd "x 2" "C-x 2" "vsplit-last-buffer")
 (modal-define-kbd "x 3" "C-x 3" "hsplit-last-buffer")
-(modal-define-kbd "x 5" "C-x +" "balance-windows")
-(modal-define-kbd "x 6" "C-c <left>" "windmove-left")
-(modal-define-kbd "x 7" "C-c <down>" "windmove-down")
-(modal-define-kbd "x 8" "C-c <up>" "windmove-up")
-(modal-define-kbd "x 9" "C-c <right>" "windmove-right")
-(modal-define-kbd "x (" "C-x (" "kmacro-start-macro")
-(modal-define-kbd "x )" "C-x )" "kmacro-end-macro")
+(modal-define-kbd "x 4 f" "C-x 4 C-f" "ido-find-file-other-window")
+(modal-define-kbd "x 4 b" "C-x 4 b" "ido-switch-buffer-other-window")
+(modal-define-kbd "x 5 f" "C-x 5 C-f" "ido-find-file-other-frame")
+(modal-define-kbd "x 5 b" "C-x 5 b" "ido-switch-buffer-other-frame")
 (modal-define-kbd "x c" "C-x C-c" "save-buffers-kill-emacs")
 (modal-define-kbd "x b" "C-x b" "switch-buffer")
 (modal-define-kbd "x e" "C-x C-e" "eval-last-sexp")
@@ -135,14 +173,22 @@
 (modal-define-kbd "x f" "C-x C-f" "find-file")
 (modal-define-kbd "x F" "C-x f" "find-file-at-point")
 (modal-define-kbd "x H" "C-x h" "mark-whole-buffer")
+(modal-define-kbd "x k k" "C-x C-k C-k" "kmacro-end-or-call-macro-repeat")
+(modal-define-kbd "x k n" "C-x C-k C-n" "kmacro-cycle-ring-next")
+(modal-define-kbd "x k N" "C-x C-k n" "kmacro-name-last-macro")
+(modal-define-kbd "x k p" "C-x C-k C-p" "kmacro-cycle-ring-previous")
+(modal-define-kbd "x k v" "C-x C-k C-v" "kmacro-view-macro-repeat")
 (modal-define-kbd "x K" "C-x k" "kill-buffer")
 (modal-define-kbd "x l" "C-x C-l" "downcase-region")
+(modal-define-kbd "x o" "C-x o" "other-window")
+(define-key modal-mode-map (kbd "x O") #'ff-find-other-file)
 (modal-define-kbd "x p" "C-x C-p" "mark-page")
 (modal-define-kbd "x s" "C-x C-s" "save-buffer")
 (modal-define-kbd "x S" "C-x s" "save-some-buffers")
 (modal-define-kbd "x r" "C-x C-r" "recentf-open")
 (modal-define-kbd "x u" "C-x C-u" "upcase-region")
 (modal-define-kbd "x x" "C-x C-x" "exchange-point-and-mark")
+;; x - ] command prefix
 (modal-define-kbd "y" "C-y" "yank")
 (modal-define-kbd "z" "M-z" "avy-goto-char-timer")
 
@@ -162,17 +208,18 @@
 (modal-define-kbd "M" "M-m")
 (modal-define-kbd "N" "M-n")
 (modal-define-kbd "O" "M-o")
-(modal-define-kbd "Q" "M-q")
+(define-key modal-mode-map "Q" #'fill-paragraph)
 (modal-define-kbd "P" "M-p")
 (modal-define-kbd "R" "M-r")
-(modal-define-kbd "S" "M-S")
+;; S
 (modal-define-kbd "T" "M-t")
 (modal-define-kbd "U" "M-u")
 (modal-define-kbd "V" "M-v")
 (modal-define-kbd "W" "M-w")
-(modal-define-kbd "X" "M-x")
+;; X - [ command prefix
+;; X - ] command prefix
 (modal-define-kbd "Y" "M-y")
-;; Z - reserved
+(modal-define-kbd "Z" "C-x z" "repeat")
 
 (modal-define-kbd "M-\\" "C-M-\\" "indent-region")
 (modal-define-kbd "M-@" "C-M-@" "mark-sexp")
@@ -184,7 +231,7 @@
 (modal-define-kbd "M-k" "C-M-k" "kill-sexp")
 (modal-define-kbd "M-n" "C-M-n" "forward-list")
 (modal-define-kbd "M-p" "C-M-p" "backward-list")
-(global-set-key "\M-q" #'keyboard-escape-quit)
+(global-set-key "\M-q" #'keyboard-esc-quit)
 
 (modal-global-mode 1)
 

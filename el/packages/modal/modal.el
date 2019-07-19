@@ -68,13 +68,6 @@ This variable is considered when Modal is enabled globally via
 (defvar modal-mode-map (make-sparse-keymap)
   "This is Modal mode map, used to translate your keys.")
 
-(defvar modal-last-command nil
-  "Last command called by modal.")
-
-(defun modal-repeat ()
-  (interactive)
-  (call-interactively modal-last-command))
-
 ;;;###autoload
 (defun modal-define-key (actual-key target-key name)
   "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
@@ -93,10 +86,11 @@ This variable is considered when Modal is enabled globally via
                        (unless (eq keymap modal-mode-map)
                          (let ((binding (lookup-key keymap ,target-key)))
                            (when (commandp binding)
-                             (set 'this-command binding)
+                             (when (eq last-repeatable-command this-command)
+                               (setq last-repeatable-command last-command))
+                             (setq this-original-command binding
+                                   this-command binding)
                              (call-interactively binding)
-                             (unless (eq 'modal-repeat binding)
-                               (set 'modal-last-command binding))
                              t))))
                      (current-active-maps)))
           ,docstring)))))
@@ -134,7 +128,7 @@ the mode if ARG is omitted or NIL, and toggle it if ARG is
 This minor mode setups translation of key bindings according to
 configuration created previously with `modal-define-key' and
 `modal-define-keys'."
-  :lighter "↑"
+  :lighter "◇"
   :keymap modal-mode-map
   (if modal-mode
       (progn
@@ -142,7 +136,7 @@ configuration created previously with `modal-define-key' and
         ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type) ;; ))
         (define-key universal-argument-map "u" #'universal-argument-more)
-        (global-set-key (kbd "<escape>") nil))
+        (global-set-key [escape] nil))
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
     (setq-local cursor-type modal-insert-cursor-type) ;; ))
@@ -172,7 +166,6 @@ Otherwise use `list'."
 
 ;; keys
 (define-key modal-mode-map "i" #'modal-global-mode)
-(define-key modal-mode-map "Z" #'modal-repeat)
 (modal-define-kbd "u" "C-u" "universal-argument")
 
 

@@ -28,7 +28,7 @@
 (dolist (path c-c++-include-paths)
   (add-to-list 'cc-search-directories path))
 
-(bind-key "C-x o" 'ff-find-other-file)
+(bind-key "C-x O" 'ff-find-other-file)
 
 ;;;;;;;;;;;;;;
 ;; C macros ;;
