@@ -129,6 +129,8 @@
 
 (require 'multiple-cursors-config)
 
+(require 'multiple-windows)
+
 (require 'smartscan-config)
 
 (require 'nxml-config)
