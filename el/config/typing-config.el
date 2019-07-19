@@ -177,8 +177,11 @@ prompt the user for a coding system."
     "Display whether caps lock is on."
     :global t
     :lighter (:eval (if (caps-lock-on (x-led-mask))
-                        (propertize "⇪" 'font-lock-face
-                                    '(:foreground "red" :weight bold))
+                        (progn
+                          (set-cursor-color "violet")
+                          (propertize "⇪" 'font-lock-face
+                                      '(:foreground "red" :weight bold)))
+                      (set-cursor-color "red")
                       "")))
   (caps-lock-show-mode))
 
@@ -529,6 +532,10 @@ there's a region, all lines that region covers will be duplicated."
 ;(global-set-key (kbd "M-n M-m") 'imath-mode)
 
 
+;; isearch
+(define-key isearch-mode-map "\M-f" #'isearch-repeat-forward)
+(define-key isearch-mode-map "\M-b" #'isearch-repeat-backward)
+
 ;; Bookmark handling
 ;;
 ;; (global-set-key (kbd "<C-f5>") '(lambda () (interactive) (progn (message "Bookmark f5 added") (bookmark-set "BookMark_f5"))))
@@ -653,7 +660,7 @@ there's a region, all lines that region covers will be duplicated."
 (defun kill-ring-insert ()
   (interactive)
   (let ((to_insert (completing-read "Yank : "
-                                    (delete-duplicates kill-ring :test #'equal))))
+                                    (cl-delete-duplicates kill-ring :test #'equal))))
     (when (and to_insert (region-active-p))
       ;; the currently highlighted section is to be replaced by the yank
       (delete-region (region-beginning) (region-end)))
@@ -676,7 +683,7 @@ there's a region, all lines that region covers will be duplicated."
 (defun rotate-or-inflection ()
   (interactive)
   (condition-case nil
-      (rotate-text)
+      (rotate-text 1)
     (error (string-inflection-all-cycle))))
 
 ;;;;;;;;;;

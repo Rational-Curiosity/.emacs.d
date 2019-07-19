@@ -386,7 +386,7 @@ ALL-FRAMES have special meanings:
 Anything else means consider all windows on WINDOW’s frame and no
 others."
   (interactive (list (selected-window) 'visible))
-  (save-excursion
+  (save-selected-window
     (dolist (other-window (cdr (window-list-1 window 0 all-frames)))
       (select-window other-window)
       (kmacro-call-macro 1))))
@@ -412,7 +412,7 @@ ALL-FRAMES have special meanings:
 Anything else means consider all windows on WINDOW’s frame and no
 others."
   (interactive (list 'visible))
-  (save-excursion
+  (save-selected-window
     (dolist (window (window-list-1 nil 0 all-frames))
       (select-window window)
       (kmacro-call-macro 1))))
@@ -420,7 +420,7 @@ others."
 (defun kmacro-call-other-windows-in-frame (&optional frame window)
   "Call last keyboard macro in FRAME's windows other than WINDOW."
   (interactive (list (selected-frame) (selected-window)))
-  (save-excursion
+  (save-selected-window
     (dolist (other-window (cdr (window-list frame 0 window)))
       (select-window other-window)
       (kmacro-call-macro 1))))
@@ -428,7 +428,7 @@ others."
 (defun kmacro-call-all-windows-in-frame (&optional frame)
   "Call last keyboard macro in FRAME's windows."
   (interactive (list (selected-frame)))
-  (save-excursion
+  (save-selected-window
     (dolist (window (window-list frame 0))
       (select-window window)
       (kmacro-call-macro 1))))
