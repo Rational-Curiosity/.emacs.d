@@ -226,6 +226,32 @@ When called from lisp, FUNCTION may also be a function object."
 ;; (let ((print-escape-newlines t))
 ;;   (prin1-to-string "..."))
 
+;;;;;;;;;;;;
+;; Errors ;;
+;;;;;;;;;;;;
+;; Protect from errors
+(defun rollback-on-error-inc ()
+  "Increment `rollback-on-error-counter' fake variable."
+  (cl-incf rollback-on-error-counter))
+(defun rollback-on-error-advice (orig-fun &rest args)
+  "Rollback (ORIG-FUN ARGS) evaluation on error.
+
+Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice)"
+  ;; (undo-boundary)  ; <undo>
+  (advice-add 'undo-boundary :before #'rollback-on-error-inc)
+  (unwind-protect
+      (let ((rollback-on-error-counter 1))
+        (condition-case raised-error
+            (apply orig-fun args)
+          (error (primitive-undo rollback-on-error-counter
+                                 buffer-undo-list)
+                 (error "%s: %s rolled back (%i)"
+                        orig-fun
+                        (error-message-string raised-error)
+                        rollback-on-error-counter))))
+    (advice-remove 'undo-boundary #'rollback-on-error-inc)))
+
+
 ;;;;;;;;;;;;;;;
 ;; Processes ;;
 ;;;;;;;;;;;;;;;

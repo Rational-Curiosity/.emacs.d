@@ -395,7 +395,6 @@ prompt the user for a coding system."
 ;; Moving ;;
 ;;;;;;;;;;;;
 (require 'move-thing)
-(move-thing-mode t)
 
 ;;;;;;;;;;;
 ;; Copia ;;

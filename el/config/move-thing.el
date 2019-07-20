@@ -11,39 +11,72 @@
 ;; ‘line’, and ‘page’.
 
 ;;; Code:
+
+;;  #####
+;; #     #  ####  #####  ######
+;; #       #    # #    # #
+;; #       #    # #    # #####
+;; #       #    # #####  #
+;; #     # #    # #   #  #
+;;  #####   ####  #    # ######
+;; (fset 'mt-bounds-of-thing-at-point
+;;       (if (require 'thingatpt+ nil t)
+;;           #'tap-bounds-of-thing-at-point
+;;         #'bounds-of-thing-at-point))
+(fset 'mt--bounds-of-thing-at-point
+      #'bounds-of-thing-at-point)
+
+(require 'rect)
+(require 'ring)
+(defvar mt-things
+  '((word     . "'w")
+    (symbol   . "'s")
+    (sexp     . "'e")
+    (list     . "'t")
+    (defun    . "'d")
+    (filename . "'f")
+    (url      . "'u")
+    (email    . "'m")
+    (line     . "'l")))
+
 ;; Check list sorted
 (defun sorted-p (list op)
   (let ((copy (cl-copy-list list)))
     (equal (sort copy op) list)))
 
-;; Protect from errors
-(defun rollback-on-error-inc ()
-  (cl-incf rollback-on-error-counter))
-(defun rollback-on-error-advice (orig-fun &rest args)
-  "Rollback (ORIG-FUN ARGS) evaluation on error."
-  ;; (undo-boundary)  ; <undo>
-  (advice-add 'undo-boundary :before #'rollback-on-error-inc)
-  (unwind-protect
-      (let ((rollback-on-error-counter 1))
-        (condition-case raised-error
-            (apply orig-fun args)
-          (error (primitive-undo rollback-on-error-counter
-                                 buffer-undo-list)
-                 (error "%s: %s rolled back (%i)"
-                        orig-fun
-                        (error-message-string raised-error)
-                        rollback-on-error-counter))))
-    (advice-remove 'undo-boundary #'rollback-on-error-inc)))
-(require 'rect)
-(require 'ring)
-;; (fset 'mt-bounds-of-thing-at-point
-;;       (if (require 'thingatpt+ nil t)
-;;           #'tap-bounds-of-thing-at-point
-;;         #'bounds-of-thing-at-point))
-(fset 'mt-bounds-of-thing-at-point
-      #'bounds-of-thing-at-point)
+;; [ to
+(defvar mt--to-thing-ring nil)
+(let ((to-things mt-things))
+  (set 'mt--to-thing-ring (make-ring (length to-things)))
+  (dolist (elem to-things) (ring-insert mt--to-thing-ring (car elem))))
 
-(defun mt-bounds-of-thing-at-point-or-region (thing)
+(defvar mt--to-thing (ring-ref mt--to-thing-ring 0))
+
+(defun mt--cycle-to-things ()
+  "Cycle to-things in ring."
+  (let ((to-thing (ring-ref mt--to-thing-ring -1)))
+    (ring-insert mt--to-thing-ring to-thing)
+    (set 'mt--to-thing to-thing)))
+;; ]
+
+;; [ from
+(defvar mt--from-thing-ring nil)
+(let ((from-things mt-things))
+  (set 'mt--from-thing-ring (make-ring (length from-things)))
+  (dolist (elem from-things) (ring-insert mt--from-thing-ring (car elem))))
+
+(defvar mt--from-thing (ring-ref mt--from-thing-ring 0))
+
+(defun mt--cycle-from-things ()
+  "Cycle from-things in ring."
+  (let ((from-thing (ring-ref mt--from-thing-ring -1)))
+    (ring-insert mt--from-thing-ring from-thing)
+    (setq mt--from-thing from-thing
+          mt--to-thing from-thing)
+    from-thing))
+;; ]
+
+(defun mt--bounds-of-thing-at-point-or-region (thing)
   (if (use-region-p)
       (let ((positions (sort (list (mark) (point)) '<)))
         (if rectangle-mark-mode
@@ -61,8 +94,117 @@
           (cons 'region
                 (cons (car positions) (car (cdr positions))))))
     (cons 'bounds
-          (mt-bounds-of-thing-at-point thing))))
+          (mt--bounds-of-thing-at-point thing))))
 
+;;  #####                                               #     #
+;; #     #  ####  #    # #    #   ##   #    # #####     #     #  ####   ####  #    #
+;; #       #    # ##  ## ##  ##  #  #  ##   # #    #    #     # #    # #    # #   #
+;; #       #    # # ## # # ## # #    # # #  # #    #    ####### #    # #    # ####
+;; #       #    # #    # #    # ###### #  # # #    #    #     # #    # #    # #  #
+;; #     # #    # #    # #    # #    # #   ## #    #    #     # #    # #    # #   #
+;;  #####   ####  #    # #    # #    # #    # #####     #     #  ####   ####  #    #
+(defvar mt-movement-commands
+  '(
+    ;; previous-line
+    ;; next-line
+    ;; right-char
+    ;; right-word
+    ;; forward-char
+    ;; forward-word
+    ;; left-char
+    ;; left-word
+    ;; backward-char
+    ;; backward-word
+    ;; forward-paragraph
+    ;; backward-paragraph
+    ;; forward-list
+    ;; backward-list
+    ;; end-of-buffer
+    ;; end-of-defun
+    ;; end-of-line
+    ;; end-of-sexp
+    ;; exchange-point-and-mark
+    ;; move-end-of-line
+    ;; beginning-of-buffer
+    ;; beginning-of-defun
+    ;; beginning-of-line
+    ;; beginning-of-sexp
+    ;; move-beginning-of-line
+    ;; back-to-indentation
+    ;; subword-forward
+    ;; subword-backward
+    ;; subword-mark
+    ;; subword-kill
+    ;; subword-backward-kill
+    ;; subword-transpose
+    ;; subword-capitalize
+    ;; subword-upcase
+    ;; subword-downcase
+    ;; smart-forward
+    ;; smart-backward
+    ;; smart-up
+    ;; smart-down
+    avy-goto-char
+    avy-goto-char-2
+    avy-goto-char-2-above
+    avy-goto-char-2-below
+    avy-goto-char-in-line
+    avy-goto-char-timer
+    avy-goto-end-of-line
+    avy-goto-line
+    avy-goto-line-above
+    avy-goto-line-below
+    avy-goto-subword-0
+    avy-goto-subword-1
+    avy-goto-symbol-1
+    avy-goto-symbol-1-above
+    avy-goto-symbol-1-below
+    avy-goto-word-0
+    avy-goto-word-0-above
+    avy-goto-word-0-below
+    avy-goto-word-0-regexp
+    avy-goto-word-1
+    avy-goto-word-1-above
+    avy-goto-word-1-below
+    avy-goto-word-or-subword-1)
+  "Default set of movement commands.")
+
+(defvar mt-interchange-things nil)
+
+(defvar mt--marker nil
+  "Beginning of from region marker.")
+
+(defun mt--pre-command ()
+  (and (memq this-original-command mt-movement-commands)
+       (mt--bounds-of-thing-at-point mt--from-thing)
+       (set-marker mt--marker (point))))
+
+(defun mt--post-command ()
+  (when (and (memq this-original-command mt-movement-commands)
+             mt--marker
+             (marker-position mt--marker))
+    (condition-case raised-error
+        (let ((to-bounds (mt--bounds-of-thing-at-point
+                          mt--to-thing)))
+          (when (and to-bounds
+                     (save-excursion
+                       (switch-to-buffer (marker-buffer mt--marker))
+                       (goto-char (marker-position mt--marker))
+                       (mt--bounds-of-thing-at-point mt--from-thing)))
+            (let ((thing (if mt-interchange-things
+                             (mt--kill-bounds to-bounds))))
+              (save-excursion
+                (switch-to-buffer (marker-buffer mt--marker))
+                (goto-char (marker-position mt--marker))
+                (setq thing (prog1
+                                (mt--kill-bounds
+                                 (mt--bounds-of-thing-at-point mt--from-thing))
+                              (and thing
+                                   (not buffer-read-only)
+                                   (insert thing)))))
+              (insert thing))))
+      (error (message "Moving thing: %s" (error-message-string raised-error))))
+    (set-marker mt--marker nil)))
 
 ;; #     #
 ;; ##   ##  ####  #####  ######
@@ -76,97 +218,47 @@
   :group 'editing
   :prefix "mt-")
 
-(defcustom move-thing-mode-line
-  '(:eval (concat (cdr (assoc mt-from-thing mt-things))
+(defcustom mt-mode-line
+  '(:eval (concat (cdr (assoc mt--from-thing mt-things))
                   (if mt-interchange-things
-                      (cdr (assoc mt-to-thing mt-things)))))
+                      (cdr (assoc mt--to-thing mt-things)))))
   "Show current selected thing."
   :group 'move-thing
   :risky t
   :type 'sexp)
 
-(defvar move-thing-mode-map
+(defvar mt-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "M-C-<up>")     'mt-move-up)
-    (define-key map (kbd "M-C-<down>")   'mt-move-down)
-    (define-key map (kbd "M-C-<left>")   'mt-move-left)
-    (define-key map (kbd "M-C-<right>")  'mt-move-right)
-    (define-key map (kbd "M-S-<up>")     'mt-up)
-    (define-key map (kbd "M-S-<down>")   'mt-down)
-    (define-key map (kbd "M-S-<left>")   'mt-backward)
-    (define-key map (kbd "M-S-<right>")  'mt-forward)
-    (define-key map (kbd "M-C-<home>")   'mt-cycle-things)
-    (define-key map (kbd "M-C-<end>")    'mt-cycle-to-things)
-    (define-key map (kbd "M-C-<prior>")  'mt-shift-mc-left)
-    (define-key map (kbd "M-C-<next>")   'mt-shift-mc-right)
-    (define-key map (kbd "M-C-<insert>") 'mt-toggle-interchange-things)
+    (define-key map (kbd "M-j") 'mt-cycle-things)
+    (define-key map (kbd "M-k") 'mt-cycle-to-things)
+    (define-key map (kbd "M-h") 'mt-toggle-interchange-things)
+    (define-key map (kbd "C-p") 'mt-move-up)
+    (define-key map (kbd "C-n") 'mt-move-down)
+    (define-key map (kbd "C-b") 'mt-move-left)
+    (define-key map (kbd "C-f") 'mt-move-right)
+    (define-key map (kbd "<up>")     'mt-up)
+    (define-key map (kbd "<down>")   'mt-down)
+    (define-key map (kbd "<left>")   'mt-backward)
+    (define-key map (kbd "<right>")  'mt-forward)
+    (define-key map (kbd "<prior>")  'mt-shift-mc-left)
+    (define-key map (kbd "<next>")   'mt-shift-mc-right)
     map))
 
-(define-minor-mode move-thing-mode
+(define-minor-mode mt-mode
   "Toggle Move thing mode."
   :init-value nil
-  :lighter move-thing-mode-line
+  :lighter mt-mode-line
   :group 'move-thing
-  :keymap move-thing-mode-map
-  :global t)
-
-;; #######
-;;    #    #    # # #    #  ####   ####
-;;    #    #    # # ##   # #    # #
-;;    #    ###### # # #  # #       ####
-;;    #    #    # # #  # # #  ###      #
-;;    #    #    # # #   ## #    # #    #
-;;    #    #    # # #    #  ####   ####
-(defvar mt-things '((word     . "'w")
-                    (symbol   . "'s")
-                    (sexp     . "'e")
-                    (list     . "'t")
-                    (defun    . "'d")
-                    (filename . "'f")
-                    (url      . "'u")
-                    (email    . "'m")
-                    (line     . "'l")))
-
-(defvar mt-interchange-things nil)
-(make-variable-buffer-local 'mt-interchange-things)
-
-;; [ to
-(defvar mt-to-thing-ring nil)
-(let ((to-things mt-things))
-  (set 'mt-to-thing-ring (make-ring (length to-things)))
-  (dolist (elem to-things) (ring-insert mt-to-thing-ring (car elem))))
-(make-variable-buffer-local 'mt-to-thing-ring)
-
-(defvar mt-to-thing (ring-ref mt-to-thing-ring 0))
-(make-variable-buffer-local 'mt-to-thing)
-
-(defun mt-cycle-to-things ()
-  "Cycle to-things in ring."
-  (interactive)
-  (let ((to-thing (ring-ref mt-to-thing-ring -1)))
-    (ring-insert mt-to-thing-ring to-thing)
-    (set 'mt-to-thing to-thing)))
-;; ]
-
-;; [ from
-(defvar mt-from-thing-ring nil)
-(let ((from-things mt-things))
-  (set 'mt-from-thing-ring (make-ring (length from-things)))
-  (dolist (elem from-things) (ring-insert mt-from-thing-ring (car elem))))
-(make-variable-buffer-local 'mt-from-thing-ring)
-
-(defvar mt-from-thing (ring-ref mt-from-thing-ring 0))
-(make-variable-buffer-local 'mt-from-thing)
-
-(defun mt-cycle-from-things ()
-  "Cycle from-things in ring."
-  (let ((from-thing (ring-ref mt-from-thing-ring -1)))
-    (ring-insert mt-from-thing-ring from-thing)
-    (setq mt-from-thing from-thing
-          mt-to-thing from-thing)
-    from-thing))
-;; ]
-
+  :keymap mt-mode-map
+  :global t
+  (if mt-mode
+      (progn
+        (add-hook 'post-command-hook 'mt--post-command)
+        (add-hook 'pre-command-hook 'mt--pre-command)
+        (setq mt--marker (make-marker)))
+    (setq mt--marker nil)
+    (remove-hook 'post-command-hook 'mt--post-command)
+    (remove-hook 'pre-command-hook 'mt--pre-command)))
 
 ;;              #
 ;; #####       #  #    #
@@ -201,6 +293,15 @@
        ;; (undo-boundary)  ; <undo>
        (delete-region (car (cdr arg)) (cdr (cdr arg)))))))
 
+(defun mt--kill-bounds (bounds)
+  (let ((beg (car bounds))
+        (end (cdr bounds)))
+    (prog1
+        (buffer-substring-no-properties beg end)
+      ;; (undo-boundary)  ; <undo>
+      (unless buffer-read-only
+        (delete-region beg end)))))
+
 (defun mt-kill-bounds (arg)
   (unless arg
     (error "Thing not found, kill imposible"))
@@ -224,7 +325,7 @@
     (= column (move-to-column column))))
 
 (defun mt-exists-thing-at-point (thing)
-  (let ((bounds (mt-bounds-of-thing-at-point thing)))
+  (let ((bounds (mt--bounds-of-thing-at-point thing)))
     (and bounds
          (let ((str (buffer-substring-no-properties
                      (car bounds) (cdr bounds))))
@@ -232,7 +333,7 @@
 
 (defun mt-up-thing (arg &optional column thing)
   (setq arg (- (abs arg))
-        thing (or thing mt-to-thing))
+        thing (or thing mt--to-thing))
   (mt-forward-line arg column)
   (while (not (mt-exists-thing-at-point thing))
     (cl-decf arg)
@@ -241,7 +342,7 @@
 
 (defun mt-down-thing (arg &optional column thing)
   (setq arg (abs arg)
-        thing (or thing mt-to-thing))
+        thing (or thing mt--to-thing))
   (mt-forward-line arg column)
   (while (not (mt-exists-thing-at-point thing))
     (cl-incf arg)
@@ -249,7 +350,7 @@
   arg)
 
 (defun mt-forward-thing (arg &optional thing delimiter len)
-  (setq thing (or thing mt-to-thing)
+  (setq thing (or thing mt--to-thing)
         len (or len 1))
   (let (bounds
         pos
@@ -257,7 +358,7 @@
     (if delimiter
         (dotimes (i arg)
           (while (not (and
-                       (set 'bounds (mt-bounds-of-thing-at-point thing))
+                       (set 'bounds (mt--bounds-of-thing-at-point thing))
                        (set 'pos (point))
                        (not (= pos (cdr bounds)))
                        (< pos-ini pos)
@@ -269,7 +370,7 @@
           (goto-char (cdr bounds)))
       (dotimes (i arg)
         (while (not (and
-                     (set 'bounds (mt-bounds-of-thing-at-point thing))
+                     (set 'bounds (mt--bounds-of-thing-at-point thing))
                      (set 'pos (point))
                      (not (= pos (cdr bounds)))
                      (< pos-ini pos)))
@@ -278,7 +379,7 @@
     bounds))
 
 (defun mt-backward-thing (arg &optional thing delimiter len)
-  (setq thing (or thing mt-to-thing)
+  (setq thing (or thing mt--to-thing)
         len (or len 1))
   (let (bounds
         pos
@@ -286,7 +387,7 @@
     (if delimiter
         (dotimes (i arg)
           (while (not (and
-                       (set 'bounds (mt-bounds-of-thing-at-point thing))
+                       (set 'bounds (mt--bounds-of-thing-at-point thing))
                        (set 'pos (point))
                        (not (= pos (car bounds)))
                        (> pos-ini pos)
@@ -298,7 +399,7 @@
           (goto-char (car bounds)))
       (dotimes (i arg)
         (while (not (and
-                     (set 'bounds (mt-bounds-of-thing-at-point thing))
+                     (set 'bounds (mt--bounds-of-thing-at-point thing))
                      (not (= (point) (car bounds)))))
           (backward-char 1))
         (goto-char (car bounds))))
@@ -342,7 +443,7 @@
   (mt-move-thing-down (- arg)))
 
 (defun mt-move-thing-down (arg)
-  (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+  (let* ((from-sbs (mt--bounds-of-thing-at-point-or-region mt--from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs))
          (column (current-column)))
     (goto-char (car (cdr from-sbs)))
@@ -357,7 +458,7 @@
   (mt-move-thing-forward (- arg)))
 
 (defun mt-move-thing-forward (arg)
-  (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+  (let* ((from-sbs (mt--bounds-of-thing-at-point-or-region mt--from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs)))
     (goto-char (car (cdr from-sbs)))
     (forward-char arg)
@@ -368,11 +469,11 @@
 
 (defun mt-interchange-thing-up (arg)
   (let* ((column (current-column))
-         (from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+         (from-sbs (mt--bounds-of-thing-at-point-or-region mt--from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs)))
     (goto-char (car (cdr from-sbs)))
-    (mt-up-thing arg column mt-to-thing)
-    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+    (mt-up-thing arg column mt--to-thing)
+    (let* ((to-bs (mt--bounds-of-thing-at-point mt--to-thing))
            (to (mt-kill-bounds to-bs)))
       (goto-char (- (car (cdr from-sbs)) (length to)))
       ;; (undo-boundary)  ; <undo>
@@ -385,14 +486,14 @@
 
 (defun mt-interchange-thing-down (arg)
   (let* ((column (current-column))
-         (from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+         (from-sbs (mt--bounds-of-thing-at-point-or-region mt--from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs)))
     (goto-char (car (cdr from-sbs)))
     (mt-forward-line (1- (length from)))
     (when (mt-newline-ending (car from))
       (cl-decf arg))
-    (mt-down-thing arg column mt-to-thing)
-    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+    (mt-down-thing arg column mt--to-thing)
+    (let* ((to-bs (mt--bounds-of-thing-at-point mt--to-thing))
            (to (mt-kill-bounds to-bs)))
       (goto-char (car (cdr from-sbs)))
       ;; (undo-boundary)  ; <undo>
@@ -405,10 +506,10 @@
 (advice-add 'mt-interchange-thing-down :around #'rollback-on-error-advice)
 
 (defun mt-interchange-thing-backward (arg)
-  (let ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing)))
+  (let ((from-sbs (mt--bounds-of-thing-at-point-or-region mt--from-thing)))
     (goto-char (car (cdr from-sbs)))
-    (mt-backward-thing arg mt-to-thing
-                       (and (eq mt-to-thing 'sexp)
+    (mt-backward-thing arg mt--to-thing
+                       (and (eq mt--to-thing 'sexp)
                             (let* ((pos (car (cdr from-sbs)))
                                    (delimiter (buffer-substring-no-properties
                                                pos (1+ pos))))
@@ -417,7 +518,7 @@
                                    '("\"" "'" "(" "{" "["))
                                   delimiter
                                 "[^\"'({[]"))))
-    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+    (let* ((to-bs (mt--bounds-of-thing-at-point mt--to-thing))
            (from (mt-kill-rectangle-or-bounds from-sbs))
            (to (mt-kill-bounds to-bs)))
       (goto-char (- (car (cdr from-sbs)) (length to)))
@@ -430,18 +531,18 @@
 (advice-add 'mt-interchange-thing-backward :around #'rollback-on-error-advice)
 
 (defun mt-interchange-thing-forward (arg)
-  (let* ((from-sbs (mt-bounds-of-thing-at-point-or-region mt-from-thing))
+  (let* ((from-sbs (mt--bounds-of-thing-at-point-or-region mt--from-thing))
          (from (mt-kill-rectangle-or-bounds from-sbs)))
     (goto-char (car (cdr from-sbs)))
-    (goto-char (car (mt-forward-thing arg mt-to-thing
-                                      (and (eq mt-to-thing 'sexp)
+    (goto-char (car (mt-forward-thing arg mt--to-thing
+                                      (and (eq mt--to-thing 'sexp)
                                            (let ((delimiter (substring (car from) 0 1)))
                                              (if (member
                                                   delimiter
                                                   '("\"" "'" "(" "{" "["))
                                                  delimiter
                                                "[^\"'({[]"))))))
-    (let* ((to-bs (mt-bounds-of-thing-at-point mt-to-thing))
+    (let* ((to-bs (mt--bounds-of-thing-at-point mt--to-thing))
            (to (mt-kill-bounds to-bs)))
       (goto-char (car (cdr from-sbs)))
       ;; (undo-boundary)  ; <undo>
@@ -525,7 +626,7 @@
          (mapcar
           (lambda (pos)
             (goto-char pos)
-            (mt-bounds-of-thing-at-point mt-from-thing))
+            (mt--bounds-of-thing-at-point mt--from-thing))
           (sort points '<)))
         (neg (> 0 arg))
         listed-bounds)
@@ -533,14 +634,13 @@
             (push (car x) listed-bounds)
             (push (cdr x) listed-bounds)) bounds)
     (if (not (sorted-p listed-bounds '>))
-        (error "move-thing: %s's bounds overlap" mt-from-thing)
+        (error "move-thing: %s's bounds overlap" mt--from-thing)
       (if neg
           (dotimes (i (- arg) bounds)
             (setq bounds (mt-shift-points-left bounds)))
         (dotimes (i arg bounds)
           (setq bounds (mt-shift-points-right bounds)))))))
 (advice-add 'mt-shift-points :around #'rollback-on-error-advice)
-
 
 ;; ###
 ;;  #  #    # ##### ###### #####    ##    ####  ##### # #    # ######
@@ -552,19 +652,32 @@
 (defun mt-cycle-things ()
   "Cycle things in ring."
   (interactive)
-  (if (not (eql mt-from-thing mt-to-thing))
-      (while (not (eql mt-from-thing mt-to-thing))
-        (mt-cycle-to-things))
-    (let ((init-thing (ring-ref mt-from-thing-ring 0))
+  (set-marker mt--marker nil)
+  (if (not (eql mt--from-thing mt--to-thing))
+      (while (not (eql mt--from-thing mt--to-thing))
+        (mt--cycle-to-things))
+    (let ((init-thing (ring-ref mt--from-thing-ring 0))
           current-thing found)
       (while (not (or found
                       (eql init-thing current-thing)))
         (setq found t
-              current-thing (mt-cycle-from-things))
+              current-thing (mt--cycle-from-things))
         (condition-case nil
-            (let ((bounds (mt-bounds-of-thing-at-point current-thing)))
+            (let ((bounds (mt--bounds-of-thing-at-point current-thing)))
               (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
           (error (set 'found nil)))))))
+
+(defun mt-cycle-to-things ()
+  (interactive)
+  (set-marker mt--marker nil)
+  (mt--cycle-to-things)
+  (force-mode-line-update))
+
+(defun mt-toggle-interchange-things ()
+  (interactive)
+  (set-marker mt--marker nil)
+  (setq mt-interchange-things (not mt-interchange-things))
+  (force-mode-line-update))
 
 (defun mt-shift-mc-left (arg)
   (interactive "p")
@@ -626,9 +739,6 @@
   (interactive "p")
   (mt-forward-thing arg))
 
-(defun mt-toggle-interchange-things ()
-  (interactive)
-  (setq mt-interchange-things (not mt-interchange-things)))
 
 (provide 'move-thing)
 ;;; move-thing.el ends here
