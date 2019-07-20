@@ -193,7 +193,12 @@ prompt the user for a coding system."
 (setq-default indent-tabs-mode nil
               tab-width 4
               sh-indent-for-case-label 0
-              sh-indent-for-case-alt '+)
+              sh-indent-for-case-alt '+
+              ;; line numbers
+              display-line-numbers 'relative)
+;; Line numbers
+;; (add-hook 'prog-mode-hook #'display-line-numbers-mode)
+
 (setq c-default-style "linux"
       tab-width 4
       indent-tabs-mode nil
@@ -206,9 +211,6 @@ prompt the user for a coding system."
 (c-set-offset 'label '*)
 (c-set-offset 'case-label '0)
 (c-set-offset 'access-label '/)
-;; Line numbers
-(add-hook 'prog-mode-hook #'linum-mode)
-(setq linum-format "%d")
 ;; Show new line and tab characters
 (with-eval-after-load 'whitespace
   (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) "")

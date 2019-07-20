@@ -262,11 +262,11 @@
 (bind-keys
  ("S-<left>"            . sp-backward-sexp)
  ("S-<right>"           . sp-forward-sexp)
- ("S-<up>"              . sp-backward-up-sexp)
+ ("M-a"                 . sp-backward-up-sexp)
  ("S-<down>"            . sp-down-sexp)
  ("C-S-<left>"          . sp-dwim-beginning-of-sexp)
  ("C-S-<right>"         . sp-dwim-end-of-sexp)
- ("C-S-<up>"            . sp-up-sexp)
+ ("M-e"                 . sp-up-sexp)
  ("C-S-<down>"          . sp-down-sexp)
  ("C-S-<delete>"        . kill-to-end-of-sexp)
  ("M-s <delete>"        . kill-to-end-of-sexp)

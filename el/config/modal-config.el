@@ -36,8 +36,6 @@ cancel the use of the current buffer (for special-purpose buffers)."
          (exit-recursive-edit))
         (buffer-quit-function
          (funcall buffer-quit-function))
-        ((string-match "^ \\*" (buffer-name (current-buffer)))
-         (bury-buffer))
         (t (keyboard-quit))))
 
 ;;;;;;;;;;
@@ -133,7 +131,12 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "d" "<deletechar>" "delete-forward-char")
 (modal-define-kbd "e" "C-e" "move-end-of-line")
 (modal-define-kbd "f" "C-f" "forward-char")
-(modal-define-kbd "g" "C-g" "keyboard-quit")
+(define-key modal-mode-map (kbd "g c") #'avy-goto-char)
+(define-key modal-mode-map (kbd "g C") #'avy-goto-char-2)
+(define-key modal-mode-map (kbd "g l") #'avy-goto-line)
+(define-key modal-mode-map (kbd "g s") #'avy-goto-char-timer)
+(define-key modal-mode-map (kbd "g w") #'avy-goto-word-1)
+(define-key modal-mode-map (kbd "g W") #'avy-goto-word-0)
 (modal-define-kbd "h" "M-h" "mark-paragraph")
 ;; i - reserved
 (modal-define-kbd "j" "M-j" "indent-new-comment-line")
@@ -198,12 +201,19 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "D" "M-d")
 (modal-define-kbd "E" "M-e")
 (modal-define-kbd "F" "M-f")
+(define-key modal-mode-map (kbd "G C") #'avy-goto-char-2)
 (modal-define-kbd "G g" "M-g g" "goto-line")
 (modal-define-kbd "G G" "M-g M-g" "goto-line")
+(modal-define-kbd "G N" "M-g M-n" "next-error")
+(modal-define-kbd "G P" "M-g M-p" "previous-error")
+(define-key modal-mode-map (kbd "G W") #'avy-goto-word-0)
 (modal-define-kbd "H" "M-H")
 (modal-define-kbd "I" "M-i")
 (modal-define-kbd "J" "M-j")
-(modal-define-kbd "K" "M-k")
+(define-key modal-mode-map (kbd "K h") #'sp-kill-hybrid-sexp)
+(modal-define-kbd (kbd "K l") "<C-S-backspace>")
+(define-key modal-mode-map (kbd "K s") #'sp-kill-sexp)
+(define-key modal-mode-map (kbd "K S") #'sp-backward-kill-sexp)
 (modal-define-kbd "L" "M-l")
 (modal-define-kbd "M" "M-m")
 (modal-define-kbd "N" "M-n")
@@ -232,6 +242,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "M-n" "C-M-n" "forward-list")
 (modal-define-kbd "M-p" "C-M-p" "backward-list")
 (global-set-key "\M-q" #'keyboard-esc-quit)
+(define-key query-replace-map "\M-q" 'quit)
 
 (modal-global-mode 1)
 
