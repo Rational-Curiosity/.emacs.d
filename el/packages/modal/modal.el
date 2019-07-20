@@ -71,7 +71,8 @@ This variable is considered when Modal is enabled globally via
 ;;;###autoload
 (defun modal-define-key (actual-key target-key name)
   "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
-  (let ((docstring (format "`%s' is called through an alias which translates %s into %s."
+  (let ((sname (make-symbol name))
+        (docstring (format "`%s' is called through an alias which translates %s into %s."
                            (key-binding     target-key)
                            (key-description actual-key)
                            (key-description target-key))))
@@ -79,16 +80,15 @@ This variable is considered when Modal is enabled globally via
      `(define-key
         modal-mode-map
         ,actual-key
-        (defalias (make-symbol ,name)
+        (defalias (quote ,sname)
           (lambda ()
             (interactive)
             (cl-some (lambda (keymap)
                        (unless (eq keymap modal-mode-map)
                          (let ((binding (lookup-key keymap ,target-key)))
                            (when (commandp binding)
-                             (when (eq last-repeatable-command this-command)
-                               (setq last-repeatable-command last-command))
-                             (setq this-original-command binding
+                             (setq real-this-command binding
+                                   this-original-command binding
                                    this-command binding)
                              (call-interactively binding)
                              t))))
