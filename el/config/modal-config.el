@@ -193,7 +193,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "x x" "C-x C-x" "exchange-point-and-mark")
 ;; x - ] command prefix
 (modal-define-kbd "y" "C-y" "yank")
-(modal-define-kbd "z" "M-z" "avy-goto-char-timer")
+(define-key modal-mode-map "z" #'avy-goto-char-timer)
 
 (modal-define-kbd "A" "M-a")
 (modal-define-kbd "B" "M-b")
