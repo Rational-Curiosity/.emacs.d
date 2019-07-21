@@ -242,7 +242,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "M-n" "C-M-n" "forward-list")
 (modal-define-kbd "M-p" "C-M-p" "backward-list")
 (global-set-key "\M-q" #'keyboard-esc-quit)
-(define-key query-replace-map "\M-q" 'quit)
+(define-key query-replace-map "\M-q" 'quit)  ;; read-event
+(define-key function-key-map "\M-q" "\C-g")  ;; read-key
 
 (modal-global-mode 1)
 
