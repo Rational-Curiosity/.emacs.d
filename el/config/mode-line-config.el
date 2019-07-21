@@ -179,7 +179,13 @@
       eol-mnemonic-mac "CR")
 
 (setq-default
- ;;
+ ;; #     #
+ ;; ##   ## #    # #      ######
+ ;; # # # # #    # #      #
+ ;; #  #  # #    # #      #####
+ ;; #     # #    # #      #
+ ;; #     # #    # #      #
+ ;; #     #  ####  ###### ######
  mode-line-mule-info
  `(""
    (current-input-method
@@ -201,7 +207,13 @@ mouse-3: Describe current input method"))
    (:propertize
     (:eval (mode-line-eol-desc))
     face mode-line-eol))
- ;;
+ ;; #     #
+ ;; ##   ##  ####  #####  # ###### # ###### #####
+ ;; # # # # #    # #    # # #      # #      #    #
+ ;; #  #  # #    # #    # # #####  # #####  #    #
+ ;; #     # #    # #    # # #      # #      #    #
+ ;; #     # #    # #    # # #      # #      #    #
+ ;; #     #  ####  #####  # #      # ###### #####
  mode-line-modified
  '(:eval
    (cond
@@ -226,7 +238,13 @@ mouse-3: Describe current input method"))
     (t ""
        ;; (propertize "-" 'face 'mode-line-not-modified)
        )))
- ;;
+ ;; ######
+ ;; #     #  ####   ####  # ##### #  ####  #    #
+ ;; #     # #    # #      #   #   # #    # ##   #
+ ;; ######  #    #  ####  #   #   # #    # # #  #
+ ;; #       #    #      # #   #   # #    # #  # #
+ ;; #       #    # #    # #   #   # #    # #   ##
+ ;; #        ####   ####  #   #   #  ####  #    #
  mode-line-position
  `(,(propertize
      (concat (propertize "%l" 'face 'mode-line-column)
@@ -251,7 +269,13 @@ mouse-1: Display Line and Column Mode Menu")
         ;; XXX needs better description
         'help-echo "Size indication mode\n\
 mouse-1: Display Line and Column Mode Menu")))
- ;;
+ ;; #     #
+ ;; ##   ##  ####  #####  ######  ####
+ ;; # # # # #    # #    # #      #
+ ;; #  #  # #    # #    # #####   ####
+ ;; #     # #    # #    # #           #
+ ;; #     # #    # #    # #      #    #
+ ;; #     #  ####  #####  ######  ####
  mode-line-modes
  (let ((recursive-edit-help-echo "Recursive edit, type C-M-c to get out"))
    (list (propertize "%[" 'help-echo recursive-edit-help-echo)
@@ -278,6 +302,12 @@ mouse-3: Toggle minor modes"
                                  'mouse-2 #'mode-line-widen))
          (propertize "%]" 'help-echo recursive-edit-help-echo)
          " "))
+ ;;  ####  #####   ####  #    # #####   ####
+ ;; #    # #    # #    # #    # #    # #
+ ;; #      #    # #    # #    # #    #  ####
+ ;; #  ### #####  #    # #    # #####       #
+ ;; #    # #   #  #    # #    # #      #    #
+ ;;  ####  #    #  ####   ####  #       ####
  ;; Pre Filename
  mode-line-pre-filename
  '("%e"
@@ -292,22 +322,40 @@ mouse-3: Toggle minor modes"
  ;; Post Filename
  mode-line-post-filename
  '("%e"
-   (vc-mode vc-mode)
    mode-line-modes
    mode-line-misc-info
    ;; mode-line-end-spaces
    )
- ;; Mode Line
+ ;; #     #                         #
+ ;; ##   ##  ####  #####  ######    #       # #    # ######
+ ;; # # # # #    # #    # #         #       # ##   # #
+ ;; #  #  # #    # #    # #####     #       # # #  # #####
+ ;; #     # #    # #    # #         #       # #  # # #
+ ;; #     # #    # #    # #         #       # #   ## #
+ ;; #     #  ####  #####  ######    ####### # #    # ######
+ mode-line-vc nil
  mode-line-format
  `("%e"
    ,@(cdr mode-line-pre-filename)
    (:eval (mode-line-buffer-identification-shorten))
+   (:eval mode-line-vc)
    ,@(cdr mode-line-post-filename)))
 
 (defun mode-line-abbreviate-file-name ()
   (let ((name (buffer-file-name)))
     (if name
         (abbreviate-file-name name))))
+
+(defun abbrev-string-try (string len abbrev-len)
+  (let ((old "")
+        (regexp (concat "\\(\\([A-Za-z]\\{"
+                        (int-to-string abbrev-len)
+                        "\\}\\)[A-Za-z]+\\).*\\'")))
+    (while (and (< len (length string))
+                (not (string-equal string old)))
+      (setq old string
+            string (replace-regexp-in-string regexp "\\2" string nil nil 1))))
+  string)
 
 (defun shorten-path (path len abbrev-len)
   (let ((path-old "")
@@ -329,18 +377,48 @@ mouse-3: Toggle minor modes"
     path))
 
 (defvar mode-line-path-abbrev-len 2)
+(defvar mode-line-vc-abbrev-len 2)
 
 (defun mode-line-buffer-identification-shorten ()
-  (let ((pre-filename (format-mode-line mode-line-pre-filename))
-        (post-filename (format-mode-line mode-line-post-filename))
-        (name (or (mode-line-abbreviate-file-name) (buffer-name))))
-    (let ((len (- (window-total-width)
-                  (string-width pre-filename)
-                  (string-width post-filename))))
-      (format (concat "%-" (int-to-string len) "s")
-              (if (<= (string-width name) len)
-                  name
-                (shorten-path name len mode-line-path-abbrev-len))))))
+  (setq mode-line-vc (or vc-mode ""))
+  (let ((total-len (window-total-width))
+        (pre-len (string-width (format-mode-line mode-line-pre-filename)))
+        (post-len (string-width (format-mode-line mode-line-post-filename)))
+        (vc-len (string-width mode-line-vc))
+        (file-path (or (mode-line-abbreviate-file-name) (buffer-name))))
+    (let* ((len (- total-len pre-len vc-len post-len))
+           (final-file-path
+            (if (<= (string-width file-path) len)
+                file-path
+              (setq file-path (let ((file-name (replace-regexp-in-string "\\`.*/" "" file-path)))
+                                (concat (abbrev-string-try (replace-regexp-in-string "[^/]*\\'" "" file-path)
+                                                           (- len (string-width file-name))
+                                                           mode-line-path-abbrev-len)
+                                        file-name)))
+              (let ((file-path-len (string-width file-path)))
+                (if (<= file-path-len len)
+                    file-path
+                  (if (< 0 vc-len)
+                      (setq vc-len (- vc-len (- file-path-len len))
+                            mode-line-vc (abbrev-string-try mode-line-vc
+                                                            vc-len
+                                                            mode-line-vc-abbrev-len)
+                            len (+ vc-len (- file-path-len (string-width mode-line-vc)))))
+                  (if (<= file-path-len len)
+                      file-path
+                    (setq file-path (let ((path (replace-regexp-in-string "[^/]*\\'" "" file-path)))
+                                      (concat path
+                                              (abbrev-string-try (replace-regexp-in-string "\\`.*/" "" file-path)
+                                                                 (- len (string-width path))
+                                                                 mode-line-path-abbrev-len))))
+                    (if (<= (string-width file-path) len)
+                        file-path
+                      (let ((len/2 (max 1 (/ len 2))))
+                        (concat
+                         (substring file-path 0 (- len/2 1))
+                         "…"
+                         (substring file-path (- len/2)))))))))))
+      (format (concat "%-" (int-to-string len) "s") final-file-path))))
 
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
