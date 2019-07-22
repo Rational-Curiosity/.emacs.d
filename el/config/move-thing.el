@@ -105,45 +105,45 @@
 ;;  #####   ####  #    # #    # #    # #    # #####     #     #  ####   ####  #    #
 (defvar mt-movement-commands
   '(
-    ;; previous-line
-    ;; next-line
-    ;; right-char
-    ;; right-word
-    ;; forward-char
-    ;; forward-word
-    ;; left-char
-    ;; left-word
-    ;; backward-char
-    ;; backward-word
-    ;; forward-paragraph
-    ;; backward-paragraph
-    ;; forward-list
-    ;; backward-list
-    ;; end-of-buffer
-    ;; end-of-defun
-    ;; end-of-line
-    ;; end-of-sexp
-    ;; exchange-point-and-mark
-    ;; move-end-of-line
-    ;; beginning-of-buffer
-    ;; beginning-of-defun
-    ;; beginning-of-line
-    ;; beginning-of-sexp
-    ;; move-beginning-of-line
-    ;; back-to-indentation
-    ;; subword-forward
-    ;; subword-backward
-    ;; subword-mark
-    ;; subword-kill
-    ;; subword-backward-kill
-    ;; subword-transpose
-    ;; subword-capitalize
-    ;; subword-upcase
-    ;; subword-downcase
-    ;; smart-forward
-    ;; smart-backward
-    ;; smart-up
-    ;; smart-down
+    previous-line
+    next-line
+    right-char
+    right-word
+    forward-char
+    forward-word
+    left-char
+    left-word
+    backward-char
+    backward-word
+    forward-paragraph
+    backward-paragraph
+    forward-list
+    backward-list
+    end-of-buffer
+    end-of-defun
+    end-of-line
+    end-of-sexp
+    exchange-point-and-mark
+    move-end-of-line
+    beginning-of-buffer
+    beginning-of-defun
+    beginning-of-line
+    beginning-of-sexp
+    move-beginning-of-line
+    back-to-indentation
+    subword-forward
+    subword-backward
+    subword-mark
+    subword-kill
+    subword-backward-kill
+    subword-transpose
+    subword-capitalize
+    subword-upcase
+    subword-downcase
+    smart-forward
+    smart-backward
+    smart-up
+    smart-down
     avy-goto-char
     avy-goto-char-2
     avy-goto-char-2-above
@@ -174,37 +174,42 @@
 (defvar mt--marker nil
   "Beginning of from region marker.")
 
-(defun mt--pre-command ()
-  (and (memq this-original-command mt-movement-commands)
-       (mt--bounds-of-thing-at-point mt--from-thing)
-       (set-marker mt--marker (point))))
-
 (defun mt--post-command ()
   (when (and (memq this-original-command mt-movement-commands)
-             mt--marker
              (marker-position mt--marker))
     (condition-case raised-error
-        (let ((to-bounds (mt--bounds-of-thing-at-point
-                          mt--to-thing)))
-          (when (and to-bounds
-                     (save-excursion
-                       (switch-to-buffer (marker-buffer mt--marker))
-                       (goto-char (marker-position mt--marker))
-                       (mt--bounds-of-thing-at-point mt--from-thing)))
-            (let ((thing (if mt-interchange-things
-                             (mt--kill-bounds to-bounds))))
-              (save-excursion
-                (switch-to-buffer (marker-buffer mt--marker))
-                (goto-char (marker-position mt--marker))
-                (setq thing (prog1
-                                (mt--kill-bounds
-                                 (mt--bounds-of-thing-at-point mt--from-thing))
-                              (and thing
-                                   (not buffer-read-only)
-                                   (insert thing)))))
-              (insert thing))))
+        (let ((from-bounds (save-excursion
+                             (switch-to-buffer (marker-buffer mt--marker))
+                             (goto-char (marker-position mt--marker))
+                             (mt--bounds-of-thing-at-point mt--from-thing))))
+          ;; (message "From %s" from-bounds)
+          (if from-bounds
+              (if mt-interchange-things
+                  (let ((to-bounds (mt--bounds-of-thing-at-point
+                                    mt--to-thing)))
+                    ;; (message "To %s" to-bounds)
+                    (if to-bounds
+                        (if (or (<= (cdr from-bounds) (car to-bounds))
+                                (<= (cdr to-bounds) (car from-bounds)))
+                            (let ((thing (mt--kill-bounds to-bounds)))
+                              (save-excursion
+                                (switch-to-buffer (marker-buffer mt--marker))
+                                (goto-char (marker-position mt--marker))
+                                (setq thing (prog1
+                                                (mt--kill-bounds
+                                                 (mt--bounds-of-thing-at-point mt--from-thing))
+                                              (insert thing))))
+                              (insert thing))
+                          (message "From %s To %s intersect" from-bounds to-bounds))
+                      (message "To %s not found" mt--to-thing)))
+                (save-excursion
+                  (switch-to-buffer (marker-buffer mt--marker))
+                  (setq thing (mt--kill-bounds from-bounds)))
+                (insert thing))
+            (message "From %s not found" mt--from-thing)))
       (error (message "Moving thing: %s" (error-message-string raised-error))))
-    (set-marker mt--marker nil)))
+    (set-marker mt--marker nil)
+    (setq mt--mode-line-face 'mt--unselected-face)))
 
 ;; #     #
 ;; ##   ##  ####  #####  ######
@@ -213,15 +218,27 @@
 ;; #     # #    # #    # #
 ;; #     # #    # #    # #
 ;; #     #  ####  #####  ######
+(defface mt--selected-face
+  '((t :foreground "gray" :inherit (mode-line)))
+  "Correct" :group 'mt-mode)
+(defface mt--unselected-face
+  '((t :foreground "white" :inherit (mode-line)))
+  "Correct" :group 'mode-line)
+
+(defvar mt--mode-line-face 'mt--unselected-face)
+
+
 (defgroup move-thing ()
   "Move thing minor mode."
   :group 'editing
   :prefix "mt-")
 
 (defcustom mt-mode-line
-  '(:eval (concat (cdr (assoc mt--from-thing mt-things))
-                  (if mt-interchange-things
-                      (cdr (assoc mt--to-thing mt-things)))))
+  '(:eval (propertize
+           (concat (cdr (assoc mt--from-thing mt-things))
+                   (if mt-interchange-things
+                       (cdr (assoc mt--to-thing mt-things))))
+           'face mt--mode-line-face))
   "Show current selected thing."
   :group 'move-thing
   :risky t
@@ -232,16 +249,16 @@
     (define-key map (kbd "M-j") 'mt-cycle-things)
     (define-key map (kbd "M-k") 'mt-cycle-to-things)
     (define-key map (kbd "M-h") 'mt-toggle-interchange-things)
-    (define-key map (kbd "C-p") 'mt-move-up)
-    (define-key map (kbd "C-n") 'mt-move-down)
-    (define-key map (kbd "C-b") 'mt-move-left)
-    (define-key map (kbd "C-f") 'mt-move-right)
-    (define-key map (kbd "<up>")     'mt-up)
-    (define-key map (kbd "<down>")   'mt-down)
-    (define-key map (kbd "<left>")   'mt-backward)
-    (define-key map (kbd "<right>")  'mt-forward)
-    (define-key map (kbd "<prior>")  'mt-shift-mc-left)
-    (define-key map (kbd "<next>")   'mt-shift-mc-right)
+    ;; (define-key map (kbd "C-p") 'mt-move-up)
+    ;; (define-key map (kbd "C-n") 'mt-move-down)
+    ;; (define-key map (kbd "C-b") 'mt-move-left)
+    ;; (define-key map (kbd "C-f") 'mt-move-right)
+    ;; (define-key map (kbd "<up>")     'mt-up)
+    ;; (define-key map (kbd "<down>")   'mt-down)
+    ;; (define-key map (kbd "<left>")   'mt-backward)
+    ;; (define-key map (kbd "<right>")  'mt-forward)
+    ;; (define-key map (kbd "<prior>")  'mt-shift-mc-left)
+    ;; (define-key map (kbd "<next>")   'mt-shift-mc-right)
     map))
 
 (define-minor-mode mt-mode
@@ -254,11 +271,9 @@
   (if mt-mode
       (progn
         (add-hook 'post-command-hook 'mt--post-command)
-        (add-hook 'pre-command-hook 'mt--pre-command)
         (setq mt--marker (make-marker)))
     (setq mt--marker nil)
-    (remove-hook 'post-command-hook 'mt--post-command)
-    (remove-hook 'pre-command-hook 'mt--pre-command)))
+    (remove-hook 'post-command-hook 'mt--post-command)))
 
 ;;              #
 ;; #####       #  #    #
@@ -649,27 +664,32 @@
 ;;  #  #  # #   #   #      #####  ###### #        #   # #    # #
 ;;  #  #   ##   #   #      #   #  #    # #    #   #   #  #  #  #
 ;; ### #    #   #   ###### #    # #    #  ####    #   #   ##   ######
-(defun mt-cycle-things ()
+(defun mt-cycle-things (arg)
   "Cycle things in ring."
-  (interactive)
-  (set-marker mt--marker nil)
-  (if (not (eql mt--from-thing mt--to-thing))
-      (while (not (eql mt--from-thing mt--to-thing))
-        (mt--cycle-to-things))
-    (let ((init-thing (ring-ref mt--from-thing-ring 0))
-          current-thing found)
-      (while (not (or found
-                      (eql init-thing current-thing)))
-        (setq found t
-              current-thing (mt--cycle-from-things))
-        (condition-case nil
-            (let ((bounds (mt--bounds-of-thing-at-point current-thing)))
-              (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
-          (error (set 'found nil)))))))
+  (interactive "P")
+  (setq mt--mode-line-face 'mt--selected-face)
+  (set-marker mt--marker (point))
+  (if (or (eq last-command 'mt-cycle-things) arg)
+      (if (not (eql mt--from-thing mt--to-thing))
+          (while (not (eql mt--from-thing mt--to-thing))
+            (mt--cycle-to-things))
+        (let ((init-thing (ring-ref mt--from-thing-ring 0))
+              current-thing found)
+          (while (not (or found
+                          (eql init-thing current-thing)))
+            (setq found t
+                  current-thing (mt--cycle-from-things))
+            (condition-case nil
+                (let ((bounds (mt--bounds-of-thing-at-point current-thing)))
+                  (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
+              (error (set 'found nil))))))
+    (condition-case nil
+        (let ((bounds (mt--bounds-of-thing-at-point mt--from-thing)))
+          (pulse-momentary-highlight-region (car bounds) (cdr bounds)))
+      (error (mt-cycle-things t)))))
 
 (defun mt-cycle-to-things ()
   (interactive)
-  (set-marker mt--marker nil)
   (mt--cycle-to-things)
   (force-mode-line-update))
 
