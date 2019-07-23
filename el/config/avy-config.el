@@ -17,16 +17,15 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(bind-keys
- ("M-g c"               . avy-goto-char)
- ("M-g C"               . avy-goto-char-2)
- ("M-g s"               . avy-goto-char-timer)
- ("M-g l"               . avy-goto-line)
- ("M-g w"               . avy-goto-word-1)
- ("M-g W"               . avy-goto-word-0)
- ("M-z"                 . avy-goto-char-timer)
- ("M-Z"                 . link-hint-open-link)
- ("C-M-z"               . link-hint-copy-link))
+(global-set-key (kbd "M-g c") #'avy-goto-char)
+(global-set-key (kbd "M-g C") #'avy-goto-char-2)
+(global-set-key (kbd "M-g s") #'avy-goto-char-timer)
+(global-set-key (kbd "M-g l") #'avy-goto-line)
+(global-set-key (kbd "M-g w") #'avy-goto-word-1)
+(global-set-key (kbd "M-g W") #'avy-goto-word-0)
+(global-set-key (kbd "M-z")   #'avy-goto-char-timer)
+(global-set-key (kbd "M-g k") #'link-hint-open-link)
+(global-set-key (kbd "M-g K") #'link-hint-copy-link)
 
 
 (provide 'avy-config)

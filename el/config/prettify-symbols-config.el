@@ -72,8 +72,7 @@
                   (push '("=="    . ?≡) prettify-symbols-alist))
                 (prettify-symbols-mode)))
 
-    (bind-keys
-     ("<f7> p"  . prettify-symbols-mode)))
+    (global-set-key (kbd "<f7> p") #'prettify-symbols-mode))
 
 
 (provide 'prettify-symbols-config)

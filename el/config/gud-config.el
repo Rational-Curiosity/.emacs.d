@@ -119,9 +119,9 @@
     ("C-k" gud-kill "kill")
     ("C-q" gud-quit "quit" :color blue) ; blue color exec and quit hydra
     ("M-q" nil ""))
-  (bind-keys :map gud-minor-mode-map
-             ("C-x C-a m" . hydra-gud/body)
-             ("C-c C-t" . gud-tooltip-mode)))
+  (define-key gud-minor-mode-map (kbd "C-x C-a m") #'hydra-gud/body)
+  (define-key gud-minor-mode-map (kbd "C-c C-t") #'gud-tooltip-mode))
+
 
 (provide 'gud-config)
 ;;; gud-config.el ends here

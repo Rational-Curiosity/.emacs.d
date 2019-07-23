@@ -69,9 +69,9 @@ This variable is considered when Modal is enabled globally via
   "This is Modal mode map, used to translate your keys.")
 
 ;;;###autoload
-(defun modal-define-key (actual-key target-key name)
+(defun modal-define-key (actual-key target-key &optional name)
   "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
-  (let ((sname (make-symbol name))
+  (let ((sname (make-symbol (or name (key-description target-key))))
         (docstring (format "`%s' is called through an alias which translates %s into %s."
                            (key-binding     target-key)
                            (key-description actual-key)

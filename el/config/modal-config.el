@@ -11,6 +11,7 @@
 (setq modal-insert-cursor-type 'box
       modal-cursor-type 'hollow
       modal-excluded-modes '(calc-mode
+                             ediff-mode
                              magit-popup-mode
                              magit-mode
                              magit-process-mode
@@ -88,8 +89,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c ! p") #'flycheck-previous-error)
 (define-key modal-mode-map (kbd "c ! l") #'flycheck-list-errors)
 ;; c - [ command prefix
-(modal-define-kbd "c b" "C-c C-b" "go-back")
-(modal-define-kbd "c c" "C-c C-c")
+(define-key modal-mode-map (kbd "c b") (kbd "C-c C-b"))  ;; go-back
+(modal-define-key (kbd "c c") (kbd "C-c C-c") "confirm-commit")
 (define-key modal-mode-map (kbd "c e w") #'er/mark-word)
 (define-key modal-mode-map (kbd "c e s") #'er/mark-symbol)
 (define-key modal-mode-map (kbd "c e c") #'er/mark-method-call)
@@ -103,19 +104,19 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c i n") #'flyspell-goto-next-error)
 (define-key modal-mode-map (kbd "c i p") #'flyspell-goto-previous-error)
 (define-key modal-mode-map (kbd "c i a") #'flyspell-auto-correct-word)
-(modal-define-kbd "c k" "C-c C-k")
+(modal-define-key (kbd "c k") (kbd "C-c C-k") "cancel-commit")
 (define-key modal-mode-map (kbd "c m p") #'mc/mark-previous-like-this)
 (define-key modal-mode-map (kbd "c m n") #'mc/mark-next-like-this)
 (define-key modal-mode-map (kbd "c m a") #'mc/mark-all-like-this-dwim)
-(modal-define-kbd "c n" "C-c C-n" "smartscan-symbol-go-forward")
+(define-key modal-mode-map (kbd "c n") (kbd "C-c C-n"))  ;; smartscan-symbol-go-forward
 (define-key modal-mode-map (kbd "c o") #'operate-on-number-at-point-or-region)
-(modal-define-kbd "c p" "C-c C-p" "smartscan-symbol-go-backward")
-(modal-define-kbd "c r" "C-c M-s" "org-sort-entries-user-defined")
+(define-key modal-mode-map (kbd "c p") (kbd "C-c C-p"))  ;; smartscan-symbol-go-backward
+(define-key modal-mode-map (kbd "c r") (kbd "C-c M-s"))  ;; org-sort-entries-user-defined
 (define-key modal-mode-map (kbd "c R") #'revert-buffer)
-(modal-define-kbd "c s" "C-c C-s" "org-schedule")
-(modal-define-kbd "c t" "C-c C-t" "org-todo")
-(modal-define-kbd "c u" "C-c C-u" "outline-up-heading")
-(modal-define-kbd "c v" "C-c C-v")
+(modal-define-key (kbd "c s") (kbd "C-c C-s") "org-schedule")
+(modal-define-key (kbd "c t") (kbd "C-c C-t") "org-todo")
+(define-key modal-mode-map (kbd "c u") (kbd "C-c C-u"))  ;; outline-up-heading
+(define-key modal-mode-map (kbd "c v") (kbd "C-c C-v"))
 (define-key modal-mode-map (kbd "c w t") #'transpose-frame)
 (define-key modal-mode-map (kbd "c w h") #'flop-frame)
 (define-key modal-mode-map (kbd "c w v") #'flip-frame)
@@ -137,6 +138,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "g s") #'avy-goto-char-timer)
 (define-key modal-mode-map (kbd "g w") #'avy-goto-word-1)
 (define-key modal-mode-map (kbd "g W") #'avy-goto-word-0)
+(define-key modal-mode-map (kbd "g k") #'link-hint-open-link)
+(define-key modal-mode-map (kbd "g K") #'link-hint-copy-link)
 (modal-define-kbd "h" "M-h" "mark-paragraph")
 ;; i - reserved
 (modal-define-kbd "j" "M-j" "indent-new-comment-line")
@@ -204,8 +207,12 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "G C") #'avy-goto-char-2)
 (modal-define-kbd "G g" "M-g g" "goto-line")
 (modal-define-kbd "G G" "M-g M-g" "goto-line")
+(modal-define-kbd "G n" "M-g M-n" "next-error")
 (modal-define-kbd "G N" "M-g M-n" "next-error")
+(modal-define-kbd "G p" "M-g M-p" "previous-error")
 (modal-define-kbd "G P" "M-g M-p" "previous-error")
+(define-key modal-mode-map (kbd "G s") #'sp-end-of-sexp)
+(define-key modal-mode-map (kbd "G S") #'sp-beginning-of-sexp)
 (define-key modal-mode-map (kbd "G W") #'avy-goto-word-0)
 (modal-define-kbd "H" "M-H")
 (modal-define-kbd "I" "M-i")
@@ -241,7 +248,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "M-k" "C-M-k" "kill-sexp")
 (modal-define-kbd "M-n" "C-M-n" "forward-list")
 (modal-define-kbd "M-p" "C-M-p" "backward-list")
-(global-set-key "\M-q" #'keyboard-esc-quit)
+(global-set-key "\M-q" "\C-g")
 (define-key query-replace-map "\M-q" 'quit)  ;; read-event
 (define-key function-key-map "\M-q" "\C-g")  ;; read-key
 
