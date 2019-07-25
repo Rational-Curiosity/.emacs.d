@@ -10,8 +10,10 @@
 
 (setq modal-insert-cursor-type 'box
       modal-cursor-type 'hollow
-      modal-excluded-modes '(calc-mode
+      modal-excluded-modes '(package-menu-mode
+                             calc-mode
                              ediff-mode
+                             eshell-mode
                              magit-popup-mode
                              magit-mode
                              magit-process-mode
@@ -54,14 +56,14 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;; " (handy as self-inserting symbol)
 (modal-define-kbd "(" "C-(" "sp-rewrap-sexp-lc")
 (modal-define-kbd ")" "C-)" "sp-unwrap-sexp-lc")
-(define-key modal-mode-map "º" #'er/expand-region)
-(define-key modal-mode-map "ª" #'er/contract-region)
+(define-key modal-mode-map "ª" #'er/expand-region)
 (define-key modal-mode-map "&" #'rotate-or-inflection)
 (define-key modal-mode-map "?" #'goto-last-change-reverse)
 (define-key modal-mode-map "/" #'goto-last-change)
 (modal-define-kbd "." "M-." "definition-at-point")
 (modal-define-kbd ";" "M-;" "comment-dwim")
 (modal-define-kbd ":" "M-:" "eval-expression")
+(define-key modal-mode-map "+" #'fold-dwim)
 (modal-define-kbd "-" "C-_" "undo-tree-undo")
 (modal-define-kbd "_" "M-_" "undo-tree-redo")
 (modal-define-kbd "," "M-," "declaration-at-point")
@@ -140,7 +142,15 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "g W") #'avy-goto-word-0)
 (define-key modal-mode-map (kbd "g k") #'link-hint-open-link)
 (define-key modal-mode-map (kbd "g K") #'link-hint-copy-link)
-(modal-define-kbd "h" "M-h" "mark-paragraph")
+(define-key modal-mode-map (kbd "h b") #'describe-bindings)
+(define-key modal-mode-map (kbd "h f") #'describe-function)
+(define-key modal-mode-map (kbd "h k") #'describe-key)
+(define-key modal-mode-map (kbd "h L") #'describe-language-environment)
+(define-key modal-mode-map (kbd "h m") #'describe-mode)
+(define-key modal-mode-map (kbd "h o") #'describe-symbol)
+(define-key modal-mode-map (kbd "h P") #'describe-package)
+(define-key modal-mode-map (kbd "h s") #'describe-syntax)
+(define-key modal-mode-map (kbd "h v") #'describe-variable)
 ;; i - reserved
 (modal-define-kbd "j" "M-j" "indent-new-comment-line")
 (modal-define-kbd "k" "C-k" "kill-line")
@@ -193,6 +203,17 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "x S" "C-x s" "save-some-buffers")
 (modal-define-kbd "x r" "C-x C-r" "recentf-open")
 (modal-define-kbd "x u" "C-x C-u" "upcase-region")
+(define-key modal-mode-map (kbd "x v =") #'magit-diff)
+(define-key modal-mode-map (kbd "x v b") #'magit-branch)
+(define-key modal-mode-map (kbd "x v c") #'magit-checkout)
+(define-key modal-mode-map (kbd "x v L") #'vc-print-root-log)
+(define-key modal-mode-map (kbd "x v l") #'vc-print-log)
+(define-key modal-mode-map (kbd "x v m") #'hydra-smerge/body)
+(define-key modal-mode-map (kbd "x v P") #'magit-push)
+(define-key modal-mode-map (kbd "x v p") #'magit-pull)
+(define-key modal-mode-map (kbd "x v R") #'magit-rebase-continue)
+(define-key modal-mode-map (kbd "x v r") #'magit-rebase)
+(define-key modal-mode-map (kbd "x v v") #'magit-status)
 (modal-define-kbd "x x" "C-x C-x" "exchange-point-and-mark")
 ;; x - ] command prefix
 (modal-define-kbd "y" "C-y" "yank")
@@ -214,7 +235,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "G s") #'sp-end-of-sexp)
 (define-key modal-mode-map (kbd "G S") #'sp-beginning-of-sexp)
 (define-key modal-mode-map (kbd "G W") #'avy-goto-word-0)
-(modal-define-kbd "H" "M-H")
+(modal-define-kbd "H" "M-h")
 (modal-define-kbd "I" "M-i")
 (modal-define-kbd "J" "M-j")
 (define-key modal-mode-map (kbd "K h") #'sp-kill-hybrid-sexp)
@@ -248,9 +269,11 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "M-k" "C-M-k" "kill-sexp")
 (modal-define-kbd "M-n" "C-M-n" "forward-list")
 (modal-define-kbd "M-p" "C-M-p" "backward-list")
-(global-set-key "\M-q" "\C-g")
 (define-key query-replace-map "\M-q" 'quit)  ;; read-event
 (define-key function-key-map "\M-q" "\C-g")  ;; read-key
+(global-set-key "\M-q" "\C-g")
+(global-set-key (kbd "S-SPC") #'modal-global-mode-idle)
+(global-set-key (kbd "º") #'modal-global-mode-force)
 
 (modal-global-mode 1)
 

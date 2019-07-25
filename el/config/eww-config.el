@@ -53,19 +53,17 @@
 
 (setq eww-search-prefix "https://www.google.com/search?q="
       eww-download-directory "~/Descargas")
-(bind-keys
- :map eww-mode-map
- ("<backtab>"  . shr-previous-link)
- (":" . eww) ; Go to URL
- ("h" . eww-list-histories) ; View history
- ("w" . modi/eww-copy-url-dwim)
- ("/" . highlight-regexp)
- ("k" . modi/eww-keep-lines))
+
 ;; Make the binding for `revert-buffer' do `eww-reload' in eww-mode
-(define-key eww-mode-map [remap revert-buffer] #'eww-reload)
-(bind-keys
- :map eww-checkbox-map
- ("<down-mouse-1>" . eww-toggle-checkbox))
+(define-key eww-mode-map (kbd "<backtab>") 'shr-previous-link)
+(define-key eww-mode-map (kbd ":") 'eww)
+(define-key eww-mode-map (kbd "h") 'eww-list-histories)
+(define-key eww-mode-map (kbd "w") 'modi/eww-copy-url-dwim)
+(define-key eww-mode-map (kbd "/") 'highlight-regexp)
+(define-key eww-mode-map (kbd "k") 'modi/eww-keep-lines)
+(define-key eww-mode-map [remap revert-buffer] 'eww-reload)
+(define-key eww-checkbox-map (kbd "<down-mouse-1>") 'eww-toggle-checkbox)
+
 
 (provide 'eww-config)
 ;;; eww-config.el ends here

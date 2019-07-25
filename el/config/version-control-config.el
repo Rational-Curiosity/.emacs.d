@@ -66,7 +66,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
   ("C->"   smerge-diff-base-lower)
   ("M-q" nil "quit"))
 
-(define-key smerge-mode-map (kbd "C-c m m") #'hydra-smerge/body)
+(define-key smerge-mode-map (kbd "C-x v m") #'hydra-smerge/body)
 
 
 (provide 'version-control-config)

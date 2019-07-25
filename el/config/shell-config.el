@@ -77,6 +77,7 @@
 ;;                                     (and (bound-and-true-p execute-command)
 ;;                                          (eval execute-command))))))
 (defvar execute-list '(compile execute test check config convert copy move next previous extern generate clean recompile build rebuild))
+
 (defun execute (&optional arg)
   (interactive "P")
   (let* ((pair-list (cl-remove-if-not
@@ -91,6 +92,7 @@
 
 (defvar insert-from-function-alist '(("git branches" . vc-git-branches)
                                      ("text to rotate" . rotate-text-symbols)))
+
 (defun insert-from-function (arg)
   (interactive "P")
   (let* ((choices (mapcar 'car insert-from-function-alist))
@@ -136,6 +138,7 @@
     (if arg
         (kill-new result)
       (insert result))))
+
 ;;;;;;;;;;;;;;;
 ;; Funciones ;;
 ;;;;;;;;;;;;;;;
@@ -176,21 +179,14 @@
            (require 'fish-completion nil t))
   (global-fish-completion-mode))
 
-(bind-keys
- ("C-M-!"   . insert-from-function)
- ("M-!"     . shell-execute)
- ("M-s RET" . shell-execute)
- ("C-!"     . execute))
+(global-set-key (kbd "C-M-!") #'insert-from-function)
+(global-set-key (kbd "M-!") #'shell-execute)
+(global-set-key (kbd "M-s RET") #'shell-execute)
+(global-set-key (kbd "C-!") #'execute)
 
 (with-eval-after-load 'shell
-  (bind-keys :map shell-mode-map
-             ("C-c C-k" . term-char-mode)
-             ("C-c C-j" . term-line-mode)))
-
-(with-eval-after-load 'esh-mode
-  (bind-keys :map eshell-mode-map
-             ("C-c C-k" . term-char-mode)
-             ("C-c C-j" . term-line-mode)))
+  (define-key shell-mode-map (kbd "C-c C-k") #'term-char-mode)
+  (define-key shell-mode-map (kbd "C-c C-j") #'term-line-mode))
 
 ;; (global-set-key (kbd "M-!") 'shell-execute)
 ;; (global-set-key (kbd "M-s RET") 'shell-execute)

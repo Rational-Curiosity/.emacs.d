@@ -66,13 +66,12 @@ ARG - `C-u' differ with prompted file.
        (call-interactively 'vdiff-buffers)))
      (call-interactively 'vdiff-hydra/body))))
 
-(bind-keys
- ("C-c d R"     . diff-revert-buffer-with-file)
- ("C-c d m"     . vdiff-hydra-or-diff)
- ("C-c d 3 f"   . vdiff-files3)
- ("C-c d f"     . vdiff-files)
- ("C-c d 3 b"   . vdiff-buffers3)
- ("C-c d b"     . vdiff-buffers))
+(global-set-key (kbd "C-c d R") 'diff-revert-buffer-with-file)
+(global-set-key (kbd "C-c d 3 f") 'vdiff-files3)
+(global-set-key (kbd "C-c d m") 'vdiff-hydra-or-diff)
+(global-set-key (kbd "C-c d f") 'vdiff-files)
+(global-set-key (kbd "C-c d 3 b") 'vdiff-buffers3)
+(global-set-key (kbd "C-c d b") 'vdiff-buffers)
 
 
 (provide 'diff-config)

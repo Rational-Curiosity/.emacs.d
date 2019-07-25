@@ -118,8 +118,7 @@ _;_: file          _p_: set project      _B_: show rtags buf
   ("I" rtags-imenu)
   ("T" rtags-taglist)
   ("M-q" nil "quit"))
-(bind-keys :map c-mode-base-map
-           ("C-:" . hydra-rtags/body))
+(define-key c-mode-base-map (kbd "C-:") #'hydra-rtags/body)
 
 ;;;;;;;;;;
 ;; Keys ;;

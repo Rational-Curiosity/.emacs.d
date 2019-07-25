@@ -118,10 +118,9 @@
 
 ;; Teclas
 (with-eval-after-load 'cc-mode
-  (bind-keys :map c++-mode-map
-             ("C-c m c" . compile-cmake-make))
-  (bind-keys :map c-mode-map
-             ("C-c m c" . compile-cmake-make)))
+  (define-key c++-mode-map (kbd "C-c m c") 'compile-cmake-make)
+  (define-key c-mode-map (kbd "C-c m c") 'compile-cmake-make))
+
 
 (provide 'cmake-make-config)
 ;;; cmake-make-config.el ends here

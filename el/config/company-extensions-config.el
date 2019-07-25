@@ -118,9 +118,8 @@
   (add-to-list 'company-backends '(company-rtags)))
 
 
-(bind-keys
- ("<f7> ," . toggle-company-semantic)
- ("C-c y"  . company-yasnippet))
+(global-set-key (kbd "<f7> ,") 'toggle-company-semantic)
+(global-set-key (kbd "C-c y") 'company-yasnippet)
 
 
 (provide 'company-extensions-config)

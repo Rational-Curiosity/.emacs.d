@@ -53,10 +53,8 @@
 (add-to-list 'default-frame-alist '(alpha . (85 . 50)))
 ;; ]
 
-
-(bind-keys
- ("<f6> t" . cycle-themes)
- ("<f7> t" . toggle-transparency))
+(global-set-key (kbd "<f6> t") #'cycle-themes)
+(global-set-key (kbd "<f7> t") #'toggle-transparency)
 
 
 (provide 'theme-config)

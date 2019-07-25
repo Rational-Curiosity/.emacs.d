@@ -140,9 +140,18 @@
                        (ignore-errors
                          (vimish-fold beg end))))))))))))))
 
+(deffold fold-regexp (regexp &optional threshold)
+  ((regexp (cond
+            ((stringp regexp) regexp)
+            ((symbolp regexp) (symbol-name regexp))
+            (t (read-regexp "Regexp"))))
+   (threshold (or threshold 1)))
+  (looking-at regexp)
+  (looking-at regexp))
+
 (deffold fold-indent (level &optional threshold)
   ((indentation (* level tab-width))
-   (threshold (or 5 threshold)))
+   (threshold (or threshold 5)))
   (and (= indentation (current-indentation))
        (not (looking-at "[[:space:]]*$")))
   (or (<= indentation (current-indentation))
@@ -152,14 +161,15 @@
   (looking-at "[[:space:]]*[}\\])]"))
 
 (deffold fold-precomp (&optional threshold)
-  ((threshold 1))
+  ((threshold (or threshold 1)))
   (cond
    ((derived-mode-p 'c-mode 'c++-mode)
     (looking-at "[[:space:]]*#"))
    ((derived-mode-p 'python-mode 'elpy-mode)
     (looking-at "[[:space:]]*\\(from\\|import\\)")))
   (or (looking-at "[[:space:]]*$")
-      (char-equal ?\\ (char-before (1- (point))))
+      (let ((char (char-before (1- (point)))))
+        (and char (char-equal ?\\ char)))
       (cond
        ((derived-mode-p 'c-mode 'c++-mode)
         (looking-at "[[:space:]]*#"))
@@ -168,7 +178,7 @@
   (looking-at "[[:space:]]*$"))
 
 (deffold fold-comment (&optional threshold)
-  ((threshold 1))
+  ((threshold (or threshold 1)))
   (cond
    ((derived-mode-p 'lisp-interaction-mode 'emacs-lisp)
     (looking-at "[[:space:]]*;"))
@@ -189,23 +199,31 @@
 (defun fold-dwim (level)
   (interactive "p")
   (cond
-   (mark-active
+   (mark-active ;; exists region?
     (call-interactively #'vimish-fold))
-   ((cl-block nested-dolist ;; exist vimish overlay at point?
+   ((cl-block nested-dolist ;; exists vimish overlay at point?
       (dolist (overlay (overlays-at (point)))
         (when (vimish-fold--vimish-overlay-p overlay)
           (cl-return-from nested-dolist t)))
       nil)
     (vimish-fold-toggle))
-   ((cl-block nested-dolist ;; exist vimish overlays in buffer?
+   ((let ((bounds (bounds-of-thing-at-point 'defun)))
+      (if bounds ;; exists function definition at point?
+          (let ((beg (car bounds))
+                (end (cdr bounds))
+                (pos (point)))
+            (if (and (<= beg pos)
+                     (< pos end))
+                (vimish-fold beg end))))))
+   ((cl-block nested-dolist ;; exists vimish overlays in buffer?
       (dolist (overlay (overlays-in (point-min) (point-max)))
         (when (vimish-fold--vimish-overlay-p overlay)
           (cl-return-from nested-dolist t)))
       nil)
     (vimish-fold-toggle-all))
-   (t
+   (t  ;; else
     (if current-prefix-arg
-        (fold-indent level (read-number "Threshold: " 1))
+        (fold-indent (read-number "Level: " 1) (read-number "Threshold: " 1))
       (fold-indent level))
     (fold-precomp)
     (fold-comment))))
@@ -249,20 +267,19 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(bind-keys
- ("C-c v f"             . vimish-fold)
- ("C-c v +"             . vimish-fold-unfold)
- ("C-c v *"             . vimish-fold-unfold-all)
- ("C-c v -"             . vimish-fold-refold)
- ("C-c v _"             . vimish-fold-refold-all)
- ("C-c v ."             . vimish-fold-toggle)
- ("C-c v :"             . vimish-fold-toggle-all)
- ("C-c v M-g"           . vimish-fold-avy)
- ("C-c v d"             . vimish-fold-delete)
- ("C-c v D"             . vimish-fold-delete-all)
- ("M-P"                 . vimish-fold-previous-fold)
- ("M-N"                 . vimish-fold-next-fold)
- ("M-*"                 . fold-dwim))
+(global-set-key (kbd "C-c v f") #'vimish-fold)
+(global-set-key (kbd "C-c v +") #'vimish-fold-unfold)
+(global-set-key (kbd "C-c v *") #'vimish-fold-unfold-all)
+(global-set-key (kbd "C-c v -") #'vimish-fold-refold)
+(global-set-key (kbd "C-c v _") #'vimish-fold-refold-all)
+(global-set-key (kbd "C-c v .") #'vimish-fold-toggle)
+(global-set-key (kbd "C-c v :") #'vimish-fold-toggle-all)
+(global-set-key (kbd "C-c v M-g") #'vimish-fold-avy)
+(global-set-key (kbd "C-c v d") #'vimish-fold-delete)
+(global-set-key (kbd "C-c v D") #'vimish-fold-delete-all)
+(global-set-key (kbd "M-P") #'vimish-fold-previous-fold)
+(global-set-key (kbd "M-N") #'vimish-fold-next-fold)
+(global-set-key (kbd "M-*") #'fold-dwim)
 
 
 (provide 'vimish-fold-config)

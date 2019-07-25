@@ -17,10 +17,8 @@
         srefactor--setter-prefix "set"
         srefactor--getter-setter-removal-prefix "_"
         srefactor--getter-setter-capitalize-p t)
-  (bind-keys :map c++-mode-map
-             ("C-c s" . srefactor-refactor-at-point))
-  (bind-keys :map c-mode-map
-             ("C-c s" . srefactor-refactor-at-point)))
+  (define-key c++-mode-map (kbd "C-c s") #'srefactor-refactor-at-point)
+  (define-key c-mode-map (kbd "C-c s") #'srefactor-refactor-at-point))
 
 
 (with-eval-after-load 'elisp-mode

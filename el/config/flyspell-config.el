@@ -151,10 +151,6 @@
       (aset (aref (symbol-function 'make-flyspell-overlay) 2) 12 "C-mouse-2: correct word at point")))
 
 ;;(fset 'flyspell-emacs-popup 'flyspell-emacs-popup-textual)
-(bind-keys
- ("C-c i ." . cycle-ispell-languages)
- ("C-c i s" . spanish-dictionary)
- ("C-c i e" . english-dictionary))
 (defhydra hydra-spell (:foreign-keys warn)
   "SPELL"
   ("C-b" flyspell-buffer "buffer")
@@ -163,8 +159,10 @@
   ("C-c" flyspell-correct-word-before-point "correct")
   ("C-a" flyspell-auto-correct-word "auto")
   ("M-q" nil "quit"))
-(bind-keys
- ("C-c i m" . hydra-spell/body))
+(global-set-key (kbd "C-c i m") 'hydra-spell/body)
+(global-set-key (kbd "C-c i .") 'cycle-ispell-languages)
+(global-set-key (kbd "C-c i s") 'spanish-dictionary)
+(global-set-key (kbd "C-c i e") 'english-dictionary)
 
 
 (provide 'flyspell-config)

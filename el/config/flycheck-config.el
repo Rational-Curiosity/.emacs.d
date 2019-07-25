@@ -134,9 +134,8 @@
 (setq-default flycheck-mode-line '(:eval (flycheck-mode-line-status-text-color)))
 
 ;; Keys
-(bind-keys :map flycheck-mode-map
-           ("C-c ! t w" . flycheck-toggle-warnings)
-           ("C-c ! t i" . flycheck-toggle-includes))
+(define-key flycheck-mode-map (kbd "C-c ! t w") 'flycheck-toggle-warnings)
+(define-key flycheck-mode-map (kbd "C-c ! t i") 'flycheck-toggle-includes)
 
 
 (provide 'flycheck-config)

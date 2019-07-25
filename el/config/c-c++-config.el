@@ -28,8 +28,6 @@
 (dolist (path c-c++-include-paths)
   (add-to-list 'cc-search-directories path))
 
-(bind-key "C-x O" 'ff-find-other-file)
-
 ;;;;;;;;;;;;;;
 ;; C macros ;;
 ;;;;;;;;;;;;;;
@@ -138,14 +136,14 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(global-set-key (kbd "C-x O") 'ff-find-other-file)
 
 (dolist (mode-map (list c-mode-map c++-mode-map))
-  (bind-keys :map mode-map
-           ([C-M-tab] . clang-format-region)
-           ("C-c c h" . c-c++-header-guards)
-           ([(shift return)] . c-context-line-break)
-           ("M-b" . c-beginning-of-statement)
-           ("M-e" . c-end-of-statement)))
+  (define-key mode-map [C-M-tab] 'clang-format-region)
+  (define-key mode-map [(shift return)] 'c-context-line-break)
+  (define-key mode-map (kbd "C-c c h") 'c-c++-header-guards)
+  (define-key mode-map (kbd "M-b") 'c-beginning-of-statement)
+  (define-key mode-map (kbd "M-b") 'c-end-of-statement))
 ;; (define-key c-mode-map (kbd "C-c c h") 'c-c++-header-guards)
 ;; (define-key c++-mode-map (kbd "C-c c h") 'c-c++-header-guards)
 ;; (define-key c-mode-map [(shift return)] 'c-context-line-break)

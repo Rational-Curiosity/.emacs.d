@@ -209,7 +209,8 @@
             (message "From %s not found" mt--from-thing)))
       (error (message "Moving thing: %s" (error-message-string raised-error))))
     (set-marker mt--marker nil)
-    (setq mt--mode-line-face 'mt--unselected-face)))
+    (setq mt--mode-line-face 'mt--unselected-face)
+    (force-mode-line-update)))
 
 ;; #     #
 ;; ##   ##  ####  #####  ######
@@ -219,7 +220,10 @@
 ;; #     # #    # #    # #
 ;; #     #  ####  #####  ######
 (defface mt--selected-face
-  '((t :foreground "gray" :inherit (mode-line)))
+  '((((class color) (background dark))
+     (:background "#AAAA33"))
+    (((class color) (background light))
+     (:background "#FFFFAA")))
   "Correct" :group 'mt-mode)
 (defface mt--unselected-face
   '((t :foreground "white" :inherit (mode-line)))
@@ -668,6 +672,7 @@
   "Cycle things in ring."
   (interactive "P")
   (setq mt--mode-line-face 'mt--selected-face)
+  (force-mode-line-update)
   (set-marker mt--marker (point))
   (if (or (eq last-command 'mt-cycle-things) arg)
       (if (not (eql mt--from-thing mt--to-thing))

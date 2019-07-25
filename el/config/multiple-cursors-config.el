@@ -16,12 +16,10 @@
 ;; (global-set-key (kbd "C->") 'mc/mark-next-like-this)
 ;; (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
 
-(bind-keys
- ("C-<"           . mc/mark-previous-like-this)
- ("C->"           . mc/mark-next-like-this)
- ("C-c C-<"       . mc/mark-all-like-this-dwim)
- ("C-S-<mouse-1>" . mc/add-cursor-on-click)
- )
+(global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
+(global-set-key (kbd "C->") #'mc/mark-next-like-this)
+(global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this-dwim)
+(global-set-key (kbd "C-S-<mouse-1>") #'mc/add-cursor-on-click)
 
 
 ;; [ Add a cursor win mouse

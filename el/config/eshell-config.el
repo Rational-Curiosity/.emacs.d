@@ -178,6 +178,8 @@
                               (goto-address-mode 1)
                               (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
                               (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
+                              (define-key eshell-mode-map (kbd "C-c C-k") #'term-char-mode)
+                              (define-key eshell-mode-map (kbd "C-c C-j") #'term-line-mode)
                               (add-to-list 'eshell-complex-commands "ag")))
 ;; Colorize advices
 ;; brute force...

@@ -18,8 +18,7 @@
                                "xmllint --format -" t t)
     (error "Cannot find xmllint command")))
 
-(bind-keys
- ("C-c x f" . xml-format))
+(global-set-key (kbd "C-c x f") #'xml-format)
 
 
 (provide 'nxml-config)

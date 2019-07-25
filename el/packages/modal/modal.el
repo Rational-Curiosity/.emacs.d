@@ -56,6 +56,9 @@ variable should follow the same conventions."
           (cons  :tag "display a horizontal bar cursor with given height"
                  (const hbar (integer :tag "height of cursor")))))
 
+(defcustom modal-idle-secs 2
+  "Modal mode enabled during `modal-idle-secs' seconds")
+
 ;;;###autoload
 (defcustom modal-excluded-modes nil
   "List of major modes for which `modal-mode' should not be activated.
@@ -116,6 +119,8 @@ Arguments are accepted in in the format used for saving keyboard
 macros (see `edmacro-mode')."
   (modal-remove-key (kbd kbd)))
 
+(defvar modal--original-buffer nil)
+
 ;;;###autoload
 (define-minor-mode modal-mode
   "Toggle the `modal-mode' minor mode.
@@ -136,25 +141,47 @@ configuration created previously with `modal-define-key' and
         ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type) ;; ))
         (define-key universal-argument-map "u" #'universal-argument-more)
-        (global-set-key [escape] nil))
+        (global-set-key "º" #'self-insert-command)
+        ;; (global-set-key (kbd "<escape>") nil)
+        )
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
     (setq-local cursor-type modal-insert-cursor-type) ;; ))
     (define-key universal-argument-map "u" nil)
-    (global-set-key (kbd "<escape>") #'modal-global-mode)))
+    (global-set-key "º" #'modal-global-mode-force)
+    ;; (global-set-key (kbd "<escape>") #'modal-global-mode)
+    ))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not minibuffer or blacklisted.
 
 This is used by `modal-global-mode'."
-  (unless (or (minibufferp)
-              (member major-mode modal-excluded-modes))
+  (if (and (not (and modal--original-buffer
+                     (equal modal--original-buffer
+                            (current-buffer))))
+               (or (minibufferp)
+                   (member major-mode modal-excluded-modes)))
+      (global-set-key "º" #'modal-global-mode-force)
     (modal-mode 1)))
 
 ;;;###autoload
 (define-globalized-minor-mode modal-global-mode
   modal-mode
   modal--maybe-activate)
+
+(defun modal-global-mode-idle (secs)
+  (interactive "P")
+  (unless modal-mode
+    (let ((modal--original-buffer (current-buffer)))
+      (modal-global-mode 1))
+    (run-with-idle-timer (if (and secs (< 0 secs)) secs modal-idle-secs)
+                         nil #'modal-global-mode 0)))
+
+(defun modal-global-mode-force ()
+  (interactive)
+  (unless modal-mode
+    (let ((modal--original-buffer (current-buffer)))
+      (modal-global-mode 1))))
 
 ;; advices
 (defun modal--input-function-advice (fnc key)
@@ -165,7 +192,9 @@ Otherwise use `list'."
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
 ;; keys
-(define-key modal-mode-map "i" #'modal-global-mode)
+(define-key modal-mode-map "i" (lambda ()
+                                 (interactive)
+                                 (modal-global-mode 0)))
 (modal-define-kbd "u" "C-u" "universal-argument")
 
 

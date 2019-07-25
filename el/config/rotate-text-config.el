@@ -35,9 +35,8 @@
              '("None" "False" "True"))
 
 
-(bind-keys
- ("M-<up>"   . rotate-text)
- ("M-<down>" . rotate-text-backward))
+(global-set-key (kbd "M-<up>") #'rotate-text)
+(global-set-key (kbd "M-<down>") #'rotate-text-backward)
 
 
 (provide 'rotate-text-config)

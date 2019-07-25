@@ -8,8 +8,8 @@
 ;;; Code:
 
 (require 'expand-region)
-(bind-keys
- ("M-º" . er/expand-region))
+
+(global-set-key (kbd "M-º") #'er/expand-region)
 
 
 (provide 'regions-config)

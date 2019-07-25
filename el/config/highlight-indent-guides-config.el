@@ -24,8 +24,7 @@
 (set-face-background 'highlight-indent-guides-even-face "dimgray")
 (set-face-foreground 'highlight-indent-guides-character-face "dimgray")
 
-(bind-keys
- ("<f7> i" . highlight-indent-guides-mode))
+(global-set-key (kbd "<f7> i") #'highlight-indent-guides-mode)
 
 
 (provide 'highlight-indent-guides-config)

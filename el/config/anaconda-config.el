@@ -89,10 +89,9 @@ show doc:    _s_
   ("A" anaconda-mode-find-assignments-other-frame)
   ("s" anaconda-mode-show-doc)
   ("M-q" nil "quit"))
-(bind-keys :map anaconda-mode-map
-           ("C-:" . hydra-anaconda/body))
 
 (define-key anaconda-mode-map (kbd "M-r") nil)
+(define-key anaconda-mode-map (kbd "C-:") 'hydra-anaconda/body)
 
 
 (provide 'anaconda-config)

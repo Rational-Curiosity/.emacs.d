@@ -99,9 +99,8 @@ Improve default ia jump at point."
 ;;            ("C-c , +" . senator-fold-tag)
 ;;            ("C-c , -" . senator-unfold-tag)
 ;;            ("C-c , ." . senator-fold-tag-toggle))
-(bind-keys :map semantic-symref-results-mode-map
-           ("e" . semantic-symref-list-expand-all)
-           ("c" . semantic-symref-list-contract-all))
+(define-key semantic-symref-results-mode-map "e" #'semantic-symref-list-expand-all)
+(define-key semantic-symref-results-mode-map "c" #'semantic-symref-list-contract-all)
 
 (semantic-mode 1)
 

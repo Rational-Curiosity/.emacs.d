@@ -324,8 +324,7 @@ Don't show on windows buffers currently showed."
   ("C-p" winner-undo "undo")
   ("C-n" winner-redo "redo")
   ("M-q" nil "quit"))
-(bind-keys
- ("C-c w m" . hydra-win/body))
+(global-set-key (kbd "C-c w m") 'hydra-win/body)
 
 ;;;;;;;;;;;;
 ;; Frames ;;
@@ -494,11 +493,10 @@ others."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-
-(bind-keys* ("C-c <left>"  . windmove-left)
-            ("C-c <right>" . windmove-right)
-            ("C-c <up>"    . windmove-up)
-            ("C-c <down>"  . windmove-down))
+(global-set-key (kbd "C-c <left>") 'windmove-left)
+(global-set-key (kbd "C-c <right>") 'windmove-right)
+(global-set-key (kbd "C-c <up>") 'windmove-up)
+(global-set-key (kbd "C-c <down>") 'windmove-down)
 
 ;; (defhydra hydra-win (global-map "C-c")
 ;;   "WIN"
@@ -507,30 +505,29 @@ others."
 ;;   ("<up>" windmove-up)
 ;;   ("<down>" windmove-down))
 
-(bind-keys
- ("C-c R"     . revert-buffer)
- ("C-x C-c"   . save-buffers-kill-terminal-with-choice)
- ("C-x M-t"   . transpose-frame)
- ("C-x M-h"   . flop-frame)
- ("C-x M-v"   . flip-frame)
- ("C-x M-r"   . rotate-frame-clockwise)
- ("C-x M-R"   . rotate-frame-anticlockwise)
- ("C-x 2"     . vsplit-last-buffer)
- ("C-x 3"     . hsplit-last-buffer)
- ("C-x M-2"   . shell-2-window-frame)
- ("C-x M-3"   . shell-3-window-frame)
- ("C-c w o"   . halve-other-window-height)
- ("C-c w d a" . window-dedicate-all)
- ("C-c w u a" . window-undedicate-all)
- ("C-c w d t" . window-dedicate-this)
- ("C-c w u t" . window-undedicate-this)
- ("C-c w p"   . winner-undo)
- ("C-c w n"   . winner-redo)
- ("C-c w h"   . toggle-hscroll-aggressive)
- ("C-x k"     . kill-buffer-or-buffers-from-file)
- ("C-c b t"   . toggle-tool-bar-mode-from-frame)
- ("C-c b m"   . toggle-menu-bar-mode-from-frame)
- ("C-c e"     . toggle-message-truncate-lines))
+(global-set-key (kbd "C-c R") #'revert-buffer)
+(global-set-key (kbd "C-x C-c") #'save-buffers-kill-terminal-with-choice)
+(global-set-key (kbd "C-x M-t") #'transpose-frame)
+(global-set-key (kbd "C-x M-h") #'flop-frame)
+(global-set-key (kbd "C-x M-v") #'flip-frame)
+(global-set-key (kbd "C-x M-r") #'rotate-frame-clockwise)
+(global-set-key (kbd "C-x M-R") #'rotate-frame-anticlockwise)
+(global-set-key (kbd "C-x 2") #'vsplit-last-buffer)
+(global-set-key (kbd "C-x 3") #'hsplit-last-buffer)
+(global-set-key (kbd "C-x M-2") #'shell-2-window-frame)
+(global-set-key (kbd "C-x M-3") #'shell-3-window-frame)
+(global-set-key (kbd "C-c w o") #'halve-other-window-height)
+(global-set-key (kbd "C-c w d a") #'window-dedicate-all)
+(global-set-key (kbd "C-c w u a") #'window-undedicate-all)
+(global-set-key (kbd "C-c w d t") #'window-dedicate-this)
+(global-set-key (kbd "C-c w u t") #'window-undedicate-this)
+(global-set-key (kbd "C-c w p") #'winner-undo)
+(global-set-key (kbd "C-c w n") #'winner-redo)
+(global-set-key (kbd "C-c w h") #'toggle-hscroll-aggressive)
+(global-set-key (kbd "C-x k") #'kill-buffer-or-buffers-from-file)
+(global-set-key (kbd "C-c b t") #'toggle-tool-bar-mode-from-frame)
+(global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
+(global-set-key (kbd "C-c e") #'toggle-message-truncate-lines)
 
 
 (provide 'frames-windows-buffers-config)

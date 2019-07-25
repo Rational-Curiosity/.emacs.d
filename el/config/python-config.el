@@ -247,11 +247,10 @@ if __name__ == \"__main__\":
 ;; (define-key python-mode-map (kbd "C-c d h")
 ;;   #'sphinx-build-html)
 
-(bind-keys :map python-mode-map
-           ("C-c t d" . python-doctest-to-message)
-           ("C-c t t" . python-timeit-to-message)
-           ("C-c d h" . sphinx-build-html)
-           ("<f7> v"  . toggle-python-version))
+(define-key python-mode-map (kbd "C-c t d") #'python-doctest-to-message)
+(define-key python-mode-map (kbd "C-c t t") #'python-timeit-to-message)
+(define-key python-mode-map (kbd "C-c d h") #'sphinx-build-html)
+(define-key python-mode-map (kbd "<f7> v") #'toggle-python-version)
 
 
 (provide 'python-config)

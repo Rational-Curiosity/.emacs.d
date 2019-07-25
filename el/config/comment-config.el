@@ -48,9 +48,10 @@
   ("C-d" rebox-dwim "dwim")
   ("C-f" rebox-fill "fill")
   ("M-q" nil "quit"))
-(bind-keys
- ("C-c ; m" . hydra-rebox/body)
- ("C-c ; l" . comment-line))
+
+(global-set-key (kbd "C-c ; m") 'hydra-rebox/body)
+(global-set-key (kbd "C-c ; l") 'comment-line)
+
 
 (provide 'comment-config)
 ;;; comment-config.el ends here

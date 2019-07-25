@@ -325,6 +325,7 @@ Modified from `icomplete-completions'."
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 ;; ido keys
 (defun ido-setup-completion-map-advice ()
+  (define-key ido-completion-map (kbd "SPC") nil)
   (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
   (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)
   (define-key ido-completion-map (kbd "M-v") 'ido-preview)
@@ -332,10 +333,9 @@ Modified from `icomplete-completions'."
   (define-key ido-completion-map (kbd "M-B") 'ido-preview-prev))
 (advice-add 'ido-setup-completion-map :after 'ido-setup-completion-map-advice)
 
-(bind-keys
- ("M-i"     . ido-occur-at-point)
- ("M-I"     . ido-occur-from-isearch)
- ("C-x C-r" . ido-recentf-open))
+(global-set-key (kbd "M-i") #'ido-occur-at-point)
+(global-set-key (kbd "M-I") #'ido-occur-from-isearch)
+(global-set-key (kbd "C-x C-r") #'ido-recentf-open)
 
 
 (provide 'ido-config)

@@ -68,8 +68,8 @@
   ("%"  apply-operation-to-number-at-point)
   ("'"  operate-on-number-at-point))
 
-(bind-keys ("C-c o m" . hydra-operate/body)
-           ("C-c o o" . operate-on-number-at-point-or-region))
+(global-set-key (kbd "C-c o m") #'hydra-operate/body)
+(global-set-key (kbd "C-c o o") #'operate-on-number-at-point-or-region)
 
 ;;;;;;;;;;;;;;;;
 ;; Mode utils ;;
