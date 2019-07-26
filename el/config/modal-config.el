@@ -51,6 +51,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key indent-rigidly-map "b" #'indent-rigidly-left)
 
 ;; Modal editing
+(with-eval-after-load 'smartparens
+  (define-key modal-mode-map [remap backward-sexp] 'sp-backward-sexp)
+  (define-key modal-mode-map [remap forward-sexp] 'sp-forward-sexp))
 
 ;; ' (handy as self-inserting symbol)
 ;; " (handy as self-inserting symbol)
@@ -273,7 +276,6 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key function-key-map "\M-q" "\C-g")  ;; read-key
 (global-set-key "\M-q" "\C-g")
 (global-set-key (kbd "S-SPC") #'modal-global-mode-idle)
-(global-set-key (kbd "º") #'modal-global-mode-force)
 
 (modal-global-mode 1)
 

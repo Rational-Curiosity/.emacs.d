@@ -140,28 +140,21 @@ configuration created previously with `modal-define-key' and
         ;; (dolist (buffer (buffer-list))
         ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type) ;; ))
-        (define-key universal-argument-map "u" #'universal-argument-more)
-        (global-set-key "º" #'self-insert-command)
-        ;; (global-set-key (kbd "<escape>") nil)
-        )
+        (define-key universal-argument-map "u" #'universal-argument-more))
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
     (setq-local cursor-type modal-insert-cursor-type) ;; ))
-    (define-key universal-argument-map "u" nil)
-    (global-set-key "º" #'modal-global-mode-force)
-    ;; (global-set-key (kbd "<escape>") #'modal-global-mode)
-    ))
+    (define-key universal-argument-map "u" nil)))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not minibuffer or blacklisted.
 
 This is used by `modal-global-mode'."
-  (if (and (not (and modal--original-buffer
-                     (equal modal--original-buffer
-                            (current-buffer))))
+  (unless (and (not (and modal--original-buffer
+                         (equal modal--original-buffer
+                                (current-buffer))))
                (or (minibufferp)
                    (member major-mode modal-excluded-modes)))
-      (global-set-key "º" #'modal-global-mode-force)
     (modal-mode 1)))
 
 ;;;###autoload
@@ -192,6 +185,8 @@ Otherwise use `list'."
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
 ;; keys
+(global-set-key (kbd "º") #'modal-global-mode-force)
+(define-key modal-mode-map (kbd "º") #'self-insert-command)
 (define-key modal-mode-map "i" (lambda ()
                                  (interactive)
                                  (modal-global-mode 0)))
