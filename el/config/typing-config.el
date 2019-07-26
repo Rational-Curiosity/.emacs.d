@@ -195,6 +195,8 @@ prompt the user for a coding system."
               sh-indent-for-case-label 0
               sh-indent-for-case-alt '+
               ;; line numbers
+              display-line-numbers-width-start t
+              display-line-numbers-grow-only t
               display-line-numbers 'relative)
 ;; Line numbers
 ;; (add-hook 'prog-mode-hook #'display-line-numbers-mode)
