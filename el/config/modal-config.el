@@ -155,7 +155,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "h s") #'describe-syntax)
 (define-key modal-mode-map (kbd "h v") #'describe-variable)
 ;; i - reserved
-(modal-define-kbd "j" "M-j" "indent-new-comment-line")
+(modal-define-kbd "j" "C-j" "electric-newline-and-maybe-indent")
 (modal-define-kbd "k" "C-k" "kill-line")
 (modal-define-kbd "l" "C-l" "recenter-top-bottom")
 (modal-define-kbd "m" "C-m" "newline")
@@ -240,7 +240,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "G W") #'avy-goto-word-0)
 (modal-define-kbd "H" "M-h")
 (modal-define-kbd "I" "M-i")
-(modal-define-kbd "J" "M-j")
+(modal-define-kbd "J" "M-j" "indent-new-comment-line")
 (define-key modal-mode-map (kbd "K h") #'sp-kill-hybrid-sexp)
 (modal-define-kbd (kbd "K l") "<C-S-backspace>")
 (define-key modal-mode-map (kbd "K s") #'kill-to-end-of-sexp)
