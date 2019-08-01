@@ -160,7 +160,7 @@
       org-export-with-sub-superscripts '{}
       org-export-allow-bind-keywords nil
       org-tags-column -80
-      org-cycle-include-plain-lists 'integrate
+      org-cycle-include-plain-lists t ;; 'integrate ;; list initally folded
       org-tags-sort-function #'string>
       org-ellipsis "▼"
       org-use-speed-commands

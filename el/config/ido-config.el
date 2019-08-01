@@ -317,14 +317,26 @@ Modified from `icomplete-completions'."
 ;;;;;;;;;;
 ;; smex ;;
 ;;;;;;;;;;
-(smex-initialize) ; Can be omitted. This might cause a (minimal) delay
-                  ; when Smex is auto-initialized on its first run.
+(smex-initialize)  ;; Can be omitted. This might cause a (minimal) delay
+                   ;; when Smex is auto-initialized on its first run.
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is your old M-x.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+;; icomplete keys
+(define-key icomplete-minibuffer-map "\M-q" 'abort-recursive-edit)
+(define-key icomplete-minibuffer-map "\M-j" 'icomplete-force-complete-and-exit)
+(define-key icomplete-minibuffer-map "\M-f" 'icomplete-forward-completions)
+(define-key icomplete-minibuffer-map "\M-b" 'icomplete-backward-completions)
+
 ;; ido keys
 (defun ido-setup-completion-map-advice ()
+  (define-key ido-completion-map "\M-q" 'abort-recursive-edit)
+  (define-key ido-completion-map "\M-j" 'ido-select-text)
   (define-key ido-completion-map (kbd "SPC") nil)
   (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
   (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)

@@ -11,6 +11,7 @@
 (setq modal-insert-cursor-type 'box
       modal-cursor-type 'hollow
       modal-excluded-modes '(package-menu-mode
+                             dired-mode
                              calc-mode
                              ediff-mode
                              eshell-mode
@@ -89,6 +90,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 
 (modal-define-kbd "a" "C-a" "move-beginning-of-line")
 (modal-define-kbd "b" "C-b" "backward-char")
+(define-key modal-mode-map (kbd "c '") (kbd "C-c '"))
 (define-key modal-mode-map (kbd "c ! c") #'flycheck-buffer)
 (define-key modal-mode-map (kbd "c ! n") #'flycheck-next-error)
 (define-key modal-mode-map (kbd "c ! p") #'flycheck-previous-error)
@@ -205,6 +207,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "x s" "C-x C-s" "save-buffer")
 (modal-define-kbd "x S" "C-x s" "save-some-buffers")
 (modal-define-kbd "x r" "C-x C-r" "recentf-open")
+(modal-define-kbd "x R m" "C-x r m" "bookmark-set")
+(modal-define-kbd "x R b" "C-x r b" "bookmark-jump")
+(modal-define-kbd "x R l" "C-x r l" "list-bookmarks")
 (modal-define-kbd "x u" "C-x C-u" "upcase-region")
 (define-key modal-mode-map (kbd "x v =") #'magit-diff)
 (define-key modal-mode-map (kbd "x v b") #'magit-branch)
@@ -272,9 +277,18 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "M-k" "C-M-k" "kill-sexp")
 (modal-define-kbd "M-n" "C-M-n" "forward-list")
 (modal-define-kbd "M-p" "C-M-p" "backward-list")
+;; new quit bind
 (define-key query-replace-map "\M-q" 'quit)  ;; read-event
 (define-key function-key-map "\M-q" "\C-g")  ;; read-key
-(global-set-key "\M-q" "\C-g")
+;; minibuffer keys
+(define-key minibuffer-local-map "\M-q" 'abort-recursive-edit)
+(define-key minibuffer-local-ns-map "\M-q" 'abort-recursive-edit)
+(define-key minibuffer-local-isearch-map "\M-q" 'abort-recursive-edit)
+(define-key minibuffer-local-completion-map "\M-q" 'abort-recursive-edit)
+(define-key minibuffer-local-must-match-map "\M-q" 'abort-recursive-edit)
+(define-key minibuffer-local-filename-completion-map "\M-q" 'abort-recursive-edit)
+(global-set-key "\M-q" 'keyboard-quit)
+
 (global-set-key (kbd "S-SPC") #'modal-global-mode-idle)
 
 (modal-global-mode 1)
