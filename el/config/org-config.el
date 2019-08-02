@@ -28,8 +28,9 @@
 (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
 (set-face-attribute 'org-warning nil :foreground "gold")
 (set-face-attribute 'org-tag nil :bold nil)
-(set-face-attribute 'org-level-1 nil :bold t)
-(set-face-attribute 'org-level-2 nil :bold t :foreground "light sea green")
+(set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")
+(set-face-attribute 'org-level-2 nil :bold t :foreground "medium turquoise")
+(set-face-attribute 'org-level-3 nil :bold t :foreground "pale turquoise")
 
 (set-face-attribute 'org-block-begin-line nil
                     :underline "#A7A6AA")  ;; :foreground "#388EFF" :background "#222210")
@@ -150,7 +151,7 @@
 ;; Startup options ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
-(setq ;org-hide-block-startup t
+(setq org-hide-block-startup t
       org-descriptive-links nil ;; nil display the full links
       org-startup-folded 'content
       org-startup-with-inline-images t
