@@ -124,6 +124,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "c t") (kbd "C-c C-t") "org-todo")
 (define-key modal-mode-map (kbd "c u") (kbd "C-c C-u"))  ;; outline-up-heading
 (define-key modal-mode-map (kbd "c v") (kbd "C-c C-v"))
+(define-key modal-mode-map (kbd "c V s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
+(define-key modal-mode-map (kbd "c V h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
 (define-key modal-mode-map (kbd "c w t") #'transpose-frame)
 (define-key modal-mode-map (kbd "c w h") #'flop-frame)
 (define-key modal-mode-map (kbd "c w v") #'flip-frame)
