@@ -11,10 +11,12 @@
 (setq modal-insert-cursor-type 'box
       modal-cursor-type 'hollow
       modal-excluded-modes '(package-menu-mode
+                             debugger-mode
                              dired-mode
                              calc-mode
                              ediff-mode
                              eshell-mode
+                             git-rebase-mode
                              magit-popup-mode
                              magit-mode
                              magit-process-mode
@@ -150,6 +152,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "g k") #'link-hint-open-link)
 (define-key modal-mode-map (kbd "g K") #'link-hint-copy-link)
 (define-key modal-mode-map (kbd "h b") #'describe-bindings)
+(define-key modal-mode-map (kbd "h e") #'view-echo-area-messages)
 (define-key modal-mode-map (kbd "h f") #'describe-function)
 (define-key modal-mode-map (kbd "h k") #'describe-key)
 (define-key modal-mode-map (kbd "h L") #'describe-language-environment)
