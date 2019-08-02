@@ -330,7 +330,8 @@
 (with-eval-after-load 'org
   (require 'org-config)
   (require 'org-super-agenda-config)
-  (require 'org-appt))
+  (require 'org-appt)
+  (require 'gitlab-api))
 (add-hook 'org-mode-hook #'org-super-agenda-mode)
 ;; ]
 
