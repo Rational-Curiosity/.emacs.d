@@ -99,6 +99,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c ! l") #'flycheck-list-errors)
 ;; c - [ command prefix
 (define-key modal-mode-map (kbd "c b") (kbd "C-c C-b"))  ;; go-back
+(define-key modal-mode-map (kbd "c B") (kbd "C-c M-b"))
 (modal-define-key (kbd "c c") (kbd "C-c C-c") "confirm-commit")
 (define-key modal-mode-map (kbd "c e w") #'er/mark-word)
 (define-key modal-mode-map (kbd "c e s") #'er/mark-symbol)
@@ -107,6 +108,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c e Q") #'er/mark-outside-quotes)
 (define-key modal-mode-map (kbd "c e p") #'er/mark-inside-pairs)
 (define-key modal-mode-map (kbd "c e P") #'er/mark-outside-pairs)
+(define-key modal-mode-map (kbd "c f") (kbd "C-c C-f"))
+(define-key modal-mode-map (kbd "c F") (kbd "C-c M-f"))
 (define-key modal-mode-map (kbd "c i s") #'spanish-dictionary)
 (define-key modal-mode-map (kbd "c i e") #'english-dictionary)
 (define-key modal-mode-map (kbd "c i c") #'flyspell-buffer)
@@ -125,7 +128,16 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "c s") (kbd "C-c C-s") "org-schedule")
 (modal-define-key (kbd "c t") (kbd "C-c C-t") "org-todo")
 (define-key modal-mode-map (kbd "c u") (kbd "C-c C-u"))  ;; outline-up-heading
-(define-key modal-mode-map (kbd "c v") (kbd "C-c C-v"))
+(define-key modal-mode-map (kbd "c v *") #'vimish-fold-unfold-all)
+(define-key modal-mode-map (kbd "c v +") #'vimish-fold-unfold)
+(define-key modal-mode-map (kbd "c v -") #'vimish-fold-refold)
+(define-key modal-mode-map (kbd "c v _") #'vimish-fold-refold-all)
+(define-key modal-mode-map (kbd "c v .") #'vimish-fold-toggle)
+(define-key modal-mode-map (kbd "c v :") #'vimish-fold-toggle-all)
+(define-key modal-mode-map (kbd "c v d") #'vimish-fold-delete)
+(define-key modal-mode-map (kbd "c v D") #'vimish-fold-delete-all)
+(define-key modal-mode-map (kbd "c v f") #'vimish-fold)
+(define-key modal-mode-map (kbd "c v G") #'vimish-fold-avy)
 (define-key modal-mode-map (kbd "c V s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
 (define-key modal-mode-map (kbd "c V h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
 (define-key modal-mode-map (kbd "c w t") #'transpose-frame)
@@ -139,6 +151,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c w R") #'rotate-frame-anticlockwise)
 (define-key modal-mode-map (kbd "c w -") #'winner-undo)
 (define-key modal-mode-map (kbd "c w _") #'winner-redo)
+(define-key modal-mode-map (kbd "c x n") (kbd "C-c C-x C-n"))
+(define-key modal-mode-map (kbd "c x p") (kbd "C-c C-x C-p"))
 ;; c - ] command prefix
 (modal-define-kbd "d" "<deletechar>" "delete-forward-char")
 (modal-define-kbd "e" "C-e" "move-end-of-line")

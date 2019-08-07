@@ -17,6 +17,7 @@
                '((t (:foreground "forest green" :weight bold))))
 ;; (face-spec-set 'magit-popup-disabled-argument
 ;;                '((t (:foreground "slate gray" :weight light))))
+(define-key magit-popup-mode-map "\M-q" 'magit-popup-quit)
 
 
 (provide 'magit-popup-config)

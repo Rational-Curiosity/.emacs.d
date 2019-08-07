@@ -336,7 +336,9 @@ Modified from `icomplete-completions'."
 ;; ido keys
 (defun ido-setup-completion-map-advice ()
   (define-key ido-completion-map "\M-q" 'abort-recursive-edit)
-  (define-key ido-completion-map "\M-j" 'ido-select-text)
+  (define-key ido-completion-map "\C-j" 'ido-exit-minibuffer)
+  (define-key ido-completion-map "\M-j" 'ido-exit-minibuffer)
+  (define-key ido-completion-map (kbd "RET") 'ido-select-text)
   (define-key ido-completion-map (kbd "SPC") nil)
   (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
   (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)

@@ -197,7 +197,7 @@ prompt the user for a coding system."
               ;; line numbers
               display-line-numbers-width-start t
               display-line-numbers-grow-only t
-              display-line-numbers 'relative)
+              display-line-numbers 'visual)
 ;; Line numbers
 ;; (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 

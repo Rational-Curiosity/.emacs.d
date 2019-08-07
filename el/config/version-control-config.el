@@ -18,26 +18,29 @@
         (vc-refresh-state))))
   (advice-add 'magit-refresh :after 'vc-refresh-buffers))
 
-(with-eval-after-load 'magit-status
-  (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
-  (define-key magit-status-mode-map (kbd "M-g C") #'avy-goto-char-2)
-  (define-key magit-status-mode-map (kbd "M-g s") #'avy-goto-char-timer)
-  (define-key magit-status-mode-map (kbd "M-g l") #'avy-goto-line)
-  (define-key magit-status-mode-map (kbd "M-g w") #'avy-goto-word-1)
-  (define-key magit-status-mode-map (kbd "M-g W") #'avy-goto-word-0)
-  (define-key magit-status-mode-map (kbd "z")   #'avy-goto-char-timer)
-  (define-key magit-status-mode-map (kbd "M-g k") #'link-hint-open-link)
-  (define-key magit-status-mode-map (kbd "M-g K") #'link-hint-copy-link))
-(with-eval-after-load 'magit-process
-  (define-key magit-process-mode-map (kbd "M-g c") #'avy-goto-char)
-  (define-key magit-process-mode-map (kbd "M-g C") #'avy-goto-char-2)
-  (define-key magit-process-mode-map (kbd "M-g s") #'avy-goto-char-timer)
-  (define-key magit-process-mode-map (kbd "M-g l") #'avy-goto-line)
-  (define-key magit-process-mode-map (kbd "M-g w") #'avy-goto-word-1)
-  (define-key magit-process-mode-map (kbd "M-g W") #'avy-goto-word-0)
-  (define-key magit-process-mode-map (kbd "z")   #'avy-goto-char-timer)
-  (define-key magit-process-mode-map (kbd "M-g k") #'link-hint-open-link)
-  (define-key magit-process-mode-map (kbd "M-g K") #'link-hint-copy-link))
+(with-eval-after-load 'transient
+  (define-key transient-base-map "\M-q" 'transient-quit-one))
+
+;; (with-eval-after-load 'magit-status
+;;   (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
+;;   (define-key magit-status-mode-map (kbd "M-g C") #'avy-goto-char-2)
+;;   (define-key magit-status-mode-map (kbd "M-g s") #'avy-goto-char-timer)
+;;   (define-key magit-status-mode-map (kbd "M-g l") #'avy-goto-line)
+;;   (define-key magit-status-mode-map (kbd "M-g w") #'avy-goto-word-1)
+;;   (define-key magit-status-mode-map (kbd "M-g W") #'avy-goto-word-0)
+;;   (define-key magit-status-mode-map (kbd "M-z")   #'avy-goto-char-timer)
+;;   (define-key magit-status-mode-map (kbd "M-g k") #'link-hint-open-link)
+;;   (define-key magit-status-mode-map (kbd "M-g K") #'link-hint-copy-link))
+;; (with-eval-after-load 'magit-process
+;;   (define-key magit-process-mode-map (kbd "M-g c") #'avy-goto-char)
+;;   (define-key magit-process-mode-map (kbd "M-g C") #'avy-goto-char-2)
+;;   (define-key magit-process-mode-map (kbd "M-g s") #'avy-goto-char-timer)
+;;   (define-key magit-process-mode-map (kbd "M-g l") #'avy-goto-line)
+;;   (define-key magit-process-mode-map (kbd "M-g w") #'avy-goto-word-1)
+;;   (define-key magit-process-mode-map (kbd "M-g W") #'avy-goto-word-0)
+;;   (define-key magit-process-mode-map (kbd "M-z")   #'avy-goto-char-timer)
+;;   (define-key magit-process-mode-map (kbd "M-g k") #'link-hint-open-link)
+;;   (define-key magit-process-mode-map (kbd "M-g K") #'link-hint-copy-link))
 
 ;; SMerge hydra menu
 (defhydra hydra-smerge
