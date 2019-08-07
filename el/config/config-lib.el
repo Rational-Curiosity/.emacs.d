@@ -13,6 +13,12 @@
       (setcdr last (cddr last))
       list)))
 
+(defun assoc-keys (keys alist &optional test-fun)
+  "Recursively find KEYS in ALIST."
+  (while (and (listp alist) keys)
+    (setq alist (assoc (pop keys) alist test-fun)))
+  (if keys nil alist))
+
 (require 'cl-lib)
 ;; [ get current function name
 ;; thanks to: https://emacs.stackexchange.com/a/2312
@@ -24,7 +30,7 @@
     (while (setq frame (backtrace-frame index))
       (push frame frames)
       (cl-incf index))
-    (cl-remove-if-not 'car frames)))
+    (cl-delete-if-not 'car frames)))
 
 (defmacro compile-time-function-name ()
   "Get the name of calling function at expansion time."
@@ -110,7 +116,7 @@
   (cons 'if
         (cons
          (list 'daemonp)
-         (append
+         (nconc
           (list (list 'add-hook (quote 'after-make-frame-functions)
                       (cons 'lambda (cons (list (if frame frame 'frame)) body))))
           (list (list 'funcall
@@ -140,7 +146,7 @@ CLASS optional class name, DIR default."
   (dir-locals-set-class-variables class list)
   (dir-locals-set-directory-class dir class)
   (dolist (item list)
-    (setq safe-local-variable-values (append safe-local-variable-values (cdr item))))
+    (setq safe-local-variable-values (nconc safe-local-variable-values (cdr item))))
   class)
 
 
@@ -271,8 +277,8 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
         (processes))
     (while pids
       (setq children nil)
-      (mapc (lambda (pid) (setq children (append children (processes-children pid attrs-processes)))) pids)
-      (setq processes (append processes children))
+      (mapc (lambda (pid) (setq children (nconc children (processes-children pid attrs-processes)))) pids)
+      (setq processes (nconc processes children))
       (setq pids (mapcar (lambda (attrs-process) (cdr (assoc 'pid attrs-process))) children)))
     processes))
 
@@ -287,7 +293,7 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
       ;; [ Limit python's processes of all emacs
       ;; (let ((attrs-processes (mapcar (lambda (x) (process-get-attrs x '(ppid comm))) (list-system-processes)))
       ;;       (emacs-processes))
-      ;;   (mapc (lambda (x) (setq emacs-processes (append emacs-processes (processes-children-all (cdr (assoc 'pid x)) attrs-processes)))) (processes-named "emacs.exe" attrs-processes))
+      ;;   (mapc (lambda (x) (nconc emacs-processes (processes-children-all (cdr (assoc 'pid x)) attrs-processes))) (processes-named "emacs.exe" attrs-processes))
       ;;   (processes-named "python.exe" emacs-processes))
       ;; ]
       ;; Limit python's processes of every emacs
