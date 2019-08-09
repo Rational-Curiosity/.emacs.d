@@ -36,10 +36,13 @@
 (defcustom gitlab-api-url-base ""
   "Url base, example https://gitlab.domain.com/api/v4")
 
+(defcustom gitlab-api-per-page 100
+  "Pagination")
+
 (defvar gitlab-api-projects-alist nil)
 
-(defun gitlab-api-request (url &optional method params)
-  (request url
+(defun gitlab-api-request (resource &optional method params)
+  (request (concat gitlab-api-url-base resource)
            :type (or method "GET")
            :encoding 'utf-8
            :headers (list (cons "Private-Token" gitlab-api-token))
@@ -50,30 +53,31 @@
                      (json-read))
            :sync t))
 
-(defun gitlab-api-data (url &optional method params)
+(defun gitlab-api-data (resource &optional method params)
   (request-response-data
-   (gitlab-api-request url method params)))
+   (gitlab-api-request resource method params)))
 
-(defun gitlab-api--fill-template (template alist)
-  (mapc (lambda (key-value)
-          (setq template (replace-regexp-in-string
-                          (concat "{" (car key-value) "}")
-                          (cdr key-value) template t 'literal)))
-        alist)
-  template)
+(defun gitlab-api-data-all-pages (resource &optional method params)
+  (map-put params "per_page" gitlab-api-per-page)
+  (let ((page 1) (data-page [t]) (data []))
+    (while (not (seq-empty-p data-page))
+      (map-put params "page" (int-to-string page))
+      (setq data-page (gitlab-api-data resource method params)
+            data (vconcat data data-page)
+            page (1+ page)))
+    data))
 
-(defun gitlab-api-resource (resource &optional alist method params)
-  (gitlab-api-data (concat gitlab-api-url-base
-                           (if alist
-                               (gitlab-api--fill-template resource alist)
-                             resource))
+(defun gitlab-api-template (resource &optional alist method params)
+  (gitlab-api-data (if alist
+                       (gitlab-api--fill-template resource alist)
+                     resource)
                    method params))
 
 ;;;;;;;;;;;;;;
 ;; Projects ;;
 ;;;;;;;;;;;;;;
 (defun gitlab-api-get-projects ()
-  (let ((projets-datas (gitlab-api-data (concat gitlab-api-url-base "/projects") "GET")))
+  (let ((projets-datas (gitlab-api-data-all-pages "/projects" "GET")))
     (setq gitlab-api-projects-alist (mapcar (lambda (project-data)
                                               (cons (cdr (assoc 'id project-data))
                                                     (cdr (assoc 'name project-data))))
@@ -91,21 +95,29 @@
 ;; (defun gitlab-api-get-merge-requests-all ()
 ;;   (apply 'vconcat (mapcar 'gitlab-api-get-merge-requests (gitlab-api-get-projects-property 'id))))
 
-(defun gitlab-api-project-resource (project-id resource &optional alist method)
-  (gitlab-api-data (concat gitlab-api-url-base "/projects/" (int-to-string project-id)
-                           (if alist
-                               (gitlab-api--fill-template resource alist)
-                             resource))
-                   method))
+(defun gitlab-api-project-resource (project-id resource &optional alist method params)
+  (gitlab-api-data-all-pages (concat "/projects/" (int-to-string project-id)
+                                     (if alist
+                                         (gitlab-api--fill-template resource alist)
+                                       resource))
+                             method params))
 
-(defun gitlab-api-project-resource-all (resource &optional alist method)
+(defun gitlab-api-project-resource-all (resource &optional alist method params)
   (apply 'vconcat (mapcar (lambda (project-id)
-                            (gitlab-api-project-resource project-id resource alist method))
+                            (gitlab-api-project-resource project-id resource alist method params))
                           (gitlab-api-get-projects-property 'id))))
 
 ;;;;;;;;;;;;;
 ;; Helpers ;;
 ;;;;;;;;;;;;;
+(defun gitlab-api--fill-template (template alist)
+  (mapc (lambda (key-value)
+          (setq template (replace-regexp-in-string
+                          (concat "{" (car key-value) "}")
+                          (cdr key-value) template t 'literal)))
+        alist)
+  template)
+
 (defun gitlab-api--assoc-keys (keys alist)
   "Recursively find KEYS in ALIST."
   (while (and (listp alist) keys)
@@ -197,88 +209,57 @@
                                         cond-args))))))
                 conds))))
 
-(defun gitlab-api-org-get-merge-requests (&optional level sort-func &rest filter-funcs)
-  (interactive "P")
-  (let ((merge-requests (gitlab-api-project-resource-all "/merge_requests" nil "GET")))
+(defun gitlab-api-org-data-all-pages (resource &optional method params level sort-func filter-funcs)
+  (let ((issues (gitlab-api-data-all-pages resource method params)))
     (while filter-funcs
-      (setq merge-requests (cl-delete-if-not (pop filter-funcs) merge-requests)))
-    (let ((text (mapconcat (lambda (data)
-                             (gitlab-api--convert-to-org data
-                                                         '(id
-                                                           iid
-                                                           project_id
-                                                           title
-                                                           description
-                                                           state
-                                                           created_at
-                                                           updated_at
-                                                           target_branch
-                                                           source_branch
-                                                           (author id)
-                                                           (author username)
-                                                           (assignee id)
-                                                           (assignee username)
-                                                           source_project_id
-                                                           target_project_id
-                                                           labels
-                                                           (milestone id)
-                                                           (milestone project_id)
-                                                           (milestone title)
-                                                           merge_status
-                                                           web_url)
-                                                         level
-                                                         "/projects/{project_id}/merge_requests/{iid}"))
-                           (sort
-                            merge-requests
-                            (or sort-func 'gitlab-api-default-sort))
-                           "")))
-      (if (called-interactively-p 'any)
-          (insert text)
-        text))))
+      (setq issues (cl-delete-if-not (pop filter-funcs) issues)))
+    (mapconcat (lambda (data)
+                 (gitlab-api--convert-to-org data
+                                             '(id
+                                               iid
+                                               project_id
+                                               title
+                                               description
+                                               state
+                                               created_at
+                                               updated_at
+                                               target_branch
+                                               source_branch
+                                               (author id)
+                                               (author username)
+                                               (assignee id)
+                                               (assignee username)
+                                               source_project_id
+                                               target_project_id
+                                               labels
+                                               (milestone id)
+                                               (milestone project_id)
+                                               (milestone title)
+                                               merge_status
+                                               web_url)
+                                             level
+                                             (concat "/projects/{project_id}" resource "/{iid}")))
+               (sort
+                issues
+                (or sort-func 'gitlab-api-default-sort))
+               "")))
 
 (defun gitlab-api-org-get-issues (&optional level sort-func &rest filter-funcs)
   (interactive "P")
-  (let ((issues (gitlab-api-project-resource-all "/issues" nil "GET")))
-    (while filter-funcs
-      (setq issues (cl-delete-if-not (pop filter-funcs) issues)))
-    (let ((text (mapconcat (lambda (data)
-                             (gitlab-api--convert-to-org data
-                                                         '(id
-                                                           iid
-                                                           project_id
-                                                           title
-                                                           description
-                                                           state
-                                                           created_at
-                                                           updated_at
-                                                           target_branch
-                                                           source_branch
-                                                           (author id)
-                                                           (author username)
-                                                           (assignee id)
-                                                           (assignee username)
-                                                           source_project_id
-                                                           target_project_id
-                                                           labels
-                                                           (milestone id)
-                                                           (milestone project_id)
-                                                           (milestone title)
-                                                           merge_status
-                                                           web_url)
-                                                         level
-                                                         "/projects/{project_id}/issues/{iid}"))
-                           (sort
-                            issues
-                            (or sort-func 'gitlab-api-default-sort))
-                           "")))
-      (if (called-interactively-p 'any)
-          (insert text)
-        text))))
+  (if (called-interactively-p 'any)
+      (insert (gitlab-api-org-data-all-pages "/issues" "GET" '(("scope" . "all")) level sort-func filter-funcs))
+    (gitlab-api-org-data-all-pages "/issues" "GET" '(("scope" . "all")) level sort-func filter-funcs)))
+
+(defun gitlab-api-org-get-merge-requests (&optional level sort-func &rest filter-funcs)
+  (interactive "P")
+  (if (called-interactively-p 'any)
+      (insert (gitlab-api-org-data-all-pages "/merge_requests" "GET" '(("scope" . "all")) level sort-func filter-funcs))
+    (gitlab-api-org-data-all-pages "/merge_requests" "GET" '(("scope" . "all")) level sort-func filter-funcs)))
 
 (defun gitlab-api-org-update-entry-at-point ()
   (interactive)
   (let* ((properties (org-entry-properties nil 'standard))
-         (resource-datas (gitlab-api-resource (cdr (assoc "RESOURCE" properties)) properties "GET")))
+         (resource-datas (gitlab-api-template (cdr (assoc "RESOURCE" properties)) properties "GET")))
     (mapc (lambda (property)
             (let* ((name (downcase (car property)))
                    (value (cdr property))
