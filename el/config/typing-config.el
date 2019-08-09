@@ -699,7 +699,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-A") #'align-regexp)
 (global-set-key (kbd "M-C") #'rotate-or-inflection)
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
-(global-set-key (kbd "<f7> s") #'toggle-enable-multibyte-characters)
+(global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
 (global-set-key (kbd "<f7> w") #'toggle-truncate-lines)
 (global-set-key (kbd "<f7> l") #'whitespace-toggle-lines-tail)
