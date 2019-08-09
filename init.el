@@ -130,8 +130,6 @@
 
 (require 'multiple-windows)
 
-(require 'smartscan-config)
-
 (require 'nxml-config)
 
 (require 'diff-config)
@@ -158,6 +156,10 @@
 (add-hook 'prog-mode-hook #'highlight-thing-mode)
 (with-eval-after-load 'highlight-thing
   (require 'highlight-thing-config))
+;; Smartscan
+(add-hook 'prog-mode-hook #'smartscan-mode)
+(with-eval-after-load 'smartscan
+  (require 'smartscan-config))
 ;; highlight-indent-guides (started inside typing-config when emacs server)
 ;; poor performance and annoying cursor movement
 ;; (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)

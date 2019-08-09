@@ -3,22 +3,21 @@
 ;;; Commentary:
 
 ;; Usage:
-;; (require 'smartscan-config)
+;; (with-eval-after-load 'smartscan
+;;   (require 'smartscan-config))
 
 ;;; Code:
-
-(defvar smartscan-map
-  (let ((m (make-sparse-keymap)))
-    (define-key m (kbd "C-c C-n") 'smartscan-symbol-go-forward)
-    (define-key m (kbd "C-c C-p") 'smartscan-symbol-go-backward)
-    (define-key m (kbd "C-c C-r") 'smartscan-symbol-replace)
-    m)
-  "Keymap for `smartscan'.")
-
-(global-smartscan-mode 1)
-
 (require 'config-lib)
 (advice-add 'smartscan-symbol-goto :around #'message-silent-advice)
+
+(define-key smartscan-map (kbd "M-n") nil)
+(define-key smartscan-map (kbd "C-c C-n") 'smartscan-symbol-go-forward)
+(define-key smartscan-map (kbd "M-p") nil)
+(define-key smartscan-map (kbd "C-c C-p") 'smartscan-symbol-go-backward)
+(define-key smartscan-map (kbd "M-'") nil)
+(define-key smartscan-map (kbd "C-c C-r") 'smartscan-symbol-replace)
+
+(global-set-key (kbd "<f5>") 'smartscan-mode)
 
 
 (provide 'smartscan-config)
