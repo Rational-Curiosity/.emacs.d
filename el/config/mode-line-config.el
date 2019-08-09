@@ -246,9 +246,11 @@ mouse-3: Describe current input method"))
  ;; #       #    # #    # #   #   # #    # #   ##
  ;; #        ####   ####  #   #   #  ####  #    #
  mode-line-position
- `(,(propertize
-     (concat (propertize "%l" 'face 'mode-line-column)
-             ":%c ")
+ `((:eval
+    (if (memq display-line-numbers '(relative visual))
+        ":%c "
+      ,(concat (propertize "%l" 'face 'mode-line-column)
+               ":%c "))
      'local-map mode-line-column-line-number-mode-map
      'mouse-face 'mode-line-highlight
      'help-echo "Line number and Column number\n\

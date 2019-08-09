@@ -94,7 +94,7 @@
         ("ENOU" :foreground "green yellow" :weight bold) ;; ENOUGH
         ("DELE" :foreground "light green" :weight bold) ;; DELEGATED
         ("LINK" :foreground "violet" :weight bold) ;; LINKED
-        ("WAIT" :foreground "blue violet" :weight bold :underline t) ;; WAITING
+        ("WAIT" :foreground "blue violet" :weight bold) ;; WAITING
         ("HOLD" :foreground "dark violet" :weight bold :underline t) ;; HOLD
         ("CANC" :foreground "dark green" :weight bold) ;; CANCELED
         ("FIXM" :foreground "dark red" :weight bold) ;; FIXME
@@ -161,6 +161,7 @@
       org-export-with-sub-superscripts '{}
       org-export-allow-bind-keywords nil
       org-tags-column -80
+      org-agenda-tags-column -90
       org-cycle-include-plain-lists t ;; 'integrate ;; list initally folded
       org-tags-sort-function #'string>
       org-ellipsis "▼"
@@ -838,11 +839,11 @@ You can also customize this for each buffer, using something like
         (800 1000 1200 1400 1600 1800 2000)
         "......" "----------------")
       org-agenda-prefix-format
-      '((agenda . " %i %-4.4 c%?-12t% s") ; (agenda . " %i %-12:c%?-12t% s")
+      '((agenda . " %i %-4.4 c%?-12t% s")  ;; (agenda . " %i %-12:c%?-12t% s")
         (timeline . "  % s")
-        (todo . " %i %-4.4 c%?-12t% s") ; (todo . " %i %-12:c")
-        (tags . " %i %-12:c")
-        (search . " %i %-12:c"))
+        (todo . " %i %-4.4 c%?-12t% s")    ;; (todo . " %i %-12:c")
+        (tags . " %i %-4.4 c")             ;; (tags . " %i %-12:c")
+        (search . " %i %-4.4 c"))          ;; (search . " %i %-12:c")
       org-agenda-scheduled-leaders '("Sche" "S-%3dd")
       org-agenda-deadline-leaders  '("Dead" "D+%3dd" "D-%3dd")
       org-agenda-sorting-strategy
@@ -870,8 +871,13 @@ You can also customize this for each buffer, using something like
            '(org-agenda-skip-entry-if
              'notregexp
              ":STYLE: *habit"))))
+        ("r" "[r]epeat timestamps"
+         ((alltodo ""
+                   ((org-agenda-skip-function
+                     '(and (not (org-get-repeat))
+                           (org-entry-end-position)))))))
         ("c" "[c]alendar" cfw:open-org-calendar-command)
-        ("n" "[n]ot closed timestamp"
+        ("n" "[n]ot closed timestamps"
          ((alltodo ""
                    ((org-agenda-skip-function
                      '(org-agenda-skip-entry-if
