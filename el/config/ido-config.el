@@ -343,8 +343,8 @@ Modified from `icomplete-completions'."
   (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
   (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)
   (define-key ido-completion-map (kbd "M-v") 'ido-preview)
-  (define-key ido-completion-map (kbd "M-F") 'ido-preview-next)
-  (define-key ido-completion-map (kbd "M-B") 'ido-preview-prev))
+  (define-key ido-completion-map (kbd "M-e") 'ido-preview-next)
+  (define-key ido-completion-map (kbd "M-a") 'ido-preview-prev))
 (advice-add 'ido-setup-completion-map :after 'ido-setup-completion-map-advice)
 
 (global-set-key (kbd "M-i") #'ido-occur-at-point)
