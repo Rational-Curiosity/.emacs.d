@@ -59,12 +59,15 @@
 
 (defun gitlab-api-data-all-pages (resource &optional method params)
   (map-put params "per_page" gitlab-api-per-page)
-  (let ((page 1) (data-page [t]) (data []))
+  (let ((page 1) data-page data)
+    (map-put params "page" (int-to-string page))
+    (setq data-page (gitlab-api-data resource method params)
+          data data-page)
     (while (not (seq-empty-p data-page))
+      (setq page (1+ page))
       (map-put params "page" (int-to-string page))
       (setq data-page (gitlab-api-data resource method params)
-            data (vconcat data data-page)
-            page (1+ page)))
+            data (vconcat data data-page)))
     data))
 
 (defun gitlab-api-template (resource &optional alist method params)
@@ -72,6 +75,12 @@
                        (gitlab-api--fill-template resource alist)
                      resource)
                    method params))
+
+(defun gitlab-api-template-all-pages (resource &optional alist method params)
+  (gitlab-api-data-all-pages (if alist
+                                 (gitlab-api--fill-template resource alist)
+                               resource)
+                             method params))
 
 ;;;;;;;;;;;;;;
 ;; Projects ;;
@@ -209,10 +218,13 @@
                                         cond-args))))))
                 conds))))
 
-(defun gitlab-api-org-data-all-pages (resource &optional method params level sort-func filter-funcs)
-  (let ((issues (gitlab-api-data-all-pages resource method params)))
+;;;;;;;;;
+;; Org ;;
+;;;;;;;;;
+(defun gitlab-api-org-data-all-pages (resource template &optional method params level sort-func filter-funcs)
+  (let ((data-all-pages (gitlab-api-data-all-pages resource method params)))
     (while filter-funcs
-      (setq issues (cl-delete-if-not (pop filter-funcs) issues)))
+      (setq data-all-pages (cl-delete-if-not (pop filter-funcs) data-all-pages)))
     (mapconcat (lambda (data)
                  (gitlab-api--convert-to-org data
                                              '(id
@@ -238,23 +250,29 @@
                                                merge_status
                                                web_url)
                                              level
-                                             (concat "/projects/{project_id}" resource "/{iid}")))
+                                             template))
                (sort
-                issues
+                data-all-pages
                 (or sort-func 'gitlab-api-default-sort))
                "")))
 
 (defun gitlab-api-org-get-issues (&optional level sort-func &rest filter-funcs)
   (interactive "P")
   (if (called-interactively-p 'any)
-      (insert (gitlab-api-org-data-all-pages "/issues" "GET" '(("scope" . "all")) level sort-func filter-funcs))
-    (gitlab-api-org-data-all-pages "/issues" "GET" '(("scope" . "all")) level sort-func filter-funcs)))
+      (insert (gitlab-api-org-data-all-pages "/issues"
+                                             "/projects/{project_id}/issues/{iid}"
+                                             "GET" '(("scope" . "all")) level sort-func filter-funcs))
+    (gitlab-api-org-data-all-pages "/issues" "/projects/{project_id}/issues/{iid}"
+                                   "GET" '(("scope" . "all")) level sort-func filter-funcs)))
 
 (defun gitlab-api-org-get-merge-requests (&optional level sort-func &rest filter-funcs)
   (interactive "P")
   (if (called-interactively-p 'any)
-      (insert (gitlab-api-org-data-all-pages "/merge_requests" "GET" '(("scope" . "all")) level sort-func filter-funcs))
-    (gitlab-api-org-data-all-pages "/merge_requests" "GET" '(("scope" . "all")) level sort-func filter-funcs)))
+      (insert (gitlab-api-org-data-all-pages "/merge_requests"
+                                             "/projects/{project_id}/merge_requests/{iid}"
+                                             "GET" '(("scope" . "all")) level sort-func filter-funcs))
+    (gitlab-api-org-data-all-pages "/merge_requests" "/projects/{project_id}/merge_requests/{iid}"
+                                   "GET" '(("scope" . "all")) level sort-func filter-funcs)))
 
 (defun gitlab-api-org-update-entry-at-point ()
   (interactive)
