@@ -69,4 +69,4 @@ and stored in the variable `org-prefix-format-compiled'."
                  `(format ,s ,@vars))))))))
 
 
-(provide 'ox-odt-bug)
+(provide 'org-agenda-bug)
