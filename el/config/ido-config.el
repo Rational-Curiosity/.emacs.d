@@ -347,8 +347,7 @@ Modified from `icomplete-completions'."
   (define-key ido-completion-map (kbd "M-a") 'ido-preview-prev))
 (advice-add 'ido-setup-completion-map :after 'ido-setup-completion-map-advice)
 
-(global-set-key (kbd "M-i") #'ido-occur-at-point)
-(global-set-key (kbd "M-I") #'ido-occur-from-isearch)
+(global-set-key (kbd "M-i") #'ido-occur-dwim)
 (global-set-key (kbd "C-x C-r") #'ido-recentf-open)
 
 

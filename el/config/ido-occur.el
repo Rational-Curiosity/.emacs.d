@@ -88,31 +88,28 @@ and from end of `BUFFER' to beginning of `BUFFER'."
   "Strip text properties from `TXT'."
   (set-text-properties 0 (length txt) nil txt) txt)
 
-(defvar ido-occur--line-number 0
-  "Buffer line.")
-
 (defun ido-occur--run (&optional query)
   "Yet another `occur' with `ido'.
 When non-nil, QUERY is the initial search pattern."
-  (unwind-protect
-      (progn
-        (setq ido-occur--line-number (line-number-at-pos))
-        (let* ((initial-column (current-column))
-               (line (ido-occur--strip-text-properties
+  (let ((initial-point (point))
+        (ido-occur--line-number (line-number-at-pos)))
+    (unwind-protect
+        (let* ((line (ido-occur--strip-text-properties
                       (ido-completing-read ido-occur--prompt
                                            (ido-occur--lines-as-list (current-buffer)
                                                                      ido-occur--line-number)
                                            nil
                                            nil
                                            query)))
-               (line-length (length line))
-               (new-column (if (<= line-length initial-column)
-                               line-length
-                             initial-column))
                (line-number (string-to-number (car (split-string line)))))
-          (forward-line (- line-number ido-occur--line-number))
-          (move-to-column new-column)))
-    (setq ido-occur--line-number 0)))
+          (if (< line-number 1)
+              (user-error "Wrong selection `%s' corresponds to line %s" line line-number)
+            (push-mark initial-point)
+            (setq initial-point nil)
+            (forward-line (- line-number ido-occur--line-number))
+            (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
+            (pulse-momentary-highlight-region (match-beginning 0) (match-end 0))))
+      (if initial-point (goto-char initial-point)))))
 
 (defun ido-preview ()
   (interactive)
@@ -143,9 +140,7 @@ When non-nil, QUERY is the initial search pattern."
 (defun ido-occur (&optional query)
   "Yet another `occur' with `ido'.
 When non-nil, QUERY is the initial search pattern."
-
   (interactive)
-
   ;; Because in original "Ido" matcher preserves candidates sort order.
   (when (fboundp 'ido-clever-match-disable) (ido-clever-match-disable))
   (cond ((bound-and-true-p ido-vertical-mode)
@@ -161,16 +156,22 @@ When non-nil, QUERY is the initial search pattern."
   (when (fboundp 'ido-clever-match-enable) (ido-clever-match-enable)))
 
 ;;;###autoload
-(defun ido-occur-at-point ()
+(defun ido-occur-dwim (arg)
   "Open `ido-occur' at point."
-  (interactive)
-  (ido-occur (if (symbol-at-point) (symbol-name (symbol-at-point)) "")))
-
-;;;###autoload
-(defun ido-occur-from-isearch ()
-  "Open `ido-occur' from `isearch'."
-  (interactive)
-  (ido-occur (if isearch-regexp isearch-string (regexp-quote isearch-string))))
+  (interactive "P")
+  (ido-occur (if arg
+                 (pcase arg
+                   ('(4) ido-text)
+                   ('(16) (if (eq isearch-regexp ido-enable-regexp)
+                              isearch-string
+                            (if ido-enable-regexp
+                                (regexp-quote isearch-string)
+                              isearch-string)))
+                   (_ arg))
+               (let ((symbol (symbol-at-point)))
+                 (if symbol
+                     (symbol-name symbol)
+                   "")))))
 
 
 (provide 'ido-occur)
