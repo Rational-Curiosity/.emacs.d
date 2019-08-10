@@ -10,7 +10,9 @@
 
 (setq modal-insert-cursor-type 'box
       modal-cursor-type 'hollow
-      modal-excluded-modes '(package-menu-mode
+      modal-excluded-modes '(buffer-menu-mode
+                             ibuffer-mode
+                             package-menu-mode
                              debugger-mode
                              dired-mode
                              calc-mode
