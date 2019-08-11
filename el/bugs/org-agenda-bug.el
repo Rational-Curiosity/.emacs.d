@@ -40,9 +40,9 @@ and stored in the variable `org-prefix-format-compiled'."
             (setq org-prefix-category-max-length
                   (let ((x (match-string 2 s)))
                     (save-match-data  ;; +
-                      (when (string-match "\\.[0-9]+" x)
+                      (when (string-match "\\.[0-9]+" x)                          ;; +
                         (string-to-number (substring (match-string 0 x) 1)))))))  ;; +
-;;                     (when (string-match-p "\\.[0-9]+" x)  ;; -
+;;                     (when (string-match-p "\\.[0-9]+" x)                       ;; -
 ;;                       (string-to-number (substring (match-string 0 x) 1))))))  ;; -
           (if (eq var 'eval)
               (setq varform `(format ,f (org-eval ,(read (match-string 4 s)))))

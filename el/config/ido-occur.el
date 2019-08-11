@@ -1,36 +1,4 @@
-;;; ido-occur.el --- Yet another `occur' with `ido'.
-
-;; Copyright (C) 2016 Danil <danil@kutkevich.org>.
-;; Author: Danil <danil@kutkevich.org>, Josuah Demangeon <sshbio>, sebasar
-;; Version: 0.2.0
-;; Package-Version: 20160820.1440
-;; Package-Requires: ((dash "2.13.0"))
-;; Keywords: inner buffer search
-;; URL: https://github.com/danil/ido-occur
-
-;;; Commentary:
-;; Yet another `occur' with `ido'.
-;; See the README.md for more details.
-
-;;; License:
-
-;; This file is not part of GNU Emacs.
-;; However, it is distributed under the same license.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;; Boston, MA 02110-1301, USA.
+;;; ido-occur.el --- Another `occur' with `ido'.
 
 ;;; Code:
 
@@ -99,7 +67,7 @@ When non-nil, QUERY is the initial search pattern."
                                            (ido-occur--lines-as-list (current-buffer)
                                                                      ido-occur--line-number)
                                            nil
-                                           nil
+                                           t
                                            query)))
                (line-number (string-to-number (car (split-string line)))))
           (if (< line-number 1)

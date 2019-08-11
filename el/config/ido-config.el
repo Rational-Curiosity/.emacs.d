@@ -338,13 +338,14 @@ Modified from `icomplete-completions'."
 (defun ido-recentf-open ()
   "Use `ido-completing-read' to find a recent file."
   (interactive)
-  (if (find-file (ido-completing-read "Find recent file: " recentf-list))
+  (if (find-file (ido-completing-read "Find recent file: " recentf-list nil t))
       (message "Opening file...")
     (message "Aborting")))
 
 ;;;;;;;;;;
 ;; smex ;;
 ;;;;;;;;;;
+(require 'smex)
 (smex-initialize)  ;; Can be omitted. This might cause a (minimal) delay
                    ;; when Smex is auto-initialized on its first run.
 
