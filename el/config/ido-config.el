@@ -49,6 +49,30 @@
 (require 'ido-at-point)
 (ido-at-point-mode)
 
+;;;;;;;;;;;;;;;;;;;;;;;
+;; Customs variables ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+(defcustom ido-decorations-require-match
+  '("{" "}" " | " " | ..." "(" ")" " (No match)"
+    " (Matched)" " (Not readable)" " (Too big)" " (Confirm)")
+  "List of strings used by Ido to display the alternatives in the minibuffer
+and match is required.
+There are between 11 and 13 elements in this list:
+1st and 2nd elements are used as brackets around the prospect list,
+3rd element is the separator between prospects (ignored if
+`ido-separator' is set),
+4th element is the string inserted at the end of a truncated list of prospects,
+5th and 6th elements are used as brackets around the common match string which
+can be completed using TAB,
+7th element is the string displayed when there are no matches, and
+8th element is displayed if there is a single match (and faces are not used),
+9th element is displayed when the current directory is non-readable,
+10th element is displayed when directory exceeds `ido-max-directory-size',
+11th element is displayed to confirm creating new file or buffer.
+12th and 13th elements (if present) are used as brackets around the sole
+remaining completion.  If absent, elements 5 and 6 are used instead."
+  :type '(repeat string)
+  :group 'ido)
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -58,6 +82,7 @@
   "Return the string that is displayed after the user's text.
 Modified from `icomplete-completions'."
   (let* ((comps ido-matches)
+         (ido-decorations (if ido-require-match ido-decorations-require-match ido-decorations))  ;; +
          (ind (and (consp (car comps)) (> (length (cdr (car comps))) 1)
                    ido-merged-indicator))
          first)
@@ -82,11 +107,14 @@ Modified from `icomplete-completions'."
     (cond ((null comps)
            (cond
             (ido-show-confirm-message
-             (or (nth 10 ido-decorations) " [Confirm]"))
+             ;; (or (nth 10 ido-decorations) " [Confirm]"))      ;; -
+             (nth 10 ido-decorations))                           ;; +
             (ido-directory-nonreadable
-             (or (nth 8 ido-decorations) " [Not readable]"))
+             ;; (or (nth 8 ido-decorations) " [Not readable]"))  ;; -
+             (nth 8 ido-decorations))                            ;; +
             (ido-directory-too-big
-             (or (nth 9 ido-decorations) " [Too big]"))
+             ;; (or (nth 9 ido-decorations) " [Too big]"))       ;; -
+             (nth 9 ido-decorations))                            ;; +
             (ido-report-no-match
              (nth 6 ido-decorations))  ;; [No match]
             (t "")))
@@ -154,7 +182,7 @@ Modified from `icomplete-completions'."
                   (concat (nth 4 ido-decorations)   ;; [ ... ]
                           (substring ido-common-match-string (length name))
                           (nth 5 ido-decorations)))
-              " [" (int-to-string (length ido-matches)) "]" ;; +
+              " " (nth 4 ido-decorations) (int-to-string (length ido-matches)) (nth 5 ido-decorations) ;; +
               ;; list all alternatives
               (nth 0 ido-decorations)  ;; { ... }
               alternatives
@@ -329,16 +357,21 @@ Modified from `icomplete-completions'."
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 ;; icomplete keys
 (define-key icomplete-minibuffer-map "\M-q" 'abort-recursive-edit)
-(define-key icomplete-minibuffer-map "\M-j" 'icomplete-force-complete-and-exit)
-(define-key icomplete-minibuffer-map "\M-f" 'icomplete-forward-completions)
-(define-key icomplete-minibuffer-map "\M-b" 'icomplete-backward-completions)
+(define-key icomplete-minibuffer-map "\M-j" [?\C-j])
+(define-key icomplete-minibuffer-map "\M-f" [?\C-.])
+(define-key icomplete-minibuffer-map "\M-b" [?\C-,])
 
+(defun ido-select-text-or-exit-minibuffer ()
+  (interactive)
+  (if ido-require-match
+      (ido-exit-minibuffer)
+    (ido-select-text)))
 ;; ido keys
 (defun ido-setup-completion-map-advice ()
   (define-key ido-completion-map "\M-q" 'abort-recursive-edit)
   (define-key ido-completion-map "\C-j" 'ido-exit-minibuffer)
   (define-key ido-completion-map "\M-j" 'ido-exit-minibuffer)
-  (define-key ido-completion-map (kbd "RET") 'ido-select-text)
+  (define-key ido-completion-map (kbd "RET") 'ido-select-text-or-exit-minibuffer)
   (define-key ido-completion-map (kbd "SPC") nil)
   (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
   (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)
