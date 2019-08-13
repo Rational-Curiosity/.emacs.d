@@ -663,7 +663,8 @@ there's a region, all lines that region covers will be duplicated."
 (defun kill-ring-insert ()
   (interactive)
   (let ((to_insert (completing-read "Yank : "
-                                    (cl-delete-duplicates kill-ring :test #'equal))))
+                                    (cl-delete-duplicates kill-ring :test #'equal)
+                                    nil t)))
     (when (and to_insert (region-active-p))
       ;; the currently highlighted section is to be replaced by the yank
       (delete-region (region-beginning) (region-end)))

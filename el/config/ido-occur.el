@@ -56,6 +56,10 @@ and from end of `BUFFER' to beginning of `BUFFER'."
   "Strip text properties from `TXT'."
   (set-text-properties 0 (length txt) nil txt) txt)
 
+(defun ido-occur--visible-momentary-highlight-region (beg end)
+  (mapc (lambda (overlay) (overlay-put overlay 'invisible nil)) (overlays-in beg end))
+  (pulse-momentary-highlight-region beg end))
+
 (defun ido-occur--run (&optional query)
   "Yet another `occur' with `ido'.
 When non-nil, QUERY is the initial search pattern."
@@ -76,7 +80,7 @@ When non-nil, QUERY is the initial search pattern."
             (setq initial-point nil)
             (forward-line (- line-number ido-occur--line-number))
             (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
-            (pulse-momentary-highlight-region (match-beginning 0) (match-end 0))))
+            (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0))))
       (if initial-point (goto-char initial-point)))))
 
 (defun ido-preview ()
@@ -85,13 +89,8 @@ When non-nil, QUERY is the initial search pattern."
     (let ((line-number (string-to-number (car (split-string (car ido-matches))))))
       (with-selected-window (minibuffer-selected-window)
         (forward-line (- line-number ido-occur--line-number))
-        (let ((start (point-at-bol))
-              (end (save-excursion
-                     (end-of-line)
-                     (when (not (eobp))
-                       (forward-char 1))
-                     (point))))
-          (pulse-momentary-highlight-region start end)))
+        (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
+        (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0)))
       (setq ido-occur--line-number line-number))))
 
 (defun ido-preview-prev ()
