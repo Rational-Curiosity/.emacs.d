@@ -61,14 +61,16 @@
 (defun gitlab-api-data-all-pages (resource &optional method params)
   (map-put params "per_page" gitlab-api-per-page)
   (let ((page 1) data-page data)
-    (map-put params "page" (int-to-string page))
+    (map-put params "page" (int-to-string page) 'string-equal)
     (setq data-page (gitlab-api-data resource method params)
           data data-page)
     (while (not (seq-empty-p data-page))
       (setq page (1+ page))
-      (map-put params "page" (int-to-string page))
+      (map-put params "page" (int-to-string page) 'string-equal)
       (setq data-page (gitlab-api-data resource method params)
             data (vconcat data data-page)))
+    (message "%s %s %i items in %i pages with %i items per page"
+             method resource (length data) (1- page) gitlab-api-per-page)
     data))
 
 (defun gitlab-api-template (resource &optional alist method params)
@@ -128,11 +130,22 @@
         alist)
   template)
 
+;; (defun gitlab-api--assoc-keys (keys alist)
+;;   "Recursively find KEYS in ALIST."
+;;   (while (and (listp alist) keys)
+;;     (setq alist (cdr (assoc (pop keys) alist))))
+;;   (if keys nil alist))
+
 (defun gitlab-api--assoc-keys (keys alist)
   "Recursively find KEYS in ALIST."
-  (while (and (listp alist) keys)
-    (setq alist (cdr (assoc (pop keys) alist))))
-  (if keys nil alist))
+  (if keys
+      (cond
+       ((listp alist)
+        (gitlab-api--assoc-keys (cdr keys) (cdr (assoc (car keys) alist))))
+       ((vectorp alist)
+        (mapcar (lambda (al)
+                  (gitlab-api--assoc-keys (cdr keys) (cdr (assoc (car keys) al)))) alist)))
+    alist))
 
 (defun gitlab-api--convert-state (state type)
   (pcase state
@@ -160,6 +173,8 @@
     ("gigas_api_panel"    "APN")
     ("gigas_api"          "API")
     ("gigas_mapp"         "MAP")
+    ("gigas_executor"     "EX")
+    ("Control Panel"      "CPN")
     (_ project-name)))
 
 (defun gitlab-api--convert-to-org (data keys &optional level resource)
@@ -169,7 +184,7 @@
                "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
                (or (assoc-default 'web_url data) resource) t))
         (project (gitlab-api-get-project-name (assoc-default 'project_id data))))
-    (let ((entry (format "%s %s %s  :%s:%s:"
+    (let ((entry (format "%s %s %-64s  :%s:%s:"
                          (make-string level ?*)
                          (gitlab-api--convert-state (assoc-default 'state data) type)
                          (assoc-default 'title data)
@@ -262,6 +277,7 @@
                                              (author username)
                                              (assignee id)
                                              (assignee username)
+                                             (assignees username)
                                              source_project_id
                                              target_project_id
                                              labels
@@ -315,11 +331,26 @@
            "/projects/{project_id}/merge_requests/{iid}"
            level sort-func filter-funcs)))
 
-(defun gitlab-api-org-get-from-redmine-id (level redmine-id)
-  (interactive "p\nnRedmine issue id")
+(defun gitlab-api-org-get-from-redmine-id (level &optional redmine-id property)
+  (interactive (list (prefix-numeric-value current-prefix-arg)
+                     (completing-read "Redmine issue id: "
+                                      (mapcar
+                                       (lambda (str-or-url) (replace-regexp-in-string "^https?://.*/" "" str-or-url))
+                                       (remove
+                                        nil
+                                        (mapcar
+                                         (lambda (key) (org-entry-get nil key))
+                                         '("ORIGIN" "BUG_IN"))))))
+               ;; "p\nMRedmine issue id: "
+               )
   (let* ((issues (gitlab-api-data-all-pages
                   "/search" "GET"
-                  `(("scope" . "issues") ("search" . ,(replace-regexp-in-string "^https?://.*/" "" redmine-id)))))
+                  `(("scope" . "issues")
+                    ("search" . ,(concat
+                                  "\""
+                                  (or redmine-id
+                                      (replace-regexp-in-string "^https?://.*/" "" (org-entry-get nil (or property "ORIGIN"))))
+                                  "\"")))))
          (result (concat
                   (gitlab-api-org-convert issues "/projects/{project_id}/issues/{iid}" level)
                   (mapconcat (lambda (issue)
