@@ -15,16 +15,24 @@
 
 (message "Importing docker-config")
 
-(with-eval-after-load 'magit-popup
- (magit-define-popup docker-container-logs-popup
-  "Popup for showing containers logs."
-  'docker-container
-  :man-page "docker-logs"
-  :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
-  :options  '((?T "Tail" "--tail="))
-  :actions  '((?L "Logs" docker-container-logs-selection))
-  :default-arguments '("-f" "-t" "--tail=150")
-  :setup-function #'docker-utils-setup-popup))
+(with-eval-after-load 'docker-container
+  (setq docker-container-logs-popup
+        (list :variable docker-container-logs-arguments
+              :man-page "docker-logs"
+              :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
+              :options  '((?T "Tail" "--tail="))
+              :actions  '((?L "Logs" docker-container-logs-selection))
+              :default-arguments '("-f" "-t" "--tail=150")
+              :setup-function #'docker-utils-setup-popup))
+  (magit-define-popup docker-container-logs-popup
+    "Popup for showing containers logs."
+    'docker-container
+    :man-page "docker-logs"
+    :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
+    :options  '((?T "Tail" "--tail="))
+    :actions  '((?L "Logs" docker-container-logs-selection))
+    :default-arguments '("-f" "-t" "--tail=150")
+    :setup-function #'docker-utils-setup-popup))
 
 ;;;;;;;;;;
 ;; Keys ;;
@@ -42,7 +50,7 @@
       (define-key map (kbd "M-g l") #'avy-goto-line)
       (define-key map (kbd "M-g w") #'avy-goto-word-1)
       (define-key map (kbd "M-g W") #'avy-goto-word-0)
-      (define-key map (kbd "z")   #'avy-goto-char-timer)
+      (define-key map (kbd "z")     #'avy-goto-char-timer)
       (define-key map (kbd "M-g k") #'link-hint-open-link)
       (define-key map (kbd "M-g K") #'link-hint-copy-link))))
 
