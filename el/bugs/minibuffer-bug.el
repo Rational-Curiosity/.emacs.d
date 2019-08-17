@@ -14,9 +14,9 @@
           (let ((res (condition-case raised-error
                          (funcall fun)
                        (error
-                        (message "completion-capf fun backtrace:")
-                        (backtrace)
-                        (message "completion-capf fun error: %s" raised-error)
+                        ;; (message "completion-capf fun backtrace:")
+                        ;; (backtrace)
+                        ;; (message "completion-capf fun error: %s" raised-error)
                         nil))))
             (cond
              ((and (consp res) (not (functionp res)))
