@@ -69,8 +69,8 @@
       (map-put params "page" (int-to-string page) 'string-equal)
       (setq data-page (gitlab-api-data resource method params)
             data (vconcat data data-page)))
-    (message "%s %s %i items in %i pages with %i items per page"
-             method resource (length data) (1- page) gitlab-api-per-page)
+    (message "%s %s %s: %i items"
+             method resource params (length data) (1- page) gitlab-api-per-page)
     data))
 
 (defun gitlab-api-template (resource &optional alist method params)
@@ -167,14 +167,19 @@
     ("comfy-lib"          "CMF")
     ("managers-lib"       "MGR")
     ("bestof-lib"         "BOF")
+    ("gigas-errors-pkg"   "ERR")
     ("gigas_hv_failover"  "HFO")
     ("gigas_kudeiro"      "KUD")
     ("gigas_apiproxy"     "AXY")
+    ("API Proxy"          "AXY")
     ("gigas_api_panel"    "APN")
     ("gigas_api"          "API")
+    ("MApp"               "MAP")
     ("gigas_mapp"         "MAP")
+    ("gigas_mercury"      "MCY")
     ("gigas_executor"     "EX")
     ("Control Panel"      "CPN")
+    ("Hostbill"           "HBL")
     (_ project-name)))
 
 (defun gitlab-api--convert-to-org (data keys &optional level resource)
@@ -307,7 +312,8 @@
 
 (defun gitlab-api-org-get-issues (level &optional params sort-func &rest filter-funcs)
   (interactive "p")
-  (map-put params "scope" "all")
+  (map-put params "scope" "all" 'string-equal)
+  (map-put params "state" "all" 'string-equal)
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
                      (gitlab-api-data-all-pages "/issues" "GET" params)
@@ -320,7 +326,8 @@
 
 (defun gitlab-api-org-get-merge-requests (level &optional params sort-func &rest filter-funcs)
   (interactive "p")
-  (map-put params "scope" "all")
+  (map-put params "scope" "all" 'string-equal)
+  (map-put params "state" "all" 'string-equal)
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
                      (gitlab-api-data-all-pages "/merge_requests" "GET" params)
@@ -332,7 +339,7 @@
            level sort-func filter-funcs)))
 
 (defun gitlab-api-org-get-from-redmine-id (level &optional redmine-id property)
-  (interactive (list (prefix-numeric-value current-prefix-arg)
+  (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
                      (completing-read "Redmine issue id: "
                                       (mapcar
                                        (lambda (str-or-url) (replace-regexp-in-string "^https?://.*/" "" str-or-url))
@@ -343,14 +350,19 @@
                                          '("ORIGIN" "BUG_IN"))))))
                ;; "p\nMRedmine issue id: "
                )
+  (setq level (or level (1+ (org-outline-level)))
+        redmine-id (if (and (stringp redmine-id) (not (string-empty-p redmine-id)))
+                       redmine-id
+                     (replace-regexp-in-string "^https?://.*/" "" (org-entry-get nil (or property "ORIGIN")))))
   (let* ((issues (gitlab-api-data-all-pages
-                  "/search" "GET"
-                  `(("scope" . "issues")
+                  "/issues" "GET"
+                  `(("scope" . "all")
+                    ("state" . "all")
                     ("search" . ,(concat
                                   "\""
-                                  (or redmine-id
-                                      (replace-regexp-in-string "^https?://.*/" "" (org-entry-get nil (or property "ORIGIN"))))
-                                  "\"")))))
+                                  redmine-id
+                                  "\""))
+                    ("in" . "description"))))
          (result (concat
                   (gitlab-api-org-convert issues "/projects/{project_id}/issues/{iid}" level)
                   (mapconcat (lambda (issue)
@@ -359,7 +371,9 @@
                                   (gitlab-api-data-all-pages
                                    (concat "/projects/" (int-to-string (cdr (assoc 'project_id issue))) "/merge_requests")
                                    "GET"
-                                   `(("search" . ,(concat "\"" issue-id "\"")) ("in" . "description")))
+                                   `(("scope" . "all")
+                                     ("state" . "all")
+                                     ("search" . ,(concat "\"" issue-id "\"")) ("in" . "description")))
                                   "/projects/{project_id}/merge_requests/{iid}" level nil
                                   (lambda (data)
                                     (string-match-p (concat issue-id "\\([ \t\n]\\|$\\)") (cdr (assoc 'description data)))))))

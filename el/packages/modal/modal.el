@@ -56,7 +56,7 @@ variable should follow the same conventions."
           (cons  :tag "display a horizontal bar cursor with given height"
                  (const hbar (integer :tag "height of cursor")))))
 
-(defcustom modal-idle-secs 2
+(defcustom modal-idle-secs 1
   "Modal mode enabled during `modal-idle-secs' seconds")
 
 ;;;###autoload
@@ -164,11 +164,11 @@ This is used by `modal-global-mode'."
 
 (defun modal-global-mode-idle (secs)
   (interactive "P")
-  (unless modal-mode
-    (let ((modal--original-buffer (current-buffer)))
-      (modal-global-mode 1))
+  (let ((new-state (if modal-mode 0 1))
+        (modal--original-buffer (current-buffer)))
+    (modal-global-mode new-state)
     (run-with-idle-timer (if (and secs (< 0 secs)) secs modal-idle-secs)
-                         nil #'modal-global-mode 0)))
+                         nil #'modal-global-mode (- 1 new-state))))
 
 (defun modal-global-mode-force ()
   (interactive)

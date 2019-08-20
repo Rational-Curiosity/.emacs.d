@@ -157,6 +157,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c w _") #'winner-redo)
 (define-key modal-mode-map (kbd "c x n") (kbd "C-c C-x C-n"))  ;; org-next-link
 (define-key modal-mode-map (kbd "c x p") (kbd "C-c C-x C-p"))  ;; org-previous-link
+(define-key modal-mode-map (kbd "c x s") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
 ;; c - ] command prefix
 (modal-define-kbd "d" "<deletechar>" "delete-forward-char")
 (modal-define-kbd "e" "C-e" "move-end-of-line")
@@ -233,12 +234,13 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-kbd "x o" "C-x o" "other-window")
 (define-key modal-mode-map (kbd "x O") #'ff-find-other-file)
 (modal-define-kbd "x p" "C-x C-p" "mark-page")
-(modal-define-kbd "x s" "C-x C-s" "save-buffer")
-(modal-define-kbd "x S" "C-x s" "save-some-buffers")
+(modal-define-kbd "x P s" "C-x p s" "bookmark-save")
 (modal-define-kbd "x r" "C-x C-r" "recentf-open")
 (modal-define-kbd "x R m" "C-x r m" "bookmark-set")
 (modal-define-kbd "x R b" "C-x r b" "bookmark-jump")
 (modal-define-kbd "x R l" "C-x r l" "list-bookmarks")
+(modal-define-kbd "x s" "C-x C-s" "save-buffer")
+(modal-define-kbd "x S" "C-x s" "save-some-buffers")
 (modal-define-kbd "x u" "C-x C-u" "upcase-region")
 (define-key modal-mode-map (kbd "x v =") #'magit-diff)
 (define-key modal-mode-map (kbd "x v b") #'magit-branch)
@@ -298,8 +300,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;;;;;;;;;;
 ;; new quit bind ;;
 ;;;;;;;;;;;;;;;;;;;
-(define-key query-replace-map "\M-q" 'quit)  ;; read-event
-(define-key function-key-map "\M-q" "\C-g")  ;; read-key
+(define-key query-replace-map "\M-q" 'quit)          ;; read-event
+(define-key function-key-map "\M-q" "\C-g")          ;; read-key
+(define-key isearch-mode-map "\M-q" 'isearch-abort)  ;; isearch-mode
 ;; minibuffer keys
 (define-key minibuffer-local-map "\M-q" 'abort-recursive-edit)
 (define-key minibuffer-local-ns-map "\M-q" 'abort-recursive-edit)
@@ -309,6 +312,16 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key minibuffer-local-filename-completion-map "\M-q" 'abort-recursive-edit)
 (global-set-key "\M-q" 'keyboard-quit)
 
+(define-key help-mode-map (kbd "S-SPC") nil)
+(define-key messages-buffer-mode-map (kbd "S-SPC") nil)
+(with-eval-after-load 'compile
+  (define-key compilation-mode-map (kbd "S-SPC") nil))
+(with-eval-after-load 'magit-mode
+  (define-key magit-mode-map (kbd "S-SPC") nil))
+(with-eval-after-load 'vc-git
+  (define-key vc-git-log-view-mode-map (kbd "S-SPC") nil))
+(with-eval-after-load 'bookmark
+  (define-key bookmark-bmenu-mode-map (kbd "S-SPC") nil))
 (global-set-key (kbd "S-SPC") #'modal-global-mode-idle)
 
 (modal-global-mode 1)

@@ -39,7 +39,7 @@ and stored in the variable `org-prefix-format-compiled'."
                   (floor (abs (string-to-number (match-string 2 s)))))
             (setq org-prefix-category-max-length
                   (let ((x (match-string 2 s)))
-                    (save-match-data  ;; +
+                    (save-match-data                                              ;; +
                       (when (string-match "\\.[0-9]+" x)                          ;; +
                         (string-to-number (substring (match-string 0 x) 1)))))))  ;; +
 ;;                     (when (string-match-p "\\.[0-9]+" x)                       ;; -
