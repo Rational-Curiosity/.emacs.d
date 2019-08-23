@@ -15,9 +15,18 @@
 
 (defun assoc-keys (keys alist &optional test-fun)
   "Recursively find KEYS in ALIST."
-  (while (and (listp alist) keys)
-    (setq alist (assoc (pop keys) alist test-fun)))
-  (if keys nil alist))
+  (if keys
+      (cond
+       ((listp alist)
+        (assoc-keys (cdr keys) (cdr (assoc (car keys) alist test-fun)) test-fun))
+       ((vectorp alist)
+        (mapcar (lambda (al)
+                  (assoc-keys (cdr keys) (cdr (assoc (car keys) al test-fun)) test-fun)) alist)))
+    alist))
+
+(defun eval-string (string)
+  "Evaluate elisp code stored in a string."
+  (eval (car (read-from-string string))))
 
 (require 'cl-lib)
 ;; [ get current function name

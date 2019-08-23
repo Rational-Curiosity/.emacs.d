@@ -30,6 +30,9 @@
 ;;; Code:
 (require 'request)
 (require 'map)
+(require 'json)
+
+(require 'config-lib)
 
 (defcustom gitlab-api-token ""
   "Private-Token")
@@ -59,7 +62,7 @@
    (gitlab-api-request resource method params)))
 
 (defun gitlab-api-data-all-pages (resource &optional method params)
-  (map-put params "per_page" gitlab-api-per-page)
+  (map-put params "per_page" gitlab-api-per-page 'string-equal)
   (let ((page 1) data-page data)
     (map-put params "page" (int-to-string page) 'string-equal)
     (setq data-page (gitlab-api-data resource method params)
@@ -70,7 +73,7 @@
       (setq data-page (gitlab-api-data resource method params)
             data (vconcat data data-page)))
     (message "%s %s %s: %i items"
-             method resource params (length data) (1- page) gitlab-api-per-page)
+             method resource params (length data))
     data))
 
 (defun gitlab-api-template (resource &optional alist method params)
@@ -136,17 +139,6 @@
 ;;     (setq alist (cdr (assoc (pop keys) alist))))
 ;;   (if keys nil alist))
 
-(defun gitlab-api--assoc-keys (keys alist)
-  "Recursively find KEYS in ALIST."
-  (if keys
-      (cond
-       ((listp alist)
-        (gitlab-api--assoc-keys (cdr keys) (cdr (assoc (car keys) alist))))
-       ((vectorp alist)
-        (mapcar (lambda (al)
-                  (gitlab-api--assoc-keys (cdr keys) (cdr (assoc (car keys) al)))) alist)))
-    alist))
-
 (defun gitlab-api--convert-state (state type)
   (pcase state
     ("opened" (pcase type
@@ -159,7 +151,7 @@
                 (_ (concat state "/" type))))
     ("locked" "HOLD")
     ("merged" "DONE")
-    (_ state)))
+    (_ (concat state "/" type))))
 
 (defun gitlab-api--abbrev-project-name (project-name)
   (pcase project-name
@@ -182,6 +174,16 @@
     ("Hostbill"           "HBL")
     (_ project-name)))
 
+(defun gitlab-api--format-field (field value indent)
+  (concat indent (format "%-9s  %s" (concat ":" field ":")
+                         (if (stringp value)
+                             (replace-regexp-in-string "\r?\n"
+                                                       (concat
+                                                        indent
+                                                        (format "%-9s " (concat ":" field "+:")))
+                                                       value t)
+                           value))))
+
 (defun gitlab-api--convert-to-org (data keys &optional level resource)
   (setq level (or level 1))
   (let ((indent (concat "\n" (make-string (1+ level) ?\ )))
@@ -200,22 +202,16 @@
                           (and project (concat indent ":PROJECT:  " project))))
       (dolist (key keys)
         (if (listp key)
-            (let ((value (gitlab-api--assoc-keys key data)))
+            (let ((value (assoc-keys key data)))
               (if value
                   (setq entry (concat
                                entry
-                               indent
-                               (format "%-10s %s"
-                                       (concat ":" (mapconcat 'symbol-name key ".") ":")
-                                       value)))))
+                               (gitlab-api--format-field (mapconcat 'symbol-name key ".") value indent)))))
           (let ((value (assoc-default key data)))
             (when value
               (setq entry (concat
                            entry
-                           indent
-                           (format "%-10s %s"
-                                   (concat ":" (symbol-name key) ":")
-                                   value)))))))
+                           (redmine-api--format-field (symbol-name key) value indent)))))))
       (replace-regexp-in-string "\n\\*" "\n.*" (concat entry indent ":END:\n\n") t 'literal))))
 
 (defun gitlab-api-default-sort (a b)
@@ -255,7 +251,7 @@
                                                          ((symbolp arg)
                                                           (list 'assoc-default (pop args) 'a))
                                                          ((listp arg)
-                                                          (list 'gitlab-api--assoc-keys (pop args) 'a))
+                                                          (list 'assoc-keys (pop args) 'a))
                                                          (t (pop args)))))))
                                         cond-args))))))
                 conds))))
@@ -395,7 +391,7 @@
             (let* ((name (downcase (car property)))
                    (value (cdr property))
                    (resource-data (if (string-match-p "\\." name)
-                                      (gitlab-api--assoc-keys (mapcar 'intern (split-string name "\\."))
+                                      (assoc-keys (mapcar 'intern (split-string name "\\."))
                                                               resource-datas)
                                     (cdr (assoc (intern name) resource-datas)))))
               (when resource-data
