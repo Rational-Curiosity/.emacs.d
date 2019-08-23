@@ -63,21 +63,20 @@ cancel the use of the current buffer (for special-purpose buffers)."
 
 ;; ' (handy as self-inserting symbol)
 ;; " (handy as self-inserting symbol)
-(modal-define-kbd "(" "C-(" "sp-rewrap-sexp-lc")
-(modal-define-kbd ")" "C-)" "sp-unwrap-sexp-lc")
-(define-key modal-mode-map "ª" #'er/expand-region)
+(modal-define-kbd "(" "C-(" "sp-rewrap-sexp-lc" t)
+(modal-define-kbd ")" "C-)" "sp-unwrap-sexp-lc" t)
 (define-key modal-mode-map "&" #'rotate-or-inflection)
 (define-key modal-mode-map "?" #'goto-last-change-reverse)
 (define-key modal-mode-map "/" #'goto-last-change)
 ;; (modal-define-kbd "." "M-." "definition-at-point")
-(modal-define-kbd ";" "M-;" "comment-dwim")
+(modal-define-kbd ";" "M-;" "comment-dwim" t)
 (modal-define-kbd ":" "M-:" "eval-expression")
 (define-key modal-mode-map "+" #'fold-dwim)
-(modal-define-kbd "-" "C-_" "undo-tree-undo")
-(modal-define-kbd "_" "M-_" "undo-tree-redo")
+(modal-define-kbd "-" "C-_" "undo-tree-undo" t)
+(modal-define-kbd "_" "M-_" "undo-tree-redo" t)
 ;; (modal-define-kbd "," "M-," "declaration-at-point")
-(modal-define-kbd "%" "M-%" "query-replace")
-(modal-define-kbd "*" "C-*" "duplicate-current-line-or-region")
+(modal-define-kbd "%" "M-%" "query-replace" t)
+(modal-define-kbd "*" "C-*" "duplicate-current-line-or-region" t)
 (modal-define-kbd "<" "M-<" "beginning-of-buffer")
 (modal-define-kbd ">" "M->" "end-of-buffer")
 (modal-define-kbd "SPC" "C-SPC" "set-mark-command")
@@ -112,7 +111,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c e Q") #'er/mark-outside-quotes)
 (define-key modal-mode-map (kbd "c e p") #'er/mark-inside-pairs)
 (define-key modal-mode-map (kbd "c e P") #'er/mark-outside-pairs)
-(define-key modal-mode-map (kbd "c f") (kbd "C-c C-f"))
+(define-key modal-mode-map (kbd "c f") (kbd "C-c C-f"))  ;; org-forward-heading-same-level
 (define-key modal-mode-map (kbd "c F") (kbd "C-c M-f"))  ;; org-next-block
 (define-key modal-mode-map (kbd "c i s") #'spanish-dictionary)
 (define-key modal-mode-map (kbd "c i e") #'english-dictionary)
@@ -159,7 +158,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "c x p") (kbd "C-c C-x C-p"))  ;; org-previous-link
 (define-key modal-mode-map (kbd "c x s") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
 ;; c - ] command prefix
-(modal-define-kbd "d" "<deletechar>" "delete-forward-char")
+(modal-define-kbd "d" "<deletechar>" "delete-forward-char" t)
 (modal-define-kbd "e" "C-e" "move-end-of-line")
 (modal-define-kbd "f" "C-f" "forward-char")
 ;; g - [ prefix
@@ -186,20 +185,20 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "h v") #'describe-variable)
 ;; h - ] prefix
 ;; i - reserved
-(modal-define-kbd "j" "C-j" "electric-newline-and-maybe-indent")
-(modal-define-kbd "k" "C-k" "kill-line")
+(modal-define-kbd "j" "C-j" "electric-newline-and-maybe-indent" t)
+(modal-define-kbd "k" "C-k" "kill-line" t)
 (modal-define-kbd "l" "C-l" "recenter-top-bottom")
-(modal-define-kbd "m" "C-m" "newline")
+(modal-define-kbd "m" "C-m" "newline" t)
 (modal-define-kbd "n" "C-n" "next-line")
-(modal-define-kbd "o" "C-o" "open-line")
+(modal-define-kbd "o" "C-o" "open-line" t)
 (modal-define-kbd "p" "C-p" "previous-line")
-(modal-define-kbd "q" "C-q" "quoted-insert")
+(modal-define-kbd "q" "C-q" "quoted-insert" t)
 (modal-define-kbd "r" "C-r" "isearch-backward")
 (modal-define-kbd "s" "C-s" "isearch-forward")
-(modal-define-kbd "t" "C-t" "transpose-chars")
+(modal-define-kbd "t" "C-t" "transpose-chars" t)
 ;; u - reserved
 (modal-define-kbd "v" "C-v" "scroll-up-command")
-(modal-define-kbd "w" "C-w" "kill-region")
+(modal-define-kbd "w" "C-w" "kill-region" t)
 ;; x - [ command prefix
 (modal-define-kbd "x TAB" "C-x TAB" "indent-rigidly")
 (modal-define-kbd "x RET" "C-x C-o" "delete-blank-lines")
@@ -280,7 +279,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map "Q" "C-M-q")  ;; prog-indent-sexp
 (modal-define-kbd "R" "C-M-r" "isearch-backward-regexp")
 (modal-define-kbd "S" "C-M-s" "isearch-forward-regexp")
-(modal-define-kbd "T" "C-M-t" "transpose-sexps")
+(modal-define-kbd "T" "C-M-t" "transpose-sexps" t)
 (modal-define-kbd "U" "C-M-u" "backward-up-list")
 (modal-define-kbd "V" "C-M-v" "scroll-other-window")
 (modal-define-kbd "W" "C-M-w" "append-next-kill")
@@ -312,18 +311,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key minibuffer-local-filename-completion-map "\M-q" 'abort-recursive-edit)
 (global-set-key "\M-q" 'keyboard-quit)
 
-(define-key help-mode-map (kbd "S-SPC") nil)
-(define-key messages-buffer-mode-map (kbd "S-SPC") nil)
-(with-eval-after-load 'compile
-  (define-key compilation-mode-map (kbd "S-SPC") nil))
-(with-eval-after-load 'magit-mode
-  (define-key magit-mode-map (kbd "S-SPC") nil))
-(with-eval-after-load 'vc-git
-  (define-key vc-git-log-view-mode-map (kbd "S-SPC") nil))
-(with-eval-after-load 'bookmark
-  (define-key bookmark-bmenu-mode-map (kbd "S-SPC") nil))
-(global-set-key (kbd "S-SPC") #'modal-global-mode-idle)
-
+;;;;;;;;;;;;;;;;;;;;;;
+;; Globally enabled ;;
+;;;;;;;;;;;;;;;;;;;;;;
 (modal-global-mode 1)
 
 

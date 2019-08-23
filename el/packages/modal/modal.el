@@ -72,7 +72,7 @@ This variable is considered when Modal is enabled globally via
   "This is Modal mode map, used to translate your keys.")
 
 ;;;###autoload
-(defun modal-define-key (actual-key target-key &optional name)
+(defun modal-define-key (actual-key target-key &optional name insertp)
   "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
   (let ((sname (make-symbol (or name (key-description target-key))))
         (docstring (format "`%s' is called through an alias which translates %s into %s."
@@ -88,7 +88,13 @@ This variable is considered when Modal is enabled globally via
             (interactive)
             (cl-some (lambda (keymap)
                        (unless (eq keymap modal-mode-map)
-                         (let ((binding (lookup-key keymap ,target-key)))
+                         (let ((binding ,(if insertp
+                                             `(lookup-key
+                                               keymap
+                                               (if buffer-read-only
+                                                   ,actual-key
+                                                 ,target-key))
+                                           `(lookup-key keymap ,target-key))))
                            (when (commandp binding)
                              (setq real-this-command binding
                                    this-original-command binding
@@ -99,12 +105,12 @@ This variable is considered when Modal is enabled globally via
           ,docstring)))))
 
 ;;;###autoload
-(defun modal-define-kbd (actual-kbd target-kbd &optional name)
+(defun modal-define-kbd (actual-kbd target-kbd &optional name insertp)
   "Register translation from ACTUAL-KBD to TARGET-KBD with optional NAME.
 
 Arguments are accepted in in the format used for saving keyboard
 macros (see `edmacro-mode')."
-  (modal-define-key (kbd actual-kbd) (kbd target-kbd) (or name target-kbd)))
+  (modal-define-key (kbd actual-kbd) (kbd target-kbd) (or name target-kbd) insertp))
 
 ;;;###autoload
 (defun modal-remove-key (key)
@@ -167,7 +173,9 @@ This is used by `modal-global-mode'."
   (let ((new-state (if modal-mode 0 1))
         (modal--original-buffer (current-buffer)))
     (modal-global-mode new-state)
-    (run-with-idle-timer (if (and secs (< 0 secs)) secs modal-idle-secs)
+    (run-with-idle-timer (if (and (integerp secs) (< 0 secs))
+                             secs
+                           modal-idle-secs)
                          nil #'modal-global-mode (- 1 new-state))))
 
 (defun modal-global-mode-force ()
@@ -175,6 +183,14 @@ This is used by `modal-global-mode'."
   (unless modal-mode
     (let ((modal--original-buffer (current-buffer)))
       (modal-global-mode 1))))
+
+(defun modal-global-mode-toggle (secs)
+  (interactive "P")
+  (if secs
+      (modal-global-mode-idle secs)
+    (if modal-mode
+        (modal-global-mode 0)
+      (modal-global-mode-force))))
 
 ;; advices
 (defun modal--input-function-advice (fnc key)
@@ -185,12 +201,11 @@ Otherwise use `list'."
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
 ;; keys
-(global-set-key (kbd "º") #'modal-global-mode-force)
-(define-key modal-mode-map (kbd "º") #'self-insert-command)
-(define-key modal-mode-map "i" (lambda ()
-                                 (interactive)
-                                 (modal-global-mode 0)))
 (modal-define-kbd "u" "C-u" "universal-argument")
+(global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
+
+;; Make compatible with other modules
+(define-key special-mode-map (kbd "S-SPC") nil)  ;; simple.el
 
 
 (provide 'modal)
