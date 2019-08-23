@@ -16,8 +16,9 @@
 (message "Importing docker-config")
 
 (with-eval-after-load 'docker-container
-  (setq docker-container-logs-popup
-        (list :variable docker-container-logs-arguments
+  (setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
+        docker-container-logs-popup
+        (list :variable 'docker-container-logs-arguments
               :man-page "docker-logs"
               :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
               :options  '((?T "Tail" "--tail="))
