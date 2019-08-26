@@ -28,6 +28,27 @@
   "Evaluate elisp code stored in a string."
   (eval (car (read-from-string string))))
 
+(defun keymaps-with-binding (key)
+  (let (keymaps)
+    (mapatoms (lambda (ob) (if (boundp ob)
+                          (let ((keymap (symbol-value ob)))
+                            (if (keymapp keymap)
+                                (let ((m (lookup-key keymap key)))
+                                  (if (and m (or (symbolp m) (keymapp m)))
+                                      (push keymap keymaps)))))))
+              obarray)
+    keymaps))
+
+(defun locate-key-binding (key)
+  "Determine keymaps KEY is defined"
+  (interactive "kPress key: ")
+  (let ((key-str (key-description key)))
+    (mapatoms (lambda (ob) (when (and (boundp ob) (keymapp (symbol-value ob)))
+                        (let ((m (lookup-key (symbol-value ob) key)))
+                          (when m
+                            (message "key: %s, keymap: %S, bind: %s" key-str ob m)))))
+              obarray)))
+
 (require 'cl-lib)
 ;; [ get current function name
 ;; thanks to: https://emacs.stackexchange.com/a/2312
