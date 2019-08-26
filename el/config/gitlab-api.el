@@ -43,6 +43,13 @@
 (defcustom gitlab-api-per-page 100
   "Pagination")
 
+(defcustom gitlab-api-debug nil
+  "Debug")
+
+(defun gitlab-api-toggle-debug ()
+  (interactive)
+  (setq gitlab-api-debug (not gitlab-api-debug)))
+
 (defvar gitlab-api-projects-alist nil)
 
 (defun gitlab-api-request (resource &optional method params)
@@ -72,15 +79,24 @@
       (map-put params "page" (int-to-string page) 'string-equal)
       (setq data-page (gitlab-api-data resource method params)
             data (vconcat data data-page)))
+    (if gitlab-api-debug (let ((item-count 0))
+                           (mapc (lambda (item)
+                                   (message "  Item %i" (cl-incf item-count))
+                                   (mapc (lambda (prop)
+                                           (message "    %s" prop)) item))
+                                 data)))
     (message "%s %s %s: %i items"
              method resource params (length data))
     data))
 
 (defun gitlab-api-template (resource &optional alist method params)
-  (gitlab-api-data (if alist
-                       (gitlab-api--fill-template resource alist)
-                     resource)
-                   method params))
+  (setq resource (if alist
+                     (gitlab-api--fill-template resource alist)
+                   resource))
+  (let ((data (gitlab-api-data resource method params)))
+    (if gitlab-api-debug (mapc (lambda (prop) (message "    %s" prop)) data))
+    (message "%s %s %s: %i properties" method resource params (length data))
+    data))
 
 (defun gitlab-api-template-all-pages (resource &optional alist method params)
   (gitlab-api-data-all-pages (if alist
@@ -386,7 +402,9 @@
                 "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
                 (or (assoc-default "web_url" properties)
                     (assoc-default "RESOURCE" properties)) t))
-         (resource-datas (gitlab-api-template (cdr (assoc "RESOURCE" properties)) properties "GET")))
+         (resource-datas (gitlab-api-template (cdr (assoc "RESOURCE" properties)) properties "GET"
+                                              '(("scope" . "all")
+                                                ("state" . "all")))))
     (mapc (lambda (property)
             (let* ((name (downcase (car property)))
                    (value (cdr property))
@@ -395,9 +413,13 @@
                                                               resource-datas)
                                     (cdr (assoc (intern name) resource-datas)))))
               (when resource-data
-                (let ((data (if (stringp resource-data) resource-data (format "%s" resource-data))))
-                  (unless (string-equal value data)
-                    (org-entry-put nil name data)
+                (let ((data (replace-regexp-in-string
+                             "\r" ""
+                             (if (stringp resource-data)
+                                 resource-data
+                               (format "%s" resource-data)) t t)))
+                  (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
+                    (org-entry-put-multiline-property nil name data)
                     (pcase name
                       ("state" (org-entry-put nil "TODO" (gitlab-api--convert-state data type)))
                       ("project_id" (org-entry-put nil "PROJECT" (gitlab-api-get-project-name resource-data)))))))))

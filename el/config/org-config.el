@@ -240,12 +240,6 @@
                            ("w" . 2400)
                            ("m" . 9600)
                            ("y" . 96000))
-      org-effort-durations '(("min" . 1)
-                             ("h" . 60)
-                             ("d" . 480)
-                             ("w" . 2400)
-                             ("m" . 9600)
-                             ("y" . 96000))
       org-effort-threshold 20
       org-enforce-todo-dependencies t
       ;; [ 'note Graba el tiempo y una nota cuando se realiza una tarea
@@ -1189,15 +1183,101 @@ SUFFIX - default .png"
               #'(lambda () my-current-time)))
     (org-todo arg)))
 
-(defun org-block-and-result-hide-all ()
-  (interactive)
-  (call-interactively #'org-hide-block-all)
-  (call-interactively #'org-babel-result-hide-all))
+;; (defun org-block-and-result-hide-all ()
+;;   (interactive)
+;;   (call-interactively #'org-hide-block-all)
+;;   (call-interactively #'org-babel-result-hide-all))
 
-(defun org-block-and-result-show-all ()
-  (interactive)
-  (call-interactively #'org-show-block-all)
-  (call-interactively #'org-babel-show-result-all))
+;; (defun org-block-and-result-show-all ()
+;;   (interactive)
+;;   (call-interactively #'org-show-block-all)
+;;   (call-interactively #'org-babel-show-result-all))
+
+(defun org-entry-put-multiline-property (pom property value)
+  "Set PROPERTY to VALUE for entry at point-or-marker POM.
+
+If the value is nil, it is converted to the empty string.  If it
+is not a string, an error is raised.  Also raise an error on
+invalid property names.
+
+PROPERTY can be any regular property (see
+`org-special-properties').  It can also be \"TODO\",
+\"PRIORITY\", \"SCHEDULED\" and \"DEADLINE\".
+
+For the last two properties, VALUE may have any of the special
+values \"earlier\" and \"later\".  The function then increases or
+decreases scheduled or deadline date by one day."
+  (cond ((null value) (setq value ""))
+        ((not (stringp value)) (error "Properties values should be strings"))
+        ((not (org--valid-property-p property))
+         (user-error "Invalid property name: \"%s\"" property)))
+  (org-with-point-at pom
+    (if (or (not (featurep 'org-inlinetask)) (org-inlinetask-in-task-p))
+        (org-back-to-heading t)
+      (org-with-limited-levels (org-back-to-heading t)))
+    (let ((beg (point)))
+      (cond
+       ((equal property "TODO")
+        (cond ((not (org-string-nw-p value)) (setq value 'none))
+              ((not (member value org-todo-keywords-1))
+               (user-error "\"%s\" is not a valid TODO state" value)))
+        (org-todo value)
+        (org-align-tags))
+       ((equal property "PRIORITY")
+        (org-priority (if (org-string-nw-p value) (string-to-char value) ?\s))
+        (org-align-tags))
+       ((equal property "SCHEDULED")
+        (forward-line)
+        (if (and (looking-at-p org-planning-line-re)
+                 (re-search-forward
+                  org-scheduled-time-regexp (line-end-position) t))
+            (cond ((string= value "earlier") (org-timestamp-change -1 'day))
+                  ((string= value "later") (org-timestamp-change 1 'day))
+                  ((string= value "") (org-schedule '(4)))
+                  (t (org-schedule nil value)))
+          (if (member value '("earlier" "later" ""))
+              (call-interactively #'org-schedule)
+            (org-schedule nil value))))
+       ((equal property "DEADLINE")
+        (forward-line)
+        (if (and (looking-at-p org-planning-line-re)
+                 (re-search-forward
+                  org-deadline-time-regexp (line-end-position) t))
+            (cond ((string= value "earlier") (org-timestamp-change -1 'day))
+                  ((string= value "later") (org-timestamp-change 1 'day))
+                  ((string= value "") (org-deadline '(4)))
+                  (t (org-deadline nil value)))
+          (if (member value '("earlier" "later" ""))
+              (call-interactively #'org-deadline)
+            (org-deadline nil value))))
+       ((member property org-special-properties)
+        (error "The %s property cannot be set with `org-entry-put'" property))
+       (t
+        (let* ((range (org-get-property-block beg 'force))
+               (end (cdr range))
+               (case-fold-search t))
+          (goto-char (car range))
+          (if (re-search-forward (org-re-property property nil t) end t)
+              (let ((property-plus (concat property "+")))
+                (kill-whole-line)
+                (goto-char (match-beginning 0))
+                (while (re-search-forward (org-re-property property-plus nil t) end t)
+                  (kill-whole-line)
+                  (goto-char (match-beginning 0)))
+                (insert "\n")
+                (backward-char))
+            (goto-char end)
+            (insert "\n")
+            (backward-char))
+          (let ((lines (split-string value "\n")))
+            (insert ":" property ": " (pop lines))
+            (org-indent-line)
+            (end-of-line)
+            (dolist (line lines)
+              (insert "\n:" property "+: " line)
+              (org-indent-line)
+              (end-of-line)))))))
+    (run-hook-with-args 'org-property-changed-functions property value)))
 
 ;;;;;;;;;;;;;;;;;;;
 ;; Org templates ;;
@@ -1240,8 +1320,8 @@ SUFFIX - default .png"
 (define-key org-mode-map (kbd "C-c v e") #'org-show-entry)
 (define-key org-mode-map (kbd "C-c TAB") #'org-show-subtree)
 (define-key org-mode-map (kbd "C-c v t") #'org-show-todo-tree)
-(define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all) 
-(define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all) 
+;; (define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all) 
+;; (define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all) 
 (define-key org-mode-map (kbd "C-c M-s") #'org-sort-entries-user-defined)
 (define-key org-mode-map (kbd "C-c c") #'org-capture)
 (define-key org-mode-map (kbd "C-c a") #'org-agenda)

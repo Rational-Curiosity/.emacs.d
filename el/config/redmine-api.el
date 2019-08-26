@@ -18,6 +18,13 @@
 (defcustom redmine-api-per-page 100
   "Pagination")
 
+(defcustom redmine-api-debug nil
+  "Debug")
+
+(defun redmine-api-toggle-debug ()
+  (interactive)
+  (setq redmine-api-debug (not redmine-api-debug)))
+
 (defun redmine-api-request (resource &optional method params)
   (request (concat redmine-api-url-base resource ".json")
            :type (or method "GET")
@@ -35,10 +42,10 @@
    (redmine-api-request resource method params)))
 
 (defun redmine-api-template (resource &optional alist method params)
-  (redmine-api-data (if alist
-                       (redmine-api--fill-template resource alist)
-                     resource)
-                   method params))
+  (setq resource (if alist
+                     (redmine-api--fill-template resource alist)
+                   resource))
+  (redmine-api-data resource method params))
 
 ;;;;;;;;;;;;;
 ;; Helpers ;;
@@ -75,12 +82,28 @@
     ("New"         "TODO")
     ("In progress" "STAR")
     ("On hold"     "HOLD")
-    ("QA Blocked"  "REOP")
+    ("QA Failed"   "REOP")
+    ("QA Blocked"  "LINK")
+    ("QA Queue"    "DONE")
+    ("QA Passed"   "FINI")
+    ("Closed"      "CANC")
     (_ (concat state "/" type))))
 
 (defun redmine-api--abbrev-project-name (project-name)
   (pcase project-name
-    ("Programación"   "PRG")
+    ("Command"             "Cmd")
+    ("Comfy"               "CMF")
+    ("Managers"            "Mgr")
+    ("BestOf"              "Bof")
+    ("Programación"        "Prg")
+    ("API Proxy"           "Axy")
+    ("Billy (Billing API)" "Axy")
+    ("Panel de control"    "Cpn")
+    ("Front"               "Fnt")
+    ("GO"                  "Go")
+    ("API Provisión"       "Apv")
+    ("GO panel"            "Gpn")
+    ("Kudeiro"             "Kud")
     (_ project-name)))
 
 (defun redmine-api--format-field (field value indent)
@@ -167,8 +190,11 @@
   (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
                      (read-string "Issue Id: ")))
   (setq level (or level (1+ (org-outline-level))))
-  (let* ((issue (cdr (assoc 'issue (redmine-api-data (concat "/issues/" issue-id) "GET"))))
+  (let* ((resource (concat "/issues/" issue-id))
+         (issue (cdr (assoc 'issue (redmine-api-data resource "GET"))))
          (result (redmine-api-org-convert (list issue) "/issues/{id}" level)))
+    (if redmine-api-debug (mapc (lambda (prop) (message "    %s" prop)) issue))
+    (message "%s %s %s: %i properties" "GET" resource nil (length issue))
     (if (called-interactively-p 'any)
         (insert result)
       result)))
@@ -182,6 +208,12 @@
   (setq level (or level (1+ (org-outline-level))))
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
+    (if redmine-api-debug (let ((item-count 0))
+                            (mapc (lambda (item)
+                                    (message "  Item %i" (cl-incf item-count))
+                                    (mapc (lambda (prop)
+                                            (message "    %s" prop)) item))
+                                  issues)))
     (message "%s %s %s: %i items" "GET" "/issues" params (length issues))
     (if (called-interactively-p 'any)
         (insert result)
@@ -197,6 +229,12 @@
   (map-put params "priority_id" "5" 'string-equal)
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
+    (if redmine-api-debug (let ((item-count 0))
+                            (mapc (lambda (item)
+                                    (message "  Item %i" (cl-incf item-count))
+                                    (mapc (lambda (prop)
+                                            (message "    %s" prop)) item))
+                                  issues)))
     (message "%s %s %s: %i items" "GET" "/issues" params (length issues))
     (if (called-interactively-p 'any)
         (insert result)
@@ -212,6 +250,12 @@
   (map-put params "tracker_name" "~bug" 'string-equal)
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
+    (if redmine-api-debug (let ((item-count 0))
+                            (mapc (lambda (item)
+                                    (message "  Item %i" (cl-incf item-count))
+                                    (mapc (lambda (prop)
+                                            (message "    %s" prop)) item))
+                                  issues)))
     (message "%s %s %s: %i items" "GET" "/issues" params (length issues))
     (if (called-interactively-p 'any)
         (insert result)
@@ -224,7 +268,10 @@
                 "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
                 (or (assoc-default "ORIGIN" properties)
                     (assoc-default "RESOURCE" properties)) t))
-         (resource-datas (redmine-api-template (cdr (assoc "RESOURCE" properties)) properties "GET")))
+         (resource (redmine-api--fill-template (cdr (assoc "RESOURCE" properties)) properties))
+         (resource-datas (cdr (assoc 'issue (redmine-api-data resource "GET")))))
+    (if redmine-api-debug (mapc (lambda (prop) (message "    %s" prop)) resource-datas))
+    (message "%s %s %s: %i properties" "GET" resource nil (length resource-datas))
     (mapc (lambda (property)
             (let* ((name (downcase (car property)))
                    (value (cdr property))
@@ -233,9 +280,13 @@
                                                               resource-datas)
                                     (cdr (assoc (intern name) resource-datas)))))
               (when resource-data
-                (let ((data (if (stringp resource-data) resource-data (format "%s" resource-data))))
-                  (unless (string-equal value data)
-                    (org-entry-put nil name data)
+                (let ((data (replace-regexp-in-string
+                             "\r" ""
+                             (if (stringp resource-data)
+                                 resource-data
+                               (format "%s" resource-data)) t t)))
+                  (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
+                    (org-entry-put-multiline-property nil name data)
                     (pcase name
                       ("status.name" (org-entry-put nil "TODO" (redmine-api--convert-state data type)))))))))
           properties)))
