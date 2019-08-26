@@ -200,12 +200,22 @@ Otherwise use `list'."
   (funcall (if modal-mode #'list fnc) key))
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
-;; keys
+;;;;;;;;;;
+;; keys ;;
+;;;;;;;;;;
+;; Make compatible with other modules
+(define-key special-mode-map [?\S-\ ] nil)     ;; simple.el
+(with-eval-after-load 'rmail
+  (define-key rmail-mode-map [?\S-\ ] nil))       ;; rmail.el
+(with-eval-after-load 'cus-edit
+  (define-key custom-mode-map [?\S-\ ] nil)       ;; cus-edit.el
+  (define-key custom-mode-link-map [?\S-\ ] nil)) ;; cus-edit.el
+(mapc (lambda (keymap)
+        (define-key keymap [?\S-\ ] nil))
+      (keymaps-with-binding [?\S-\ ]))
+;; Modal keys
 (modal-define-kbd "u" "C-u" "universal-argument")
 (global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
-
-;; Make compatible with other modules
-(define-key special-mode-map (kbd "S-SPC") nil)  ;; simple.el
 
 
 (provide 'modal)

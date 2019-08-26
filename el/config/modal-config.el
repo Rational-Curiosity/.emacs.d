@@ -184,7 +184,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key modal-mode-map (kbd "h s") #'describe-syntax)
 (define-key modal-mode-map (kbd "h v") #'describe-variable)
 ;; h - ] prefix
-;; i - reserved
+(modal-define-kbd "i" "C-i" "indent-for-tab-command")
 (modal-define-kbd "j" "C-j" "electric-newline-and-maybe-indent" t)
 (modal-define-kbd "k" "C-k" "kill-line" t)
 (modal-define-kbd "l" "C-l" "recenter-top-bottom")
