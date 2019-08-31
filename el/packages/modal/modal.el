@@ -68,49 +68,54 @@ This variable is considered when Modal is enabled globally via
   :tag  "Excluded Modes"
   :type '(repeat :tag "Major modes to exclude" symbol))
 
+;;;###autoload
+(defcustom modal-insertp-functions nil
+  "List of functions to avoid on read only mode.
+
+This variable is considered on read only mode
+`modal-global-mode'."
+  :tag  "Insertp Functions"
+  :type '(repeat :tag "Insertp functions to avoid on read only mode" symbol))
+
 (defvar modal-mode-map (make-sparse-keymap)
   "This is Modal mode map, used to translate your keys.")
 
+(defun modal-find-bind (key)
+  (cl-some (lambda (keymap)
+             (unless (eq keymap modal-mode-map)
+               (let ((binding (lookup-key keymap key)))
+                 (if (commandp binding)
+                     binding))))
+           (current-active-maps)))
+
+(defun modal-find-bind-check-read-only (actual-key target-key)
+  (let ((binding (modal-find-bind target-key)))
+    (if (and buffer-read-only
+             (memq binding modal-insertp-functions))
+        (setq binding (modal-find-bind actual-key)))
+    binding))
+
 ;;;###autoload
-(defun modal-define-key (actual-key target-key &optional name insertp)
+(defun modal-define-key (actual-key target-key)
   "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
-  (let ((sname (make-symbol (or name (key-description target-key))))
-        (docstring (format "`%s' is called through an alias which translates %s into %s."
-                           (key-binding     target-key)
-                           (key-description actual-key)
-                           (key-description target-key))))
-    (eval
-     `(define-key
-        modal-mode-map
-        ,actual-key
-        (defalias (quote ,sname)
-          (lambda ()
-            (interactive)
-            (cl-some (lambda (keymap)
-                       (unless (eq keymap modal-mode-map)
-                         (let ((binding ,(if insertp
-                                             `(lookup-key
-                                               keymap
-                                               (if buffer-read-only
-                                                   ,actual-key
-                                                 ,target-key))
-                                           `(lookup-key keymap ,target-key))))
-                           (when (commandp binding)
-                             (setq real-this-command binding
-                                   this-original-command binding
-                                   this-command binding)
-                             (call-interactively binding)
-                             t))))
-                     (current-active-maps)))
-          ,docstring)))))
-
-;;;###autoload
-(defun modal-define-kbd (actual-kbd target-kbd &optional name insertp)
-  "Register translation from ACTUAL-KBD to TARGET-KBD with optional NAME.
-
-Arguments are accepted in in the format used for saving keyboard
-macros (see `edmacro-mode')."
-  (modal-define-key (kbd actual-kbd) (kbd target-kbd) (or name target-kbd) insertp))
+  (if (arrayp target-key)
+      (let ((docstring (format "Modal mode translates \"%s\" into \"%s\"."
+                               (key-description actual-key)
+                               (key-description target-key))))
+        (define-key
+          modal-mode-map
+          actual-key
+          (eval
+           `(lambda ()
+              ,docstring
+              (interactive)
+              (let ((binding (modal-find-bind-check-read-only ,actual-key ,target-key)))
+                (when binding
+                  (setq real-this-command binding
+                        this-original-command binding
+                        this-command binding)
+                  (call-interactively binding)))))))
+    (define-key modal-mode-map actual-key target-key)))
 
 ;;;###autoload
 (defun modal-remove-key (key)
@@ -126,6 +131,24 @@ macros (see `edmacro-mode')."
   (modal-remove-key (kbd kbd)))
 
 (defvar modal--original-buffer nil)
+
+;;;###autoload
+(defun modal-add-first-parent (keymap)
+  (let ((parent (keymap-parent keymap)))
+    (if parent
+        (set-keymap-parent keymap (make-composed-keymap
+                                   modal-mode-map
+                                   parent))
+      (set-keymap-parent keymap modal-mode-map))))
+
+;;;###autoload
+(defun modal-add-last-parent (keymap)
+  (let ((parent (keymap-parent keymap)))
+    (if parent
+        (set-keymap-parent keymap (make-composed-keymap
+                                   parent
+                                   modal-mode-map))
+      (set-keymap-parent keymap modal-mode-map))))
 
 ;;;###autoload
 (define-minor-mode modal-mode
@@ -200,6 +223,39 @@ Otherwise use `list'."
   (funcall (if modal-mode #'list fnc) key))
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
+;; which-key-mode
+(with-eval-after-load 'which-key
+  (cl-delete '((nil . "\\`\\?\\?\\'") . (nil . "lambda")) which-key-replacement-alist)
+  (push '((nil . "\\`\\?\\?\\'") .
+          (lambda (key-binding)
+            (let* ((key (car key-binding))
+                   (key-array (kbd key)))
+              (cons key
+                    (condition-case nil
+                        (let ((keys (split-string (documentation (key-binding key-array)) "\"")))
+                          (if (and (= (length keys) 5)
+                                   (string-equal (car keys) "Modal mode translates "))
+                              (copy-sequence
+                               (symbol-name (modal-find-bind-check-read-only
+                                            key-array
+                                            (kbd (nth 3 keys)))))
+                            "lambda"))
+                      (error "lambda")))))) which-key-replacement-alist))
+
+;; (fset 'modal--symbol-name (symbol-function 'symbol-name))
+
+;; (defun modal--which-key-advice (orig-fun &rest args)
+;;   (cl-letf (((symbol-function 'symbol-name)
+;;              (lambda (symbol)
+;;                (let ((name (modal--symbol-name symbol)))
+;;                  (message "--- %s" name)
+;;                  (if (string-equal name "**modal-mode-translation**")
+;;                      (message (modal--symbol-name (funcall symbol t)))
+;;                    name)))))
+;;     (apply orig-fun args)))
+
+;; (with-eval-after-load 'which-key
+;;   (advice-add 'which-key--get-keymap-bindings :around 'modal--which-key-advice))
 ;;;;;;;;;;
 ;; keys ;;
 ;;;;;;;;;;
@@ -214,7 +270,7 @@ Otherwise use `list'."
         (define-key keymap [?\S-\ ] nil))
       (keymaps-with-binding [?\S-\ ]))
 ;; Modal keys
-(modal-define-kbd "u" "C-u" "universal-argument")
+(modal-define-key (kbd "u") (kbd "C-u"))  ;; universal-argument
 (global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
 
 

@@ -24,7 +24,23 @@
                              magit-mode
                              magit-process-mode
                              magit-status-mode
-                             docker-container-mode))
+                             docker-container-mode)
+      modal-insertp-functions '(sp-rewrap-sexp-lc
+                                sp-unwrap-sexp-lc
+                                comment-dwim
+                                undo-tree-undo
+                                undo-tree-redo
+                                query-replace
+                                duplicate-current-line-or-region
+                                delete-forward-char
+                                electric-newline-and-maybe-indent
+                                kill-line
+                                newline
+                                open-line
+                                quoted-insert
+                                transpose-chars
+                                kill-region
+                                transpose-sexps))
 
 
 (defun keyboard-esc-quit ()
@@ -58,243 +74,249 @@ cancel the use of the current buffer (for special-purpose buffers)."
 
 ;; Modal editing
 (with-eval-after-load 'smartparens
-  (define-key modal-mode-map [remap backward-sexp] 'sp-backward-sexp)
-  (define-key modal-mode-map [remap forward-sexp] 'sp-forward-sexp))
+  (modal-define-key [remap backward-sexp] 'sp-backward-sexp)
+  (modal-define-key [remap forward-sexp] 'sp-forward-sexp))
 
 ;; ' (handy as self-inserting symbol)
 ;; " (handy as self-inserting symbol)
-(modal-define-kbd "(" "C-(" "sp-rewrap-sexp-lc" t)
-(modal-define-kbd ")" "C-)" "sp-unwrap-sexp-lc" t)
-(define-key modal-mode-map "&" #'rotate-or-inflection)
-(define-key modal-mode-map "?" #'goto-last-change-reverse)
-(define-key modal-mode-map "/" #'goto-last-change)
+(modal-define-key (kbd "(") (kbd "C-("))  ;; sp-rewrap-sexp-lc
+(modal-define-key (kbd ")") (kbd "C-)"))  ;; sp-unwrap-sexp-lc
+(modal-define-key "&" #'rotate-or-inflection)
+(modal-define-key "?" #'goto-last-change-reverse)
+(modal-define-key "/" #'goto-last-change)
 ;; (modal-define-kbd "." "M-." "definition-at-point")
-(modal-define-kbd ";" "M-;" "comment-dwim" t)
-(modal-define-kbd ":" "M-:" "eval-expression")
-(define-key modal-mode-map "+" #'fold-dwim)
-(modal-define-kbd "-" "C-_" "undo-tree-undo" t)
-(modal-define-kbd "_" "M-_" "undo-tree-redo" t)
-;; (modal-define-kbd "," "M-," "declaration-at-point")
-(modal-define-kbd "%" "M-%" "query-replace" t)
-(modal-define-kbd "*" "C-*" "duplicate-current-line-or-region" t)
-(modal-define-kbd "<" "M-<" "beginning-of-buffer")
-(modal-define-kbd ">" "M->" "end-of-buffer")
-(modal-define-kbd "SPC" "C-SPC" "set-mark-command")
+(modal-define-key (kbd ";") (kbd "M-;"))  ;; comment-dwim
+(modal-define-key (kbd ":") (kbd "M-:"))  ;; eval-expression
+(modal-define-key "+" #'fold-dwim)
+(modal-define-key (kbd "-") (kbd "C-_"))  ;; undo-tree-undo
+(modal-define-key (kbd "_") (kbd "M-_"))  ;; undo-tree-redo
+(modal-define-key (kbd "%") (kbd "M-%"))  ;; query-replace
+(modal-define-key (kbd "*") (kbd "C-*"))  ;; duplicate-current-line-or-region
+(modal-define-key (kbd "<") (kbd "M-<"))  ;; beginning-of-buffer
+(modal-define-key (kbd ">") (kbd "M->"))  ;; end-of-buffer
+(modal-define-key (kbd "SPC") (kbd "C-SPC"))  ;; set-mark-command
 
-(modal-define-kbd "0" "C-0" "prefix-0")
-(modal-define-kbd "1" "C-1" "prefix-1")
-(modal-define-kbd "2" "C-2" "prefix-2")
-(modal-define-kbd "3" "C-3" "prefix-3")
-(modal-define-kbd "4" "C-4" "prefix-4")
-(modal-define-kbd "5" "C-5" "prefix-5")
-(modal-define-kbd "6" "C-6" "prefix-6")
-(modal-define-kbd "7" "C-7" "prefix-7")
-(modal-define-kbd "8" "C-8" "prefix-8")
-(modal-define-kbd "9" "C-9" "prefix-9")
+(modal-define-key (kbd "0") (kbd "C-0"))  ;; prefix-0
+(modal-define-key (kbd "1") (kbd "C-1"))  ;; prefix-1
+(modal-define-key (kbd "2") (kbd "C-2"))  ;; prefix-2
+(modal-define-key (kbd "3") (kbd "C-3"))  ;; prefix-3
+(modal-define-key (kbd "4") (kbd "C-4"))  ;; prefix-4
+(modal-define-key (kbd "5") (kbd "C-5"))  ;; prefix-5
+(modal-define-key (kbd "6") (kbd "C-6"))  ;; prefix-6
+(modal-define-key (kbd "7") (kbd "C-7"))  ;; prefix-7
+(modal-define-key (kbd "8") (kbd "C-8"))  ;; prefix-8
+(modal-define-key (kbd "9") (kbd "C-9"))  ;; prefix-9
 
-(modal-define-kbd "a" "C-a" "move-beginning-of-line")
-(modal-define-kbd "b" "C-b" "backward-char")
+(modal-define-key (kbd "a") (kbd "C-a"))  ;; move-beginning-of-line
+(modal-define-key (kbd "b") (kbd "C-b"))  ;; backward-char
+(modal-define-key "\M-b" 'backward-word)
 ;; c - [ command prefix
-(define-key modal-mode-map (kbd "c '") (kbd "C-c '"))
-(define-key modal-mode-map (kbd "c ! c") #'flycheck-buffer)
-(define-key modal-mode-map (kbd "c ! n") #'flycheck-next-error)
-(define-key modal-mode-map (kbd "c ! p") #'flycheck-previous-error)
-(define-key modal-mode-map (kbd "c ! l") #'flycheck-list-errors)
-(modal-define-key (kbd "c a") (kbd "C-c a") "org-agenda")
-(define-key modal-mode-map (kbd "c b") (kbd "C-c C-b"))  ;; go-back
-(define-key modal-mode-map (kbd "c B") (kbd "C-c M-b"))  ;; org-previous-block
-(modal-define-key (kbd "c c") (kbd "C-c C-c") "confirm-commit")
-(define-key modal-mode-map (kbd "c e w") #'er/mark-word)
-(define-key modal-mode-map (kbd "c e s") #'er/mark-symbol)
-(define-key modal-mode-map (kbd "c e c") #'er/mark-method-call)
-(define-key modal-mode-map (kbd "c e q") #'er/mark-inside-quotes)
-(define-key modal-mode-map (kbd "c e Q") #'er/mark-outside-quotes)
-(define-key modal-mode-map (kbd "c e p") #'er/mark-inside-pairs)
-(define-key modal-mode-map (kbd "c e P") #'er/mark-outside-pairs)
-(define-key modal-mode-map (kbd "c f") (kbd "C-c C-f"))  ;; org-forward-heading-same-level
-(define-key modal-mode-map (kbd "c F") (kbd "C-c M-f"))  ;; org-next-block
-(define-key modal-mode-map (kbd "c i s") #'spanish-dictionary)
-(define-key modal-mode-map (kbd "c i e") #'english-dictionary)
-(define-key modal-mode-map (kbd "c i c") #'flyspell-buffer)
-(define-key modal-mode-map (kbd "c i n") #'flyspell-goto-next-error)
-(define-key modal-mode-map (kbd "c i p") #'flyspell-goto-previous-error)
-(define-key modal-mode-map (kbd "c i a") #'flyspell-auto-correct-word)
-(modal-define-key (kbd "c k") (kbd "C-c C-k") "cancel-commit")
-(define-key modal-mode-map (kbd "c m p") #'mc/mark-previous-like-this)
-(define-key modal-mode-map (kbd "c m n") #'mc/mark-next-like-this)
-(define-key modal-mode-map (kbd "c m a") #'mc/mark-all-like-this-dwim)
-(define-key modal-mode-map (kbd "c n") (kbd "C-c C-n"))  ;; smartscan-symbol-go-forward or org-next-visible-heading
-(define-key modal-mode-map (kbd "c o") #'operate-on-number-at-point-or-region)
-(define-key modal-mode-map (kbd "c p") (kbd "C-c C-p"))  ;; smartscan-symbol-go-backward or org-previous-visible-heading
-(define-key modal-mode-map (kbd "c r") (kbd "C-c M-s"))  ;; org-sort-entries-user-defined
-(define-key modal-mode-map (kbd "c R") #'revert-buffer)
-(modal-define-key (kbd "c s") (kbd "C-c C-s") "org-schedule")
-(modal-define-key (kbd "c t") (kbd "C-c C-t") "org-todo")
-(define-key modal-mode-map (kbd "c u") (kbd "C-c C-u"))  ;; outline-up-heading
-(define-key modal-mode-map (kbd "c v *") #'vimish-fold-unfold-all)
-(define-key modal-mode-map (kbd "c v +") #'vimish-fold-unfold)
-(define-key modal-mode-map (kbd "c v -") #'vimish-fold-refold)
-(define-key modal-mode-map (kbd "c v _") #'vimish-fold-refold-all)
-(define-key modal-mode-map (kbd "c v .") #'vimish-fold-toggle)
-(define-key modal-mode-map (kbd "c v :") #'vimish-fold-toggle-all)
-(define-key modal-mode-map (kbd "c v d") #'vimish-fold-delete)
-(define-key modal-mode-map (kbd "c v D") #'vimish-fold-delete-all)
-(define-key modal-mode-map (kbd "c v f") #'vimish-fold)
-(define-key modal-mode-map (kbd "c v G") #'vimish-fold-avy)
-(define-key modal-mode-map (kbd "c V s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
-(define-key modal-mode-map (kbd "c V h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
-(define-key modal-mode-map (kbd "c w t") #'transpose-frame)
-(define-key modal-mode-map (kbd "c w h") #'flop-frame)
-(define-key modal-mode-map (kbd "c w v") #'flip-frame)
-(define-key modal-mode-map (kbd "c w b") #'windmove-left)
-(define-key modal-mode-map (kbd "c w f") #'windmove-right)
-(define-key modal-mode-map (kbd "c w n") #'windmove-down)
-(define-key modal-mode-map (kbd "c w p") #'windmove-up)
-(define-key modal-mode-map (kbd "c w r") #'rotate-frame-clockwise)
-(define-key modal-mode-map (kbd "c w R") #'rotate-frame-anticlockwise)
-(define-key modal-mode-map (kbd "c w -") #'winner-undo)
-(define-key modal-mode-map (kbd "c w _") #'winner-redo)
-(define-key modal-mode-map (kbd "c x n") (kbd "C-c C-x C-n"))  ;; org-next-link
-(define-key modal-mode-map (kbd "c x p") (kbd "C-c C-x C-p"))  ;; org-previous-link
-(define-key modal-mode-map (kbd "c x s") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
+(modal-define-key (kbd "c TAB") (kbd "C-c TAB"))
+(modal-define-key (kbd "c <backtab>") (kbd "C-c <backtab>"))
+(modal-define-key (kbd "c '") (kbd "C-c '"))
+(modal-define-key (kbd "c ! c") #'flycheck-buffer)
+(modal-define-key (kbd "c ! n") #'flycheck-next-error)
+(modal-define-key (kbd "c ! p") #'flycheck-previous-error)
+(modal-define-key (kbd "c ! l") #'flycheck-list-errors)
+(modal-define-key (kbd "c a") (kbd "C-c C-a"))
+(modal-define-key (kbd (kbd "c A")) (kbd (kbd "C-c a")))  ;; org-agenda
+(modal-define-key (kbd "c b") (kbd "C-c C-b"))  ;; go-back
+(modal-define-key (kbd "c B") (kbd "C-c M-b"))  ;; org-previous-block
+(modal-define-key (kbd (kbd "c c")) (kbd (kbd "C-c C-c")))  ;; confirm-commit
+(modal-define-key (kbd "c e w") #'er/mark-word)
+(modal-define-key (kbd "c e s") #'er/mark-symbol)
+(modal-define-key (kbd "c e c") #'er/mark-method-call)
+(modal-define-key (kbd "c e q") #'er/mark-inside-quotes)
+(modal-define-key (kbd "c e Q") #'er/mark-outside-quotes)
+(modal-define-key (kbd "c e p") #'er/mark-inside-pairs)
+(modal-define-key (kbd "c e P") #'er/mark-outside-pairs)
+(modal-define-key (kbd "c f") (kbd "C-c C-f"))  ;; org-forward-heading-same-level
+(modal-define-key (kbd "c F") (kbd "C-c M-f"))  ;; org-next-block
+(modal-define-key (kbd "c i s") #'spanish-dictionary)
+(modal-define-key (kbd "c i e") #'english-dictionary)
+(modal-define-key (kbd "c i c") #'flyspell-buffer)
+(modal-define-key (kbd "c i n") #'flyspell-goto-next-error)
+(modal-define-key (kbd "c i p") #'flyspell-goto-previous-error)
+(modal-define-key (kbd "c i a") #'flyspell-auto-correct-word)
+(modal-define-key (kbd (kbd "c k")) (kbd (kbd "C-c C-k")))  ;; cancel-commit
+(modal-define-key (kbd "c m p") #'mc/mark-previous-like-this)
+(modal-define-key (kbd "c m n") #'mc/mark-next-like-this)
+(modal-define-key (kbd "c m a") #'mc/mark-all-like-this-dwim)
+(modal-define-key (kbd "c n") (kbd "C-c C-n"))  ;; smartscan-symbol-go-forward or org-next-visible-heading
+(modal-define-key (kbd "c o") #'operate-on-number-at-point-or-region)
+(modal-define-key (kbd "c p") (kbd "C-c C-p"))  ;; smartscan-symbol-go-backward or org-previous-visible-heading
+(modal-define-key (kbd "c q") (kbd "C-c C-q"))
+(modal-define-key (kbd "c r") (kbd "C-c M-s"))  ;; org-sort-entries-user-defined
+(modal-define-key (kbd "c R") #'revert-buffer)
+(modal-define-key (kbd (kbd "c s")) (kbd (kbd "C-c C-s")))  ;; org-schedule
+(modal-define-key (kbd (kbd "c t")) (kbd (kbd "C-c C-t")))  ;; org-todo
+(modal-define-key (kbd "c u") (kbd "C-c C-u"))  ;; outline-up-heading
+(modal-define-key (kbd "c v *") #'vimish-fold-unfold-all)
+(modal-define-key (kbd "c v +") #'vimish-fold-unfold)
+(modal-define-key (kbd "c v -") #'vimish-fold-refold)
+(modal-define-key (kbd "c v _") #'vimish-fold-refold-all)
+(modal-define-key (kbd "c v .") #'vimish-fold-toggle)
+(modal-define-key (kbd "c v :") #'vimish-fold-toggle-all)
+(modal-define-key (kbd "c v d") #'vimish-fold-delete)
+(modal-define-key (kbd "c v D") #'vimish-fold-delete-all)
+(modal-define-key (kbd "c v f") #'vimish-fold)
+(modal-define-key (kbd "c v G") #'vimish-fold-avy)
+(modal-define-key (kbd "c V s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
+(modal-define-key (kbd "c V h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
+(modal-define-key (kbd "c w t") #'transpose-frame)
+(modal-define-key (kbd "c w h") #'flop-frame)
+(modal-define-key (kbd "c w v") #'flip-frame)
+(modal-define-key (kbd "c w b") #'windmove-left)
+(modal-define-key (kbd "c w f") #'windmove-right)
+(modal-define-key (kbd "c w n") #'windmove-down)
+(modal-define-key (kbd "c w p") #'windmove-up)
+(modal-define-key (kbd "c w r") #'rotate-frame-clockwise)
+(modal-define-key (kbd "c w R") #'rotate-frame-anticlockwise)
+(modal-define-key (kbd "c w -") #'winner-undo)
+(modal-define-key (kbd "c w _") #'winner-redo)
+(modal-define-key (kbd "c x n") (kbd "C-c C-x C-n"))  ;; org-next-link
+(modal-define-key (kbd "c x p") (kbd "C-c C-x C-p"))  ;; org-previous-link
+(modal-define-key (kbd "c x s") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
 ;; c - ] command prefix
-(modal-define-kbd "d" "<deletechar>" "delete-forward-char" t)
-(modal-define-kbd "e" "C-e" "move-end-of-line")
-(modal-define-kbd "f" "C-f" "forward-char")
+(modal-define-key (kbd "d") (kbd "<deletechar>"))  ;; delete-forward-char
+(modal-define-key (kbd "e") (kbd "C-e"))  ;; move-end-of-line
+(modal-define-key (kbd "f") (kbd "C-f"))  ;; forward-char
+(modal-define-key "\M-f" 'forward-word)
 ;; g - [ prefix
-(define-key modal-mode-map (kbd "g c") #'avy-goto-char)
-(define-key modal-mode-map (kbd "g C") #'avy-goto-char-2)
-(define-key modal-mode-map (kbd "g l") #'avy-goto-line)
-(define-key modal-mode-map (kbd "g s") #'sp-end-of-sexp)
-(define-key modal-mode-map (kbd "g S") #'sp-beginning-of-sexp)
-(define-key modal-mode-map (kbd "g w") #'avy-goto-word-1)
-(define-key modal-mode-map (kbd "g W") #'avy-goto-word-0)
-(define-key modal-mode-map (kbd "g k") #'link-hint-open-link)
-(define-key modal-mode-map (kbd "g K") #'link-hint-copy-link)
+(modal-define-key (kbd "g c") #'avy-goto-char)
+(modal-define-key (kbd "g C") #'avy-goto-char-2)
+(modal-define-key (kbd "g l") #'avy-goto-line)
+(modal-define-key (kbd "g s") #'sp-end-of-sexp)
+(modal-define-key (kbd "g S") #'sp-beginning-of-sexp)
+(modal-define-key (kbd "g w") #'avy-goto-word-1)
+(modal-define-key (kbd "g W") #'avy-goto-word-0)
+(modal-define-key (kbd "g k") #'link-hint-open-link)
+(modal-define-key (kbd "g K") #'link-hint-copy-link)
 ;; g - ] prefix
 ;; h - [ prefix
-(define-key modal-mode-map (kbd "h b") #'describe-bindings)
-(define-key modal-mode-map (kbd "h e") #'view-echo-area-messages)
-(define-key modal-mode-map (kbd "h f") #'describe-function)
-(define-key modal-mode-map (kbd "h k") #'describe-key)
-(define-key modal-mode-map (kbd "h L") #'describe-language-environment)
-(define-key modal-mode-map (kbd "h m") #'describe-mode)
-(define-key modal-mode-map (kbd "h o") #'describe-symbol)
-(define-key modal-mode-map (kbd "h P") #'describe-package)
-(define-key modal-mode-map (kbd "h s") #'describe-syntax)
-(define-key modal-mode-map (kbd "h v") #'describe-variable)
+(modal-define-key (kbd "h b") #'describe-bindings)
+(modal-define-key (kbd "h e") #'view-echo-area-messages)
+(modal-define-key (kbd "h f") #'describe-function)
+(modal-define-key (kbd "h k") #'describe-key)
+(modal-define-key (kbd "h L") #'describe-language-environment)
+(modal-define-key (kbd "h m") #'describe-mode)
+(modal-define-key (kbd "h o") #'describe-symbol)
+(modal-define-key (kbd "h P") #'describe-package)
+(modal-define-key (kbd "h s") #'describe-syntax)
+(modal-define-key (kbd "h v") #'describe-variable)
 ;; h - ] prefix
-(modal-define-kbd "i" "C-i" "indent-for-tab-command")
-(modal-define-kbd "j" "C-j" "electric-newline-and-maybe-indent" t)
-(modal-define-kbd "k" "C-k" "kill-line" t)
-(modal-define-kbd "l" "C-l" "recenter-top-bottom")
-(modal-define-kbd "m" "C-m" "newline" t)
-(modal-define-kbd "n" "C-n" "next-line")
-(modal-define-kbd "o" "C-o" "open-line" t)
-(modal-define-kbd "p" "C-p" "previous-line")
-(modal-define-kbd "q" "C-q" "quoted-insert" t)
-(modal-define-kbd "r" "C-r" "isearch-backward")
-(modal-define-kbd "s" "C-s" "isearch-forward")
-(modal-define-kbd "t" "C-t" "transpose-chars" t)
+(modal-define-key (kbd "i") (kbd "C-i"))  ;; indent-for-tab-command
+(modal-define-key (kbd "j") (kbd "C-j"))  ;; electric-newline-and-maybe-indent
+(modal-define-key (kbd "k") (kbd "C-k"))  ;; kill-line
+(modal-define-key (kbd "l") (kbd "C-l"))  ;; recenter-top-bottom
+(modal-define-key (kbd "m") (kbd "C-m"))  ;; newline
+(modal-define-key (kbd "n") (kbd "C-n"))  ;; next-line
+(modal-define-key (kbd "o") (kbd "C-o"))  ;; open-line
+(modal-define-key (kbd "p") (kbd "C-p"))  ;; previous-line
+(modal-define-key (kbd "q") (kbd "C-q"))  ;; quoted-insert
+(modal-define-key (kbd "r") (kbd "C-r"))  ;; isearch-backward
+(modal-define-key (kbd "s") (kbd "C-s"))  ;; isearch-forward
+(modal-define-key (kbd "t") (kbd "C-t"))  ;; transpose-chars
 ;; u - reserved
-(modal-define-kbd "v" "C-v" "scroll-up-command")
-(modal-define-kbd "w" "C-w" "kill-region" t)
+(modal-define-key (kbd "v") (kbd "C-v"))  ;; scroll-up-command
+(modal-define-key (kbd "w") (kbd "C-w"))  ;; kill-region
 ;; x - [ command prefix
-(modal-define-kbd "x TAB" "C-x TAB" "indent-rigidly")
-(modal-define-kbd "x RET" "C-x C-o" "delete-blank-lines")
-(modal-define-kbd "x SPC" "C-x C-SPC" "pop-global-mark")
-(modal-define-kbd "x S-SPC" "C-x SPC" "rectangle-mark-mode")
-(modal-define-kbd "x ;" "C-x C-;" "comment-line")
-(modal-define-kbd "x (" "C-x (" "kmacro-start-macro")
-(modal-define-kbd "x )" "C-x )" "kmacro-end-macro")
-(modal-define-kbd "x +" "C-x +" "balance-windows")
-(modal-define-kbd "x 0" "C-x 0" "delete-window")
-(modal-define-kbd "x 1" "C-x 1" "delete-other-windows")
-(modal-define-kbd "x 2" "C-x 2" "vsplit-last-buffer")
-(modal-define-kbd "x 3" "C-x 3" "hsplit-last-buffer")
-(modal-define-kbd "x 4 f" "C-x 4 C-f" "ido-find-file-other-window")
-(modal-define-kbd "x 4 b" "C-x 4 b" "ido-switch-buffer-other-window")
-(modal-define-kbd "x 5 f" "C-x 5 C-f" "ido-find-file-other-frame")
-(modal-define-kbd "x 5 b" "C-x 5 b" "ido-switch-buffer-other-frame")
-(modal-define-kbd "x c" "C-x C-c" "save-buffers-kill-emacs")
-(modal-define-kbd "x b" "C-x b" "switch-buffer")
-(modal-define-kbd "x e" "C-x C-e" "eval-last-sexp")
-(modal-define-kbd "x E" "C-x e" "kmacro-end-and-call-macro")
-(modal-define-kbd "x f" "C-x C-f" "find-file")
-(modal-define-kbd "x F" "C-x f" "find-file-at-point")
-(modal-define-kbd "x H" "C-x h" "mark-whole-buffer")
-(modal-define-kbd "x k k" "C-x C-k C-k" "kmacro-end-or-call-macro-repeat")
-(modal-define-kbd "x k n" "C-x C-k C-n" "kmacro-cycle-ring-next")
-(modal-define-kbd "x k N" "C-x C-k n" "kmacro-name-last-macro")
-(modal-define-kbd "x k p" "C-x C-k C-p" "kmacro-cycle-ring-previous")
-(modal-define-kbd "x k v" "C-x C-k C-v" "kmacro-view-macro-repeat")
-(modal-define-kbd "x K" "C-x k" "kill-buffer")
-(modal-define-kbd "x l" "C-x C-l" "downcase-region")
-(modal-define-kbd "x o" "C-x o" "other-window")
-(define-key modal-mode-map (kbd "x O") #'ff-find-other-file)
-(modal-define-kbd "x p" "C-x C-p" "mark-page")
-(modal-define-kbd "x P s" "C-x p s" "bookmark-save")
-(modal-define-kbd "x r" "C-x C-r" "recentf-open")
-(modal-define-kbd "x R m" "C-x r m" "bookmark-set")
-(modal-define-kbd "x R b" "C-x r b" "bookmark-jump")
-(modal-define-kbd "x R l" "C-x r l" "list-bookmarks")
-(modal-define-kbd "x s" "C-x C-s" "save-buffer")
-(modal-define-kbd "x S" "C-x s" "save-some-buffers")
-(modal-define-kbd "x u" "C-x C-u" "upcase-region")
-(define-key modal-mode-map (kbd "x v =") #'magit-diff)
-(define-key modal-mode-map (kbd "x v b") #'magit-branch)
-(define-key modal-mode-map (kbd "x v c") #'magit-checkout)
-(define-key modal-mode-map (kbd "x v L") #'vc-print-root-log)
-(define-key modal-mode-map (kbd "x v l") #'vc-print-log)
-(define-key modal-mode-map (kbd "x v m") #'hydra-smerge/body)
-(define-key modal-mode-map (kbd "x v P") #'magit-push)
-(define-key modal-mode-map (kbd "x v p") #'magit-pull)
-(define-key modal-mode-map (kbd "x v R") #'magit-rebase-continue)
-(define-key modal-mode-map (kbd "x v r") #'magit-rebase)
-(define-key modal-mode-map (kbd "x v v") #'magit-status)
-(modal-define-kbd "x x" "C-x C-x" "exchange-point-and-mark")
-(modal-define-kbd "x z" "C-x z" "repeat")
+(modal-define-key (kbd "x TAB") (kbd "C-x TAB"))  ;; indent-rigidly
+(modal-define-key (kbd "x RET") (kbd "C-x C-o"))  ;; delete-blank-lines
+(modal-define-key (kbd "x SPC") (kbd "C-x C-SPC"))  ;; pop-global-mark
+(modal-define-key (kbd "x S-SPC") (kbd "C-x SPC"))  ;; rectangle-mark-mode
+(modal-define-key (kbd "x ;") (kbd "C-x C-;"))  ;; comment-line
+(modal-define-key (kbd "x (") (kbd "C-x ("))  ;; kmacro-start-macro
+(modal-define-key (kbd "x )") (kbd "C-x )"))  ;; kmacro-end-macro
+(modal-define-key (kbd "x +") (kbd "C-x +"))  ;; balance-windows
+(modal-define-key (kbd "x 0") (kbd "C-x 0"))  ;; delete-window
+(modal-define-key (kbd "x 1") (kbd "C-x 1"))  ;; delete-other-windows
+(modal-define-key (kbd "x 2") (kbd "C-x 2"))  ;; vsplit-last-buffer
+(modal-define-key (kbd "x 3") (kbd "C-x 3"))  ;; hsplit-last-buffer
+(modal-define-key (kbd "x 4 f") (kbd "C-x 4 C-f"))  ;; ido-find-file-other-window
+(modal-define-key (kbd "x 4 b") (kbd "C-x 4 b"))  ;; ido-switch-buffer-other-window
+(modal-define-key (kbd "x 5 f") (kbd "C-x 5 C-f"))  ;; ido-find-file-other-frame
+(modal-define-key (kbd "x 5 b") (kbd "C-x 5 b"))  ;; ido-switch-buffer-other-frame
+(modal-define-key (kbd "x c") (kbd "C-x C-c"))  ;; save-buffers-kill-emacs
+(modal-define-key (kbd "x b") (kbd "C-x b"))  ;; switch-buffer
+(modal-define-key (kbd "x e") (kbd "C-x C-e"))  ;; eval-last-sexp
+(modal-define-key (kbd "x E") (kbd "C-x e"))  ;; kmacro-end-and-call-macro
+(modal-define-key (kbd "x f") (kbd "C-x C-f"))  ;; find-file
+(modal-define-key (kbd "x F") (kbd "C-x f"))  ;; find-file-at-point
+(modal-define-key (kbd "x H") (kbd "C-x h"))  ;; mark-whole-buffer
+(modal-define-key (kbd "x k i") #'select-kbd-macro)
+(modal-define-key (kbd "x k k") (kbd "C-x C-k C-k"))  ;; kmacro-end-or-call-macro-repeat
+(modal-define-key (kbd "x k n") (kbd "C-x C-k C-n"))  ;; kmacro-cycle-ring-next
+(modal-define-key (kbd "x k N") (kbd "C-x C-k n"))  ;; kmacro-name-last-macro
+(modal-define-key (kbd "x k p") (kbd "C-x C-k C-p"))  ;; kmacro-cycle-ring-previous
+(modal-define-key (kbd "x k v") (kbd "C-x C-k C-v"))  ;; kmacro-view-macro-repeat
+(modal-define-key (kbd "x K") (kbd "C-x k"))  ;; kill-buffer
+(modal-define-key (kbd "x l") (kbd "C-x C-l"))  ;; downcase-region
+(modal-define-key (kbd "x o") (kbd "C-x o"))  ;; other-window
+(modal-define-key (kbd "x O") #'ff-find-other-file)
+(modal-define-key (kbd "x p") (kbd "C-x C-p"))  ;; mark-page
+(modal-define-key (kbd "x P s") (kbd "C-x p s"))  ;; bookmark-save
+(modal-define-key (kbd "x r") (kbd "C-x C-r"))  ;; recentf-open
+(modal-define-key (kbd "x R m") (kbd "C-x r m"))  ;; bookmark-set
+(modal-define-key (kbd "x R b") (kbd "C-x r b"))  ;; bookmark-jump
+(modal-define-key (kbd "x R l") (kbd "C-x r l"))  ;; list-bookmarks
+(modal-define-key (kbd "x s") (kbd "C-x C-s"))  ;; save-buffer
+(modal-define-key (kbd "x S") (kbd "C-x s"))  ;; save-some-buffers
+(modal-define-key (kbd "x u") (kbd "C-x C-u"))  ;; upcase-region
+(modal-define-key (kbd "x v =") #'magit-diff)
+(modal-define-key (kbd "x v b") #'magit-branch)
+(modal-define-key (kbd "x v c") #'magit-checkout)
+(modal-define-key (kbd "x v L") #'vc-print-root-log)
+(modal-define-key (kbd "x v l") #'vc-print-log)
+(modal-define-key (kbd "x v m") #'hydra-smerge/body)
+(modal-define-key (kbd "x v P") #'magit-push)
+(modal-define-key (kbd "x v p") #'magit-pull)
+(modal-define-key (kbd "x v R") #'magit-rebase-continue)
+(modal-define-key (kbd "x v r") #'magit-rebase)
+(modal-define-key (kbd "x v v") #'magit-status)
+(modal-define-key (kbd "x x") (kbd "C-x C-x"))  ;; exchange-point-and-mark
+(modal-define-key (kbd "x z") (kbd "C-x z"))  ;; repeat
 ;; x - ] command prefix
-(modal-define-kbd "y" "C-y" "yank")
-(define-key modal-mode-map "z" #'avy-goto-char-timer)
+(modal-define-key (kbd "y") (kbd "C-y"))  ;; yank
+(modal-define-key "z" #'avy-goto-char-timer)
 
-(modal-define-kbd "S-\\" "C-M-\\" "indent-region")
-(modal-define-kbd "S-@" "C-M-@" "mark-sexp")
-(modal-define-kbd "A" "C-M-a" "beginning-of-defun")
-(modal-define-kbd "B" "C-M-b" "backward-sexp")
-(modal-define-kbd "C" "C-M-c" "exit-recursive-edit")
-(modal-define-kbd "D" "C-M-d" "down-list")
-(modal-define-kbd "E" "C-M-e" "end-of-defun")
-(modal-define-kbd "F" "C-M-f" "forward-sexp")
+(modal-define-key (kbd "S-\\") (kbd "C-M-\\"))  ;; indent-region
+(modal-define-key (kbd "S-@") (kbd "C-M-@"))  ;; mark-sexp
+(modal-define-key (kbd "A") (kbd "C-M-a"))  ;; beginning-of-defun
+(modal-define-key (kbd "B") (kbd "C-M-b"))  ;; backward-sexp
+(modal-define-key (kbd "C") (kbd "C-M-c"))  ;; exit-recursive-edit
+(modal-define-key (kbd "D") (kbd "C-M-d"))  ;; down-list
+(modal-define-key (kbd "E") (kbd "C-M-e"))  ;; end-of-defun
+(modal-define-key (kbd "F") (kbd "C-M-f"))  ;; forward-sexp
 ;; G - [ command prefix
 ;; G - ] command prefix
-(modal-define-kbd "H" "C-M-h" "mark-defun")
-(modal-define-kbd "I" "C-M-i" "completion-at-point/flyspell-auto-correct-word")
-(modal-define-kbd "J" "C-M-j" "indent-new-comment-line")
-(modal-define-kbd "K" "C-M-k" "kill-sexp")
-(modal-define-kbd "N" "C-M-n" "forward-list")
-(modal-define-kbd "L" "C-M-l" "reposition-window")
-(modal-define-kbd "O" "C-M-o" "split-line")
-(modal-define-kbd "P" "C-M-p" "backward-list")
-(define-key modal-mode-map "Q" "C-M-q")  ;; prog-indent-sexp
-(modal-define-kbd "R" "C-M-r" "isearch-backward-regexp")
-(modal-define-kbd "S" "C-M-s" "isearch-forward-regexp")
-(modal-define-kbd "T" "C-M-t" "transpose-sexps" t)
-(modal-define-kbd "U" "C-M-u" "backward-up-list")
-(modal-define-kbd "V" "C-M-v" "scroll-other-window")
-(modal-define-kbd "W" "C-M-w" "append-next-kill")
-(modal-define-kbd "X" "C-M-x" "eval-defun")
+(modal-define-key (kbd "H") (kbd "C-M-h"))  ;; mark-defun
+(modal-define-key (kbd "I") (kbd "C-M-i"))  ;; completion-at-point/flyspell-auto-correct-word
+(modal-define-key (kbd "J") (kbd "C-M-j"))  ;; indent-new-comment-line
+(modal-define-key (kbd "K") (kbd "C-M-k"))  ;; kill-sexp
+(modal-define-key (kbd "N") (kbd "C-M-n"))  ;; forward-list
+(modal-define-key (kbd "L") (kbd "C-M-l"))  ;; reposition-window
+(modal-define-key (kbd "O") (kbd "C-M-o"))  ;; split-line
+(modal-define-key (kbd "P") (kbd "C-M-p"))  ;; backward-list
+(modal-define-key "Q" "C-M-q")  ;; prog-indent-sexp
+(modal-define-key (kbd "R") (kbd "C-M-r"))  ;; isearch-backward-regexp
+(modal-define-key (kbd "S") (kbd "C-M-s"))  ;; isearch-forward-regexp
+(modal-define-key (kbd "T") (kbd "C-M-t"))  ;; transpose-sexps
+(modal-define-key (kbd "U") (kbd "C-M-u"))  ;; backward-up-list
+(modal-define-key (kbd "V") (kbd "C-M-v"))  ;; scroll-other-window
+(modal-define-key (kbd "W") (kbd "C-M-w"))  ;; append-next-kill
+(modal-define-key (kbd "X") (kbd "C-M-x"))  ;; eval-defun
 ;; Y - [ command prefix
-(define-key modal-mode-map (kbd "Y h") #'sp-kill-hybrid-sexp)
-(modal-define-kbd "Y l" "<C-S-backspace>")
-(define-key modal-mode-map (kbd "Y s") #'kill-to-end-of-sexp)
-(define-key modal-mode-map (kbd "Y S") #'kill-to-begin-of-sexp)
+(modal-define-key (kbd "Y h") #'sp-kill-hybrid-sexp)
+(modal-define-key (kbd "Y l") (kbd "<C-S-backspace>"))
+(modal-define-key (kbd "Y s") #'kill-to-end-of-sexp)
+(modal-define-key (kbd "Y S") #'kill-to-begin-of-sexp)
 ;; Y - ] command prefix
 ;; Z - [ command prefix
 ;; Z - ] command prefix
 
-(define-key modal-mode-map (kbd "M-Q") #'fill-paragraph)
-(modal-define-kbd "M-V" "C-M-S-v" "scroll-other-window-down")
+(modal-define-key (kbd "M-Q") #'fill-paragraph)
+(modal-define-key (kbd "M-V") (kbd "C-M-S-v"))  ;; scroll-other-window-down
 
 ;;;;;;;;;;;;;;;;;;;
 ;; new quit bind ;;
