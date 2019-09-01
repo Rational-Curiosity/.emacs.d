@@ -122,14 +122,6 @@ This variable is considered on read only mode
   "Unregister translation from KEY."
   (define-key modal-mode-map key nil))
 
-;;;###autoload
-(defun modal-remove-kbd (kbd)
-  "Unregister translation from KBD.
-
-Arguments are accepted in in the format used for saving keyboard
-macros (see `edmacro-mode')."
-  (modal-remove-key (kbd kbd)))
-
 (defvar modal--original-buffer nil)
 
 ;;;###autoload
@@ -230,17 +222,17 @@ Otherwise use `list'."
           (lambda (key-binding)
             (let* ((key (car key-binding))
                    (key-array (kbd key)))
-              (cons key
-                    (condition-case nil
-                        (let ((keys (split-string (documentation (key-binding key-array)) "\"")))
-                          (if (and (= (length keys) 5)
-                                   (string-equal (car keys) "Modal mode translates "))
-                              (copy-sequence
-                               (symbol-name (modal-find-bind-check-read-only
-                                            key-array
-                                            (kbd (nth 3 keys)))))
-                            "lambda"))
-                      (error "lambda")))))) which-key-replacement-alist))
+              (condition-case nil
+                  (let ((keys (split-string (documentation (key-binding key-array) t) "\"")))
+                    (if (and (= (length keys) 5)
+                             (string-equal (car keys) "Modal mode translates "))
+                        (let ((binding (modal-find-bind-check-read-only
+                                        key-array
+                                        (kbd (nth 3 keys)))))
+                          (and binding (cons key (copy-sequence
+                                                  (symbol-name binding)))))
+                      (cons key "lambda")))
+                (error (cons key "lambda")))))) which-key-replacement-alist))
 
 ;; (fset 'modal--symbol-name (symbol-function 'symbol-name))
 
