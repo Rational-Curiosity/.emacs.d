@@ -690,6 +690,25 @@ there's a region, all lines that region covers will be duplicated."
       (rotate-text 1)
     (error (string-inflection-all-cycle))))
 
+;;;;;;;;;;;;;;;;;;;;;
+;; Keyboard macros ;;
+;;;;;;;;;;;;;;;;;;;;;
+(defun select-kbd-macro ()
+  (interactive)
+  (unless (kmacro-ring-empty-p)
+    (let* ((ring-alist (mapcar (lambda (ring-item)
+                                 (cons (format-kbd-macro (car ring-item))
+                                       (car ring-item)))
+                               kmacro-ring))
+           (kbd-macro (cdr (assoc (completing-read
+                                   "Select kbd macro: "
+                                   ring-alist nil t nil nil
+                                   (format-kbd-macro last-kbd-macro)) ring-alist))))
+      (when kbd-macro
+        (cl-delete-if (lambda (ring-item) (equal kbd-macro (car ring-item))) kmacro-ring)
+        (kmacro-push-ring)
+        (setq last-kbd-macro kbd-macro)))))
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
@@ -733,6 +752,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-<right>") #'forward-alt)
 (global-set-key (kbd "M-<left>") #'backward-alt)
 (global-set-key (kbd "C-ñ") #'find-next-unsafe-char)
+(global-set-key (kbd "C-x C-k C-i") 'select-kbd-macro)
 
 ;; Usa el clipboard del sistema
 ;; (global-set-key [(shift delete)] 'clipboard-kill-region)
