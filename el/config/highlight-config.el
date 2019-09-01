@@ -7,14 +7,23 @@
 (require 'hi-lock)
 (setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) "")
 
-;; Faces
-
+;;;;;;;;;;;
+;; Faces ;;
+;;;;;;;;;;;
 (defface hi-yellow-b
   '((((min-colors 88)) (:weight bold :foreground "yellow1"))
     (t (:weight bold :foreground "yellow")))
   "Face for hi-lock mode."
   :group 'hi-lock-faces)
 
+(require 'hl-line)
+(set-face-attribute 'hl-line nil
+                    :foreground 'unspecified :background "#2B2B2B"
+                    :underline 'unspecified :inherit 'unspecified)
+(global-hl-line-mode 1)
+;;;;;;;;;;;;;;;
+;; Functions ;;
+;;;;;;;;;;;;;;;
 (defun hl-smaller-5 ()
   "Highlight nunbers smaller than 5."
   (interactive)
