@@ -97,7 +97,7 @@ This variable is considered on read only mode
 
 ;;;###autoload
 (defun modal-define-key (actual-key target-key)
-  "Register translation from ACTUAL-KEY to TARGET-KEY with NAME."
+  "Register translation from ACTUAL-KEY to TARGET-KEY."
   (if (arrayp target-key)
       (let ((docstring (format "Modal mode translates \"%s\" into \"%s\"."
                                (key-description actual-key)
