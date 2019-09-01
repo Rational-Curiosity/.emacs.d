@@ -10,6 +10,21 @@
 (require 'config-lib)
 (advice-add 'smartscan-symbol-goto :around #'message-silent-advice)
 
+(defun smartscan-symbol-go-forward (arg)
+  "Jumps forward to the next symbol at point"
+  (interactive "P")
+  (smartscan-symbol-goto (if arg
+                             smartscan-last-symbol-name
+                           (smartscan-symbol-at-pt 'end)) 'forward))
+
+;;;###autoload
+(defun smartscan-symbol-go-backward (arg)
+  "Jumps backward to the previous symbol at point"
+  (interactive "P")
+  (smartscan-symbol-goto (if arg
+                             smartscan-last-symbol-name
+                           (smartscan-symbol-at-pt 'beginning)) 'backward))
+
 (define-key smartscan-map (kbd "M-n") nil)
 (define-key smartscan-map (kbd "C-c C-n") 'smartscan-symbol-go-forward)
 (define-key smartscan-map (kbd "M-p") nil)
