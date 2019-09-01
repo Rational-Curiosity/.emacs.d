@@ -12,7 +12,8 @@
       bmkp-last-as-first-bookmark-file nil
       ;;bmkp-light-style-autonamed 'lfringe
       ;;bmkp-light-style-non-autonamed 'lfringe
-      bmkp-bmenu-commands-file "~/.emacs.d/cache/bmk-bmenu-commands.el")
+      bmkp-bmenu-commands-file "~/.emacs.d/cache/bmk-bmenu-commands.el"
+      bmkp-bmenu-state-file "~/.emacs.d/cache/bmk-bmenu-state.el")
 
 (set-face-background 'bmkp-light-non-autonamed "DarkSlateGray")
 (set-face-background 'bmkp-light-autonamed "DimGray")

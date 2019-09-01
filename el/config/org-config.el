@@ -1195,6 +1195,7 @@ SUFFIX - default .png"
 
 (defun org-entry-put-multiline-property (pom property value)
   "Set PROPERTY to VALUE for entry at point-or-marker POM.
+Allow multiline properties.
 
 If the value is nil, it is converted to the empty string.  If it
 is not a string, an error is raised.  Also raise an error on
@@ -1316,9 +1317,10 @@ decreases scheduled or deadline date by one day."
                             (set
                              (make-local-variable 'semantic-mode) nil)))
 
-(define-key org-mode-map (kbd "M-.") #'org-priority)
+(define-key org-mode-map (kbd "M-,") #'org-priority)
 (define-key org-mode-map (kbd "C-c v e") #'org-show-entry)
 (define-key org-mode-map (kbd "C-c TAB") #'org-show-subtree)
+(define-key org-mode-map (kbd "C-c <backtab>") #'org-show-all)
 (define-key org-mode-map (kbd "C-c v t") #'org-show-todo-tree)
 ;; (define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all) 
 ;; (define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all) 

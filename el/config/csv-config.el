@@ -49,5 +49,10 @@
 
 (add-hook 'csv-mode-hook #'csv-detect-separator)
 
+;; Keys
+(define-key csv-mode-map (kbd "<tab>") 'csv-forward-field)
+(define-key csv-mode-map (kbd "<backtab>") 'csv-backward-field)
+
+
 (provide 'csv-config)
 ;;; csv-config.el ends here

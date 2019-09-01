@@ -9,10 +9,12 @@
 
 ;; folding
 (require 'vimish-fold)
-;; (set-face-attribute 'vimish-fold-overlay nil
-;;                     :inherit nil
-;;                     :background "#0f0f0f")
-(face-spec-set 'vimish-fold-overlay '((t (:background "#0f0f0f"))))
+(set-face-attribute 'vimish-fold-overlay nil
+                    :foreground 'unspecified
+                    :background "#0f0f0f"
+                    :underline t
+                    :inherit 'unspecified)
+;; (face-spec-set 'vimish-fold-overlay '((t (:background "#0f0f0f" :underline t))))
 
 
 (defmacro deffold (func-name params let*-list start-cond while-cond &optional backward-cond last-cond)
