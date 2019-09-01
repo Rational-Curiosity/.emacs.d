@@ -49,6 +49,11 @@
                             (message "key: %s, keymap: %S, bind: %s" key-str ob m)))))
               obarray)))
 
+;; Recursibe byte compile
+(defun byte-compile-recursively (directory)
+  (interactive "DByte compile and recompile directory: ")
+  (byte-recompile-directory directory 0 t))
+
 (require 'cl-lib)
 ;; [ get current function name
 ;; thanks to: https://emacs.stackexchange.com/a/2312
@@ -299,7 +304,8 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
   (cl-remove-if-not (lambda (attrs-process) (member (cdr (assoc 'comm attrs-process)) names)) attrs-processes))
 
 (defun processes-children (pid attrs-processes)
-  (cl-remove-if-not (lambda (attrs-process) (= pid (cdr (assoc 'ppid attrs-process)))) attrs-processes))
+  (cl-remove-if-not (lambda (attrs-process) (let ((ppid (cdr (assoc 'ppid attrs-process))))
+                                         (and (integerp ppid) (= pid ppid)))) attrs-processes))
 
 (defun processes-children-all (pid attrs-processes)
   (let ((pids (list pid))
