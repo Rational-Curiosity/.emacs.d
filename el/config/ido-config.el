@@ -73,6 +73,7 @@ can be completed using TAB,
 remaining completion.  If absent, elements 5 and 6 are used instead."
   :type '(repeat string)
   :group 'ido)
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -121,14 +122,22 @@ Modified from `icomplete-completions'."
           (ido-incomplete-regexp
            (concat " " (car comps)))
           ((null (cdr comps))          ;one match
-           (concat (if (if (not ido-enable-regexp)
-                           (= (length (ido-name (car comps))) (length name))
-                         ;; We can't rely on the length of the input
-                         ;; for regexps, so explicitly check for a
-                         ;; complete match
-                         (string-match name (ido-name (car comps)))
-                         (string-equal (match-string 0 (ido-name (car comps)))
-                                       (ido-name (car comps))))
+           ;; (concat (if (if (not ido-enable-regexp)                                  ;; -
+           ;;                 (= (length (ido-name (car comps))) (length name))        ;; -
+           ;;               ;; We can't rely on the length of the input                ;; -
+           ;;               ;; for regexps, so explicitly check for a                  ;; -
+           ;;               ;; complete match                                          ;; -
+           ;;               (string-match name (ido-name (car comps)))                 ;; -
+           ;;               (string-equal (match-string 0 (ido-name (car comps)))      ;; -
+           ;;                             (ido-name (car comps))))                     ;; -
+           (concat (if (if ido-enable-regexp                                           ;; +
+                           (condition-case nil                                         ;; +
+                               (progn                                                  ;; +
+                                 (string-match name (ido-name (car comps)))            ;; +
+                                 (string-equal (match-string 0 (ido-name (car comps))) ;; +
+                                               (ido-name (car comps))))                ;; +
+                             (invalid-regexp nil))                                     ;; +
+                         (= (length (ido-name (car comps))) (length name)))            ;; +
                        ""
                      ;; When there is only one match, show the matching file
                      ;; name in full, wrapped in [ ... ].
@@ -164,13 +173,15 @@ Modified from `icomplete-completions'."
                                              (let ((regexp (if ido-enable-regexp name (regexp-quote name))) ;; +
                                                    (pos 0)                                                  ;; +
                                                    end)                                                     ;; +
-                                               (while (and (string-match regexp str pos)                    ;; +
+                                               (while (and (condition-case nil                              ;; +
+                                                               (string-match regexp str pos)                ;; +
+                                                             (invalid-regexp nil))                          ;; +
                                                            (< pos (setq end (match-end 0))))                ;; +
                                                  (ignore-errors                                             ;; +
                                                    (add-face-text-property (match-beginning 0)              ;; +
                                                                            (match-end 0)                    ;; +
                                                                            'ido-substring-match-face        ;; +
-                                                                           nil str))                          ;; +
+                                                                           nil str))                        ;; +
                                                  (setq pos end)))))                                         ;; +
                                        str)))))
                            comps))))))
@@ -182,7 +193,7 @@ Modified from `icomplete-completions'."
                   (concat (nth 4 ido-decorations)   ;; [ ... ]
                           (substring ido-common-match-string (length name))
                           (nth 5 ido-decorations)))
-              " " (nth 4 ido-decorations) (int-to-string (length ido-matches)) (nth 5 ido-decorations) ;; +
+              " " (nth 4 ido-decorations) (int-to-string (length ido-matches)) (nth 5 ido-decorations)      ;; +
               ;; list all alternatives
               (nth 0 ido-decorations)  ;; { ... }
               alternatives
