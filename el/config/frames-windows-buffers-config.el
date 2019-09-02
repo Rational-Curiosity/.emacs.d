@@ -84,7 +84,6 @@
 ;; Windows ;;
 ;;;;;;;;;;;;;
 (defvar hscroll-aggressive nil)
-(defvar horizontal-jump 60)
 (setq split-width-threshold 140
       ;; Vertical Scroll
       ;;scroll-preserve-screen-position 'allways
@@ -294,6 +293,30 @@ Don't show on windows buffers currently showed."
     (set-window-dedicated-p window nil)))
 
 ;; window resize
+(defun window-resize-width (arg &optional window max-width min-width preserve-size)
+  "ARG nil Fit WINDOW according to its buffer's width.
+WINDOW, MAX-WIDTH and MIN-WIDTH have the same meaning as in
+`fit-window-to-buffer'.
+
+ARG non-nil resize window to ARG width."
+  (interactive "P")
+  (if arg
+      (window-resize (or window (selected-window)) (- arg (window-width)) t)
+    (let ((fit-window-to-buffer-horizontally 'only))
+      (fit-window-to-buffer window nil nil max-width min-width preserve-size))))
+
+(defun window-resize-height (arg &optional window max-height min-height preserve-size)
+  "ARG nil Fit WINDOW according to its buffer's height.
+WINDOW, MAX-HEIGHT and MIN-HEIGHT have the same meaning as in
+`fit-window-to-buffer'.
+
+ARG non-nil resize window to ARG height."
+  (interactive "P")
+  (if arg
+      (window-resize (or window (selected-window)) (- arg (window-height)))
+    (let ((fit-window-to-buffer-horizontally nil))
+      (fit-window-to-buffer window max-height min-height nil nil preserve-size))))
+
 (require 'winner)
 (defhydra hydra-win (:foreign-keys warn)
   "WIN"
@@ -377,7 +400,7 @@ ALL-FRAMES have special meanings:
 
 - ‘visible’ means consider all windows on all visible frames.
 
-- 0 (the number zero) means consider all windows on all visible and
+- 0 (the number ero) means consider all windows on all visible and
   iconified frames.
 
 - A frame means consider all windows on that frame only.
@@ -506,28 +529,33 @@ others."
 ;;   ("<down>" windmove-down))
 
 (global-set-key (kbd "C-c R") #'revert-buffer)
-(global-set-key (kbd "C-x C-c") #'save-buffers-kill-terminal-with-choice)
-(global-set-key (kbd "C-x M-t") #'transpose-frame)
-(global-set-key (kbd "C-x M-h") #'flop-frame)
-(global-set-key (kbd "C-x M-v") #'flip-frame)
-(global-set-key (kbd "C-x M-r") #'rotate-frame-clockwise)
-(global-set-key (kbd "C-x M-R") #'rotate-frame-anticlockwise)
-(global-set-key (kbd "C-x 2") #'vsplit-last-buffer)
-(global-set-key (kbd "C-x 3") #'hsplit-last-buffer)
-(global-set-key (kbd "C-x M-2") #'shell-2-window-frame)
-(global-set-key (kbd "C-x M-3") #'shell-3-window-frame)
-(global-set-key (kbd "C-c w o") #'halve-other-window-height)
-(global-set-key (kbd "C-c w d a") #'window-dedicate-all)
-(global-set-key (kbd "C-c w u a") #'window-undedicate-all)
-(global-set-key (kbd "C-c w d t") #'window-dedicate-this)
-(global-set-key (kbd "C-c w u t") #'window-undedicate-this)
-(global-set-key (kbd "C-c w p") #'winner-undo)
-(global-set-key (kbd "C-c w n") #'winner-redo)
-(global-set-key (kbd "C-c w h") #'toggle-hscroll-aggressive)
-(global-set-key (kbd "C-x k") #'kill-buffer-or-buffers-from-file)
+(global-set-key (kbd "C-x C-c") 'save-buffers-kill-terminal-with-choice)
+(global-set-key (kbd "C-x k") 'kill-buffer-or-buffers-from-file)
+
 (global-set-key (kbd "C-c b t") #'toggle-tool-bar-mode-from-frame)
 (global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
-(global-set-key (kbd "C-c e") #'toggle-message-truncate-lines)
+(global-set-key (kbd "C-c e") 'toggle-message-truncate-lines)
+
+(global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
+(global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
+
+(global-set-key (kbd "C-c w t") #'transpose-frame)
+(global-set-key (kbd "C-c w h") #'flop-frame)
+(global-set-key (kbd "C-c w v") #'flip-frame)
+(global-set-key (kbd "C-c w r") #'rotate-frame-clockwise)
+(global-set-key (kbd "C-c w R") #'rotate-frame-anticlockwise)
+(global-set-key (kbd "C-c w -") #'winner-undo)
+(global-set-key (kbd "C-c w _") #'winner-redo)
+(global-set-key (kbd "C-c w 2") 'shell-2-window-frame)
+(global-set-key (kbd "C-c w 3") 'shell-3-window-frame)
+(global-set-key (kbd "C-c w a") 'toggle-hscroll-aggressive)
+(global-set-key (kbd "C-c w o") 'halve-other-window-height)
+(global-set-key (kbd "C-c w d a") 'window-dedicate-all)
+(global-set-key (kbd "C-c w u a") 'window-undedicate-all)
+(global-set-key (kbd "C-c w d t") 'window-dedicate-this)
+(global-set-key (kbd "C-c w u t") 'window-undedicate-this)
+(global-set-key (kbd "C-c w H") 'window-resize-height)
+(global-set-key (kbd "C-c w W") 'window-resize-width)
 
 
 (provide 'frames-windows-buffers-config)
