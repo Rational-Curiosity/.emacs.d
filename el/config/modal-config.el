@@ -73,10 +73,6 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (define-key indent-rigidly-map "b" #'indent-rigidly-left)
 
 ;; Modal editing
-(with-eval-after-load 'smartparens
-  (modal-define-key [remap backward-sexp] 'sp-backward-sexp)
-  (modal-define-key [remap forward-sexp] 'sp-forward-sexp))
-
 ;; ' (handy as self-inserting symbol)
 ;; " (handy as self-inserting symbol)
 (modal-define-key (kbd "(") (kbd "C-("))  ;; sp-rewrap-sexp-lc
@@ -121,7 +117,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "c a") (kbd "C-c C-a"))
 (modal-define-key (kbd (kbd "c A")) (kbd (kbd "C-c a")))  ;; org-agenda
 (modal-define-key (kbd "c b") (kbd "C-c C-b"))  ;; go-back
-(modal-define-key (kbd "c B") (kbd "C-c M-b"))  ;; org-previous-block
+(modal-define-key (kbd "c M-b") (kbd "C-c M-b"))  ;; org-previous-block
 (modal-define-key (kbd (kbd "c c")) (kbd (kbd "C-c C-c")))  ;; confirm-commit
 (modal-define-key (kbd "c e w") #'er/mark-word)
 (modal-define-key (kbd "c e s") #'er/mark-symbol)
@@ -131,7 +127,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "c e p") #'er/mark-inside-pairs)
 (modal-define-key (kbd "c e P") #'er/mark-outside-pairs)
 (modal-define-key (kbd "c f") (kbd "C-c C-f"))  ;; org-forward-heading-same-level
-(modal-define-key (kbd "c F") (kbd "C-c M-f"))  ;; org-next-block
+(modal-define-key (kbd "c M-f") (kbd "C-c M-f"))  ;; org-next-block
 (modal-define-key (kbd "c i s") #'spanish-dictionary)
 (modal-define-key (kbd "c i e") #'english-dictionary)
 (modal-define-key (kbd "c i c") #'flyspell-buffer)
@@ -163,17 +159,23 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "c v G") #'vimish-fold-avy)
 (modal-define-key (kbd "c V s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
 (modal-define-key (kbd "c V h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
-(modal-define-key (kbd "c w t") #'transpose-frame)
-(modal-define-key (kbd "c w h") #'flop-frame)
-(modal-define-key (kbd "c w v") #'flip-frame)
-(modal-define-key (kbd "c w b") #'windmove-left)
-(modal-define-key (kbd "c w f") #'windmove-right)
-(modal-define-key (kbd "c w n") #'windmove-down)
-(modal-define-key (kbd "c w p") #'windmove-up)
-(modal-define-key (kbd "c w r") #'rotate-frame-clockwise)
-(modal-define-key (kbd "c w R") #'rotate-frame-anticlockwise)
 (modal-define-key (kbd "c w -") #'winner-undo)
 (modal-define-key (kbd "c w _") #'winner-redo)
+(modal-define-key (kbd "c w 2") 'shell-2-window-frame)
+(modal-define-key (kbd "c w 3") 'shell-3-window-frame)
+(modal-define-key (kbd "c w a") #'toggle-hscroll-aggressive)
+(modal-define-key (kbd "c w d a") #'window-dedicate-all)
+(modal-define-key (kbd "c w d t") #'window-dedicate-this)
+(modal-define-key (kbd "c w H") #'window-resize-height)
+(modal-define-key (kbd "c w h") #'flop-frame)
+(modal-define-key (kbd "c w o") #'halve-other-window-height)
+(modal-define-key (kbd "c w R") #'rotate-frame-anticlockwise)
+(modal-define-key (kbd "c w r") #'rotate-frame-clockwise)
+(modal-define-key (kbd "c w t") #'transpose-frame)
+(modal-define-key (kbd "c w u a") #'window-undedicate-all)
+(modal-define-key (kbd "c w u t") #'window-undedicate-this)
+(modal-define-key (kbd "c w v") #'flip-frame)
+(modal-define-key (kbd "c w W") #'window-resize-width)
 (modal-define-key (kbd "c x n") (kbd "C-c C-x C-n"))  ;; org-next-link
 (modal-define-key (kbd "c x p") (kbd "C-c C-x C-p"))  ;; org-previous-link
 (modal-define-key (kbd "c x s") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
@@ -225,9 +227,15 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "x RET") (kbd "C-x C-o"))  ;; delete-blank-lines
 (modal-define-key (kbd "x SPC") (kbd "C-x C-SPC"))  ;; pop-global-mark
 (modal-define-key (kbd "x S-SPC") (kbd "C-x SPC"))  ;; rectangle-mark-mode
+(modal-define-key (kbd "x -") (kbd "C-x -"))  ;; shrink-window-if-larger-than-buffer
+(modal-define-key (kbd "x <") (kbd "C-x <"))  ;; scroll-left
+(modal-define-key (kbd "x >") (kbd "C-x >"))  ;; scroll-right
 (modal-define-key (kbd "x ;") (kbd "C-x C-;"))  ;; comment-line
 (modal-define-key (kbd "x (") (kbd "C-x ("))  ;; kmacro-start-macro
 (modal-define-key (kbd "x )") (kbd "C-x )"))  ;; kmacro-end-macro
+(modal-define-key (kbd "x ^") (kbd "C-x ^"))  ;; enlarge-window
+(modal-define-key (kbd "x {") (kbd "C-x {"))  ;; shrink-window-horizontally
+(modal-define-key (kbd "x }") (kbd "C-x }"))  ;; enlarge-window-horizontally
 (modal-define-key (kbd "x +") (kbd "C-x +"))  ;; balance-windows
 (modal-define-key (kbd "x 0") (kbd "C-x 0"))  ;; delete-window
 (modal-define-key (kbd "x 1") (kbd "C-x 1"))  ;; delete-other-windows
@@ -252,6 +260,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "x k v") (kbd "C-x C-k C-v"))  ;; kmacro-view-macro-repeat
 (modal-define-key (kbd "x K") (kbd "C-x k"))  ;; kill-buffer
 (modal-define-key (kbd "x l") (kbd "C-x C-l"))  ;; downcase-region
+(modal-define-key (kbd "x M-l") (kbd "C-x M-l"))  ;; recenter-horizontal
 (modal-define-key (kbd "x o") (kbd "C-x o"))  ;; other-window
 (modal-define-key (kbd "x O") #'ff-find-other-file)
 (modal-define-key (kbd "x p") (kbd "C-x C-p"))  ;; mark-page
