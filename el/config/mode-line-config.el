@@ -141,33 +141,39 @@
 
 (require 'battery)
 (bug-check-function-bytecode
-   'battery-update
-   "CIUGAAggGcbHCZ5BIUAayAuDJgAKp4MmAAoMWIMmAMkLCSKCJwDKywqnhTQACg1YhTQAzM3OJRYQKs8ghw==")
+ 'battery-update
+ "CIUGAAggGcbHCZ5BIUAayAuDJgAKp4MmAAoMWIMmAMkLCSKCJwDKywqnhTQACg1YhTQAzM3OJRYQKs8ghw==")
 (eval-and-when-daemon frame
   (display-battery-mode)
   (setq battery-mode-line-format "%p%L")
   (defun battery-update ()
     "Update battery status information in the mode line."
     (let ((data (and battery-status-function (funcall battery-status-function))))
-      (let ((percentage (truncate (car (read-from-string (cdr (assq ?p data))))))
-            (supplier (cdr (assq ?L data))))
+      (let ((percentage (car (read-from-string (cdr (assq ?p data)))))
+            (supplier (cdr (assq ?L data)))
+            percentage-str
+            percentage-face)
+        (if (numberp percentage)
+            (setq percentage-str (int-to-string (truncate percentage))
+                  percentage-face (if (<= percentage battery-load-critical)
+                                      '(:foreground "red")
+                                    `(:foreground ,(format "#%02i%02i00"
+                                                           (- 100 percentage)
+                                                           (- percentage 1)))))
+          (setq percentage-str percentage
+                percentage-face '(:foreground "yellow")))
         (setq battery-mode-line-string
               (propertize (concat
-                           (int-to-string percentage)
+                           percentage-str
                            (cond ((string-equal supplier "AC")
                                   (if (display-graphic-p) "🔌" ":"))
                                  ((string-equal supplier "BAT")
-                                  (if (display-graphic-p) "🔋" "-"))
+                                  (if (display-graphic-p) "🔋" "!"))
                                  ((string-equal supplier "N/A")
                                   "?")
                                  (t supplier)))
                           'font-lock-face
-                          (if (and (numberp percentage)
-                                   (<= percentage battery-load-critical))
-                              '(:foreground "red")
-                            `(:foreground ,(format "#%02i%02i00"
-                                                   (- 100 percentage)
-                                                   (- percentage 1))))
+                          percentage-face
                           'help-echo "Battery status information"))))
     (force-mode-line-update)))
 
