@@ -26,26 +26,39 @@
   "Return list of count occurrences of csv separators in current line."
   (mapcar #'count-occurrences-in-current-line (mapcar #'string-to-char (default-value 'csv-separators))))
 
-(defun csv-separators-max ()
-  "Return max occurrence separator in current line."
-  (let* ((frec (csv-count-occurrences-separators-in-current-line))
-         (assoc-list (cl-mapcar #'cons frec (default-value 'csv-separators))))
-    (when (cl-every (lambda (number)
+(defun csv-separators-max (&optional line)
+  "Return max occurrence separator."
+  (save-excursion
+    (goto-char (point-min))
+    (if line (forward-line (1- line)))
+    (let* ((frec (csv-count-occurrences-separators-in-current-line))
+           (assoc-list (cl-mapcar #'cons frec (default-value 'csv-separators))))
+      (while (and (cl-every (lambda (number)
+                              (= 0 number))
+                            frec)
+                  (= 0 (forward-line 1)))
+        (setq frec (csv-count-occurrences-separators-in-current-line)
+              assoc-list (cl-mapcar #'cons frec (default-value 'csv-separators))))
+      (if (cl-every (lambda (number)
                       (= 0 number))
                     frec)
-      (message "CSV separator not found, restart csv-mode"))
-    (cdr (assoc (seq-max frec) assoc-list))))
+          nil
+        (cdr (assoc (seq-max frec) assoc-list))))))
 
-(defun csv-detect-separator ()
+(defun csv-detect-separator (&optional line)
   "Detect csv separator in current buffer and update csv variables."
+  (interactive (list (line-number-at-pos)))
   ;; (make-local-variable 'csv-separators)
-  (csv-set-comment-start nil)
-  (setq-local csv-separators (list (csv-separators-max)))
-  (setq-local csv-separator-chars (mapcar #'string-to-char csv-separators))
-  (setq-local csv--skip-regexp (concat "^\n" csv-separator-chars))
-  (setq-local csv-separator-regexp (concat "[" csv-separator-chars "]"))
-  (setq-local csv-font-lock-keywords (list (list csv-separator-regexp '(0 'csv-separator-face))))
-  (message "CSV separator detected: %s" csv-separators))
+  (let ((csv-sep-max (csv-separators-max line)))
+    (if (not csv-sep-max)
+        (message "CSV separator not found, call `csv-detect-separator' or restart `csv-mode'")
+      (csv-set-comment-start nil)
+      (setq-local csv-separators (list csv-sep-max))
+      (setq-local csv-separator-chars (mapcar #'string-to-char csv-separators))
+      (setq-local csv--skip-regexp (concat "^\n" csv-separator-chars))
+      (setq-local csv-separator-regexp (concat "[" csv-separator-chars "]"))
+      (setq-local csv-font-lock-keywords (list (list csv-separator-regexp '(0 'csv-separator-face))))
+      (message "CSV separator detected: %s" csv-separators))))
 
 (add-hook 'csv-mode-hook #'csv-detect-separator)
 
