@@ -621,6 +621,20 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;;
 ;; Movimiento ;;
 ;;;;;;;;;;;;;;;;
+(defun recenter-horizontal ()
+  "Make the point horizontally centered in the window"
+  (interactive)
+  (if (eq this-command last-command)
+      (let ((mid (/ (window-width) 2))
+            (line-len (save-excursion (end-of-line) (current-column)))
+            (col (current-column)))
+        (if (< mid col)
+            (set-window-hscroll (selected-window)
+                                (- col mid))))
+    (set-window-hscroll (selected-window) (current-column))))
+
+
+
 (defvar horizontal-alt 15)
 
 (defun forward-alt ()
@@ -631,23 +645,19 @@ there's a region, all lines that region covers will be duplicated."
   (interactive)
   (backward-char horizontal-alt))
 
-(defun hscroll-right ()
-  (interactive)
-  (right-char (min
-               horizontal-jump
-               (- (save-excursion
-                    (end-of-line)
-                    (current-column))
-                  (current-column)))))
+(defun hscroll-right (arg)
+  (interactive "p")
+  (let ((width (- (window-width) hscroll-margin (if (numberp display-line-numbers)
+                                                    display-line-numbers-width
+                                                  3)))
+        (col (current-column)))
+    (let ((pos (max 0 (* (+ (/ col width) arg) width))))
+      (move-to-column (+ pos hscroll-margin 1))
+      (set-window-hscroll (selected-window) pos))))
 
-(defun hscroll-left ()
-  (interactive)
-  (left-char (min
-              horizontal-jump
-              (- (current-column)
-                 (save-excursion
-                   (beginning-of-line)
-                   (current-column))))))
+(defun hscroll-left (arg)
+  (interactive "p")
+  (hscroll-right (- arg)))
 
 (require 'string-inflection)
 
@@ -747,12 +757,15 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "S-<prior>") #'scroll-other-window-down)
 (global-set-key (kbd "C-<next>") #'hscroll-right)
 (global-set-key (kbd "M-s <next>") #'hscroll-right)
+(global-set-key (kbd "C-x >") #'hscroll-right)
 (global-set-key (kbd "C-<prior>") #'hscroll-left)
 (global-set-key (kbd "M-s <prior>") #'hscroll-left)
+(global-set-key (kbd "C-x <") #'hscroll-left)
 (global-set-key (kbd "M-<right>") #'forward-alt)
 (global-set-key (kbd "M-<left>") #'backward-alt)
 (global-set-key (kbd "C-ñ") #'find-next-unsafe-char)
 (global-set-key (kbd "C-x C-k C-i") 'select-kbd-macro)
+(global-set-key (kbd "C-x M-l") 'recenter-horizontal)
 
 ;; Usa el clipboard del sistema
 ;; (global-set-key [(shift delete)] 'clipboard-kill-region)
