@@ -324,6 +324,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;; Z - [ command prefix
 ;; Z - ] command prefix
 
+(modal-define-key (kbd "M-%") (kbd "C-M-%"))
 (modal-define-key (kbd "M-Q") #'fill-paragraph)
 (modal-define-key (kbd "M-V") (kbd "C-M-S-v"))  ;; scroll-other-window-down
 
