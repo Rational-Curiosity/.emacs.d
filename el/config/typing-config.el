@@ -7,14 +7,15 @@
 
 ;;; Code:
 
-(setq column-number-mode t)
-
-(setq-default truncate-lines t)
+(setq-default truncate-lines t
+              ;; ignore case searching
+              case-fold-search nil)
 ;; Cambia todas las preguntas yes-or-no-p por y-or-n-p
 (fset 'yes-or-no-p 'y-or-n-p)
-;; Deshabilita insertar una nueva linea al final de los ficheros
-;; para que las plantillas de 'yasnippet' no añadan nueva liena
-(set 'mode-require-final-newline nil)
+(setq column-number-mode t
+      ;; Deshabilita insertar una nueva linea al final de los ficheros
+      ;; para que las plantillas de 'yasnippet' no añadan nueva liena
+      mode-require-final-newline nil)
 
 (require 'config-lib)
 ;;;;;;;;;;;;;;;;;;;
@@ -731,6 +732,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
+(global-set-key (kbd "<f7> i") #'toggle-case-fold-search)
 (global-set-key (kbd "<f7> w") #'toggle-truncate-lines)
 (global-set-key (kbd "<f7> l") #'whitespace-toggle-lines-tail)
 (global-set-key (kbd "<f7> RET") #'whitespace-toggle-marks)
