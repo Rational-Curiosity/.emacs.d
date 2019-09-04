@@ -22,7 +22,8 @@
   '((t (:foreground "#ffd700" :bold t :underline t)))
   "Face used by ido-config for the matched part.")
 ;; ido mode
-(setq ido-enable-flex-matching nil
+(setq ido-case-fold nil
+      ido-enable-flex-matching nil
       ido-enable-regexp t
       ido-enable-prefix nil
       ido-max-prospects 20
@@ -387,6 +388,8 @@ Modified from `icomplete-completions'."
   (define-key ido-completion-map (kbd "SPC") nil)
   (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
   (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)
+  (define-key ido-completion-map (kbd "M-c") 'ido-toggle-case)
+  (define-key ido-completion-map (kbd "M-t") 'ido-toggle-regexp)
   (define-key ido-completion-map (kbd "M-v") 'ido-preview)
   (define-key ido-completion-map (kbd "M-e") 'ido-preview-next)
   (define-key ido-completion-map (kbd "M-a") 'ido-preview-prev))
