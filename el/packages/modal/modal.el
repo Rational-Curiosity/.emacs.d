@@ -11,6 +11,7 @@
 ;;; Code:
 (require 'cl-lib)
 (require 'quail)
+(require 'hl-line)
 
 
 (defgroup modal nil
@@ -160,11 +161,17 @@ configuration created previously with `modal-define-key' and
       (progn
         ;; (dolist (buffer (buffer-list))
         ;;   (with-current-buffer buffer
-        (setq-local cursor-type modal-cursor-type) ;; ))
+        (setq-local cursor-type modal-cursor-type)
+        (set-face-attribute 'hl-line nil
+                            :background "#3E2B2B")
+        ;; ))
         (define-key universal-argument-map "u" #'universal-argument-more))
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
-    (setq-local cursor-type modal-insert-cursor-type) ;; ))
+    (setq-local cursor-type modal-insert-cursor-type)
+    (set-face-attribute 'hl-line nil
+                        :background "#2B2B2B")
+    ;; ))
     (define-key universal-argument-map "u" nil)))
 
 (defun modal--maybe-activate ()
@@ -206,6 +213,16 @@ This is used by `modal-global-mode'."
     (if modal-mode
         (modal-global-mode 0)
       (modal-global-mode-force))))
+
+(defun modal-global-mode-force-with-unbind ()
+  (interactive)
+  (global-set-key [(escape)] nil)
+  (modal-global-mode-force))
+
+(defun modal-global-mode-disable-with-bind ()
+  (interactive)
+  (global-set-key [(escape)] 'modal-global-mode-force-with-unbind)
+  (modal-global-mode 0))
 
 ;; advices
 (defun modal--input-function-advice (fnc key)

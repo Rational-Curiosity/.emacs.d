@@ -184,17 +184,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "e") (kbd "C-e"))  ;; move-end-of-line
 (modal-define-key (kbd "f") (kbd "C-f"))  ;; forward-char
 (modal-define-key "\M-f" 'forward-word)
-;; g - [ prefix
-(modal-define-key (kbd "g c") #'avy-goto-char)
-(modal-define-key (kbd "g C") #'avy-goto-char-2)
-(modal-define-key (kbd "g l") #'avy-goto-line)
-(modal-define-key (kbd "g s") #'sp-end-of-sexp)
-(modal-define-key (kbd "g S") #'sp-beginning-of-sexp)
-(modal-define-key (kbd "g w") #'avy-goto-word-1)
-(modal-define-key (kbd "g W") #'avy-goto-word-0)
-(modal-define-key (kbd "g k") #'link-hint-open-link)
-(modal-define-key (kbd "g K") #'link-hint-copy-link)
-;; g - ] prefix
+(modal-define-key (kbd "g") 'modal-global-mode-disable-with-bind)
 ;; h - [ prefix
 (modal-define-key (kbd "h b") #'describe-bindings)
 (modal-define-key (kbd "h e") #'view-echo-area-messages)
