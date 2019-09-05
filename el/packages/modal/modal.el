@@ -8,6 +8,25 @@
 ;; main goal of the package is making modal editing in Emacs as natural and
 ;; native as possible.
 
+;; List of map options
+;; # man xkeyboard-config
+;; Keycode meanings
+;; # xmodmap -pke
+
+;; * Swap LeftControl and LeftWin
+;;   # setxkbmap -option ctrl:swap_lwin_lctl
+;; * RightControl as AltGr
+;;   # setxkbmap -option lv3:switch
+;; * AltGr as control
+;;   # xmodmap -e 'keycode 108 = Alt_R'
+;;   # xmodmap -e 'add control = Alt_R'
+;;   <xor>
+;;   # xmodmap -e 'keycode 108 = Control_R'
+;;   # xmodmap -e 'add control = Control_R'
+
+;; Hyper_R is free because `xmodmap' don't show it running
+;; # xmodmap
+
 ;;; Code:
 (require 'cl-lib)
 (require 'quail)
@@ -163,16 +182,16 @@ configuration created previously with `modal-define-key' and
         ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type)
         (set-face-attribute 'hl-line nil
-                            :background "#3E2B2B")
+                            :background "#3B3B4E")
         ;; ))
-        (define-key universal-argument-map "u" #'universal-argument-more))
+        (define-key universal-argument-map "U" #'universal-argument-more))
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
     (setq-local cursor-type modal-insert-cursor-type)
     (set-face-attribute 'hl-line nil
-                        :background "#2B2B2B")
+                        :background "#3B3B3B")
     ;; ))
-    (define-key universal-argument-map "u" nil)))
+    (define-key universal-argument-map "U" nil)))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not minibuffer or blacklisted.
@@ -279,7 +298,7 @@ Otherwise use `list'."
         (define-key keymap [?\S-\ ] nil))
       (keymaps-with-binding [?\S-\ ]))
 ;; Modal keys
-(modal-define-key (kbd "u") (kbd "C-u"))  ;; universal-argument
+(modal-define-key (kbd "U") (kbd "C-u"))  ;; universal-argument
 (global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
 
 
