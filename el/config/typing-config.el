@@ -151,6 +151,21 @@ prompt the user for a coding system."
                  ("Ü" . "U")) string)
     (set 'string (replace-regexp-in-string (car map) (cdr map) string nil t))))
 
+;;;;;;;;;;;;;
+;; Control ;;
+;;;;;;;;;;;;;
+(when (executable-find "setxkbmap")
+  (defun keyboard-swap-ctrl-win ()
+    (interactive)
+    (shell-command "setxkbmap -option ctrl:swap_lwin_lctl"))
+  (when (executable-find "xmodmap")
+    (defun keyboard-swap-ctrl-altgr ()
+      (interactive)
+      (shell-command
+       "setxkbmap -option lv3:switch && \
+xmodmap -e 'keycode 108 = Alt_R' && \
+xmodmap -e 'add control = Alt_R'"))))
+
 ;;;;;;;;;;
 ;; Caps ;;
 ;;;;;;;;;;
@@ -535,11 +550,6 @@ there's a region, all lines that region covers will be duplicated."
 ;; Activa imath-mode
 ;(global-set-key (kbd "M-n M-m") 'imath-mode)
 
-
-;; isearch
-(define-key isearch-mode-map "\M-f" #'isearch-repeat-forward)
-(define-key isearch-mode-map "\M-b" #'isearch-repeat-backward)
-
 ;; Bookmark handling
 ;;
 ;; (global-set-key (kbd "<C-f5>") '(lambda () (interactive) (progn (message "Bookmark f5 added") (bookmark-set "BookMark_f5"))))
@@ -695,10 +705,12 @@ there's a region, all lines that region covers will be duplicated."
 (require 'rotate-text)
 (require 'string-inflection)
 
-(defun rotate-or-inflection ()
-  (interactive)
+(defun rotate-or-inflection (arg)
+  (interactive (list (if (consp current-prefix-arg)
+                         -1
+                       (prefix-numeric-value current-prefix-arg))))
   (condition-case nil
-      (rotate-text 1)
+      (rotate-text arg)
     (error (string-inflection-all-cycle))))
 
 ;;;;;;;;;;;;;;;;;;;;;
@@ -765,9 +777,13 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-x <") #'hscroll-left)
 (global-set-key (kbd "M-<right>") #'forward-alt)
 (global-set-key (kbd "M-<left>") #'backward-alt)
-(global-set-key (kbd "C-ñ") #'find-next-unsafe-char)
+(global-set-key (kbd "C-ñ") 'find-next-unsafe-char)
 (global-set-key (kbd "C-x C-k C-i") 'select-kbd-macro)
 (global-set-key (kbd "C-x M-l") 'recenter-horizontal)
+;; Case
+(global-set-key (kbd "M-c") #'capitalize-dwim)
+(global-set-key (kbd "M-l") #'downcase-dwim)
+(global-set-key (kbd "M-u") #'upcase-dwim)
 
 ;; Usa el clipboard del sistema
 ;; (global-set-key [(shift delete)] 'clipboard-kill-region)
