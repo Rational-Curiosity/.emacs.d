@@ -93,6 +93,7 @@
      ("dired"       "δ")
      ("emacs"       "ε")
      ("help"        "?")
+     ("csv"         ",")
      ("inferior"    "i" :prefix)
      ("interaction" "i" :prefix)
      ("interactive" "i" :prefix)
