@@ -18,7 +18,7 @@
 
 (require 'hl-line)
 (set-face-attribute 'hl-line nil
-                    :foreground 'unspecified :background "#2B2B2B"
+                    :foreground 'unspecified :background "#3B3B3B"
                     :underline 'unspecified :inherit 'unspecified)
 (global-hl-line-mode 1)
 ;;;;;;;;;;;;;;;
