@@ -367,12 +367,10 @@ Modified from `icomplete-completions'."
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is your old M-x.
-(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+;; (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 ;; icomplete keys
-(define-key icomplete-minibuffer-map "\M-q" 'abort-recursive-edit)
-(define-key icomplete-minibuffer-map "\M-j" [?\C-j])
-(define-key icomplete-minibuffer-map "\M-f" [?\C-.])
-(define-key icomplete-minibuffer-map "\M-b" [?\C-,])
+(define-key icomplete-minibuffer-map "\C-s" [?\C-.])
+(define-key icomplete-minibuffer-map "\C-r" [?\C-,])
 
 (defun ido-select-text-or-exit-minibuffer ()
   (interactive)
@@ -381,15 +379,9 @@ Modified from `icomplete-completions'."
     (ido-select-text)))
 ;; ido keys
 (defun ido-setup-completion-map-advice ()
-  (define-key ido-completion-map "\M-q" 'abort-recursive-edit)
   (define-key ido-completion-map "\C-j" 'ido-exit-minibuffer)
-  (define-key ido-completion-map "\M-j" 'ido-exit-minibuffer)
   (define-key ido-completion-map (kbd "RET") 'ido-select-text-or-exit-minibuffer)
   (define-key ido-completion-map (kbd "SPC") nil)
-  (define-key ido-completion-map (kbd "M-f") 'ido-next-match)
-  (define-key ido-completion-map (kbd "M-b") 'ido-prev-match)
-  (define-key ido-completion-map (kbd "M-c") 'ido-toggle-case)
-  (define-key ido-completion-map (kbd "M-t") 'ido-toggle-regexp)
   (define-key ido-completion-map (kbd "M-v") 'ido-preview)
   (define-key ido-completion-map (kbd "M-e") 'ido-preview-next)
   (define-key ido-completion-map (kbd "M-a") 'ido-preview-prev))

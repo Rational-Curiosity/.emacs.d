@@ -528,7 +528,7 @@ others."
 ;;   ("<up>" windmove-up)
 ;;   ("<down>" windmove-down))
 
-(global-set-key (kbd "C-c R") #'revert-buffer)
+(global-set-key (kbd "C-c M-r") #'revert-buffer)
 (global-set-key (kbd "C-x C-c") 'save-buffers-kill-terminal-with-choice)
 (global-set-key (kbd "C-x k") 'kill-buffer-or-buffers-from-file)
 
@@ -543,7 +543,7 @@ others."
 (global-set-key (kbd "C-c w h") #'flop-frame)
 (global-set-key (kbd "C-c w v") #'flip-frame)
 (global-set-key (kbd "C-c w r") #'rotate-frame-clockwise)
-(global-set-key (kbd "C-c w R") #'rotate-frame-anticlockwise)
+(global-set-key (kbd "C-c w C-r") #'rotate-frame-anticlockwise)
 (global-set-key (kbd "C-c w -") #'winner-undo)
 (global-set-key (kbd "C-c w _") #'winner-redo)
 (global-set-key (kbd "C-c w 2") 'shell-2-window-frame)
@@ -554,8 +554,8 @@ others."
 (global-set-key (kbd "C-c w u a") 'window-undedicate-all)
 (global-set-key (kbd "C-c w d t") 'window-dedicate-this)
 (global-set-key (kbd "C-c w u t") 'window-undedicate-this)
-(global-set-key (kbd "C-c w H") 'window-resize-height)
-(global-set-key (kbd "C-c w W") 'window-resize-width)
+(global-set-key (kbd "C-c w C-h") 'window-resize-height)
+(global-set-key (kbd "C-c w C-w") 'window-resize-width)
 
 
 (provide 'frames-windows-buffers-config)
