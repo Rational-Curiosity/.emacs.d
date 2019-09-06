@@ -398,6 +398,11 @@
   "Command line arg `--agenda'.  SWITCH ignored."
   (require 'org))
 (add-to-list 'command-switch-alist '("--agenda" . argument--agenda))
+(defun argument--edit-server (switch)
+  "Command line arg `--edit-server'.  SWITCH ignored."
+  (require 'edit-server)
+  (edit-server-start))
+(add-to-list 'command-switch-alist '("--edit-server" . argument--edit-server))
 ;; Usage: emacs --diff file/dir1 file/dir2
 (defun argument--diff (switch)
   "Command line arg `--diff'.  SWITCH ignored."
