@@ -311,7 +311,7 @@ Otherwise use `list'."
         (define-key keymap [?\S-\ ] nil))
       (keymaps-with-binding [?\S-\ ]))
 ;; ;; Modal keys
-;; (global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
+(global-set-key (kbd "µ") #'modal-global-mode-toggle)
 
 
 (provide 'modal)

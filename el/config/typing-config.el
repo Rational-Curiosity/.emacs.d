@@ -770,9 +770,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "↓") #'undo-tree-undo) ;; AltGr-u
 (global-set-key (kbd "¶") #'undo-tree-redo) ;; AltGr-r
 (global-set-key (kbd "ð") #'kill-sexp) ;; AltGr-d
-;;(global-set-key (kbd "ĸ l") #'kill-whole-line) ;; AltGr-l l
-;;(global-set-key (kbd "ĸ s") #'kill-to-end-of-sexp) ;; AltGr-l s
-;;(global-set-key (kbd "ĸ S") #'kill-to-begin-of-sexp) ;; AltGr-l S
+(global-set-key (kbd "ĸ") #'kill-whole-line) ;; AltGr-l
 (global-set-key (kbd "¢") #'goto-last-change) ;; AltGr-c
 (global-set-key (kbd "“") #'goto-last-change-reverse) ;; AltGr-v
 (global-set-key (kbd "”") 'sp-or-backward-sexp) ;; AltGr-b
