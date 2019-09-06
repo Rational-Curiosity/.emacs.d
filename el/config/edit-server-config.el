@@ -2,6 +2,8 @@
 
 ;;; Commentary:
 
+;; url: https://chrome.google.com/webstore/detail/edit-with-emacs/ljobjlafonikaiipfkggjbhkghgicgoh
+
 ;; Usage:
 ;; (with-eval-after-load 'edit-server
 ;;   (require 'edit-server-config))

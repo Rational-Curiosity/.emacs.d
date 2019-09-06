@@ -182,8 +182,12 @@ configuration created previously with `modal-define-key' and
         ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type)
         (set-face-attribute 'hl-line nil
-                            :background "#3B3B4E")
+                            :background "#3B3B5E")
         ;; ))
+        (define-key isearch-mode-map (kbd "Q") #'isearch-quote-char)
+        (define-key isearch-mode-map (kbd "G") #'isearch-abort)
+        (define-key isearch-mode-map (kbd "S") #'isearch-repeat-forward)
+        (define-key isearch-mode-map (kbd "R") #'isearch-repeat-backward)
         (define-key universal-argument-map "U" #'universal-argument-more))
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
@@ -191,6 +195,10 @@ configuration created previously with `modal-define-key' and
     (set-face-attribute 'hl-line nil
                         :background "#3B3B3B")
     ;; ))
+    (define-key isearch-mode-map (kbd "Q") #'isearch-printing-char)
+    (define-key isearch-mode-map (kbd "G") #'isearch-printing-char)
+    (define-key isearch-mode-map (kbd "S") #'isearch-printing-char)
+    (define-key isearch-mode-map (kbd "R") #'isearch-printing-char)
     (define-key universal-argument-map "U" nil)))
 
 (defun modal--maybe-activate ()
@@ -200,14 +208,19 @@ This is used by `modal-global-mode'."
   (unless (and (not (and modal--original-buffer
                          (equal modal--original-buffer
                                 (current-buffer))))
-               (or (minibufferp)
-                   (member major-mode modal-excluded-modes)))
+               ;; (or (minibufferp)
+               (member major-mode modal-excluded-modes)
+               ;;)
+               )
     (modal-mode 1)))
 
 ;;;###autoload
 (define-globalized-minor-mode modal-global-mode
   modal-mode
   modal--maybe-activate)
+
+;; Minibuffer
+(add-hook 'minibuffer-setup-hook 'modal-mode)
 
 (defun modal-global-mode-idle (secs)
   (interactive "P")
@@ -297,9 +310,8 @@ Otherwise use `list'."
 (mapc (lambda (keymap)
         (define-key keymap [?\S-\ ] nil))
       (keymaps-with-binding [?\S-\ ]))
-;; Modal keys
-(modal-define-key (kbd "U") (kbd "C-u"))  ;; universal-argument
-(global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
+;; ;; Modal keys
+;; (global-set-key (kbd "S-SPC") #'modal-global-mode-toggle)
 
 
 (provide 'modal)

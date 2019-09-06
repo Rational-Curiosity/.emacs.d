@@ -90,12 +90,12 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "M *") (kbd "C-*"))  ;; duplicate-current-line-or-region
 ;; (modal-define-key (kbd "<") (kbd "M-<"))  ;; beginning-of-buffer
 ;; (modal-define-key (kbd ">") (kbd "M->"))  ;; end-of-buffer
-(modal-define-key (kbd "M SPC") (kbd "C-SPC"))  ;; set-mark-command
-(modal-define-key (kbd "M-%") (kbd "C-M-%")) ;; query-replace-regexp
+(modal-define-key (kbd "M %") (kbd "C-M-%")) ;; query-replace-regexp
 (modal-define-key (kbd "M k h") #'sp-kill-hybrid-sexp)
 (modal-define-key (kbd "M k l") (kbd "<C-S-backspace>")) ;; kill-whole-line
 (modal-define-key (kbd "M k s") #'kill-to-end-of-sexp)
 (modal-define-key (kbd "M k S") #'kill-to-begin-of-sexp)
+(modal-define-key (kbd "S-SPC") (kbd "C-SPC"))  ;; set-mark-command
 
 (modal-define-key (kbd "A") (kbd "C-a"))  ;; move-beginning-of-line
 (modal-define-key (kbd "B") (kbd "C-b"))  ;; backward-char
@@ -204,11 +204,12 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "R") (kbd "C-r"))  ;; isearch-backward
 (modal-define-key (kbd "S") (kbd "C-s"))  ;; isearch-forward
 (modal-define-key (kbd "T") (kbd "C-t"))  ;; transpose-chars
-;; u - reserved
+(modal-define-key (kbd "U") (kbd "C-u"))  ;; universal-argument
 (modal-define-key (kbd "V") (kbd "C-v"))  ;; scroll-up-command
 (modal-define-key (kbd "W") (kbd "C-w"))  ;; kill-region
 ;; x - [ command prefix
 (modal-define-key (kbd "X TAB") (kbd "C-x TAB"))  ;; indent-rigidly
+(modal-define-key (kbd "X <backtab>") (kbd "C-x C-TAB"))  ;; align-regexp
 (modal-define-key (kbd "X RET") (kbd "C-x C-o"))  ;; delete-blank-lines
 (modal-define-key (kbd "X S-SPC") (kbd "C-x C-SPC"))  ;; pop-global-mark
 (modal-define-key (kbd "X SPC") (kbd "C-x SPC"))  ;; rectangle-mark-mode
@@ -231,12 +232,14 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X 5 F") (kbd "C-x 5 C-f"))  ;; ido-find-file-other-frame
 (modal-define-key (kbd "X 5 b") (kbd "C-x 5 b"))  ;; ido-switch-buffer-other-frame
 (modal-define-key (kbd "X C") (kbd "C-x C-c"))  ;; save-buffers-kill-emacs
+(modal-define-key (kbd "X c") (kbd "C-x c"))  ;; rotate-or-inflection
 (modal-define-key (kbd "X b") (kbd "C-x b"))  ;; switch-buffer
 (modal-define-key (kbd "X E") (kbd "C-x C-e"))  ;; eval-last-sexp
 (modal-define-key (kbd "X e") (kbd "C-x e"))  ;; kmacro-end-and-call-macro
 (modal-define-key (kbd "X F") (kbd "C-x C-f"))  ;; find-file
 (modal-define-key (kbd "X f") (kbd "C-x f"))  ;; find-file-at-point
 (modal-define-key (kbd "X h") (kbd "C-x h"))  ;; mark-whole-buffer
+(modal-define-key (kbd "X i") (kbd "C-x i"))  ;; ido-insert-file
 (modal-define-key (kbd "X K TAB") #'select-kbd-macro)
 (modal-define-key (kbd "X K K") (kbd "C-x C-k C-k"))  ;; kmacro-end-or-call-macro-repeat
 (modal-define-key (kbd "X K N") (kbd "C-x C-k C-n"))  ;; kmacro-cycle-ring-next
@@ -312,10 +315,10 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;;;;;;;
 ;; Ubiquitous ;;
 ;;;;;;;;;;;;;;;;
-(setq ;; isearch-mode-map (make-composed-keymap (copy-keymap modal-mode-map) isearch-mode-map)
-      query-replace-map (make-composed-keymap (copy-keymap modal-mode-map) query-replace-map)
-      function-key-map (make-composed-keymap (copy-keymap modal-mode-map) function-key-map)
-      minibuffer-local-map (make-composed-keymap (copy-keymap modal-mode-map) minibuffer-local-map))
+;; (setq isearch-mode-map (make-composed-keymap (copy-keymap modal-mode-map) isearch-mode-map)
+;;       query-replace-map (make-composed-keymap (copy-keymap modal-mode-map) query-replace-map)
+;;       function-key-map (make-composed-keymap (copy-keymap modal-mode-map) function-key-map)
+;;       minibuffer-local-map (make-composed-keymap (copy-keymap modal-mode-map) minibuffer-local-map))
 
 ;;;;;;;;;;;;;;;;;;;
 ;; new quit bind ;;

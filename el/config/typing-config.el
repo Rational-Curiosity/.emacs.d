@@ -155,16 +155,25 @@ prompt the user for a coding system."
 ;; Control ;;
 ;;;;;;;;;;;;;
 (when (executable-find "setxkbmap")
-  (defun keyboard-swap-ctrl-win ()
-    (interactive)
-    (shell-command "setxkbmap -option ctrl:swap_lwin_lctl"))
+  (defun keyboard-swap-ctrl-caps (arg)
+    (interactive "P")
+    (if arg
+        (shell-command "setxkbmap -option")
+      (shell-command "setxkbmap -option ctrl:swapcaps")))
+  (defun keyboard-swap-ctrl-win (arg)
+    (interactive "P")
+    (if arg
+        (shell-command "setxkbmap -option")
+      (shell-command "setxkbmap -option ctrl:swap_lwin_lctl")))
   (when (executable-find "xmodmap")
-    (defun keyboard-swap-ctrl-altgr ()
-      (interactive)
-      (shell-command
-       "setxkbmap -option lv3:switch && \
+    (defun keyboard-swap-ctrl-altgr (arg)
+      (interactive "P")
+      (if arg
+          (shell-command "setxkbmap -option")
+        (shell-command
+         "setxkbmap -option lv3:switch && \
 xmodmap -e 'keycode 108 = Alt_R' && \
-xmodmap -e 'add control = Alt_R'"))))
+xmodmap -e 'add control = Alt_R'")))))
 
 ;;;;;;;;;;
 ;; Caps ;;
@@ -713,6 +722,21 @@ there's a region, all lines that region covers will be duplicated."
       (rotate-text arg)
     (error (string-inflection-all-cycle))))
 
+;;;;;;;;;;
+;; Sexp ;;
+;;;;;;;;;;
+(defun sp-or-forward-sexp (&optional arg)
+  (interactive "^p")
+  (if (fboundp 'sp-forward-sexp)
+      (sp-forward-sexp arg)
+    (forward-sexp arg)))
+
+(defun sp-or-backward-sexp (&optional arg)
+  (interactive "^p")
+  (if (fboundp 'sp-backward-sexp)
+      (sp-backward-sexp arg)
+    (backward-sexp arg)))
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard macros ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -739,8 +763,20 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<f1> E") #'manual-entry)
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
-(global-set-key (kbd "M-A") #'align-regexp)
-(global-set-key (kbd "M-C") #'rotate-or-inflection)
+(global-set-key (kbd "C-x C-TAB") #'align-regexp)
+(global-set-key (kbd "ŧ") #'rotate-text) ;; AltGr-t
+(global-set-key (kbd "→") #'string-inflection-all-cycle) ;; AltGr-i
+(global-set-key (kbd "½") #'query-replace-regexp) ;; AltGr-5
+(global-set-key (kbd "↓") #'undo-tree-undo) ;; AltGr-u
+(global-set-key (kbd "¶") #'undo-tree-redo) ;; AltGr-r
+(global-set-key (kbd "ð") #'kill-sexp) ;; AltGr-d
+;;(global-set-key (kbd "ĸ l") #'kill-whole-line) ;; AltGr-l l
+;;(global-set-key (kbd "ĸ s") #'kill-to-end-of-sexp) ;; AltGr-l s
+;;(global-set-key (kbd "ĸ S") #'kill-to-begin-of-sexp) ;; AltGr-l S
+(global-set-key (kbd "¢") #'goto-last-change) ;; AltGr-c
+(global-set-key (kbd "“") #'goto-last-change-reverse) ;; AltGr-v
+(global-set-key (kbd "”") 'sp-or-backward-sexp) ;; AltGr-b
+(global-set-key (kbd "đ") 'sp-or-forward-sexp) ;; AltGr-f
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
