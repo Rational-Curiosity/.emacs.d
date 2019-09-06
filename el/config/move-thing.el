@@ -701,6 +701,7 @@
 (defun mt-toggle-interchange-things ()
   (interactive)
   (set-marker mt--marker nil)
+  (setq mt--mode-line-face 'mt--unselected-face)
   (setq mt-interchange-things (not mt-interchange-things))
   (force-mode-line-update))
 
