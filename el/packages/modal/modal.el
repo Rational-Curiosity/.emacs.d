@@ -30,8 +30,6 @@
 ;;; Code:
 (require 'cl-lib)
 (require 'quail)
-(require 'hl-line)
-
 
 (defgroup modal nil
   "Introduce native modal editing of your own design"
@@ -181,8 +179,8 @@ configuration created previously with `modal-define-key' and
         ;; (dolist (buffer (buffer-list))
         ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type)
-        (set-face-attribute 'hl-line nil
-                            :background "#3B3B5E")
+        ;; (set-face-attribute 'hl-line nil
+        ;;                     :background "#3B3B5E")
         ;; ))
         (define-key isearch-mode-map (kbd "Q") #'isearch-quote-char)
         (define-key isearch-mode-map (kbd "G") #'isearch-abort)
@@ -192,8 +190,8 @@ configuration created previously with `modal-define-key' and
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
     (setq-local cursor-type modal-insert-cursor-type)
-    (set-face-attribute 'hl-line nil
-                        :background "#3B3B3B")
+    ;; (set-face-attribute 'hl-line nil
+    ;;                     :background "#3B3B3B")
     ;; ))
     (define-key isearch-mode-map (kbd "Q") #'isearch-printing-char)
     (define-key isearch-mode-map (kbd "G") #'isearch-printing-char)

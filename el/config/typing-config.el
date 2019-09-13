@@ -765,6 +765,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x C-TAB") #'align-regexp)
 (global-set-key (kbd "ŧ") #'rotate-text) ;; AltGr-t
+(global-set-key (kbd "ħ") #'pulse-momentary-highlight-current-line) ;; AltGr-h
 (global-set-key (kbd "→") #'string-inflection-all-cycle) ;; AltGr-i
 (global-set-key (kbd "½") #'query-replace-regexp) ;; AltGr-5
 (global-set-key (kbd "↓") #'undo-tree-undo) ;; AltGr-u
@@ -775,6 +776,8 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "“") #'goto-last-change-reverse) ;; AltGr-v
 (global-set-key (kbd "”") 'sp-or-backward-sexp) ;; AltGr-b
 (global-set-key (kbd "đ") 'sp-or-forward-sexp) ;; AltGr-f
+(global-set-key (kbd "€") 'end-of-defun) ;; AltGr-e
+(global-set-key (kbd "æ") 'beginning-of-defun) ;; AltGr-a
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)

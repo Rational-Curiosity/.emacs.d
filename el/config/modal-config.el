@@ -275,7 +275,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X z") (kbd "C-x z"))  ;; repeat
 ;; x - ] command prefix
 (modal-define-key (kbd "Y") (kbd "C-y"))  ;; yank
-(modal-define-key "Z" #'avy-goto-char-timer)
+(modal-define-key (kbd "Z") (kbd "C-z"))  ;; suspend-frame
 
 (modal-define-key (kbd "S-\\") (kbd "C-M-\\"))  ;; indent-region
 (modal-define-key (kbd "S-@") (kbd "C-M-@"))  ;; mark-sexp

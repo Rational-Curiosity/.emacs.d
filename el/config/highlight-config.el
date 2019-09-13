@@ -18,12 +18,23 @@
 
 (require 'hl-line)
 (set-face-attribute 'hl-line nil
-                    :foreground 'unspecified :background "#3B3B3B"
-                    :underline 'unspecified :inherit 'unspecified)
-(global-hl-line-mode 1)
+                    :foreground 'unspecified
+                    :background 'unspecified
+                    :overline 'unspecified
+                    :underline t
+                    :box 'unspecified
+                    :inherit 'unspecified)
+;; (global-hl-line-mode 1)
+
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
+(require 'pulse)
+(defun pulse-momentary-highlight-current-line (delay)
+  (interactive (list 1.2))
+  (let ((pulse-delay (/ delay pulse-iterations)))
+    (pulse-momentary-highlight-one-line (point))))
+
 (defun hl-smaller-5 ()
   "Highlight nunbers smaller than 5."
   (interactive)
