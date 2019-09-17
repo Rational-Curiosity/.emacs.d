@@ -84,51 +84,54 @@
         ("+" (:strike-through t)))
       ;; TODO keyword faces
       org-todo-keyword-faces
-      '(("TODO" :foreground "orange red" :weight bold) ;; TODO
-        ("NEXT" :foreground "gold" :weight bold) ;; NEXT
-        ("DONE" :foreground "forest green" :weight bold) ;; DONE
-        ("PLAN" :foreground "deep sky blue" :weight bold)
-        ("STAR" :foreground "sky blue" :weight bold) ;; STARTED
-        ("REOP" :foreground "indian red" :weight bold) ;; REOPENED
-        ("FINI" :foreground "dark olive green" :weight bold) ;; FINISHED
-        ("ENOU" :foreground "green yellow" :weight bold) ;; ENOUGH
-        ("DELE" :foreground "light green" :weight bold) ;; DELEGATED
-        ("LINK" :foreground "violet" :weight bold) ;; LINKED
-        ("WAIT" :foreground "blue violet" :weight bold) ;; WAITING
+      '(("TODO" :foreground "orange red" :weight bold)               ;; TODO
+        ("NEXT" :foreground "gold" :weight bold)                     ;; NEXT
+        ("DONE" :foreground "forest green" :weight bold)             ;; DONE
+        ("PLAN" :foreground "deep sky blue" :weight bold)            ;; PLANNED
+        ("STAR" :foreground "sky blue" :weight bold)                 ;; STARTED
+        ("REOP" :foreground "indian red" :weight bold)               ;; REOPENED
+        ("FINI" :foreground "dark olive green" :weight bold)         ;; FINISHED
+        ("ENOU" :foreground "green yellow" :weight bold)             ;; ENOUGH
+        ("DELE" :foreground "light green" :weight bold)              ;; DELEGATED
+        ("LINK" :foreground "violet" :weight bold)                   ;; LINKED
+        ("WAIT" :foreground "blue violet" :weight bold)              ;; WAITING
         ("HOLD" :foreground "dark violet" :weight bold :underline t) ;; HOLD
-        ("CANC" :foreground "dark green" :weight bold) ;; CANCELED
-        ("FIXM" :foreground "dark red" :weight bold) ;; FIXME
-        ("VERI" :foreground "dodger blue" :weight bold) ;; VERIFY
-        ("UNDO" :foreground "royal blue" :weight bold)) ;; UNDO
+        ("CANC" :foreground "dark green" :weight bold)               ;; CANCELED
+        ("FIXM" :foreground "dark red" :weight bold)                 ;; FIXME
+        ("VERI" :foreground "dodger blue" :weight bold)              ;; VERIFY
+        ("UNDO" :foreground "royal blue" :weight bold))              ;; UNDO
       ;; TAG faces
       org-tag-faces
-      '(("@business"    :foreground "deep sky blue")
-        ("@admin"       :foreground "blue")
-        ("@job"         :foreground "pink")
-        ("@improvement" :foreground "green")
-        ("@research"    :foreground "yellow")
-        ("@language"    :foreground "orange")
-        ("@sport"       :foreground "purple")
-        ("@others"      :foreground "red")
-        ("business"     :foreground "#e5786d")
-        ("admin"        :foreground "#e68a00")
-        ("job"          :foreground "#996633")
-        ("improvement"  :foreground "#e6e600")
-        ("research"     :foreground "#e5f442")
-        ("language"     :foreground "#e69900")
-        ("sport"        :foreground "#ff471a")
-        ("others"       :foreground "#ff0000"))
+      '(("@business"      :foreground "deep sky blue")
+        ("@admin"         :foreground "blue")
+        ("@job"           :foreground "pink")
+        ("@improvement"   :foreground "green")
+        ("@research"      :foreground "yellow")
+        ("@language"      :foreground "orange")
+        ("@sport"         :foreground "purple")
+        ("@entertainment" :foreground "lime green")
+        ("@others"        :foreground "red")
+        ("business"       :foreground "#e5786d")
+        ("admin"          :foreground "#e68a00")
+        ("job"            :foreground "#996633")
+        ("improvement"    :foreground "#e6e600")
+        ("research"       :foreground "#e5f442")
+        ("language"       :foreground "#e69900")
+        ("sport"          :foreground "#ff471a")
+        ("entertainment"  :foreground "#00ff00")
+        ("others"         :foreground "#ff0000"))
       org-tag-alist
-      '((:startgrouptag) ("business")    (:grouptags) ("@business")    (:endgrouptag)
-        (:startgrouptag) ("admin")       (:grouptags) ("@admin")       (:endgrouptag)
-        (:startgrouptag) ("job")         (:grouptags) ("@job")         (:endgrouptag)
-        (:startgrouptag) ("improvement") (:grouptags) ("@improvement") (:endgrouptag)
-        (:startgrouptag) ("health")      (:grouptags) ("@health")      (:endgrouptag)
-        (:startgrouptag) ("home")        (:grouptags) ("@home")        (:endgrouptag)
-        (:startgrouptag) ("research")    (:grouptags) ("@research")    (:endgrouptag)
-        (:startgrouptag) ("language")    (:grouptags) ("@language")    (:endgrouptag)
-        (:startgrouptag) ("sport")       (:grouptags) ("@sport")       (:endgrouptag)
-        (:startgrouptag) ("others")      (:grouptags) ("@others")      (:endgrouptag)))
+      '((:startgrouptag) ("business")      (:grouptags) ("@business")      (:endgrouptag)
+        (:startgrouptag) ("admin")         (:grouptags) ("@admin")         (:endgrouptag)
+        (:startgrouptag) ("job")           (:grouptags) ("@job")           (:endgrouptag)
+        (:startgrouptag) ("improvement")   (:grouptags) ("@improvement")   (:endgrouptag)
+        (:startgrouptag) ("health")        (:grouptags) ("@health")        (:endgrouptag)
+        (:startgrouptag) ("home")          (:grouptags) ("@home")          (:endgrouptag)
+        (:startgrouptag) ("research")      (:grouptags) ("@research")      (:endgrouptag)
+        (:startgrouptag) ("language")      (:grouptags) ("@language")      (:endgrouptag)
+        (:startgrouptag) ("sport")         (:grouptags) ("@sport")         (:endgrouptag)
+        (:startgrouptag) ("entertainment") (:grouptags) ("@entertainment") (:endgrouptag)
+        (:startgrouptag) ("others")        (:grouptags) ("@others")        (:endgrouptag)))
 ;;(:box t :foreground "#AAF")
 
 (require 'language-tools)
@@ -802,7 +805,7 @@ You can also customize this for each buffer, using something like
 ;; ;;)
 (require 'org-agenda-property)
 
-(setq org-directory (or (loop for folder in
+(setq org-directory (or (cl-loop for folder in
                               `("~/var/Dropbox/Orgzly"
                                 ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
                                 "~/Prog/org")
@@ -905,7 +908,7 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;
 (require 'org-brain)
 
-(setq org-brain-path (or (loop for folder in
+(setq org-brain-path (or (cl-loop for folder in
                                '("~/var/Dropbox/Brain")
                                when (file-exists-p folder)
                                return folder)
@@ -1059,7 +1062,7 @@ SUFFIX - default .png"
    (lambda ()
      (org-archive-subtree)
      (setq org-map-continue-from (outline-previous-heading)))
-   "/DONE|ENOUGH|FINISH|CANCELLED" scope))
+   "/DONE|ENOU|FINI|CANC" scope))
 
 (defun org-read-entry-property-name ()
   "Read a property name from the current entry."
