@@ -20,7 +20,7 @@
                              ;; eshell-mode
                              org-agenda-mode
                              git-rebase-mode
-                             ;; magit-popup-mode
+                             magit-popup-mode
                              ;; magit-mode
                              ;; magit-process-mode
                              ;; magit-status-mode
@@ -101,8 +101,10 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "B") (kbd "C-b"))  ;; backward-char
 ;; (modal-define-key "\M-b" 'backward-word)
 ;; c - [ command prefix
-(modal-define-key (kbd "C TAB") (kbd "C-c TAB"))
-(modal-define-key (kbd "C <backtab>") (kbd "C-c <backtab>"))
+(modal-define-key (kbd "C %") (kbd "C-c %"))  ;; org-mark-ring-push
+(modal-define-key (kbd "C &") (kbd "C-c &"))  ;; org-mark-ring-goto
+(modal-define-key (kbd "C TAB") (kbd "C-c TAB"))  ;; org-show-subtree
+(modal-define-key (kbd "C <backtab>") (kbd "C-c <backtab>"))  ;; org-show-all
 (modal-define-key (kbd "C '") (kbd "C-c '"))
 (modal-define-key (kbd "C ! c") #'flycheck-buffer)
 (modal-define-key (kbd "C ! n") #'flycheck-next-error)
@@ -129,11 +131,14 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C i p") #'flyspell-goto-previous-error)
 (modal-define-key (kbd "C i a") #'flyspell-auto-correct-word)
 (modal-define-key (kbd "C K") (kbd "C-c C-k"))  ;; cancel-commit
+(modal-define-key (kbd "C l") (kbd "C-c l"))  ;; org-store-link
+(modal-define-key (kbd "C L") (kbd "C-c C-l"))  ;; org-insert-link
 (modal-define-key (kbd "C m p") #'mc/mark-previous-like-this)
 (modal-define-key (kbd "C m n") #'mc/mark-next-like-this)
 (modal-define-key (kbd "C m a") #'mc/mark-all-like-this-dwim)
 (modal-define-key (kbd "C N") (kbd "C-c C-n"))  ;; smartscan-symbol-go-forward or org-next-visible-heading
 (modal-define-key (kbd "C o") #'operate-on-number-at-point-or-region)
+(modal-define-key (kbd "C O") (kbd "C-c C-o"))  ;; org-open-at-point
 (modal-define-key (kbd "C P") (kbd "C-c C-p"))  ;; smartscan-symbol-go-backward or org-previous-visible-heading
 (modal-define-key (kbd "C Q") (kbd "C-c C-q"))
 (modal-define-key (kbd "C M-s") (kbd "C-c M-s"))  ;; org-sort-entries-user-defined
@@ -158,11 +163,15 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C w 2") 'shell-2-window-frame)
 (modal-define-key (kbd "C w 3") 'shell-3-window-frame)
 (modal-define-key (kbd "C w a") #'toggle-hscroll-aggressive)
+(modal-define-key (kbd "C w B") #'windmove-left)
 (modal-define-key (kbd "C w d a") #'window-dedicate-all)
 (modal-define-key (kbd "C w d t") #'window-dedicate-this)
+(modal-define-key (kbd "C w F") #'windmove-right)
 (modal-define-key (kbd "C w H") #'window-resize-height)
 (modal-define-key (kbd "C w h") #'flop-frame)
+(modal-define-key (kbd "C w N") #'windmove-down)
 (modal-define-key (kbd "C w o") #'halve-other-window-height)
+(modal-define-key (kbd "C w P") #'windmove-up)
 (modal-define-key (kbd "C w R") #'rotate-frame-anticlockwise)
 (modal-define-key (kbd "C w r") #'rotate-frame-clockwise)
 (modal-define-key (kbd "C w t") #'transpose-frame)
@@ -173,7 +182,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C X N") (kbd "C-c C-x C-n"))  ;; org-next-link
 (modal-define-key (kbd "C X P") (kbd "C-c C-x C-p"))  ;; org-previous-link
 (modal-define-key (kbd "C X S") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
+(modal-define-key (kbd "C X V") (kbd "C-c C-x C-v"))  ;; org-toggle-inline-images
 ;; c - ] command prefix
+(modal-define-key (kbd "C") (kbd "C-c"))  ;; ido-case-fold
 (modal-define-key (kbd "D") (kbd "<deletechar>"))  ;; delete-forward-char
 (modal-define-key (kbd "E") (kbd "C-e"))  ;; move-end-of-line
 (modal-define-key (kbd "F") (kbd "C-f"))  ;; forward-char

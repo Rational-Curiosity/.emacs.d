@@ -4,9 +4,13 @@
 ;;
 ;;; Commentary:
 
-;; This is a building kit to help switch to modal editing in Emacs.  The
-;; main goal of the package is making modal editing in Emacs as natural and
-;; native as possible.
+;; functions (modal-define-key <key> <function>) only with global <key>
+
+;; if <key0> in (modal-define-key <key0> <new-keyA>) is the
+;; prefix in other (modal-define-key <key0 key1> <new-keyB>)
+;; sort like this:
+;; (modal-define-key <key0 key1> <new-keyB>)
+;; (modal-define-key <key0> <new-keyA>)
 
 ;; List of map options
 ;; # man xkeyboard-config
@@ -113,13 +117,22 @@ This variable is considered on read only mode
         (setq binding (modal-find-bind actual-key)))
     binding))
 
+(defun modal--bind-and-remove-from-hook (key command)
+  (eval `(defun modal--self-remove-from-hook ()
+           (define-key modal-mode-map ,key ,command)
+           (remove-hook 'pre-command-hook 'modal--self-remove-from-hook)))
+  (add-hook 'pre-command-hook 'modal--self-remove-from-hook))
+
 ;;;###autoload
 (defun modal-define-key (actual-key target-key)
   "Register translation from ACTUAL-KEY to TARGET-KEY."
   (if (arrayp target-key)
-      (let ((docstring (format "Modal mode translates \"%s\" into \"%s\"."
+      (let ((sub-keymap (lookup-key modal-mode-map actual-key))
+            (docstring (format "Modal mode translates \"%s\" into \"%s\"."
                                (key-description actual-key)
                                (key-description target-key))))
+        ;; (if (equal actual-key target-key)
+        ;;     (error "Dangerous and absurd: %s" docstring))
         (define-key
           modal-mode-map
           actual-key
@@ -128,11 +141,15 @@ This variable is considered on read only mode
               ,docstring
               (interactive)
               (let ((binding (modal-find-bind-check-read-only ,actual-key ,target-key)))
-                (when binding
-                  (setq real-this-command binding
-                        this-original-command binding
-                        this-command binding)
-                  (call-interactively binding)))))))
+                (if binding
+                    (progn
+                      (setq real-this-command binding
+                            this-original-command binding
+                            this-command binding)
+                      (call-interactively binding))
+                  (define-key modal-mode-map ,actual-key ',sub-keymap)
+                  (setq unread-command-events (listify-key-sequence ,actual-key))
+                  (modal--bind-and-remove-from-hook ,actual-key real-this-command)))))))
     (define-key modal-mode-map actual-key target-key)))
 
 ;;;###autoload
@@ -182,10 +199,13 @@ configuration created previously with `modal-define-key' and
         ;; (set-face-attribute 'hl-line nil
         ;;                     :background "#3B3B5E")
         ;; ))
-        (define-key isearch-mode-map (kbd "Q") #'isearch-quote-char)
-        (define-key isearch-mode-map (kbd "G") #'isearch-abort)
-        (define-key isearch-mode-map (kbd "S") #'isearch-repeat-forward)
-        (define-key isearch-mode-map (kbd "R") #'isearch-repeat-backward)
+        (define-key function-key-map "G" "\C-g")          ;; read-key
+        ;; (define-key query-replace-map "G" 'quit)          ;; read-event
+        (define-key isearch-mode-map "º" 'modal-global-mode-idle) ;; isearch-mode
+        (define-key isearch-mode-map "G" #'isearch-abort) ;; isearch-mode
+        (define-key isearch-mode-map "Q" #'isearch-quote-char)
+        (define-key isearch-mode-map "S" #'isearch-repeat-forward)
+        (define-key isearch-mode-map "R" #'isearch-repeat-backward)
         (define-key universal-argument-map "U" #'universal-argument-more))
     ;; (dolist (buffer (buffer-list))
     ;;   (with-current-buffer buffer
@@ -193,10 +213,13 @@ configuration created previously with `modal-define-key' and
     ;; (set-face-attribute 'hl-line nil
     ;;                     :background "#3B3B3B")
     ;; ))
-    (define-key isearch-mode-map (kbd "Q") #'isearch-printing-char)
-    (define-key isearch-mode-map (kbd "G") #'isearch-printing-char)
-    (define-key isearch-mode-map (kbd "S") #'isearch-printing-char)
-    (define-key isearch-mode-map (kbd "R") #'isearch-printing-char)
+    (define-key function-key-map "G" nil)
+    ;; (define-key query-replace-map "G" nil)
+    (define-key isearch-mode-map "º" #'isearch-printing-char)
+    (define-key isearch-mode-map "G" #'isearch-printing-char)
+    (define-key isearch-mode-map "Q" #'isearch-printing-char)
+    (define-key isearch-mode-map "S" #'isearch-printing-char)
+    (define-key isearch-mode-map "R" #'isearch-printing-char)
     (define-key universal-argument-map "U" nil)))
 
 (defun modal--maybe-activate ()
@@ -262,6 +285,16 @@ Otherwise use `list'."
   (funcall (if modal-mode #'list fnc) key))
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
+(defun modal--quoted-insert-advice (orig-fun arg)
+  (if modal-mode
+      (progn
+        (define-key function-key-map "G" nil)
+        (unwind-protect
+            (funcall orig-fun arg)
+          (define-key function-key-map "G" "\C-g")))
+    (funcall orig-fun arg)))
+(advice-add 'quoted-insert :around #'modal--quoted-insert-advice)
+
 ;; which-key-mode
 (with-eval-after-load 'which-key
   (cl-delete '((nil . "\\`\\?\\?\\'") . (nil . "lambda")) which-key-replacement-alist)
@@ -298,6 +331,7 @@ Otherwise use `list'."
 ;;;;;;;;;;
 ;; keys ;;
 ;;;;;;;;;;
+(global-set-key "º" 'modal-global-mode-idle)
 ;; Make compatible with other modules
 (define-key special-mode-map [?\S-\ ] nil)     ;; simple.el
 (with-eval-after-load 'rmail
