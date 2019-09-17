@@ -22,7 +22,7 @@
   '((t (:foreground "#ffd700" :bold t :underline t)))
   "Face used by ido-config for the matched part.")
 ;; ido mode
-(setq ido-case-fold nil
+(setq ido-case-fold t
       ido-enable-flex-matching nil
       ido-enable-regexp t
       ido-enable-prefix nil

@@ -7,9 +7,13 @@
 
 ;;; Code:
 
+(set-face-attribute 'line-number-current-line nil
+                    :foreground "#ebdb34"
+                    :bold t)
+
 (setq-default truncate-lines t
               ;; ignore case searching
-              case-fold-search nil)
+              case-fold-search t)
 ;; Cambia todas las preguntas yes-or-no-p por y-or-n-p
 (fset 'yes-or-no-p 'y-or-n-p)
 (setq column-number-mode t
