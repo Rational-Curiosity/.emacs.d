@@ -30,6 +30,7 @@
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
 (require 'pulse)
+(setq pulse-flag t)
 (defun pulse-momentary-highlight-current-line (delay)
   (interactive (list 1.2))
   (let ((pulse-delay (/ delay pulse-iterations)))
