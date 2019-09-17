@@ -217,6 +217,7 @@ Don't show on windows buffers currently showed."
 
 
 ;; undo and redo window distributions
+(setq winner-dont-bind-my-keys t)
 (winner-mode)
 
 (require 'windmove)
