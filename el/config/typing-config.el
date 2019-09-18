@@ -642,22 +642,42 @@ there's a region, all lines that region covers will be duplicated."
 (define-key key-translation-map (kbd "<f8> u ñ") (kbd "⊇"))
 (define-key key-translation-map (kbd "<f8> u Ñ") (kbd "⊃"))
 
-;;;;;;;;;;;;;;;;
-;; Movimiento ;;
-;;;;;;;;;;;;;;;;
-(defun recenter-horizontal ()
-  "Make the point horizontally centered in the window"
-  (interactive)
-  (if (eq this-command last-command)
-      (let ((mid (/ (window-width) 2))
-            (line-len (save-excursion (end-of-line) (current-column)))
-            (col (current-column)))
-        (if (< mid col)
-            (set-window-hscroll (selected-window)
-                                (- col mid))))
-    (set-window-hscroll (selected-window) (current-column))))
+;;;;;;;;;;;;;;;;;;;;
+;; Big movements  ;;
+;;;;;;;;;;;;;;;;;;;;
+(defun window-width-without-margin (&optional window pixelwise)
+  (- (window-width window pixelwise)
+     hscroll-margin
+     (if (numberp display-line-numbers)
+         display-line-numbers-width
+       3)))
 
+(defvar recenter-horizontal-last-op nil)
+(defvar recenter-horizontal-positions '(middle left right))
 
+(defun recenter-horizontal (&optional arg)
+  "Make the ARG or point horizontally centered in the window."
+  (interactive "P")
+  (setq arg (or arg (current-column))
+        recenter-horizontal-last-op (if (eq this-command last-command)
+                                        (car (or (cdr (member
+                                                       recenter-horizontal-last-op
+                                                       recenter-horizontal-positions))
+                                                 recenter-horizontal-positions))
+                                      (car recenter-horizontal-positions)))
+  (pcase recenter-horizontal-last-op
+    ('middle
+     (let ((mid (/ (window-width-without-margin) 2)))
+       (if (< mid arg)
+           (set-window-hscroll (selected-window)
+                               (- arg mid)))))
+    ('left
+     (set-window-hscroll (selected-window) arg))
+    ('right
+     (let ((width (window-width-without-margin)))
+       (if (< width arg)
+           (set-window-hscroll (selected-window)
+                               (- arg width)))))))
 
 (defvar horizontal-alt 15)
 
@@ -671,9 +691,7 @@ there's a region, all lines that region covers will be duplicated."
 
 (defun hscroll-right (arg)
   (interactive "p")
-  (let ((width (- (window-width) hscroll-margin (if (numberp display-line-numbers)
-                                                    display-line-numbers-width
-                                                  3)))
+  (let ((width (window-width-without-margin))
         (col (current-column)))
     (let ((pos (max 0 (* (+ (/ col width) arg) width))))
       (move-to-column (+ pos hscroll-margin 1))
@@ -682,9 +700,6 @@ there's a region, all lines that region covers will be duplicated."
 (defun hscroll-left (arg)
   (interactive "p")
   (hscroll-right (- arg)))
-
-(require 'string-inflection)
-
 
 ;;;;;;;;;;;;
 ;; Prompt ;;
@@ -767,21 +782,22 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<f1> E") #'manual-entry)
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
-(global-set-key (kbd "C-x C-TAB") #'align-regexp)
-(global-set-key (kbd "ŧ") #'rotate-text) ;; AltGr-t
+(global-set-key (kbd "C-x <C-tab>") #'align-regexp)
+(global-set-key (kbd "ŧ") #'rotate-text)                            ;; AltGr-t
 (global-set-key (kbd "ħ") #'pulse-momentary-highlight-current-line) ;; AltGr-h
-(global-set-key (kbd "→") #'string-inflection-all-cycle) ;; AltGr-i
-(global-set-key (kbd "½") #'query-replace-regexp) ;; AltGr-5
-(global-set-key (kbd "↓") #'undo-tree-undo) ;; AltGr-u
-(global-set-key (kbd "¶") #'undo-tree-redo) ;; AltGr-r
-(global-set-key (kbd "ð") #'kill-sexp) ;; AltGr-d
-(global-set-key (kbd "ĸ") #'kill-whole-line) ;; AltGr-l
-(global-set-key (kbd "¢") #'goto-last-change) ;; AltGr-c
-(global-set-key (kbd "“") #'goto-last-change-reverse) ;; AltGr-v
-(global-set-key (kbd "”") 'sp-or-backward-sexp) ;; AltGr-b
-(global-set-key (kbd "đ") 'sp-or-forward-sexp) ;; AltGr-f
-(global-set-key (kbd "€") 'end-of-defun) ;; AltGr-e
-(global-set-key (kbd "æ") 'beginning-of-defun) ;; AltGr-a
+(global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
+(global-set-key (kbd "½") #'query-replace-regexp)                   ;; AltGr-5
+(global-set-key (kbd "↓") #'undo-tree-undo)                         ;; AltGr-u
+(global-set-key (kbd "¶") #'undo-tree-redo)                         ;; AltGr-r
+(global-set-key (kbd "ð") #'kill-sexp)                              ;; AltGr-d
+(global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-l
+(global-set-key (kbd "¢") #'goto-last-change)                       ;; AltGr-c
+(global-set-key (kbd "»") #'goto-last-change-reverse)               ;; AltGr-x
+(global-set-key (kbd "“") #'scroll-other-window)                    ;; AltGr-v
+(global-set-key (kbd "”") 'sp-or-backward-sexp)                     ;; AltGr-b
+(global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
+(global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
+(global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
