@@ -220,7 +220,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "W") (kbd "C-w"))  ;; kill-region
 ;; x - [ command prefix
 (modal-define-key (kbd "X TAB") (kbd "C-x TAB"))  ;; indent-rigidly
-(modal-define-key (kbd "X <backtab>") (kbd "C-x C-TAB"))  ;; align-regexp
+(modal-define-key (kbd "X <backtab>") (kbd "C-x <C-tab>"))  ;; align-regexp
 (modal-define-key (kbd "X RET") (kbd "C-x C-o"))  ;; delete-blank-lines
 (modal-define-key (kbd "X S-SPC") (kbd "C-x C-SPC"))  ;; pop-global-mark
 (modal-define-key (kbd "X SPC") (kbd "C-x SPC"))  ;; rectangle-mark-mode
