@@ -18,7 +18,7 @@
                              calc-mode
                              ediff-mode
                              ;; eshell-mode
-                             org-agenda-mode
+                             ;; org-agenda-mode
                              git-rebase-mode
                              magit-popup-mode
                              ;; magit-mode

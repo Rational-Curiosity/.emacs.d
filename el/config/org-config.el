@@ -102,31 +102,32 @@
         ("UNDO" :foreground "royal blue" :weight bold))              ;; UNDO
       ;; TAG faces
       org-tag-faces
-      '(("@business"      :foreground "deep sky blue")
-        ("@admin"         :foreground "blue")
-        ("@job"           :foreground "pink")
-        ("@improvement"   :foreground "green")
-        ("@research"      :foreground "yellow")
-        ("@language"      :foreground "orange")
-        ("@sport"         :foreground "purple")
-        ("@entertainment" :foreground "lime green")
-        ("@others"        :foreground "red")
-        ("business"       :foreground "#e5786d")
-        ("admin"          :foreground "#e68a00")
-        ("job"            :foreground "#996633")
-        ("improvement"    :foreground "#e6e600")
-        ("research"       :foreground "#e5f442")
-        ("language"       :foreground "#e69900")
-        ("sport"          :foreground "#ff471a")
-        ("entertainment"  :foreground "#00ff00")
-        ("others"         :foreground "#ff0000"))
+      '(("@business"      :foreground "deep sky blue") ;; #00bfff
+        ("@admin"         :foreground "blue")          ;; #0000ff
+        ("@health"        :foreground "pink")          ;; #ffc0cb
+        ("@job"           :foreground "black")         ;; #000000
+        ("@improvement"   :foreground "green")         ;; #00ff00
+        ("@research"      :foreground "yellow")        ;; #ffff00
+        ("@language"      :foreground "orange")        ;; #ffa500
+        ("@sport"         :foreground "purple")        ;; #a020f0
+        ("@entertainment" :foreground "lime green")    ;; #32cd32
+        ("@others"        :foreground "red")           ;; #ff0000
+        ("business"       :foreground "#00a0e0")
+        ("admin"          :foreground "#0000e0")
+        ("job"            :foreground "#1f1f1f")
+        ("health"         :foreground "#e0a1ba")
+        ("improvement"    :foreground "#00e000")
+        ("research"       :foreground "#e0e000")
+        ("language"       :foreground "#e0b400")
+        ("sport"          :foreground "#9010e0")
+        ("entertainment"  :foreground "#20ba20")
+        ("others"         :foreground "#e00000"))
       org-tag-alist
       '((:startgrouptag) ("business")      (:grouptags) ("@business")      (:endgrouptag)
         (:startgrouptag) ("admin")         (:grouptags) ("@admin")         (:endgrouptag)
         (:startgrouptag) ("job")           (:grouptags) ("@job")           (:endgrouptag)
         (:startgrouptag) ("improvement")   (:grouptags) ("@improvement")   (:endgrouptag)
         (:startgrouptag) ("health")        (:grouptags) ("@health")        (:endgrouptag)
-        (:startgrouptag) ("home")          (:grouptags) ("@home")          (:endgrouptag)
         (:startgrouptag) ("research")      (:grouptags) ("@research")      (:endgrouptag)
         (:startgrouptag) ("language")      (:grouptags) ("@language")      (:endgrouptag)
         (:startgrouptag) ("sport")         (:grouptags) ("@sport")         (:endgrouptag)
