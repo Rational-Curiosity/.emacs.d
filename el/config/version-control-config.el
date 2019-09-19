@@ -18,9 +18,6 @@
         (vc-refresh-state))))
   (advice-add 'magit-refresh :after 'vc-refresh-buffers))
 
-(with-eval-after-load 'transient
-  (define-key transient-base-map "\M-q" 'transient-quit-one))
-
 ;; (with-eval-after-load 'magit-status
 ;;   (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
 ;;   (define-key magit-status-mode-map (kbd "M-g C") #'avy-goto-char-2)

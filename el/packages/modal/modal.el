@@ -148,7 +148,8 @@ This variable is considered on read only mode
                             this-command binding)
                       (call-interactively binding))
                   (define-key modal-mode-map ,actual-key ',sub-keymap)
-                  (setq unread-command-events (listify-key-sequence ,actual-key))
+                  (setq prefix-arg current-prefix-arg
+                        unread-command-events (listify-key-sequence ,actual-key))
                   (modal--bind-and-remove-from-hook ,actual-key real-this-command)))))))
     (define-key modal-mode-map actual-key target-key)))
 
@@ -199,10 +200,16 @@ configuration created previously with `modal-define-key' and
         ;; (set-face-attribute 'hl-line nil
         ;;                     :background "#3B3B5E")
         ;; ))
-        (define-key function-key-map "G" "\C-g")          ;; read-key
-        ;; (define-key query-replace-map "G" 'quit)          ;; read-event
-        (define-key isearch-mode-map "º" 'modal-global-mode-idle) ;; isearch-mode
-        (define-key isearch-mode-map "G" #'isearch-abort) ;; isearch-mode
+        (define-key function-key-map "G" "\C-g")    ;; read-key
+        ;; (define-key query-replace-map "G" 'quit) ;; read-event
+        ;; minibuffer
+        ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+        ;; transient
+        (if (boundp 'transient-map)
+            (define-key transient-map "G" 'transient-quit-one))
+        ;; isearch-mode
+        (define-key isearch-mode-map "º" 'modal-global-mode-idle)
+        (define-key isearch-mode-map "G" #'isearch-abort)
         (define-key isearch-mode-map "Q" #'isearch-quote-char)
         (define-key isearch-mode-map "S" #'isearch-repeat-forward)
         (define-key isearch-mode-map "R" #'isearch-repeat-backward)
@@ -215,6 +222,12 @@ configuration created previously with `modal-define-key' and
     ;; ))
     (define-key function-key-map "G" nil)
     ;; (define-key query-replace-map "G" nil)
+    ;; minibuffer
+    ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+        ;; transient
+        (if (boundp 'transient-map)
+            (define-key transient-map "G" nil))
+    ;; isearch-mode
     (define-key isearch-mode-map "º" #'isearch-printing-char)
     (define-key isearch-mode-map "G" #'isearch-printing-char)
     (define-key isearch-mode-map "Q" #'isearch-printing-char)
@@ -223,7 +236,7 @@ configuration created previously with `modal-define-key' and
     (define-key universal-argument-map "U" nil)))
 
 (defun modal--maybe-activate ()
-  "Activate `modal-mode' if current buffer is not minibuffer or blacklisted.
+  "Activate `modal-mode' if current buffer is not blacklisted.
 
 This is used by `modal-global-mode'."
   (unless (and (not (and modal--original-buffer
@@ -294,6 +307,14 @@ Otherwise use `list'."
           (define-key function-key-map "G" "\C-g")))
     (funcall orig-fun arg)))
 (advice-add 'quoted-insert :around #'modal--quoted-insert-advice)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Integration with other packages ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; transient
+(with-eval-after-load 'transient
+  (if modal-mode
+      (define-key transient-map "G" 'transient-quit-one)))
 
 ;; which-key-mode
 (with-eval-after-load 'which-key
