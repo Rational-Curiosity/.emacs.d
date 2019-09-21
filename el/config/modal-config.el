@@ -156,6 +156,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C v D") #'vimish-fold-delete-all)
 (modal-define-key (kbd "C v f") #'vimish-fold)
 (modal-define-key (kbd "C v G") #'vimish-fold-avy)
+(modal-define-key (kbd "C v p") #'vimish-fold-previous-fold)
+(modal-define-key (kbd "C v n") #'vimish-fold-next-fold)
 (modal-define-key (kbd "C v s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
 (modal-define-key (kbd "C v h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
 (modal-define-key (kbd "C w -") #'winner-undo)
@@ -219,6 +221,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "V") (kbd "C-v"))  ;; scroll-up-command
 (modal-define-key (kbd "W") (kbd "C-w"))  ;; kill-region
 ;; x - [ command prefix
+(modal-define-key (kbd "X #") (kbd "C-x #"))  ;; server-edit
 (modal-define-key (kbd "X TAB") (kbd "C-x TAB"))  ;; indent-rigidly
 (modal-define-key (kbd "X <backtab>") (kbd "C-x <C-tab>"))  ;; align-regexp
 (modal-define-key (kbd "X RET") (kbd "C-x C-o"))  ;; delete-blank-lines
