@@ -4,10 +4,11 @@
 
 ;;; Code:
 
+(setq bookmark-default-file "~/.emacs.d/cache/bookmarks")
+
 (require 'bookmark+)
 
-(setq bookmark-default-file "~/.emacs.d/cache/bookmarks"
-      bmkp-auto-light-when-jump 'all-in-buffer
+(setq bmkp-auto-light-when-jump 'all-in-buffer
       bmkp-auto-light-when-set 'all-in-buffer
       bmkp-last-as-first-bookmark-file nil
       ;;bmkp-light-style-autonamed 'lfringe
