@@ -4,14 +4,14 @@
 ;; Description: Extensions to `thingatpt.el'.
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 1996-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 1996-2019, Drew Adams, all rights reserved.
 ;; Created: Tue Feb 13 16:47:45 1996
 ;; Version: 0
-;; Last-Updated: Mon Jan  1 16:05:56 2018 (-0800)
+;; Last-Updated: Thu Sep 19 08:31:25 2019 (-0700)
 ;;           By: dradams
-;;     Update #: 2334
+;;     Update #: 2385
 ;; URL: https://www.emacswiki.org/emacs/download/thingatpt%2b.el
-;; Doc URL: https://www.emacswiki.org/emacs/ThingAtPointPlus#ThingAtPoint%2b
+;; Doc URL: https://www.emacswiki.org/emacs/ThingAtPointPlus
 ;; Keywords: extensions, matching, mouse
 ;; Compatibility: GNU Emacs: 20.x, 21.x, 22.x, 23.x, 24.x, 25.x, 26.x
 ;;
@@ -45,6 +45,7 @@
 ;;    `tap-bounds-of-list-nearest-point',
 ;;    `tap-bounds-of-number-at-point',
 ;;    `tap-bounds-of-number-at-point-decimal',
+;;    `tap-bounds-of-number-at-point-decimal-whole',
 ;;    `tap-bounds-of-number-at-point-hex',
 ;;    `tap-bounds-of-sexp-at-point',
 ;;    `tap-bounds-of-sexp-nearest-point',
@@ -52,7 +53,8 @@
 ;;    `tap-bounds-of-string-contents-at-point',
 ;;    `tap-bounds-of-symbol-at-point',
 ;;    `tap-bounds-of-symbol-nearest-point',
-;;    `tap-bounds-of-thing-nearest-point', `tap-color-at-point',
+;;    `tap-bounds-of-thing-nearest-point',
+;;    `tap-bounds-of-vector-at-point', `tap-color-at-point',
 ;;    `tap-color-nearest-point',
 ;;    `tap-color-nearest-point-with-bounds',
 ;;    `tap-define-aliases-wo-prefix', `tap-form-at-point-with-bounds',
@@ -65,7 +67,8 @@
 ;;    `tap-looking-back-p', `tap-non-nil-symbol-name-at-point',
 ;;    `tap-non-nil-symbol-name-nearest-point',
 ;;    `tap-non-nil-symbol-nearest-point',
-;;    `tap-number-at-point-decimal', `tap-number-at-point-hex',
+;;    `tap-number-at-point-decimal',
+;;    `tap-number-at-point-decimal-whole', `tap-number-at-point-hex',
 ;;    `tap-number-nearest-point', `tap-read-from-whole-string',
 ;;    `tap-region-or-word-at-point',
 ;;    `tap-region-or-word-nearest-point',
@@ -85,6 +88,7 @@
 ;;    `tap-thing-nearest-point-with-bounds',
 ;;    `tap-unquoted-list-at-point', `tap-unquoted-list-nearest-point',
 ;;    `tap-unquoted-list-nearest-point-as-string',
+;;    `tap-vector-at-point', `tap-vector-nearest-point',
 ;;    `tap-word-nearest-point',
 ;;
 ;;    plus the same functions without the prefix `tap-', if you invoke
@@ -245,6 +249,12 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2019/09/19 dadams
+;;     Added: tap(-bounds-of)-number-at-point-decimal-whole
+;;     tap(-bounds-of)-number-at-point-(decimal|hex):
+;;       Allow initial minus sign, decimal point, and fractional part.
+;; 2018/06/30 dadams
+;;     Added: tap-vector-at-point, tap-bounds-of-vector-at-point, tap-vector-nearest-point.
 ;; 2016/11/21 dadams
 ;;     Rename tap-thing-at-point to tap-thing-at-point-as-string and add new def of former.
 ;;     The new def follows vanilla Emacs in letting property thing-at-point return non-string.
@@ -1464,6 +1474,15 @@ near point.
 Optional arg SYNTAX-TABLE is a syntax table to use."
   (tap-form-nearest-point 'sexp nil syntax-table))
 
+(defun tap-vector-nearest-point (&optional syntax-table)
+  "Return the vector nearest point, if any, else \"\".
+This is an Emacs Lisp entity, the result of reading a textual sexp
+near point.
+\"Nearest\" to point is determined as for `tap-thing-nearest-point'.
+
+Optional arg SYNTAX-TABLE is a syntax table to use."
+  (tap-form-nearest-point 'sexp 'vectorp syntax-table))
+
 (defun tap-number-nearest-point (&optional syntax-table)
   "Return the number nearest to point, if any, else nil.
 \"Nearest\" to point is determined as for `tap-thing-nearest-point'.
@@ -1476,6 +1495,19 @@ Optional arg SYNTAX-TABLE is a syntax table to use."
 (unless (get 'defun 'beginning-op) (put 'defun 'beginning-op 'beginning-of-defun))
 (unless (get 'defun 'end-op)       (put 'defun 'end-op       'end-of-defun))
 (unless (get 'defun 'forward-op)   (put 'defun 'forward-op   'end-of-defun))
+
+
+(defun tap-vector-at-point ()
+  "Return the vector at point, if any, else \"\"."
+  (tap-form-at-point 'sexp 'vectorp))
+
+
+(put 'vector 'tap-bounds-of-thing-at-point 'tap-bounds-of-vector-at-point)
+
+(defun tap-bounds-of-vector-at-point ()
+  "Return bounds of vector at point.
+Return nil if none is found."
+  (and (tap-vector-at-point)  (tap-bounds-of-thing-at-point 'sexp)))
 
 
 (put 'number 'tap-bounds-of-thing-at-point 'tap-bounds-of-number-at-point)
@@ -1496,6 +1528,8 @@ Return nil if none is found."
 
 (defun tap-bounds-of-number-at-point-decimal ()
   "Return bounds of number represented by the decimal numeral at point.
+The number can include a decimal point and fractional part.
+It can also have an initial minus sign.
 Return nil if none is found."
   (and (tap-number-at-point-decimal)  (tap-bounds-of-thing-at-point 'sexp)))
 
@@ -1506,10 +1540,38 @@ Return nil if none is found."
 (defalias 'decimal-number-at-point 'tap-number-at-point-decimal)
 (defun tap-number-at-point-decimal ()
   "Return the number represented by the decimal numeral at point.
+The number can include a decimal point and fractional part.
+It can also have an initial minus sign.
 Return nil if none is found."
   (let ((strg  (tap-thing-at-point 'sexp)))
     (and (stringp strg)
-         (tap-string-match-p "\\`[0-9]+\\'" strg)
+         (tap-string-match-p "\\`-?[0-9]+\\.?[0-9]*\\'" strg)
+         (string-to-number strg))))
+
+
+(put 'decimal-number 'bounds-of-thing-at-point     'tap-bounds-of-number-at-point-decimal-whole)
+(put 'decimal-number 'tap-bounds-of-thing-at-point 'tap-bounds-of-number-at-point-decimal-whole)
+
+(defun tap-bounds-of-number-at-point-decimal-whole ()
+  "Return bounds of number represented by the whole decimal numeral at point.
+The number does not include a decimal point and fractional part, but
+it can have an initial minus sign.
+Return nil if no such number is found."
+  (and (tap-number-at-point-decimal)  (tap-bounds-of-thing-at-point 'sexp)))
+
+
+(put 'decimal-number 'thing-at-point     'tap-number-at-point-decimal-whole)
+(put 'decimal-number 'tap-thing-at-point 'tap-number-at-point-decimal-whole)
+
+(defalias 'whole-decimal-number-at-point 'tap-number-at-point-decimal-whole)
+(defun tap-number-at-point-decimal-whole ()
+  "Return the number represented by the decimal numeral at point.
+The number does not include a decimal point and fractional part, but
+it can have an initial minus sign.
+Return nil if no such number is found."
+  (let ((strg  (tap-thing-at-point 'sexp)))
+    (and (stringp strg)
+         (tap-string-match-p "\\`-?[0-9]+\\'" strg)
          (string-to-number strg))))
 
 
@@ -1518,6 +1580,8 @@ Return nil if none is found."
 
 (defun tap-bounds-of-number-at-point-hex ()
   "Return bounds of number represented by the hexadecimal numeral at point.
+The number can include a decimal point and fractional part.
+It can also have an initial minus sign.
 Return nil if none is found."
   (and (tap-number-at-point-hex)  (tap-bounds-of-thing-at-point 'sexp)))
 
@@ -1528,19 +1592,21 @@ Return nil if none is found."
 (defalias 'hex-number-at-point 'tap-number-at-point-hex)
 (defun tap-number-at-point-hex ()
   "Return the number represented by the hex numeral at point.
+The number can include a decimal point and fractional part.
+It can also have an initial minus sign.
 Return nil if none is found."
   (let ((strg  (tap-thing-at-point 'sexp)))
     (and (stringp strg)
-         (tap-string-match-p "\\`[0-9a-fA-F]+\\'" strg)
+         (tap-string-match-p "\\`-?[0-9a-fA-F]+\\.?[0-9a-fA-F]*\\'" strg)
          (string-to-number strg 16))))
 
 
-(when (fboundp 'syntax-ppss)            ; Based loosely on `comint-extract-string'.
+(when (fboundp 'syntax-ppss)
 
   (put 'string 'bounds-of-thing-at-point     'tap-bounds-of-string-at-point)
   (put 'string 'tap-bounds-of-thing-at-point 'tap-bounds-of-string-at-point)
 
-  (defun tap-bounds-of-string-at-point ()
+  (defun tap-bounds-of-string-at-point () ; Based loosely on `comint-extract-string'.
     "Return the start and end locations for the string at point.
 Return a consp (START . END), where START /= END.
 Return nil if no string is found at point.
@@ -1563,7 +1629,7 @@ string syntax.  See `tap-string-at-point'."
   (put 'string 'thing-at-point     'tap-string-at-point)
   (put 'string 'tap-thing-at-point 'tap-string-at-point)
 
-  (defun tap-string-at-point ()
+  (defun tap-string-at-point ()         ; Based loosely on `comint-extract-string'.
     "Return the string at point, or nil if there is no string at point.
 Put roughly, there is a string at point if point is on or after a \"
 and on or before a second \".
