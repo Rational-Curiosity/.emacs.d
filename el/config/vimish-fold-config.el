@@ -167,6 +167,10 @@
        (setq indentation (current-indentation)))
   (or (looking-at-p "[[:space:]]*$")
       (char-equal ?\\ (char-before (1- (point))))
+      (if (looking-at "[[:space:]]*\"\"\"[\0-\377[:nonascii:]]*?\"\"\"")
+          (goto-char (match-end 0)))
+      (if (looking-at "[[:space:]]*'''[\0-\377[:nonascii:]]*?'''")
+          (goto-char (match-end 0)))
       (< indentation (current-indentation)))
   t)
 
