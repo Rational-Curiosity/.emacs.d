@@ -147,10 +147,27 @@ This variable is considered on read only mode
                             this-original-command binding
                             this-command binding)
                       (call-interactively binding))
-                  (define-key modal-mode-map ,actual-key ',sub-keymap)
-                  (setq prefix-arg current-prefix-arg
-                        unread-command-events (listify-key-sequence ,actual-key))
-                  (modal--bind-and-remove-from-hook ,actual-key real-this-command)))))))
+                  ,@(cond
+                     ((keymapp sub-keymap)
+                      `((define-key modal-mode-map ,actual-key ',sub-keymap)
+                        (modal--bind-and-remove-from-hook ,actual-key real-this-command)
+                        (setq prefix-arg current-prefix-arg
+                              unread-command-events (mapcar
+                                                     (lambda (e) (cons t e))
+                                                     (listify-key-sequence ,actual-key)))))
+                     ((or (null sub-keymap)
+                          (numberp sub-keymap))
+                      `((setq prefix-arg current-prefix-arg
+                              unread-command-events (mapcar
+                                                     (lambda (e) (cons t e))
+                                                     (listify-key-sequence ,target-key)))))
+                     (t
+                      (display-warning
+                       'modal
+                       (format-message
+                        "Inconsistency on %s (`lookup-key' `modal-mode-map' latter) returns %s"
+                        docstring sub-keymap))
+                        '()))))))))
     (define-key modal-mode-map actual-key target-key)))
 
 ;;;###autoload

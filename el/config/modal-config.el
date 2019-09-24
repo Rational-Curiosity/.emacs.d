@@ -106,10 +106,13 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C TAB") (kbd "C-c TAB"))  ;; org-show-subtree
 (modal-define-key (kbd "C <backtab>") (kbd "C-c <backtab>"))  ;; org-show-all
 (modal-define-key (kbd "C '") (kbd "C-c '"))
-(modal-define-key (kbd "C ! c") #'flycheck-buffer)
-(modal-define-key (kbd "C ! n") #'flycheck-next-error)
-(modal-define-key (kbd "C ! p") #'flycheck-previous-error)
-(modal-define-key (kbd "C ! l") #'flycheck-list-errors)
+;; [ equivalent
+(modal-define-key (kbd "C !") (kbd "C-c !"))
+;; (modal-define-key (kbd "C ! c") #'flycheck-buffer)
+;; (modal-define-key (kbd "C ! n") #'flycheck-next-error)
+;; (modal-define-key (kbd "C ! p") #'flycheck-previous-error)
+;; (modal-define-key (kbd "C ! l") #'flycheck-list-errors)
+;; ]
 (modal-define-key (kbd "C A") (kbd "C-c C-a"))
 (modal-define-key (kbd "C a") (kbd "C-c a"))  ;; org-agenda
 (modal-define-key (kbd "C B") (kbd "C-c C-b"))  ;; go-back
@@ -124,12 +127,15 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C e P") #'er/mark-outside-pairs)
 (modal-define-key (kbd "C F") (kbd "C-c C-f"))  ;; org-forward-heading-same-level
 (modal-define-key (kbd "C M-f") (kbd "C-c M-f"))  ;; org-next-block
-(modal-define-key (kbd "C i s") #'spanish-dictionary)
-(modal-define-key (kbd "C i e") #'english-dictionary)
-(modal-define-key (kbd "C i c") #'flyspell-buffer)
-(modal-define-key (kbd "C i n") #'flyspell-goto-next-error)
-(modal-define-key (kbd "C i p") #'flyspell-goto-previous-error)
-(modal-define-key (kbd "C i a") #'flyspell-auto-correct-word)
+;; [ equivalent
+(modal-define-key (kbd "C i") (kbd "C-c i"))
+;; (modal-define-key (kbd "C i s") #'spanish-dictionary)
+;; (modal-define-key (kbd "C i e") #'english-dictionary)
+;; (modal-define-key (kbd "C i c") #'flyspell-buffer)
+;; (modal-define-key (kbd "C i n") #'flyspell-goto-next-error)
+;; (modal-define-key (kbd "C i p") #'flyspell-goto-previous-error)
+;; (modal-define-key (kbd "C i a") #'flyspell-auto-correct-word)
+;; ]
 (modal-define-key (kbd "C K") (kbd "C-c C-k"))  ;; cancel-commit
 (modal-define-key (kbd "C l") (kbd "C-c l"))  ;; org-store-link
 (modal-define-key (kbd "C L") (kbd "C-c C-l"))  ;; org-insert-link
@@ -146,20 +152,23 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C S") (kbd "C-c C-s"))  ;; org-schedule
 (modal-define-key (kbd "C T") (kbd "C-c C-t"))  ;; org-todo
 (modal-define-key (kbd "C U") (kbd "C-c C-u"))  ;; outline-up-heading
-(modal-define-key (kbd "C v *") #'vimish-fold-unfold-all)
-(modal-define-key (kbd "C v +") #'vimish-fold-unfold)
-(modal-define-key (kbd "C v -") #'vimish-fold-refold)
-(modal-define-key (kbd "C v _") #'vimish-fold-refold-all)
-(modal-define-key (kbd "C v .") #'vimish-fold-toggle)
-(modal-define-key (kbd "C v :") #'vimish-fold-toggle-all)
-(modal-define-key (kbd "C v d") #'vimish-fold-delete)
-(modal-define-key (kbd "C v D") #'vimish-fold-delete-all)
-(modal-define-key (kbd "C v f") #'vimish-fold)
-(modal-define-key (kbd "C v G") #'vimish-fold-avy)
-(modal-define-key (kbd "C v p") #'vimish-fold-previous-fold)
-(modal-define-key (kbd "C v n") #'vimish-fold-next-fold)
-(modal-define-key (kbd "C v s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
-(modal-define-key (kbd "C v h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
+;; [ equivalent
+(modal-define-key (kbd "C v") (kbd "C-c v"))
+;; (modal-define-key (kbd "C v *") #'vimish-fold-unfold-all)
+;; (modal-define-key (kbd "C v +") #'vimish-fold-unfold)
+;; (modal-define-key (kbd "C v -") #'vimish-fold-refold)
+;; (modal-define-key (kbd "C v _") #'vimish-fold-refold-all)
+;; (modal-define-key (kbd "C v .") #'vimish-fold-toggle)
+;; (modal-define-key (kbd "C v :") #'vimish-fold-toggle-all)
+;; (modal-define-key (kbd "C v d") #'vimish-fold-delete)
+;; (modal-define-key (kbd "C v D") #'vimish-fold-delete-all)
+;; (modal-define-key (kbd "C v f") #'vimish-fold)
+;; (modal-define-key (kbd "C v G") #'vimish-fold-avy)
+;; (modal-define-key (kbd "C v p") #'vimish-fold-previous-fold)
+;; (modal-define-key (kbd "C v n") #'vimish-fold-next-fold)
+;; (modal-define-key (kbd "C v s") (kbd "C-c v s"))  ;; org-block-and-result-show-all
+;; (modal-define-key (kbd "C v h") (kbd "C-c v h"))  ;; org-block-and-result-hide-all
+;; ]
 (modal-define-key (kbd "C w -") #'winner-undo)
 (modal-define-key (kbd "C w _") #'winner-redo)
 (modal-define-key (kbd "C w 2") 'shell-2-window-frame)
@@ -268,9 +277,30 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X P") (kbd "C-x C-p"))  ;; mark-page
 (modal-define-key (kbd "X p s") (kbd "C-x p s"))  ;; bookmark-save
 (modal-define-key (kbd "X R") (kbd "C-x C-r"))  ;; recentf-open
-(modal-define-key (kbd "X r m") (kbd "C-x r m"))  ;; bookmark-set
-(modal-define-key (kbd "X r b") (kbd "C-x r b"))  ;; bookmark-jump
-(modal-define-key (kbd "X r l") (kbd "C-x r l"))  ;; list-bookmarks
+;; [ equivalent
+(modal-define-key (kbd "X r") (kbd "C-x r"))
+;; (modal-define-key (kbd "X r SPC") (kbd "C-x r SPC"))  ;; point-to-register
+;; (modal-define-key (kbd "X r +") (kbd "C-x r +"))  ;; increment-register
+;; (modal-define-key (kbd "X r b") (kbd "C-x r b"))  ;; bookmark-jump
+;; (modal-define-key (kbd "X r c") (kbd "C-x r c"))  ;; clean-rectangle
+;; (modal-define-key (kbd "X r d") (kbd "C-x r d"))  ;; delete-rectangle
+;; (modal-define-key (kbd "X r f") (kbd "C-x r f"))  ;; frameset-to-register
+;; (modal-define-key (kbd "X r i") (kbd "C-x r i"))  ;; insert-register
+;; (modal-define-key (kbd "X r j") (kbd "C-x r j"))  ;; jump-to-register
+;; (modal-define-key (kbd "X r k") (kbd "C-x r k"))  ;; kill-rectangle
+;; (modal-define-key (kbd "X r l") (kbd "C-x r l"))  ;; list-bookmarks
+;; (modal-define-key (kbd "X r m") (kbd "C-x r m"))  ;; bookmark-set
+;; (modal-define-key (kbd "X r N") (kbd "C-x r N"))  ;; rectangle-number-lines
+;; (modal-define-key (kbd "X r n") (kbd "C-x r n"))  ;; number-to-register
+;; (modal-define-key (kbd "X r o") (kbd "C-x r o"))  ;; open-rectangle
+;; (modal-define-key (kbd "X r r") (kbd "C-x r r"))  ;; copy-rectangle-to-register
+;; (modal-define-key (kbd "X r s") (kbd "C-x r s"))  ;; copy-to-register
+;; (modal-define-key (kbd "X r t") (kbd "C-x r t"))  ;; string-rectangle
+;; (modal-define-key (kbd "X r U") (kbd "C-x r U"))  ;; undo-tree-restore-state-from-register
+;; (modal-define-key (kbd "X r u") (kbd "C-x r u"))  ;; undo-tree-save-state-to-register
+;; (modal-define-key (kbd "X r y") (kbd "C-x r y"))  ;; yank-rectangle
+;; (modal-define-key (kbd "X r M-w") (kbd "C-x r M-w"))  ;; copy-rectangle-as-kill
+;; ]
 (modal-define-key (kbd "X S") (kbd "C-x C-s"))  ;; save-buffer
 (modal-define-key (kbd "X s") (kbd "C-x s"))  ;; save-some-buffers
 (modal-define-key (kbd "X U") (kbd "C-x C-u"))  ;; upcase-region

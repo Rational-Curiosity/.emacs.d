@@ -144,6 +144,10 @@
 (define-key flyspell-mouse-map [mouse-2] nil)
 (define-key flyspell-mode-map (kbd "C-.") nil)
 (define-key flyspell-mode-map (kbd "C-,") nil)
+(define-key flyspell-mode-map (kbd "C-c i c") #'flyspell-buffer)
+(define-key flyspell-mode-map (kbd "C-c i n") #'flyspell-goto-next-error)
+(define-key flyspell-mode-map (kbd "C-c i p") #'flyspell-goto-previous-error)
+(define-key flyspell-mode-map (kbd "C-c i a") #'flyspell-auto-correct-word)
 ;; Change mouse over help text
 (let ((item (aref (aref (symbol-function 'make-flyspell-overlay) 2) 12)))
   (if (and (stringp item)
