@@ -5,6 +5,10 @@
          ;; "icK3ghYAghoAAQidghcAAQmdP4IXAMOFeAABIIk6g1UAxAEhhFUAAgidhDEAAghCEMXGApvHIsg9g28AycoCQGAiywM4xcYFm8wiI4RvAMOyAYJvAIk8hG8AxAEhhG8AAgmdhG8Azc4EIogCCUIRiYV2AAIBQrIBhw=="
          ;; new 26.3
          "icI9hCMAicM9gxIAAQidgiAAicQ9gx8AAQmdP4IgAMWFgQABIIk6g14AxgEhhF4AAgidhDoAAghCEMfIApvJIso9g3gAy8wCQGAizQM4x8gFm84iI4R4AMWyAYJ4AIk8hHgAxgEhhHgAAgmdhHgAz9AEIogCCUIRiYV/AAIBQrIBhw==")
+    (defvar minibuffer-bug-capf-message t)
+    (defun toggle-minibuffer-bug-capf-message ()
+      (interactive)
+      (setq minibuffer-bug-capf-message (null minibuffer-bug-capf-message)))
     (defun completion--capf-wrapper (fun which)
       ;; FIXME: The safe/misbehave handling assumes that a given function will
       ;; always return the same kind of data, but this breaks down with functions
@@ -19,8 +23,9 @@
                        (error
                         ;; (message "completion-capf fun backtrace:")
                         ;; (backtrace)
-                        (message "completion-capf: function `%s' signals: %s"
-                                 (symbol-name fun) raised-error)
+                        (if minibuffer-bug-capf-message
+                            (message "completion-capf: function `%s' signals: %s"
+                                 (symbol-name fun) raised-error))
                         nil))))
             (cond
              ((and (consp res) (not (functionp res)))
