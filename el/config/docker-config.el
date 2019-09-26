@@ -38,16 +38,16 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(dolist (map-symbol '(docker-container-mode-map
-                      docker-image-mode-map
-                      docker-machine-mode-map
-                      docker-network-mode-map
-                      docker-volume-mode-map))
-  (let ((map (eval map-symbol)))
-    ;; (with-eval-after-load (intern (replace-regexp-in-string "-mode-map" "" (symbol-name map-symbol) t 'literal))
-    (modal-add-first-parent map)
-    ;; )
-    ))
+;; (dolist (map-symbol '(docker-container-mode-map
+;;                       docker-image-mode-map
+;;                       docker-machine-mode-map
+;;                       docker-network-mode-map
+;;                       docker-volume-mode-map))
+;;   (let ((map (eval map-symbol)))
+;;     ;; (with-eval-after-load (intern (replace-regexp-in-string "-mode-map" "" (symbol-name map-symbol) t 'literal))
+;;     (modal-add-first-parent map)
+;;     ;; )
+;;     ))
 
 
 (provide 'docker-config)

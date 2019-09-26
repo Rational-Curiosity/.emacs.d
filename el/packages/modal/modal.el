@@ -273,6 +273,41 @@ This is used by `modal-global-mode'."
 ;; Minibuffer
 (add-hook 'minibuffer-setup-hook 'modal-mode)
 
+(defun modal-global-mode-force ()
+  (interactive)
+  (unless modal-mode
+    (let ((modal--original-buffer (current-buffer)))
+      (modal-global-mode 1))))
+
+(defvar modal--post-command-countdown nil)
+
+(defun modal--enable-mode-and-remove-from-hook ()
+  (if (< 0 modal--post-command-countdown)
+      (cl-decf modal--post-command-countdown)
+    (modal-global-mode 1)
+    (remove-hook 'post-command-hook 'modal--enable-mode-and-remove-from-hook)
+    (setq modal--post-command-countdown nil)))
+
+(defun modal--disable-mode-and-remove-from-hook ()
+  (if (< 0 modal--post-command-countdown)
+      (cl-decf modal--post-command-countdown)
+    (modal-global-mode 0)
+    (remove-hook 'post-command-hook 'modal--disable-mode-and-remove-from-hook)
+    (setq modal--post-command-countdown nil)))
+
+(defun modal-global-mode-post-command (times)
+  (interactive "p")
+  (when (and (numberp times)
+             (< 0 times)
+             (null modal--post-command-countdown))
+    (setq modal--post-command-countdown times)
+    (if modal-mode
+        (progn
+          (modal-global-mode 0)
+          (add-hook 'post-command-hook 'modal--enable-mode-and-remove-from-hook))
+      (modal-global-mode 1)
+      (add-hook 'post-command-hook 'modal--disable-mode-and-remove-from-hook))))
+
 (defun modal-global-mode-idle (secs)
   (interactive "P")
   (let ((new-state (if modal-mode 0 1))
@@ -282,12 +317,6 @@ This is used by `modal-global-mode'."
                              secs
                            modal-idle-secs)
                          nil #'modal-global-mode (- 1 new-state))))
-
-(defun modal-global-mode-force ()
-  (interactive)
-  (unless modal-mode
-    (let ((modal--original-buffer (current-buffer)))
-      (modal-global-mode 1))))
 
 (defun modal-global-mode-toggle (secs)
   (interactive "P")
@@ -369,7 +398,8 @@ Otherwise use `list'."
 ;;;;;;;;;;
 ;; keys ;;
 ;;;;;;;;;;
-(global-set-key "º" 'modal-global-mode-idle)
+(global-set-key "ª" 'modal-global-mode-idle)
+(global-set-key "º" 'modal-global-mode-post-command)
 ;; Make compatible with other modules
 (define-key special-mode-map [?\S-\ ] nil)     ;; simple.el
 (with-eval-after-load 'rmail

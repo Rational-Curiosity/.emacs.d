@@ -12,19 +12,19 @@
       modal-cursor-type 'hollow
       modal-excluded-modes '(buffer-menu-mode
                              ibuffer-mode
-                             package-menu-mode
+                             ;; package-menu-mode
                              ;; debugger-mode
                              dired-mode
-                             calc-mode
                              ediff-mode
                              ;; eshell-mode
                              ;; org-agenda-mode
                              git-rebase-mode
+                             ;; docker-container-mode
                              magit-popup-mode
                              ;; magit-mode
                              ;; magit-process-mode
                              ;; magit-status-mode
-                             docker-container-mode)
+                             calc-mode)
       modal-insertp-functions '(sp-rewrap-sexp-lc
                                 sp-unwrap-sexp-lc
                                 comment-dwim
