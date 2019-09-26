@@ -22,12 +22,18 @@
     (let* ((tags-file "TAGS")
            (tags-directory (locate-dominating-file default-directory tags-file)))
       (if tags-directory
-          (progn
-            (message "%s file founded in %s" tags-file tags-directory)
-            (apply orig-fun (concat tags-directory tags-file) args))
+          (let ((tags-path (expand-file-name tags-file tags-directory)))
+            (message "%s file founded in %s" tags-file tags-path)
+            (advice-remove 'visit-tags-table 'visit-tags-table-advice)
+            (advice-remove 'visit-tags-table-buffer 'visit-tags-table-buffer-advice)
+            (apply orig-fun tags-path args))
         (apply orig-fun file args)))))
 (advice-add 'visit-tags-table :around 'visit-tags-table-advice)
-(advice-add 'visit-tags-table-buffer :around 'visit-tags-table-advice)
+
+(defun visit-tags-table-buffer-advice (orig-fun &rest args)
+  (visit-tags-table)
+  (apply orig-fun args))
+(advice-add 'visit-tags-table-buffer :around 'visit-tags-table-buffer-advice)
 
 
 (provide 'etags-config)
