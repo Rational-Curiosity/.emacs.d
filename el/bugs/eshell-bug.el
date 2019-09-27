@@ -74,7 +74,8 @@
                args)
               posns)))))
 
-(require 'esh-util) ;; eshell-condition-case
+(cl-eval-when 'compile
+  (require 'esh-util)) ;; eshell-condition-case
 (with-eval-after-load 'esh-mode
   (when (bug-check-function-bytecode
          'eshell-send-input
