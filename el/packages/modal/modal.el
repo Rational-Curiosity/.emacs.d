@@ -102,6 +102,9 @@ This variable is considered on read only mode
 (defvar modal-mode-map (make-sparse-keymap)
   "This is Modal mode map, used to translate your keys.")
 
+(defvar modal--translations (make-hash-table :test 'equal)
+  "Especial translations.")
+
 (defun modal-find-bind (key)
   (cl-some (lambda (keymap)
              (unless (eq keymap modal-mode-map)
@@ -127,12 +130,14 @@ This variable is considered on read only mode
 (defun modal-define-key (actual-key target-key)
   "Register translation from ACTUAL-KEY to TARGET-KEY."
   (if (arrayp target-key)
-      (let ((sub-keymap (lookup-key modal-mode-map actual-key))
-            (docstring (format "Modal mode translates \"%s\" into \"%s\"."
-                               (key-description actual-key)
-                               (key-description target-key))))
+      (let* ((sub-keymap (lookup-key modal-mode-map actual-key))
+             (target-key-description (key-description target-key))
+             (docstring (format "Modal mode translates \"%s\" into \"%s\"."
+                                (key-description actual-key)
+                                target-key-description)))
         ;; (if (equal actual-key target-key)
         ;;     (error "Dangerous and absurd: %s" docstring))
+        (puthash target-key-description actual-key modal--translations)
         (define-key
           modal-mode-map
           actual-key
@@ -165,8 +170,8 @@ This variable is considered on read only mode
                       (display-warning
                        'modal
                        (format-message
-                        "Inconsistency on %s (`lookup-key' `modal-mode-map' latter) returns %s"
-                        docstring sub-keymap))
+                        "Inconsistency on %s (`lookup-key' `modal-mode-map' (`kbd' \"%s\")) returns %s"
+                        docstring target-key-description sub-keymap))
                         '()))))))))
     (define-key modal-mode-map actual-key target-key)))
 
@@ -210,47 +215,8 @@ configuration created previously with `modal-define-key' and
   :lighter "◇"
   :keymap modal-mode-map
   (if modal-mode
-      (progn
-        ;; (dolist (buffer (buffer-list))
-        ;;   (with-current-buffer buffer
         (setq-local cursor-type modal-cursor-type)
-        ;; (set-face-attribute 'hl-line nil
-        ;;                     :background "#3B3B5E")
-        ;; ))
-        (define-key function-key-map "G" "\C-g")    ;; read-key
-        ;; (define-key query-replace-map "G" 'quit) ;; read-event
-        ;; minibuffer
-        ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
-        ;; transient
-        (if (boundp 'transient-map)
-            (define-key transient-map "G" 'transient-quit-one))
-        ;; isearch-mode
-        (define-key isearch-mode-map "º" 'modal-global-mode-idle)
-        (define-key isearch-mode-map "G" #'isearch-abort)
-        (define-key isearch-mode-map "Q" #'isearch-quote-char)
-        (define-key isearch-mode-map "S" #'isearch-repeat-forward)
-        (define-key isearch-mode-map "R" #'isearch-repeat-backward)
-        (define-key universal-argument-map "U" #'universal-argument-more))
-    ;; (dolist (buffer (buffer-list))
-    ;;   (with-current-buffer buffer
-    (setq-local cursor-type modal-insert-cursor-type)
-    ;; (set-face-attribute 'hl-line nil
-    ;;                     :background "#3B3B3B")
-    ;; ))
-    (define-key function-key-map "G" nil)
-    ;; (define-key query-replace-map "G" nil)
-    ;; minibuffer
-    ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
-        ;; transient
-        (if (boundp 'transient-map)
-            (define-key transient-map "G" nil))
-    ;; isearch-mode
-    (define-key isearch-mode-map "º" #'isearch-printing-char)
-    (define-key isearch-mode-map "G" #'isearch-printing-char)
-    (define-key isearch-mode-map "Q" #'isearch-printing-char)
-    (define-key isearch-mode-map "S" #'isearch-printing-char)
-    (define-key isearch-mode-map "R" #'isearch-printing-char)
-    (define-key universal-argument-map "U" nil)))
+    (setq-local cursor-type modal-insert-cursor-type)))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not blacklisted.
@@ -345,23 +311,20 @@ Otherwise use `list'."
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
 (defun modal--quoted-insert-advice (orig-fun arg)
-  (if modal-mode
-      (progn
-        (define-key function-key-map "G" nil)
-        (unwind-protect
-            (funcall orig-fun arg)
-          (define-key function-key-map "G" "\C-g")))
-    (funcall orig-fun arg)))
+  (let ((key (gethash "C-g" modal--translations)))
+    (if (and modal-mode
+             key)
+        (progn
+          (define-key function-key-map key nil)
+          (unwind-protect
+              (funcall orig-fun arg)
+            (define-key function-key-map key "\C-g")))
+      (funcall orig-fun arg))))
 (advice-add 'quoted-insert :around #'modal--quoted-insert-advice)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Integration with other packages ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; transient
-(with-eval-after-load 'transient
-  (if modal-mode
-      (define-key transient-map "G" 'transient-quit-one)))
-
 ;; which-key-mode
 (with-eval-after-load 'which-key
   (cl-delete '((nil . "\\`\\?\\?\\'") . (nil . "lambda")) which-key-replacement-alist)
@@ -410,8 +373,9 @@ Otherwise use `list'."
 (mapc (lambda (keymap)
         (define-key keymap [?\S-\ ] nil))
       (keymaps-with-binding [?\S-\ ]))
-;; ;; Modal keys
+;; Modal keys
 (global-set-key (kbd "µ") #'modal-global-mode-toggle)
+(global-set-key (kbd "<key-924>") #'modal-global-mode-toggle)
 
 
 (provide 'modal)

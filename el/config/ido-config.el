@@ -369,8 +369,8 @@ Modified from `icomplete-completions'."
 ;; This is your old M-x.
 ;; (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 ;; icomplete keys
-(define-key icomplete-minibuffer-map "\C-s" [?\C-.])
-(define-key icomplete-minibuffer-map "\C-r" [?\C-,])
+(define-key icomplete-minibuffer-map "\C-s" #'icomplete-forward-completions)
+(define-key icomplete-minibuffer-map "\C-r" #'icomplete-backward-completions)
 
 (defun ido-select-text-or-exit-minibuffer ()
   (interactive)

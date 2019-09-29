@@ -66,11 +66,69 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+;; icomplete-mode
+(with-eval-after-load 'icomplete
+  (when modal-mode
+    (define-key icomplete-minibuffer-map "J" #'icomplete-force-complete-and-exit)
+    (define-key icomplete-minibuffer-map "S" #'icomplete-forward-completions)
+    (define-key icomplete-minibuffer-map "R" #'icomplete-backward-completions)))
+;; transient
+(with-eval-after-load 'transient
+  (if modal-mode
+      (define-key transient-map "G" 'transient-quit-one)))
 
-(define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
-(define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
-(define-key indent-rigidly-map "f" #'indent-rigidly-right)
-(define-key indent-rigidly-map "b" #'indent-rigidly-left)
+(defun modal-mode-bind-higher-priority-maps ()
+  (if modal-mode
+      (progn
+        (define-key function-key-map "G" "\C-g")    ;; read-key
+        ;; (define-key query-replace-map "G" 'quit) ;; read-event
+        ;; minibuffer
+        ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+        ;; isearch-mode
+        (define-key isearch-mode-map "º" 'modal-global-mode-idle)
+        (define-key isearch-mode-map "G" #'isearch-abort)
+        (define-key isearch-mode-map "Q" #'isearch-quote-char)
+        (define-key isearch-mode-map "S" #'isearch-repeat-forward)
+        (define-key isearch-mode-map "R" #'isearch-repeat-backward)
+        (define-key universal-argument-map "U" #'universal-argument-more)
+        ;; indent-rigidly
+        (define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
+        (define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
+        (define-key indent-rigidly-map "f" #'indent-rigidly-right)
+        (define-key indent-rigidly-map "b" #'indent-rigidly-left)
+        ;; icomplete-mode
+        (when (boundp 'icomplete-minibuffer-map)
+          (define-key icomplete-minibuffer-map "J" #'icomplete-force-complete-and-exit)
+          (define-key icomplete-minibuffer-map "S" #'icomplete-forward-completions)
+          (define-key icomplete-minibuffer-map "R" #'icomplete-backward-completions))
+        ;; transient
+        (when (boundp 'transient-map)
+          (define-key transient-map "G" 'transient-quit-one)))
+    (define-key function-key-map "G" nil)
+    ;; (define-key query-replace-map "G" nil)
+    ;; minibuffer
+    ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+    ;; isearch-mode
+    (define-key isearch-mode-map "º" #'isearch-printing-char)
+    (define-key isearch-mode-map "G" #'isearch-printing-char)
+    (define-key isearch-mode-map "Q" #'isearch-printing-char)
+    (define-key isearch-mode-map "S" #'isearch-printing-char)
+    (define-key isearch-mode-map "R" #'isearch-printing-char)
+    (define-key universal-argument-map "U" nil)
+    ;; indent-rigidly
+    (define-key indent-rigidly-map "F" nil)
+    (define-key indent-rigidly-map "B" nil)
+    (define-key indent-rigidly-map "f" nil)
+    (define-key indent-rigidly-map "b" nil)
+    ;; icomplete-mode
+    (when (boundp 'icomplete-minibuffer-map)
+      (define-key icomplete-minibuffer-map "J" nil)
+      (define-key icomplete-minibuffer-map "S" nil)
+      (define-key icomplete-minibuffer-map "R" nil))
+    ;; transient
+    (when (boundp 'transient-map)
+      (define-key transient-map "G" nil))))
+(add-hook 'modal-mode-hook 'modal-mode-bind-higher-priority-maps)
 
 ;; Modal editing
 ;; ' (handy as self-inserting symbol)
