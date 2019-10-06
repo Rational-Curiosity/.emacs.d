@@ -94,6 +94,7 @@
      ("emacs"       "ε")
      ("help"        "?")
      ("csv"         ",")
+     ("tsv"         "↹")
      ("inferior"    "i" :prefix)
      ("interaction" "i" :prefix)
      ("interactive" "i" :prefix)

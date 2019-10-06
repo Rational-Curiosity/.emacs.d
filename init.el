@@ -31,7 +31,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ac-php-core ag anaconda-mode android-mode async auctex avy bash-completion clang-format cmake-font-lock cmake-mode company company-anaconda company-c-headers company-php company-rtags company-tern crm-custom csharp-mode csv-mode ctable cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet fish-mode flycheck flycheck-haskell flycheck-julia flycheck-popup-tip flymake flymake-lua format-all free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt hierarchy highlight-indent-guides highlight-thing ht htmlize hydra ido-at-point ido-completing-read+ js2-mode js2-refactor json-mode json-navigator json-reformat json-snatcher let-alist link-hint lua-mode lv magit magit-popup markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-super-agenda org-trello ox-gfm ox-mediawiki ox-rst ox-twbs php-mode pkg-info plantuml-mode popup projectile protobuf-mode pythonic rainbow-delimiters rebox2 request request-deferred rtags s seq smartparens smartscan sphinx-doc sphinx-frontend srefactor stickyfunc-enhance string-inflection tablist tern transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-completion-data which-key with-editor xahk-mode xcscope xref-js2 xterm-color yasnippet yasnippet-snippets))))
+    (ac-php-core ag anaconda-mode android-mode async auctex avy bash-completion clang-format cmake-font-lock cmake-mode company company-anaconda company-c-headers company-php company-rtags company-tern crm-custom csharp-mode ctable cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet fish-mode flycheck flycheck-haskell flycheck-julia flycheck-popup-tip flymake flymake-lua format-all free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt hierarchy highlight-indent-guides highlight-thing ht htmlize hydra ido-at-point ido-completing-read+ js2-mode js2-refactor json-mode json-navigator json-reformat json-snatcher let-alist link-hint lua-mode lv magit magit-popup markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-super-agenda ox-gfm ox-mediawiki ox-rst ox-twbs php-mode pkg-info plantuml-mode popup projectile protobuf-mode pythonic rainbow-delimiters rebox2 request request-deferred rtags s seq smartparens smartscan sphinx-doc sphinx-frontend srefactor stickyfunc-enhance string-inflection tablist tern transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-completion-data which-key with-editor xahk-mode xcscope xref-js2 xterm-color yasnippet yasnippet-snippets))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -139,9 +139,9 @@
 (require 'version-control-config)
 
 ;; csv-mode
-(add-to-list 'auto-mode-alist '("\\.tsv\\'" . csv-mode))
-;; not working with with-eval-after-load 'csv-mode
-(require 'csv-config)
+(require 'csv-mode-autoloads)
+(with-eval-after-load 'csv-mode
+  (require 'csv-config))
 
 (require 'minimap-config)
 
@@ -191,6 +191,8 @@
 ;;;;;;;;;;;;;;;;;
 ;; Programming ;;
 ;;;;;;;;;;;;;;;;;
+(with-eval-after-load 'compile
+  (require 'compile-config))
 ;; flycheck-mode
 (add-hook 'prog-mode-hook #'flycheck-mode)
 (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)

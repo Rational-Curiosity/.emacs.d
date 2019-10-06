@@ -7,6 +7,7 @@
 (require 'hi-lock)
 (setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) "")
 
+(setq hi-lock-highlight-range 2000000)
 ;;;;;;;;;;;
 ;; Faces ;;
 ;;;;;;;;;;;
@@ -98,26 +99,40 @@
   (unhighlight-regexp "\\_<PATCH\\_>")
   (unhighlight-regexp "\\_<DELETE\\_>"))
 
-(defun hl-today ()
-  "Highlight today date."
-  (interactive)
-  (highlight-regexp (format-time-string "%Y-%m-%d") 'hi-blue))
+(defvar hl-datetime-today-last nil)
+(make-variable-buffer-local 'hl-datetime-today-last)
 
-(defun unhl-today ()
+(defun hl-datetime ()
   "Highlight today date."
   (interactive)
-  (unhighlight-regexp (format-time-string "%Y-%m-%d")))
+  (highlight-regexp "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]" 'hi-yellow-b)
+  (let ((date (format-time-string "%Y-%m-%d")))
+    (if hl-datetime-today-last
+        (unless (string-equal date hl-datetime-today-last)
+          (unhighlight-regexp hl-datetime-today-last)
+          (setq hl-datetime-today-last date))
+      (setq hl-datetime-today-last date)))
+  (highlight-regexp hl-datetime-today-last 'hi-green-b)
+  (highlight-regexp "[0-9][0-9]:[0-9][0-9]:[0-9][0-9]" 'hi-yellow-b))
+
+(defun unhl-datetime ()
+  "Highlight today date."
+  (interactive)
+  (if hl-datetime-today-last
+      (unhighlight-regexp hl-datetime-today-last))
+  (unhighlight-regexp "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]")
+  (unhighlight-regexp "[0-9][0-9]:[0-9][0-9]:[0-9][0-9]"))
 
 (defun hl-log ()
   (interactive)
   (hl-advices)
-  (hl-today)
+  (hl-datetime)
   (hl-apirest))
 
 (defun unhl-log ()
   (interactive)
   (unhl-advices)
-  (unhl-today)
+  (unhl-datetime)
   (unhl-apirest))
 
 

@@ -356,11 +356,6 @@ xmodmap -e 'add control = Alt_R'")))))
 ;; Narrow enabled
 (put 'narrow-to-region 'disabled nil)
 
-;; Graba cada 10 caracteres introducidos a #<file-name>#
-(setq auto-save-interval 10
-      ;; o cada 10 segundos
-      auto-save-timeout 10)
-
 ;; No lo activamos por ser muy engorroso
 ;;(put 'scroll-left 'disabled nil)
 

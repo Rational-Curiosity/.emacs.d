@@ -25,6 +25,7 @@
              names urls))
 
 (package-initialize)
+;; sort package list
 (defun package--save-selected-packages-advice (orig-fun value)
   (funcall orig-fun (sort value 'string-lessp)))
 (advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
