@@ -25,12 +25,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backup & Auto save ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
-(setq backup-directory-alist '(("" . "~/.emacs.d/backup/"))
-      auto-save-file-name-transforms
-      '((".*" "~/.emacs.d/backup/" t)))
 ;; create the autosave dir if necessary, since emacs won't.
 ;; with backup directory is not necessary
-(make-directory "~/.emacs.d/backup/" t)
+(let ((backup-directory (expand-file-name "~/.emacs.d/backup/")))
+  (make-directory backup-directory t)
+
+  (setq backup-directory-alist
+        `((".*" . ,backup-directory))
+        ;; auto-save-file-name-transforms
+        ;; '((".*" "~/.emacs.d/backup/" t))
+        ;; Graba cada 10 caracteres introducidos a #<file-name>#
+        auto-save-interval 10
+        ;; o cada 10 segundos
+        auto-save-timeout 10
+        ;; create local .#<file-name> to avoid collisions
+        create-lockfiles nil))
 
 ;;;;;;;;;;
 ;; Math ;;
