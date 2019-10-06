@@ -117,16 +117,6 @@
         (goto-char pos-end)))
     (message "Found %i pointers by ref" counts)))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;                             ;;
-;;   Funciones para compilar   ;;
-;;                             ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'compile)
-(setq ;compile-command "cbuild -g "
-      compilation-scroll-output 'first-error)
-
 ;;;;;;;;;;;;
 ;; Estilo ;;
 ;;;;;;;;;;;;
