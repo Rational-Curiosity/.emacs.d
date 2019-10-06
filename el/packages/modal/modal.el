@@ -214,9 +214,28 @@ configuration created previously with `modal-define-key' and
 `modal-define-keys'."
   :lighter "◇"
   :keymap modal-mode-map
-  (if modal-mode
-        (setq-local cursor-type modal-cursor-type)
-    (setq-local cursor-type modal-insert-cursor-type)))
+  (let ((c-g-key (gethash "C-g" modal--translations))
+        (c-u-key (gethash "C-u" modal--translations)))
+    (if modal-mode
+        (progn
+          (setq-local cursor-type modal-cursor-type)
+          (when c-g-key
+            (define-key function-key-map c-g-key "\C-g")    ;; read-key
+            ;; (define-key query-replace-map "G" 'quit) ;; read-event
+            ;; minibuffer
+            ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+            )
+          (when c-u-key
+            (define-key universal-argument-map c-u-key #'universal-argument-more)))
+      (setq-local cursor-type modal-insert-cursor-type)
+      (when c-g-key
+        (define-key function-key-map c-g-key nil)
+        ;; (define-key query-replace-map "G" nil)
+        ;; minibuffer
+        ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+        )
+      (when c-u-key
+        (define-key universal-argument-map c-u-key nil)))))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not blacklisted.
@@ -358,24 +377,6 @@ Otherwise use `list'."
 
 ;; (with-eval-after-load 'which-key
 ;;   (advice-add 'which-key--get-keymap-bindings :around 'modal--which-key-advice))
-;;;;;;;;;;
-;; keys ;;
-;;;;;;;;;;
-(global-set-key "ª" 'modal-global-mode-idle)
-(global-set-key "º" 'modal-global-mode-post-command)
-;; Make compatible with other modules
-(define-key special-mode-map [?\S-\ ] nil)     ;; simple.el
-(with-eval-after-load 'rmail
-  (define-key rmail-mode-map [?\S-\ ] nil))       ;; rmail.el
-(with-eval-after-load 'cus-edit
-  (define-key custom-mode-map [?\S-\ ] nil)       ;; cus-edit.el
-  (define-key custom-mode-link-map [?\S-\ ] nil)) ;; cus-edit.el
-(mapc (lambda (keymap)
-        (define-key keymap [?\S-\ ] nil))
-      (keymaps-with-binding [?\S-\ ]))
-;; Modal keys
-(global-set-key (kbd "µ") #'modal-global-mode-toggle)
-(global-set-key (kbd "<key-924>") #'modal-global-mode-toggle)
 
 
 (provide 'modal)

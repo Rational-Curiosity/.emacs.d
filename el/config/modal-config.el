@@ -76,21 +76,21 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (with-eval-after-load 'transient
   (if modal-mode
       (define-key transient-map "G" 'transient-quit-one)))
+;; magit-popup
+(with-eval-after-load 'magit-popup
+  (if modal-mode
+      (define-key magit-popup-mode-map "G" 'magit-popup-quit)))
 
 (defun modal-mode-bind-higher-priority-maps ()
   (if modal-mode
       (progn
-        (define-key function-key-map "G" "\C-g")    ;; read-key
-        ;; (define-key query-replace-map "G" 'quit) ;; read-event
-        ;; minibuffer
-        ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
         ;; isearch-mode
-        (define-key isearch-mode-map "º" 'modal-global-mode-idle)
+        (define-key isearch-mode-map "ª" 'modal-global-mode-idle)
+        (define-key isearch-mode-map "º" 'modal-global-mode-post-command)
         (define-key isearch-mode-map "G" #'isearch-abort)
         (define-key isearch-mode-map "Q" #'isearch-quote-char)
         (define-key isearch-mode-map "S" #'isearch-repeat-forward)
         (define-key isearch-mode-map "R" #'isearch-repeat-backward)
-        (define-key universal-argument-map "U" #'universal-argument-more)
         ;; indent-rigidly
         (define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
         (define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
@@ -103,18 +103,17 @@ cancel the use of the current buffer (for special-purpose buffers)."
           (define-key icomplete-minibuffer-map "R" #'icomplete-backward-completions))
         ;; transient
         (when (boundp 'transient-map)
-          (define-key transient-map "G" 'transient-quit-one)))
-    (define-key function-key-map "G" nil)
-    ;; (define-key query-replace-map "G" nil)
-    ;; minibuffer
-    ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+          (define-key transient-map "G" 'transient-quit-one))
+        ;; magit-popup
+        (when (boundp 'magit-popup-mode-map)
+          (define-key magit-popup-mode-map "G" 'magit-popup-quit)))
     ;; isearch-mode
+    (define-key isearch-mode-map "ª" #'isearch-printing-char)
     (define-key isearch-mode-map "º" #'isearch-printing-char)
     (define-key isearch-mode-map "G" #'isearch-printing-char)
     (define-key isearch-mode-map "Q" #'isearch-printing-char)
     (define-key isearch-mode-map "S" #'isearch-printing-char)
     (define-key isearch-mode-map "R" #'isearch-printing-char)
-    (define-key universal-argument-map "U" nil)
     ;; indent-rigidly
     (define-key indent-rigidly-map "F" nil)
     (define-key indent-rigidly-map "B" nil)
@@ -127,7 +126,10 @@ cancel the use of the current buffer (for special-purpose buffers)."
       (define-key icomplete-minibuffer-map "R" nil))
     ;; transient
     (when (boundp 'transient-map)
-      (define-key transient-map "G" nil))))
+      (define-key transient-map "G" nil))
+    ;; magit-popup
+    (when (boundp 'magit-popup-mode-map)
+          (define-key magit-popup-mode-map "G" nil))))
 (add-hook 'modal-mode-hook 'modal-mode-bind-higher-priority-maps)
 
 ;; Modal editing
@@ -314,7 +316,10 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X 5 b") (kbd "C-x 5 b"))  ;; ido-switch-buffer-other-frame
 (modal-define-key (kbd "X C") (kbd "C-x C-c"))  ;; save-buffers-kill-emacs
 (modal-define-key (kbd "X c") (kbd "C-x c"))  ;; rotate-or-inflection
+(modal-define-key (kbd "X B") (kbd "C-x C-b"))  ;; list-buffers
 (modal-define-key (kbd "X b") (kbd "C-x b"))  ;; switch-buffer
+(modal-define-key (kbd "X D") (kbd "C-x C-d"))  ;; list-directory
+(modal-define-key (kbd "X d") (kbd "C-x d"))  ;; dired
 (modal-define-key (kbd "X E") (kbd "C-x C-e"))  ;; eval-last-sexp
 (modal-define-key (kbd "X e") (kbd "C-x e"))  ;; kmacro-end-and-call-macro
 (modal-define-key (kbd "X F") (kbd "C-x C-f"))  ;; find-file
@@ -373,6 +378,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X v R") #'magit-rebase-continue)
 (modal-define-key (kbd "X v r") #'magit-rebase)
 (modal-define-key (kbd "X v v") #'magit-status)
+(modal-define-key (kbd "X W") (kbd "C-x C-w"))  ;; write-file
 (modal-define-key (kbd "X X") (kbd "C-x C-x"))  ;; exchange-point-and-mark
 (modal-define-key (kbd "X z") (kbd "C-x z"))  ;; repeat
 ;; x - ] command prefix
@@ -413,6 +419,28 @@ cancel the use of the current buffer (for special-purpose buffers)."
 
 ;; (modal-define-key (kbd "M-Q") #'fill-paragraph)
 (modal-define-key (kbd "M-V p") (kbd "C-M-S-v"))  ;; scroll-other-window-down
+
+;;;;;;;;;;;;;;;;;
+;; Global keys ;;
+;;;;;;;;;;;;;;;;;
+(global-set-key "ª" 'modal-global-mode-idle)
+(global-set-key "º" 'modal-global-mode-post-command)
+;; Modal keys
+(global-set-key (kbd "µ") #'modal-global-mode-toggle)
+(global-set-key (kbd "<key-924>") #'modal-global-mode-toggle)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Make compatible with other modules ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-key special-mode-map [?\S-\ ] nil)        ;; simple.el
+(with-eval-after-load 'rmail
+  (define-key rmail-mode-map [?\S-\ ] nil))       ;; rmail.el
+(with-eval-after-load 'cus-edit
+  (define-key custom-mode-map [?\S-\ ] nil)       ;; cus-edit.el
+  (define-key custom-mode-link-map [?\S-\ ] nil)) ;; cus-edit.el
+(mapc (lambda (keymap)
+        (define-key keymap [?\S-\ ] nil))
+      (keymaps-with-binding [?\S-\ ]))
 
 ;;;;;;;;;;;;;;;;
 ;; Ubiquitous ;;
