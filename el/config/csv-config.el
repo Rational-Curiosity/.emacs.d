@@ -3,12 +3,11 @@
 ;;; Commentary:
 
 ;; Usage:
-;; (require 'csv-config)
+;; (with-eval-after-load 'csv
+;;   (require 'csv-config))
 
 ;;; Code:
-(require 'csv-mode)
-
-(setq csv-separators '("," ";" "\t" "|")
+(setq csv-separators '("," ";" "	" "|")
       csv-field-quotes '("\"")  ;; ("\"" "'" "`")
       csv-comment-start-default nil  ;; "#"
       csv-comment-start nil  ;; "#"
@@ -16,7 +15,6 @@
       csv-align-padding 1
       csv-header-lines 1
       csv-invisibility-default nil)
-
 
 (defun count-occurrences-in-current-line (char)
   "Count occurrences of CHAR in current line."
@@ -60,7 +58,7 @@
       (setq-local csv-font-lock-keywords (list (list csv-separator-regexp '(0 'csv-separator-face))))
       (message "CSV separator detected: %s" csv-separators))))
 
-(add-hook 'csv-mode-hook #'csv-detect-separator)
+;;(add-hook 'csv-mode-hook #'csv-detect-separator)
 
 ;; Keys
 (define-key csv-mode-map (kbd "<tab>") 'csv-forward-field)
