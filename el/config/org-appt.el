@@ -58,10 +58,15 @@
 
 ;; text notification
 (if (not (executable-find "termux-notification"))
-    (when (executable-find "xmessage")
-      (defun org-appt-function-xmessage (msg)
-        (org-appt-start-process "xmessage disp" "xmessage" nil
-                                msg))
+    (cl-block 'find
+      (cond
+       ((executable-find "gxmessage")
+        (defun org-appt-function-xmessage (msg)
+          (org-appt-start-process "gxmessage disp" "gxmessage" nil msg)))
+       ((executable-find "xmessage")
+        (defun org-appt-function-xmessage (msg)
+          (org-appt-start-process "xmessage disp" "xmessage" nil msg)))
+       (t (cl-return-from 'find)))
       (set 'org-appt-disp-functions (cons 'org-appt-function-xmessage org-appt-disp-functions)))
   (defun org-appt-function-termux-notification (msg)
     (org-appt-start-process "termux notification disp" "termux-notification" nil
@@ -71,10 +76,12 @@
 
 ;; voice notification
 (if (not (executable-find "termux-tts-speak"))
-    (when (executable-find "sfestival")
-      (defun org-appt-function-sfestival (msg)
-        (org-appt-start-process "sfestival disp" "sfestival" nil
-                                msg))
+    (cl-block 'find
+      (cond
+       ((executable-find "sfestival")
+        (defun org-appt-function-sfestival (msg)
+          (org-appt-start-process "sfestival disp" "sfestival" nil msg)))
+       (t (cl-return-from 'find)))
       (set 'org-appt-disp-functions (cons 'org-appt-function-sfestival org-appt-disp-functions)))
   (defun org-appt-function-termux-tts-speak (msg)
     (org-appt-start-process "termux tts disp" "termux-tts-speak" nil
