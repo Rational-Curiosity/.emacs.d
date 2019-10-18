@@ -12,7 +12,10 @@
 ;; (require 'compile)
 
 ;;; Code:
-(setq ;; compile-command "cbuild -g "
+
+;; process's default filter `comint-output-filter'
+(setq comint-scroll-to-bottom-on-output nil
+      ;; compile-command "cbuild -g "
       compilation-scroll-output 'first-error)
 
 ;; (defun compilation-conditional-scroll-output ()
