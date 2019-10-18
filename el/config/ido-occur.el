@@ -58,6 +58,8 @@ and from end of `BUFFER' to beginning of `BUFFER'."
 
 (defun ido-occur--visible-momentary-highlight-region (beg end)
   (mapc (lambda (overlay) (overlay-put overlay 'invisible nil)) (overlays-in beg end))
+  (if (featurep 'vimish-fold)
+    (mapc (lambda (fold) (vimish-fold--unfold fold)) (vimish-fold--folds-in beg end)))
   (pulse-momentary-highlight-region beg end))
 
 (defun ido-occur--run (&optional query)
@@ -82,6 +84,11 @@ When non-nil, QUERY is the initial search pattern."
             (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
             (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0))))
       (if initial-point (goto-char initial-point)))))
+
+(defun ido-recenter-top-botton (&optional arg)
+  (interactive "P")
+  (with-selected-window (minibuffer-selected-window)
+    (recenter-top-bottom arg)))
 
 (defun ido-preview ()
   (interactive)

@@ -382,6 +382,7 @@ Modified from `icomplete-completions'."
   (define-key ido-completion-map "\C-j" 'ido-exit-minibuffer)
   (define-key ido-completion-map (kbd "RET") 'ido-select-text-or-exit-minibuffer)
   (define-key ido-completion-map (kbd "SPC") nil)
+  (define-key ido-completion-map (kbd "C-l") 'ido-recenter-top-botton)
   (define-key ido-completion-map (kbd "M-v") 'ido-preview)
   (define-key ido-completion-map (kbd "M-e") 'ido-preview-next)
   (define-key ido-completion-map (kbd "M-a") 'ido-preview-prev))
