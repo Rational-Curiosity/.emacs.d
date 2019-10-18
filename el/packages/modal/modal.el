@@ -221,18 +221,18 @@ configuration created previously with `modal-define-key' and
           (setq-local cursor-type modal-cursor-type)
           (when c-g-key
             (define-key function-key-map c-g-key "\C-g")    ;; read-key
-            ;; (define-key query-replace-map "G" 'quit) ;; read-event
+            (define-key query-replace-map c-g-key 'quit) ;; read-event
             ;; minibuffer
-            ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+            (define-key minibuffer-local-map c-g-key #'abort-recursive-edit)
             )
           (when c-u-key
             (define-key universal-argument-map c-u-key #'universal-argument-more)))
       (setq-local cursor-type modal-insert-cursor-type)
       (when c-g-key
         (define-key function-key-map c-g-key nil)
-        ;; (define-key query-replace-map "G" nil)
+        (define-key query-replace-map c-g-key nil)
         ;; minibuffer
-        ;; (define-key minibuffer-local-map "G" #'abort-recursive-edit)
+        (define-key minibuffer-local-map c-g-key nil)
         )
       (when c-u-key
         (define-key universal-argument-map c-u-key nil)))))

@@ -252,6 +252,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C w W") #'window-resize-width)
 (modal-define-key (kbd "C X N") (kbd "C-c C-x C-n"))  ;; org-next-link
 (modal-define-key (kbd "C X P") (kbd "C-c C-x C-p"))  ;; org-previous-link
+(modal-define-key (kbd "C X K") (kbd "C-c C-x C-k"))  ;; org-toggle-link-display
 (modal-define-key (kbd "C X S") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
 (modal-define-key (kbd "C X V") (kbd "C-c C-x C-v"))  ;; org-toggle-inline-images
 ;; c - ] command prefix
@@ -262,16 +263,19 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;; (modal-define-key "\M-f" 'forward-word)
 (modal-define-key (kbd "G") (kbd "C-g"))
 ;; h - [ prefix
-(modal-define-key (kbd "H b") #'describe-bindings)
-(modal-define-key (kbd "H e") #'view-echo-area-messages)
-(modal-define-key (kbd "H f") #'describe-function)
-(modal-define-key (kbd "H k") #'describe-key)
-(modal-define-key (kbd "H L") #'describe-language-environment)
-(modal-define-key (kbd "H m") #'describe-mode)
-(modal-define-key (kbd "H o") #'describe-symbol)
-(modal-define-key (kbd "H P") #'describe-package)
-(modal-define-key (kbd "H s") #'describe-syntax)
-(modal-define-key (kbd "H v") #'describe-variable)
+;; [ equivalent
+(modal-define-key (kbd "H") (kbd "C-h"))
+;; (modal-define-key (kbd "H b") #'describe-bindings)
+;; (modal-define-key (kbd "H e") #'view-echo-area-messages)
+;; (modal-define-key (kbd "H f") #'describe-function)
+;; (modal-define-key (kbd "H k") #'describe-key)
+;; (modal-define-key (kbd "H L") #'describe-language-environment)
+;; (modal-define-key (kbd "H m") #'describe-mode)
+;; (modal-define-key (kbd "H o") #'describe-symbol)
+;; (modal-define-key (kbd "H P") #'describe-package)
+;; (modal-define-key (kbd "H s") #'describe-syntax)
+;; (modal-define-key (kbd "H v") #'describe-variable)
+;; ]
 ;; h - ] prefix
 (modal-define-key (kbd "I") (kbd "C-i"))  ;; indent-for-tab-command
 (modal-define-key (kbd "J") (kbd "C-j"))  ;; electric-newline-and-maybe-indent
