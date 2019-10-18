@@ -138,11 +138,6 @@
 
 (require 'version-control-config)
 
-;; csv-mode
-(require 'csv-mode-autoloads)
-(with-eval-after-load 'csv-mode
-  (require 'csv-config))
-
 (require 'minimap-config)
 
 (require 'figlet-config)
@@ -150,25 +145,36 @@
 
 
 ;; [ <Not always required>
+;; csv-mode
+(require 'csv-mode-autoloads)
+(with-eval-after-load 'csv-mode
+  (require 'csv-config))
+
+;; ispell
 (with-eval-after-load 'ispell
   (require 'ispell-config))
+
 ;; Highlight thing
 (add-hook 'prog-mode-hook #'highlight-thing-mode)
 (with-eval-after-load 'highlight-thing
   (require 'highlight-thing-config))
+
 ;; Smartscan
 (add-hook 'prog-mode-hook #'smartscan-mode)
 (with-eval-after-load 'smartscan
   (require 'smartscan-config))
+
 ;; highlight-indent-guides (started inside typing-config when emacs server)
 ;; poor performance and annoying cursor movement
 ;; (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
 (with-eval-after-load 'highlight-indent-guides
   (require 'highlight-indent-guides-config))
+
 ;; rainbow-delimiters-mode (before smartparens-mode)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 (with-eval-after-load 'rainbow-delimiters
   (require 'rainbow-delimiters-config))
+
 ;; smartparens-mode
 (add-hook 'prog-mode-hook #'smartparens-mode)
 (add-hook 'prog-mode-hook #'show-smartparens-mode)
@@ -265,6 +271,11 @@
       (add-hook 'c++-mode-hook #'rtags-start-process-unless-running))))
 (add-hook 'c-mode-hook   'c-c++-config)
 (add-hook 'c++-mode-hook 'c-c++-config)
+;; ]
+
+;; [ lua-mode
+(with-eval-after-load 'lua-mode
+  (require 'lua-config))
 ;; ]
 
 ;; loads only when necessary
