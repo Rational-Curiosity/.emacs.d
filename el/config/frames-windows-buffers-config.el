@@ -350,6 +350,9 @@ ARG non-nil resize window to ARG height."
   ("M-q" nil "quit"))
 (global-set-key (kbd "C-c w m") 'hydra-win/body)
 
+(require 'ace-window)
+(setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
+      aw-background t)
 ;;;;;;;;;;;;
 ;; Frames ;;
 ;;;;;;;;;;;;
@@ -529,6 +532,7 @@ others."
 ;;   ("<up>" windmove-up)
 ;;   ("<down>" windmove-down))
 
+(global-set-key (kbd "C-x o") #'ace-window)
 (global-set-key (kbd "C-c M-r") #'revert-buffer)
 (global-set-key (kbd "C-x C-c") 'save-buffers-kill-terminal-with-choice)
 (global-set-key (kbd "C-x k") 'kill-buffer-or-buffers-from-file)
