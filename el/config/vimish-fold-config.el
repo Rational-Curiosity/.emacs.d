@@ -131,8 +131,37 @@
        ((derived-mode-p 'python-mode 'elpy-mode)
         (looking-at-p "[[:space:]]*#")))))
 
-;; [ C++ style
+;; [ cc
+(deffold fold-cc-class (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  (pos-bracket)
+  (if (looking-at "[[:space:]]*class [\0-\377[:nonascii:]]*?{")
+      (setq pos-bracket (1- (match-end 0))))
+  (and (goto-char pos-bracket)
+       (sp-forward-sexp)
+       nil)
+  t t)
 
+(deffold fold-cc-comment (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  (while-function)
+  (or (if (looking-at-p "[[:space:]]*/\\*")
+          (setq while-function (lambda () (not (if (looking-at-p ".*?\\*/")
+                                                 (forward-line 1))))))
+      (if (looking-at-p "[[:space:]]*//")
+          (setq while-function (lambda () (looking-at-p "[[:space:]]*//")))))
+  (funcall while-function))
+;; ]
+
+;; [ Scripting
+(deffold fold-script-comment (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  nil
+  (looking-at-p "[[:space:]]*#")
+  (looking-at-p "[[:space:]]*\\($\\|#\\)"))
 ;; ]
 
 ;; [ Python
@@ -156,14 +185,14 @@
   (or (looking-at-p "[[:space:]]*$")
       (char-equal ?\\ (char-before (1- (point))))
       (and (< indentation (current-indentation))
-           (not (looking-at-p "[[:space:]]*\\(@\\|\\(async *\\)?def \\)"))))
+           (not (looking-at-p "[[:space:]]*\\(@\\|\\(async +\\)?def \\)"))))
   t)
 
 (deffold fold-python-function (times threshold)
   (interactive (list (read-number "Times: " -1)
                      (read-number "Threshold: " fold-threshold)))
   (indentation)
-  (and (looking-at-p "[[:space:]]*\\(async *\\)?def ")
+  (and (looking-at-p "[[:space:]]*\\(async +\\)?def ")
        (setq indentation (current-indentation)))
   (or (looking-at-p "[[:space:]]*$")
       (char-equal ?\\ (char-before (1- (point))))
@@ -186,13 +215,6 @@
           (goto-char (match-end 0)))
       (< indentation (current-indentation))))
 
-(deffold fold-python-comment (times threshold)
-  (interactive (list (read-number "Times: " -1)
-                     (read-number "Threshold: " fold-threshold)))
-  nil
-  (looking-at-p "[[:space:]]*#")
-  (looking-at-p "[[:space:]]*\\($\\|#\\)"))
-
 (deffold fold-python-docstring (times threshold)
   (interactive (list (read-number "Times: " -1)
                      (read-number "Threshold: " fold-threshold)))
@@ -203,6 +225,41 @@
           (setq docstring-delimiter "[^\n]*\"\"\"")))
   (not (looking-at-p docstring-delimiter))
   nil t)
+;; ]
+
+;; [ php
+(deffold fold-php-class-header (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  (pos-bracket)
+  (if (looking-at "[[:space:]]*class [\0-\377[:nonascii:]]*?{")
+      (setq pos-bracket (save-excursion
+                          (goto-char (1- (match-end 0)))
+                          (sp-forward-sexp)
+                          (point))))
+  (or (looking-at-p "[[:space:]]*$")
+      (char-equal ?\\ (char-before (1- (point))))
+      (and (>= pos-bracket (point))
+           (not (if (looking-at-p "[[:space:]]*\\(public +\\|protected +\\|private +\\)?\\(static +\\)?function [\0-\377[:nonascii:]]*?{")
+                    (forward-line -1)))))
+  t t)
+
+(deffold fold-php-function (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  (pos-bracket)
+  (if (looking-at "[[:space:]]*\\(public +\\|protected +\\|private +\\)?\\(static +\\)?function [\0-\377[:nonascii:]]*?{")
+      (setq pos-bracket (1- (match-end 0))))
+  (and (goto-char pos-bracket)
+       (sp-forward-sexp)
+       nil)
+  t t)
+
+(defun fold-php-comment (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  (fold-cc-comment times threshold)
+  (fold-script-comment times threshold))
 ;; ]
 
 (defun fold-derived-mode (arg blocks)
@@ -223,20 +280,36 @@
          (= arg 0))
     (call-interactively 'fold-indent))
    ((derived-mode-p 'python-mode 'elpy-mode)
+    (setq arg (or arg -1))
     (dolist (b blocks)
       (pcase b
         ("class"
-         (fold-python-class (or arg -1) fold-threshold))
+         (fold-python-class arg fold-threshold))
         ("defun"
-         (fold-python-function (or arg -1) fold-threshold))
+         (fold-python-function arg fold-threshold))
         ("require"
-         (fold-python-import (or arg -1) fold-threshold))
+         (fold-python-import arg fold-threshold))
         ("comment"
-         (fold-python-comment (or arg -1) fold-threshold))
+         (fold-script-comment arg fold-threshold))
         ("docstring"
-         (fold-python-docstring (or arg -1) fold-threshold))
+         (fold-python-docstring arg fold-threshold))
         ("header"
-         (fold-python-class-header (or arg -1) fold-threshold)))))
+         (fold-python-class-header arg fold-threshold))
+        (_ (message "Case: `%s' not implemented" b)))))
+   ((derived-mode-p 'php-mode)
+    (setq arg (or arg -1))
+    (dolist (b blocks)
+      (pcase b
+        ("class"
+         (fold-cc-class arg fold-threshold))
+        ("defun"
+         (fold-php-function arg fold-threshold))
+        ("comment"
+         (fold-php-comment arg fold-threshold))
+        ("header"
+         (fold-php-class-header arg fold-threshold))
+        (_ (message "Case: `%s' not implemented" b)))))
+   ;; last case, a lot of progmodes derive from c-mode
    ((derived-mode-p 'c-mode 'c++-mode)
     (fold-indent (or arg -1) fold-threshold)
     (fold-precomp)
@@ -286,7 +359,11 @@
       nil)
     (if arg
         (vimish-fold-delete-all)
-      (vimish-fold-toggle-all)))
+      (if (cl-every (lambda (overlay)
+                      (eq (overlay-get overlay 'type) 'vimish-fold--folded))
+                    (vimish-fold--folds-in (point-min) (point-max)))
+          (vimish-fold-unfold-all)
+        (vimish-fold-refold-all))))
    ;; else
    (t
     (setq prefix-arg arg)
@@ -297,6 +374,13 @@
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(define-key vimish-fold-folded-keymap "n" #'vimish-fold-next-fold)
+(define-key vimish-fold-folded-keymap "p" #'vimish-fold-previous-fold)
+(define-key vimish-fold-folded-keymap "+" #'vimish-fold-unfold)
+(define-key vimish-fold-folded-keymap "*" #'vimish-fold-unfold-all)
+(define-key vimish-fold-folded-keymap "d" #'vimish-fold-delete)
+(define-key vimish-fold-folded-keymap "D" #'vimish-fold-delete-all)
+
 (global-set-key (kbd "C-c v +") #'vimish-fold-unfold)
 (global-set-key (kbd "C-c v *") #'vimish-fold-unfold-all)
 (global-set-key (kbd "C-c v -") #'vimish-fold-refold)
