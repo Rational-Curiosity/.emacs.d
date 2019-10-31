@@ -9,6 +9,12 @@
 
 ;;; Code:
 
+;; Usage: emacs --exwm
+(defun argument--exwm (switch)
+  "Command line arg `--exwm'.  SWITCH ignored."
+  (require 'exwm-startup-config))
+(add-to-list 'command-switch-alist '("--exwm" . argument--exwm))
+
 (package-initialize)
 
 (require 'cl-lib)

@@ -282,16 +282,17 @@ This is used by `modal-global-mode'."
 
 (defun modal-global-mode-post-command (times)
   (interactive "p")
-  (when (and (numberp times)
-             (< 0 times)
-             (null modal--post-command-countdown))
-    (setq modal--post-command-countdown times)
-    (if modal-mode
-        (progn
-          (modal-global-mode 0)
-          (add-hook 'post-command-hook 'modal--enable-mode-and-remove-from-hook))
-      (modal-global-mode 1)
-      (add-hook 'post-command-hook 'modal--disable-mode-and-remove-from-hook))))
+  (if modal--post-command-countdown
+      (setq modal--post-command-countdown (+ modal--post-command-countdown times 1))
+    (when (and (numberp times)
+               (< 0 times))
+      (setq modal--post-command-countdown times)
+      (if modal-mode
+          (progn
+            (modal-global-mode 0)
+            (add-hook 'post-command-hook 'modal--enable-mode-and-remove-from-hook))
+        (modal-global-mode 1)
+        (add-hook 'post-command-hook 'modal--disable-mode-and-remove-from-hook)))))
 
 (defun modal-global-mode-idle (secs)
   (interactive "P")

@@ -307,7 +307,7 @@
   (when eshell-current-command-start-time
     (eshell-interactive-print
      (propertize
-      (format ">  Exit code: %i   Elapsed time: %.3fs  <"
+      (format "\n>  Exit code: %i   Elapsed time: %.3fs  <"
              eshell-last-command-status
              (float-time
               (time-subtract (current-time)

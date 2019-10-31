@@ -343,6 +343,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X O") #'ff-find-other-file)
 (modal-define-key (kbd "X P") (kbd "C-x C-p"))  ;; mark-page
 (modal-define-key (kbd "X p s") (kbd "C-x p s"))  ;; bookmark-save
+(modal-define-key (kbd "X Q") (kbd "C-x C-q"))  ;; read-only-mode
 (modal-define-key (kbd "X R") (kbd "C-x C-r"))  ;; recentf-open
 ;; [ equivalent
 (modal-define-key (kbd "X r") (kbd "C-x r"))
