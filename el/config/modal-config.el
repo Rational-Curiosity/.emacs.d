@@ -155,7 +155,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "M k l") (kbd "<C-S-backspace>")) ;; kill-whole-line
 (modal-define-key (kbd "M k s") #'kill-to-end-of-sexp)
 (modal-define-key (kbd "M k S") #'kill-to-begin-of-sexp)
-(modal-define-key (kbd "S-SPC") (kbd "C-SPC"))  ;; set-mark-command
+;; (modal-define-key (kbd "S-SPC") (kbd "C-SPC"))  ;; set-mark-command
 
 (modal-define-key (kbd "A") (kbd "C-a"))  ;; move-beginning-of-line
 (modal-define-key (kbd "B") (kbd "C-b"))  ;; backward-char
@@ -388,7 +388,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X z") (kbd "C-x z"))  ;; repeat
 ;; x - ] command prefix
 (modal-define-key (kbd "Y") (kbd "C-y"))  ;; yank
-(modal-define-key (kbd "Z") (kbd "C-z"))  ;; suspend-frame
+(modal-define-key (kbd "Z") (kbd "C-x z"))  ;; repeat (suspend-frame)
 
 (modal-define-key (kbd "S-\\") (kbd "C-M-\\"))  ;; indent-region
 (modal-define-key (kbd "S-@") (kbd "C-M-@"))  ;; mark-sexp
