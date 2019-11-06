@@ -348,7 +348,7 @@ Non-interactively, THING is a string naming a thing type.
 If option `thgcmd-use-nearest-thing-flag' and non-nil then use a thing
 that is near, not necessarily at, point."
   (interactive (list (let ((icicle-sort-function  nil))
-                       (completing-read "Thing (type): " (thgcmd-things-alist) nil nil nil nil
+                       (completing-read "Thing (type): " (thgcmd-things-alist) nil t nil nil
                                         (symbol-name thgcmd-last-thing-type)))))
   (setq thgcmd-last-thing-type  (intern thing))
   (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag) ; In `thingatpt+.el'.
@@ -442,7 +442,7 @@ non-nil, then select a THING near point."
                               (intern
                                (completing-read
                                 "Thing (type): "
-                                (thgcmd-things-alist 'REQUIRE-FWD) nil nil nil nil
+                                (thgcmd-things-alist 'REQUIRE-FWD) nil t nil nil
                                 (symbol-name thgcmd-last-thing-type))))
                        (setq this-command  this-cmd))))
            (when (thgcmd-forward-op-p thgcmd-last-thing-type)
@@ -534,7 +534,7 @@ comment."
                    (let ((last-command-event       last-command-event)
                          (last-repeatable-command  last-repeatable-command))
                      (intern (completing-read
-                              "Thing (type): " (thgcmd-things-alist) nil nil nil nil
+                              "Thing (type): " (thgcmd-things-alist) nil t nil nil
                               (symbol-name thgcmd-last-thing-type))))
                  thgcmd-last-thing-type))
            (point)
@@ -585,7 +585,7 @@ the bounds of THING.  Return nil if no such THING is found."
                    (let ((last-command-event       last-command-event)
                          (last-repeatable-command  last-repeatable-command))
                      (intern (completing-read
-                              "Thing (type): " (thgcmd-things-alist) nil nil nil nil
+                              "Thing (type): " (thgcmd-things-alist) nil t nil nil
                               (symbol-name thgcmd-last-thing-type))))
                  thgcmd-last-thing-type))
            (point)

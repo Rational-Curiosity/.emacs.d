@@ -785,8 +785,8 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "↓") #'undo-tree-undo)                         ;; AltGr-u
 (global-set-key (kbd "¶") #'undo-tree-redo)                         ;; AltGr-r
 (global-set-key (kbd "ð") #'kill-sexp)                              ;; AltGr-d
-(global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-l
-(global-set-key (kbd "¢") #'goto-last-change)                       ;; AltGr-c
+(global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-k
+(global-set-key (kbd "«") #'goto-last-change)                       ;; AltGr-z
 (global-set-key (kbd "»") #'goto-last-change-reverse)               ;; AltGr-x
 (global-set-key (kbd "“") #'scroll-other-window)                    ;; AltGr-v
 (global-set-key (kbd "”") 'sp-or-backward-sexp)                     ;; AltGr-b
@@ -801,15 +801,16 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<f7> w") #'toggle-truncate-lines)
 (global-set-key (kbd "<f7> l") #'whitespace-toggle-lines-tail)
 (global-set-key (kbd "<f7> RET") #'whitespace-toggle-marks)
-(global-set-key (kbd "M-s c b") #'backward-kill-word)
+(global-set-key (kbd "M-s k w") #'backward-kill-word)
 (global-set-key (kbd "M-n") #'forward-paragraph)
 (global-set-key (kbd "M-p") #'backward-paragraph)
 (global-set-key (kbd "C-<left>") #'left-word)
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "S-<backspace>") #'backward-kill-sexp)
-(global-set-key (kbd "M-s s b") #'backward-kill-sexp)
-(global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
-(global-set-key (kbd "S-<delete>") #'kill-sexp)
+(global-set-key (kbd "M-s s") #'swap-regions)
+(global-set-key (kbd "M-s k s") #'backward-kill-sexp)
+;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
+;; (global-set-key (kbd "S-<delete>") #'kill-sexp)
 (global-set-key (kbd "M-s <deletechar>") #'kill-sexp)
 (global-set-key (kbd "C-*") #'duplicate-current-line-or-region)
 (global-set-key (kbd "M-s *") #'duplicate-current-line-or-region)
@@ -817,7 +818,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-SPC") #'fixup-whitespace)
 (global-set-key (kbd "M-s a SPC") #'fixup-whitespace)
 (global-set-key (kbd "C-S-<backspace>") #'kill-whole-line)
-(global-set-key (kbd "M-s c s b") #'kill-whole-line)
+(global-set-key (kbd "M-s k l") #'kill-whole-line)
 (global-set-key (kbd "M-s <insertchar>") #'kill-whole-line)
 (global-set-key (kbd "<M-dead-circumflex>") #'delete-indentation)
 (global-set-key (kbd "S-<next>") #'scroll-other-window)
@@ -837,6 +838,14 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-c") #'capitalize-dwim)
 (global-set-key (kbd "M-l") #'downcase-dwim)
 (global-set-key (kbd "M-u") #'upcase-dwim)
+;; thingatpt+
+(global-set-key (kbd "M-s m") #'mark-things)
+(global-set-key (kbd "M-s c") #'cycle-thing-region)
+(global-set-key (kbd "M-s l") #'mark-enclosing-list)
+(global-set-key (kbd "M-s f") #'mark-enclosing-list-forward)
+(global-set-key (kbd "M-s b") #'mark-enclosing-list-backward)
+(global-set-key (kbd "M-s n") #'next-visible-thing-repeat)
+(global-set-key (kbd "M-s p") #'previous-visible-thing-repeat)
 
 ;; Usa el clipboard del sistema
 ;; (global-set-key [(shift delete)] 'clipboard-kill-region)
