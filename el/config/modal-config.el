@@ -428,11 +428,11 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;;;;;;;;
 ;; Global keys ;;
 ;;;;;;;;;;;;;;;;;
-(global-set-key "ª" 'modal-global-mode-idle)
-(global-set-key "º" 'modal-global-mode-post-command)
+(global-set-key "ª" 'modal-global-mode-post-command)
+(global-set-key "º" 'caps-lock-mode-post-command)
 ;; Modal keys
-(global-set-key (kbd "µ") #'modal-global-mode-toggle)
-(global-set-key (kbd "<key-924>") #'modal-global-mode-toggle)
+(global-set-key (kbd "µ") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
+(global-set-key (kbd "<key-924>") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Make compatible with other modules ;;
