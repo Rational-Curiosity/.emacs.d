@@ -96,6 +96,8 @@
 
 (require 'typing-config)
 
+(require 'caps-modes)
+
 (require 'avy-config)
 
 (require 'vimish-fold-config)
