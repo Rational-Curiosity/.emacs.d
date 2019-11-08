@@ -538,7 +538,8 @@ comment."
                               (symbol-name thgcmd-last-thing-type))))
                  thgcmd-last-thing-type))
            (point)
-           (if mark-active  (min (region-beginning) (region-end))  (point-min))))
+           ;; (if mark-active  (min (region-beginning) (region-end))  (point-min)))) ;; -
+           (point-max)))                                                             ;; +
     (if (interactive-p)
         (with-comments-hidden start end (next-visible-thing thing start end 'BACKWARD))
       (next-visible-thing thing start end 'BACKWARD))))
@@ -589,9 +590,10 @@ the bounds of THING.  Return nil if no such THING is found."
                               (symbol-name thgcmd-last-thing-type))))
                  thgcmd-last-thing-type))
            (point)
-           (if (and mark-active  (not (eq (region-beginning) (region-end))))
-               (max (region-beginning) (region-end))
-             (point-max))))
+           ;; (if (and mark-active  (not (eq (region-beginning) (region-end)))) ;; -
+           ;;     (max (region-beginning) (region-end))                         ;; -
+           ;;   (point-max))))                                                  ;; -
+           (point-max)))                                                        ;; +
     (setq thgcmd-last-thing-type  thing)
     (unless start (setq start  (point)))
     (unless end   (setq end  (if backward (point-min) (point-max))))
