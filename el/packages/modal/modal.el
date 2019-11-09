@@ -79,7 +79,9 @@ variable should follow the same conventions."
                  (const hbar (integer :tag "height of cursor")))))
 
 (defcustom modal-idle-secs 1
-  "Modal mode enabled during `modal-idle-secs' seconds")
+  "Modal mode enabled during `modal-idle-secs' seconds"
+  :tag "Modal idle seconds"
+  :type '(integer))
 
 ;;;###autoload
 (defcustom modal-excluded-modes nil
@@ -219,6 +221,10 @@ configuration created previously with `modal-define-key' and
     (if modal-mode
         (progn
           (setq-local cursor-type modal-cursor-type)
+          (setq isearch-mode-map
+                (let ((m (copy-keymap modal-mode-map)))
+                  (set-keymap-parent m isearch-mode-map)
+                  m))
           (when c-g-key
             (define-key function-key-map c-g-key "\C-g")    ;; read-key
             (define-key query-replace-map c-g-key 'quit) ;; read-event
@@ -228,6 +234,7 @@ configuration created previously with `modal-define-key' and
           (when c-u-key
             (define-key universal-argument-map c-u-key #'universal-argument-more)))
       (setq-local cursor-type modal-insert-cursor-type)
+      (setq isearch-mode-map (keymap-parent isearch-mode-map))
       (when c-g-key
         (define-key function-key-map c-g-key nil)
         (define-key query-replace-map c-g-key nil)
