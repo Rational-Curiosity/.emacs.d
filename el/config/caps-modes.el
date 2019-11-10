@@ -41,12 +41,20 @@
 ;;;;;;;;;;;;;;;;
 ;; Force caps ;;
 ;;;;;;;;;;;;;;;;
+(defun caps-find-bind (key)
+  (cl-some (lambda (keymap)
+             (unless (memq keymap (list modal-mode-map icomplete-minibuffer-map))
+               (let ((binding (lookup-key keymap key)))
+                 (if (commandp binding)
+                     binding))))
+           (current-active-maps)))
+
 (defun caps-lock--upcase ()
   (when (and (characterp last-command-event)
              (< last-command-event 123)
              (< 96 last-command-event))
     (setq last-command-event (upcase last-command-event))
-    (let ((binding (modal-find-bind (vector last-command-event))))
+    (let ((binding (caps-find-bind (vector last-command-event))))
       (if binding
           (setq real-this-command binding
                 this-original-command binding

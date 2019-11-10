@@ -85,8 +85,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
   (if modal-mode
       (progn
         ;; isearch-mode
-        (define-key isearch-mode-map "ª" 'modal-global-mode-idle)
-        (define-key isearch-mode-map "º" 'modal-global-mode-post-command)
+        (define-key isearch-mode-map "ª" 'modal-global-mode-post-command)
+        (define-key isearch-mode-map "º" 'caps-lock-mode-post-command)
         (define-key isearch-mode-map "G" #'isearch-abort)
         (define-key isearch-mode-map "Q" #'isearch-quote-char)
         (define-key isearch-mode-map "S" #'isearch-repeat-forward)
