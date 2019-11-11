@@ -43,15 +43,17 @@
 ;;;;;;;;;;;;;;;;
 (defun caps-find-bind (key)
   (cl-some (lambda (keymap)
+             ;; (message "looking keymap: `%s'" (or (keymap-symbol keymap) keymap))
              (unless (memq keymap (list modal-mode-map
                                         icomplete-minibuffer-map
                                         ido-completion-map))
+               ;; (message "keymap accepted")
                (let ((binding (lookup-key keymap key)))
                  (if (commandp binding)
                      ;; (progn
-                     ;;  (message "bind found in keymap: %s" (keymap-symbol keymap))
+                     ;;   (message "bind `%s' found in keymap: `%s'" binding (keymap-symbol keymap))
                      binding
-                     ;; )
+                     ;;   )
                    ))))
            (current-active-maps)))
 
@@ -60,11 +62,12 @@
              (< last-command-event 123)
              (< 96 last-command-event))
     (setq last-command-event (upcase last-command-event))
-    (let ((binding (caps-find-bind (vector last-command-event))))
-      (if binding
-          (setq real-this-command binding
-                this-original-command binding
-                this-command binding)))))
+    (unless isearch-mode
+      (let ((binding (caps-find-bind (vector last-command-event))))
+        (if binding
+            (setq real-this-command binding
+                  this-original-command binding
+                  this-command binding))))))
 
 (define-minor-mode caps-lock-mode
   "Make self-inserting keys invert the capitalization."
