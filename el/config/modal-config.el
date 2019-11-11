@@ -210,6 +210,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C M-s") (kbd "C-c M-s"))  ;; org-sort-entries-user-defined
 (modal-define-key (kbd "C M-r") #'revert-buffer)
 (modal-define-key (kbd "C S") (kbd "C-c C-s"))  ;; org-schedule
+(modal-define-key (kbd "C D") (kbd "C-c C-d"))  ;; org-deadline
 (modal-define-key (kbd "C T") (kbd "C-c C-t"))  ;; org-todo
 (modal-define-key (kbd "C U") (kbd "C-c C-u"))  ;; outline-up-heading
 ;; [ equivalent
