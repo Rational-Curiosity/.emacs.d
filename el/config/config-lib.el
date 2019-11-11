@@ -28,6 +28,16 @@
   "Evaluate elisp code stored in a string."
   (eval (car (read-from-string string))))
 
+;; keymaps
+(defun keymap-symbol (keymap)
+  "Return the symbol to which KEYMAP is bound, or nil if no such symbol exists."
+  (catch 'gotit
+    (mapatoms (lambda (sym)
+                (and (boundp sym)
+                     (eq (symbol-value sym) keymap)
+                     (not (eq sym 'keymap))
+                     (throw 'gotit sym))))))
+
 (defun keymaps-with-binding (key)
   (let (keymaps)
     (mapatoms (lambda (ob) (if (boundp ob)

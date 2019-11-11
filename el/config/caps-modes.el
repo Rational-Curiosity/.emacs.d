@@ -43,10 +43,16 @@
 ;;;;;;;;;;;;;;;;
 (defun caps-find-bind (key)
   (cl-some (lambda (keymap)
-             (unless (memq keymap (list modal-mode-map icomplete-minibuffer-map))
+             (unless (memq keymap (list modal-mode-map
+                                        icomplete-minibuffer-map
+                                        ido-completion-map))
                (let ((binding (lookup-key keymap key)))
                  (if (commandp binding)
-                     binding))))
+                     ;; (progn
+                     ;;  (message "bind found in keymap: %s" (keymap-symbol keymap))
+                     binding
+                     ;; )
+                   ))))
            (current-active-maps)))
 
 (defun caps-lock--upcase ()
