@@ -36,7 +36,8 @@
                 (and (boundp sym)
                      (eq (symbol-value sym) keymap)
                      (not (eq sym 'keymap))
-                     (throw 'gotit sym))))))
+                     (throw 'gotit sym)))
+              obarray)))
 
 (defun keymaps-with-binding (key)
   (let (keymaps)
