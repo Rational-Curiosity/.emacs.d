@@ -113,7 +113,7 @@ This variable is considered on read only mode
                (let ((binding (lookup-key keymap key)))
                  (if (commandp binding)
                      binding))))
-           (current-active-maps)))
+           (current-active-maps t)))
 
 (defun modal-find-bind-check-read-only (actual-key target-key)
   (let ((binding (modal-find-bind target-key)))
@@ -216,8 +216,7 @@ configuration created previously with `modal-define-key' and
 `modal-define-keys'."
   :lighter "◇"
   :keymap modal-mode-map
-  (let ((c-g-key (gethash "C-g" modal--translations))
-        (c-u-key (gethash "C-u" modal--translations)))
+  ;; (let ((c-g-key (gethash "C-g" modal--translations)))
     (if modal-mode
         (progn
           (setq-local cursor-type modal-cursor-type)
@@ -225,24 +224,18 @@ configuration created previously with `modal-define-key' and
                 (let ((m (copy-keymap modal-mode-map)))
                   (set-keymap-parent m isearch-mode-map)
                   m))
-          (when c-g-key
-            (define-key function-key-map c-g-key "\C-g")    ;; read-key
-            (define-key query-replace-map c-g-key 'quit) ;; read-event
-            ;; minibuffer
-            (define-key minibuffer-local-map c-g-key #'abort-recursive-edit)
-            )
-          (when c-u-key
-            (define-key universal-argument-map c-u-key #'universal-argument-more)))
+          ;; (when c-g-key
+          ;;   (define-key function-key-map c-g-key "\C-g")    ;; read-key
+          ;;   ;; minibuffer
+          ;;   (define-key minibuffer-local-map c-g-key #'abort-recursive-edit))
+          )
       (setq-local cursor-type modal-insert-cursor-type)
       (setq isearch-mode-map (keymap-parent isearch-mode-map))
-      (when c-g-key
-        (define-key function-key-map c-g-key nil)
-        (define-key query-replace-map c-g-key nil)
-        ;; minibuffer
-        (define-key minibuffer-local-map c-g-key nil)
-        )
-      (when c-u-key
-        (define-key universal-argument-map c-u-key nil)))))
+      ;; (when c-g-key
+      ;;   (define-key function-key-map c-g-key nil)
+      ;;   ;; minibuffer
+      ;;   (define-key minibuffer-local-map c-g-key nil)))
+      ))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not blacklisted.
@@ -261,6 +254,10 @@ This is used by `modal-global-mode'."
 (define-globalized-minor-mode modal-global-mode
   modal-mode
   modal--maybe-activate)
+
+;; The keymaps in `emulation-mode-map-alists' take precedence over
+;; `minor-mode-map-alist'
+(add-to-list 'emulation-mode-map-alists `((modal-mode . ,modal-mode-map)))
 
 ;; Minibuffer
 (add-hook 'minibuffer-setup-hook 'modal-mode)

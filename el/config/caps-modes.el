@@ -42,11 +42,10 @@
 ;; Force caps ;;
 ;;;;;;;;;;;;;;;;
 (defun caps-find-bind (key)
+  ;; (message "active maps: %s" (mapcar 'keymap-symbol (current-active-maps t)))
   (cl-some (lambda (keymap)
              ;; (message "looking keymap: `%s'" (or (keymap-symbol keymap) keymap))
-             (unless (memq keymap (list modal-mode-map
-                                        icomplete-minibuffer-map
-                                        ido-completion-map))
+             (unless (eq keymap modal-mode-map)
                ;; (message "keymap accepted")
                (let ((binding (lookup-key keymap key)))
                  (if (commandp binding)
@@ -58,6 +57,7 @@
            (current-active-maps)))
 
 (defun caps-lock--upcase ()
+  ;; (message "last-command-event: %s" last-command-event)
   (when (and (characterp last-command-event)
              (< last-command-event 123)
              (< 96 last-command-event))

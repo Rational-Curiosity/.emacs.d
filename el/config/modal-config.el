@@ -66,12 +66,6 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-;; icomplete-mode
-(with-eval-after-load 'icomplete
-  (when modal-mode
-    (define-key icomplete-minibuffer-map "J" #'icomplete-force-complete-and-exit)
-    (define-key icomplete-minibuffer-map "S" #'icomplete-forward-completions)
-    (define-key icomplete-minibuffer-map "R" #'icomplete-backward-completions)))
 ;; transient
 (with-eval-after-load 'transient
   (if modal-mode
@@ -84,46 +78,22 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (defun modal-mode-bind-higher-priority-maps ()
   (if modal-mode
       (progn
-        ;; isearch-mode
-        (define-key isearch-mode-map "ª" 'modal-global-mode-post-command)
-        (define-key isearch-mode-map "º" 'caps-lock-mode-post-command)
-        (define-key isearch-mode-map "G" #'isearch-abort)
-        (define-key isearch-mode-map "Q" #'isearch-quote-char)
-        (define-key isearch-mode-map "S" #'isearch-repeat-forward)
-        (define-key isearch-mode-map "R" #'isearch-repeat-backward)
         ;; indent-rigidly
         (define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
         (define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
         (define-key indent-rigidly-map "f" #'indent-rigidly-right)
         (define-key indent-rigidly-map "b" #'indent-rigidly-left)
-        ;; icomplete-mode
-        (when (boundp 'icomplete-minibuffer-map)
-          (define-key icomplete-minibuffer-map "J" #'icomplete-force-complete-and-exit)
-          (define-key icomplete-minibuffer-map "S" #'icomplete-forward-completions)
-          (define-key icomplete-minibuffer-map "R" #'icomplete-backward-completions))
         ;; transient
         (when (boundp 'transient-map)
           (define-key transient-map "G" 'transient-quit-one))
         ;; magit-popup
         (when (boundp 'magit-popup-mode-map)
           (define-key magit-popup-mode-map "G" 'magit-popup-quit)))
-    ;; isearch-mode
-    (define-key isearch-mode-map "ª" #'isearch-printing-char)
-    (define-key isearch-mode-map "º" #'isearch-printing-char)
-    (define-key isearch-mode-map "G" #'isearch-printing-char)
-    (define-key isearch-mode-map "Q" #'isearch-printing-char)
-    (define-key isearch-mode-map "S" #'isearch-printing-char)
-    (define-key isearch-mode-map "R" #'isearch-printing-char)
     ;; indent-rigidly
     (define-key indent-rigidly-map "F" nil)
     (define-key indent-rigidly-map "B" nil)
     (define-key indent-rigidly-map "f" nil)
     (define-key indent-rigidly-map "b" nil)
-    ;; icomplete-mode
-    (when (boundp 'icomplete-minibuffer-map)
-      (define-key icomplete-minibuffer-map "J" nil)
-      (define-key icomplete-minibuffer-map "S" nil)
-      (define-key icomplete-minibuffer-map "R" nil))
     ;; transient
     (when (boundp 'transient-map)
       (define-key transient-map "G" nil))
@@ -426,14 +396,14 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;; (modal-define-key (kbd "M-Q") #'fill-paragraph)
 (modal-define-key (kbd "M-V p") (kbd "C-M-S-v"))  ;; scroll-other-window-down
 
-;;;;;;;;;;;;;;;;;
-;; Global keys ;;
-;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;
+;; Caps keys ;;
+;;;;;;;;;;;;;;;
 (global-set-key "ª" 'modal-global-mode-post-command)
-(global-set-key "º" 'caps-lock-mode-post-command)
+(modal-define-key "º" 'caps-lock-mode-post-command)
 ;; Modal keys
-(global-set-key (kbd "µ") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
-(global-set-key (kbd "<key-924>") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
+(modal-define-key (kbd "µ") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
+(modal-define-key (kbd "<key-924>") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Make compatible with other modules ;;
