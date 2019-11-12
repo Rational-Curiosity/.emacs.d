@@ -104,8 +104,8 @@ This variable is considered on read only mode
 (defvar modal-mode-map (make-sparse-keymap)
   "This is Modal mode map, used to translate your keys.")
 
-(defvar modal--translations (make-hash-table :test 'equal)
-  "Especial translations.")
+;; (defvar modal--translations (make-hash-table :test 'equal)
+;;   "Especial translations.")
 
 (defun modal-find-bind (key)
   (cl-some (lambda (keymap)
@@ -137,9 +137,7 @@ This variable is considered on read only mode
              (docstring (format "Modal mode translates \"%s\" into \"%s\"."
                                 (key-description actual-key)
                                 target-key-description)))
-        ;; (if (equal actual-key target-key)
-        ;;     (error "Dangerous and absurd: %s" docstring))
-        (puthash target-key-description actual-key modal--translations)
+        ;; (puthash target-key-description actual-key modal--translations)
         (define-key
           modal-mode-map
           actual-key
@@ -216,26 +214,15 @@ configuration created previously with `modal-define-key' and
 `modal-define-keys'."
   :lighter "◇"
   :keymap modal-mode-map
-  ;; (let ((c-g-key (gethash "C-g" modal--translations)))
     (if modal-mode
         (progn
           (setq-local cursor-type modal-cursor-type)
           (setq isearch-mode-map
                 (let ((m (copy-keymap modal-mode-map)))
                   (set-keymap-parent m isearch-mode-map)
-                  m))
-          ;; (when c-g-key
-          ;;   (define-key function-key-map c-g-key "\C-g")    ;; read-key
-          ;;   ;; minibuffer
-          ;;   (define-key minibuffer-local-map c-g-key #'abort-recursive-edit))
-          )
+                  m)))
       (setq-local cursor-type modal-insert-cursor-type)
-      (setq isearch-mode-map (keymap-parent isearch-mode-map))
-      ;; (when c-g-key
-      ;;   (define-key function-key-map c-g-key nil)
-      ;;   ;; minibuffer
-      ;;   (define-key minibuffer-local-map c-g-key nil)))
-      ))
+      (setq isearch-mode-map (keymap-parent isearch-mode-map))))
 
 (defun modal--maybe-activate ()
   "Activate `modal-mode' if current buffer is not blacklisted.
@@ -334,17 +321,17 @@ Otherwise use `list'."
   (funcall (if modal-mode #'list fnc) key))
 (advice-add 'quail-input-method :around #'modal--input-function-advice)
 
-(defun modal--quoted-insert-advice (orig-fun arg)
-  (let ((key (gethash "C-g" modal--translations)))
-    (if (and modal-mode
-             key)
-        (progn
-          (define-key function-key-map key nil)
-          (unwind-protect
-              (funcall orig-fun arg)
-            (define-key function-key-map key "\C-g")))
-      (funcall orig-fun arg))))
-(advice-add 'quoted-insert :around #'modal--quoted-insert-advice)
+;; (defun modal--quoted-insert-advice (orig-fun arg)
+;;   (let ((key (gethash "C-g" modal--translations)))
+;;     (if (and modal-mode
+;;              key)
+;;         (progn
+;;           (define-key function-key-map key nil)
+;;           (unwind-protect
+;;               (funcall orig-fun arg)
+;;             (define-key function-key-map key "\C-g")))
+;;       (funcall orig-fun arg))))
+;; (advice-add 'quoted-insert :around #'modal--quoted-insert-advice)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Integration with other packages ;;

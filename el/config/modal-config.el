@@ -14,7 +14,7 @@
                              ibuffer-mode
                              ;; package-menu-mode
                              ;; debugger-mode
-                             dired-mode
+                             ;; dired-mode
                              ediff-mode
                              ;; eshell-mode
                              ;; org-agenda-mode
@@ -78,6 +78,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (defun modal-mode-bind-higher-priority-maps ()
   (if modal-mode
       (progn
+        (define-key universal-argument-map "U" #'universal-argument-more)
         ;; indent-rigidly
         (define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
         (define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
@@ -89,6 +90,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
         ;; magit-popup
         (when (boundp 'magit-popup-mode-map)
           (define-key magit-popup-mode-map "G" 'magit-popup-quit)))
+    (define-key universal-argument-map "U" nil)
     ;; indent-rigidly
     (define-key indent-rigidly-map "F" nil)
     (define-key indent-rigidly-map "B" nil)
@@ -399,11 +401,12 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;;;;;;
 ;; Caps keys ;;
 ;;;;;;;;;;;;;;;
-(global-set-key "ª" 'modal-global-mode-post-command)
-(modal-define-key "º" 'caps-lock-mode-post-command)
+;; (global-set-key "ª" 'modal-global-mode-post-command)
+(modal-define-key "ª" #'caps-lock-mode)
+(modal-define-key "º" #'caps-lock-mode-post-command)
 ;; Modal keys
-(modal-define-key (kbd "µ") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
-(modal-define-key (kbd "<key-924>") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
+;; (modal-define-key (kbd "µ") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
+;; (modal-define-key (kbd "<key-924>") #'caps-lock-mode) ;; #'modal-global-mode-toggle)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Make compatible with other modules ;;
