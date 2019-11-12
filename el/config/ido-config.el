@@ -26,7 +26,8 @@
       ido-enable-flex-matching nil
       ido-enable-regexp t
       ido-enable-prefix nil
-      ido-max-prospects 20
+      ido-max-prospects 25
+      ido-max-dir-file-cache 500
       ido-use-filename-at-point 'guess
       ido-use-url-at-point t
       ido-create-new-buffer 'always
