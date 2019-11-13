@@ -40,7 +40,7 @@
   :group  'editing
   :tag    "Modal"
   :prefix "modal-"
-  :link   '(url-link :tag "GitHub" "https://github.com/mrkkrp/modal"))
+  :link   '(url-link :tag "GitHub" "https://github.com/..."))
 
 (defcustom modal-cursor-type t
   "Cursor type to use in `modal-mode'.

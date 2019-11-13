@@ -78,6 +78,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (defun modal-mode-bind-higher-priority-maps ()
   (if modal-mode
       (progn
+        ;; read-key
+        (define-key function-key-map "G" "\C-g")
+        ;; universal-argument
         (define-key universal-argument-map "U" #'universal-argument-more)
         ;; indent-rigidly
         (define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
@@ -90,6 +93,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
         ;; magit-popup
         (when (boundp 'magit-popup-mode-map)
           (define-key magit-popup-mode-map "G" 'magit-popup-quit)))
+    ;; read-key
+    (define-key function-key-map "G" nil)
+    ;; universal-argument
     (define-key universal-argument-map "U" nil)
     ;; indent-rigidly
     (define-key indent-rigidly-map "F" nil)
