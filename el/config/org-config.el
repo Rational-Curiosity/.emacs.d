@@ -269,7 +269,29 @@
       ;; PRIORITIES
       org-highest-priority ?A
       org-default-priority ?H
-      org-lowest-priority ?O)
+      org-lowest-priority ?O
+      ;; Clocking
+      org-clock-string-limit 25
+      org-clock-in-resume t
+      org-clock-persist t
+      org-clock-heading-function
+      (lambda ()
+        (replace-regexp-in-string
+         "  +" " "
+         (replace-regexp-in-string
+          "\\([a-zA-Z]\\{4\\}\\)[a-zA-Z]+" "\\1"
+          (replace-regexp-in-string
+           (concat " \\("
+                   (mapconcat 'identity
+                              '("el" "la" "lo" "las" "los"
+                                "a" "ante" "bajo" "cabe" "con"
+                                "contra" "de" "desde" "durante"
+                                "en" "entre" "hacia" "hasta"
+                                "mediante" "para" "por" "según"
+                                "sin" "so" "sobre" "tras")
+                              "\\|")
+                   "\\) ") " "
+           (org-entry-get nil "ITEM"))))))
 
 (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
 
@@ -1336,6 +1358,8 @@ decreases scheduled or deadline date by one day."
 (define-key org-mode-map (kbd "C-c O") #'org-open-at-point-global)
 (define-key org-mode-map (kbd "C-c p") #'org-publish)
 (define-key org-mode-map (kbd "C-c C-v <") #'org-babel-insert-structure-template-or-enclose-region)
+(define-key org-mode-map (kbd "C-c C-v k") #'org-babel-remove-result)
+(define-key org-mode-map (kbd "C-c C-v C-k") #'org-babel-remove-result)
 (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
 (define-key org-mode-map (kbd "C-c C-x C-k") #'org-toggle-link-display)
 
