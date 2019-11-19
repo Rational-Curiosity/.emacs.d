@@ -151,6 +151,8 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;; (modal-define-key (kbd "C ! p") #'flycheck-previous-error)
 ;; (modal-define-key (kbd "C ! l") #'flycheck-list-errors)
 ;; ]
+(modal-define-key (kbd "C ,") (kbd "C-c ,"))
+(modal-define-key (kbd "C M ,") (kbd "C-c C-,"))  ;; org-insert-structure-template
 (modal-define-key (kbd "C A") (kbd "C-c C-a"))
 (modal-define-key (kbd "C a") (kbd "C-c a"))  ;; org-agenda
 (modal-define-key (kbd "C B") (kbd "C-c C-b"))  ;; go-back
@@ -216,6 +218,16 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C w B") #'windmove-left)
 (modal-define-key (kbd "C w d a") #'window-dedicate-all)
 (modal-define-key (kbd "C w d t") #'window-dedicate-this)
+(modal-define-key (kbd "C V j") (kbd "C-c C-v j"))  ;; org-babel-insert-header-arg
+(modal-define-key (kbd "C V J") (kbd "C-c C-v C-j"))  ;; org-babel-insert-header-arg
+(modal-define-key (kbd "C V k") (kbd "C-c C-v k"))  ;; org-babel-remove-result
+(modal-define-key (kbd "C V K") (kbd "C-c C-v C-k"))  ;; org-babel-remove-result
+(modal-define-key (kbd "C V o") (kbd "C-c C-v o"))  ;; org-babel-open-src-block-result
+(modal-define-key (kbd "C V O") (kbd "C-c C-v C-o"))  ;; org-babel-open-src-block-result
+(modal-define-key (kbd "C V p") (kbd "C-c C-v p"))  ;; org-babel-previous-src-block
+(modal-define-key (kbd "C V P") (kbd "C-c C-v C-p"))  ;; org-babel-previous-src-block
+(modal-define-key (kbd "C V n") (kbd "C-c C-v n"))  ;; org-babel-next-src-block
+(modal-define-key (kbd "C V N") (kbd "C-c C-v C-n"))  ;; org-babel-next-src-block
 (modal-define-key (kbd "C w F") #'windmove-right)
 (modal-define-key (kbd "C w H") #'window-resize-height)
 (modal-define-key (kbd "C w h") #'flop-frame)
@@ -229,11 +241,18 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "C w u t") #'window-undedicate-this)
 (modal-define-key (kbd "C w v") #'flip-frame)
 (modal-define-key (kbd "C w W") #'window-resize-width)
-(modal-define-key (kbd "C X N") (kbd "C-c C-x C-n"))  ;; org-next-link
-(modal-define-key (kbd "C X P") (kbd "C-c C-x C-p"))  ;; org-previous-link
+(modal-define-key (kbd "C X D") (kbd "C-c C-x C-d"))  ;; org-clock-display
+(modal-define-key (kbd "C X E") (kbd "C-c C-x C-e"))  ;; org-clock-modify-effort-estimate
+(modal-define-key (kbd "C X I") (kbd "C-c C-x C-i"))  ;; org-clock-in
+(modal-define-key (kbd "C X J") (kbd "C-c C-x C-j"))  ;; org-clock-goto
 (modal-define-key (kbd "C X K") (kbd "C-c C-x C-k"))  ;; org-toggle-link-display
+(modal-define-key (kbd "C X N") (kbd "C-c C-x C-n"))  ;; org-next-link
+(modal-define-key (kbd "C X O") (kbd "C-c C-x C-o"))  ;; org-clock-out
+(modal-define-key (kbd "C X P") (kbd "C-c C-x C-p"))  ;; org-previous-link
+(modal-define-key (kbd "C X Q") (kbd "C-c C-x C-q"))  ;; org-clock-cancel
 (modal-define-key (kbd "C X S") (kbd "C-c C-x C-s"))  ;; org-archive-subtree
 (modal-define-key (kbd "C X V") (kbd "C-c C-x C-v"))  ;; org-toggle-inline-images
+(modal-define-key (kbd "C X X") (kbd "C-c C-x C-x"))  ;; org-clock-in-last
 ;; c - ] command prefix
 (modal-define-key (kbd "C") (kbd "C-c"))  ;; ido-case-fold
 (modal-define-key (kbd "D") (kbd "<deletechar>"))  ;; delete-forward-char
