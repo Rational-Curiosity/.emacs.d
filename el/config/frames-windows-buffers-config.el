@@ -83,6 +83,11 @@
 ;;;;;;;;;;;;;
 ;; Windows ;;
 ;;;;;;;;;;;;;
+(require 'ace-window)
+
+(set-face-attribute 'aw-leading-char-face nil
+                    :bold t :foreground "red" :background "green" :height 160)
+
 (defvar hscroll-aggressive nil)
 (setq split-width-threshold 140
       ;; Vertical Scroll
@@ -95,7 +100,13 @@
       ;; Horizontal Scroll
       hscroll-margin 2
       hscroll-step 1
-      message-truncate-lines nil)
+      message-truncate-lines nil
+      ;; ace-window
+      aw-scope 'visible
+      aw-char-position 'left
+      aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
+      aw-background t)
+
 (add-hook 'term-mode-hook
           (lambda ()
             (set (make-local-variable 'scroll-margin) 0)))
@@ -350,9 +361,6 @@ ARG non-nil resize window to ARG height."
   ("M-q" nil "quit"))
 (global-set-key (kbd "C-c w m") 'hydra-win/body)
 
-(require 'ace-window)
-(setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
-      aw-background t)
 ;;;;;;;;;;;;
 ;; Frames ;;
 ;;;;;;;;;;;;
