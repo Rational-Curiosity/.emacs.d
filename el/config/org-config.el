@@ -935,8 +935,7 @@ You can also customize this for each buffer, using something like
                                '("~/var/Dropbox/Brain")
                                when (file-exists-p folder)
                                return folder)
-                         org-brain-path)
-      )
+                         org-brain-path))
 
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
@@ -1305,6 +1304,45 @@ decreases scheduled or deadline date by one day."
               (org-indent-line)
               (end-of-line)))))))
     (run-hook-with-args 'org-property-changed-functions property value)))
+
+(defun org-set-multiline-property (property value)
+  "In the current entry, set PROPERTY to VALUE.
+
+When called interactively, this will prompt for a property name, offering
+completion on existing and default properties.  And then it will prompt
+for a value, offering completion either on allowed values (via an inherited
+xxx_ALL property) or on existing values in other instances of this property
+in the current file.
+
+Throw an error when trying to set a property with an invalid name."
+  (interactive (list nil nil))
+  (let ((property (or property (org-read-property-name))))
+    ;; `org-entry-put' also makes the following check, but this one
+    ;; avoids polluting `org-last-set-property' and
+    ;; `org-last-set-property-value' needlessly.
+    (unless (org--valid-property-p property)
+      (user-error "Invalid property name: \"%s\"" property))
+    (let ((value (or value (org-read-property-value property)))
+          (fn (cdr (assoc-string property org-properties-postprocess-alist t))))
+      (setq org-last-set-property property)
+      (setq org-last-set-property-value (concat property ": " value))
+      ;; Possibly postprocess the inserted value:
+      (when fn (setq value (funcall fn value)))
+      (unless (equal (org-entry-get nil property) value)
+        (org-entry-put-multiline-property nil property value)))))
+
+(defun org-shift-advice (orig-fun arg)
+  (condition-case nil
+      (funcall orig-fun arg)
+    (error
+     (cl-some (lambda (keymap)
+                (unless (eq keymap org-mode-map)
+                  (let ((binding (lookup-key keymap (vector last-command-event))))
+                    (if (commandp binding)
+                        (call-interactively binding)))))
+              (current-active-maps t)))))
+(advice-add 'org-shiftup :around 'org-shift-advice)
+(advice-add 'org-shiftdown :around 'org-shift-advice)
 
 ;;;;;;;;;;;;;;;;;;;
 ;; Org templates ;;

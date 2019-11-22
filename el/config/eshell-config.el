@@ -178,6 +178,8 @@
                               (goto-address-mode 1)
                               (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
                               (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
+                              (define-key eshell-mode-map (kbd "M-p") 'eshell-key-alt-previous)
+                              (define-key eshell-mode-map (kbd "M-n") 'eshell-key-alt-next)
                               (define-key eshell-mode-map (kbd "C-c C-k") #'term-char-mode)
                               (define-key eshell-mode-map (kbd "C-c C-j") #'term-line-mode)
                               (add-to-list 'eshell-complex-commands "ag")))
@@ -567,8 +569,8 @@
       (progn
         (if (not (memq last-command '(eshell-key-up
                                       eshell-key-down
-                                      eshell-previous-matching-input-from-input
-                                      eshell-next-matching-input-from-input)))
+                                      eshell-key-alt-previous
+                                      eshell-key-alt-next)))
             ;; Starting a new search
             (setq eshell-matching-input-from-input-string
                   (buffer-substring (save-excursion (eshell-bol) (point))
@@ -582,6 +584,29 @@
 (defun eshell-key-down (arg)
   (interactive "p")
   (eshell-key-up (- arg)))
+
+(defun eshell-key-alt-previous (arg)
+  (interactive "p")
+  (if (eq (point)
+          (point-max))
+      (progn
+        (if (not (memq last-command '(eshell-key-up
+                                      eshell-key-down
+                                      eshell-key-alt-previous
+                                      eshell-key-alt-next)))
+            ;; Starting a new search
+            (setq eshell-matching-input-from-input-string
+                  (buffer-substring (save-excursion (eshell-bol) (point))
+                                    (point))
+                  eshell-history-index nil))
+        (eshell-previous-matching-input
+         (concat "^" (regexp-quote eshell-matching-input-from-input-string))
+         arg))
+    (forward-paragraph (- arg))))
+
+(defun eshell-key-alt-next (arg)
+  (interactive "p")
+  (eshell-key-alt-previous (- arg)))
 
 (with-eval-after-load 'em-hist
   ;; eshell-next-input call this
