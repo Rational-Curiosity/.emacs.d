@@ -1,3 +1,4 @@
+
 ;;; modal-config.el --- Configure modal
 
 ;;; Commentary:
@@ -66,6 +67,22 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+;; company
+(defun modal-config-company-enable ()
+  (define-key company-active-map "G" 'company-abort)
+  (define-key company-active-map "H" 'company-show-doc-buffer)
+  (define-key company-active-map "W" 'company-show-location)
+  (define-key company-active-map "S" 'company-search-candidates)
+  (define-key company-active-map "\M-S" 'company-filter-candidates)
+
+  (define-key company-search-map "G" 'company-search-abort)
+  (define-key company-search-map "S" 'company-search-repeat-forward)
+  (define-key company-search-map "R" 'company-search-repeat-backward)
+  (define-key company-search-map "O" 'company-search-toggle-filtering))
+(with-eval-after-load 'company
+  (if modal-mode
+      (modal-config-company-enable)))
+
 ;; transient
 (with-eval-after-load 'transient
   (if modal-mode
@@ -87,6 +104,9 @@ cancel the use of the current buffer (for special-purpose buffers)."
         (define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
         (define-key indent-rigidly-map "f" #'indent-rigidly-right)
         (define-key indent-rigidly-map "b" #'indent-rigidly-left)
+        ;; company
+	(when (boundp 'company-active-map)
+          (modal-config-company-enable))
         ;; transient
         (when (boundp 'transient-map)
           (define-key transient-map "G" 'transient-quit-one))
@@ -102,6 +122,18 @@ cancel the use of the current buffer (for special-purpose buffers)."
     (define-key indent-rigidly-map "B" nil)
     (define-key indent-rigidly-map "f" nil)
     (define-key indent-rigidly-map "b" nil)
+    ;; company
+    (when (boundp 'company-active-map)
+      (define-key company-active-map "G" nil)
+      (define-key company-active-map "H" nil)
+      (define-key company-active-map "W" nil)
+      (define-key company-active-map "S" nil)
+      (define-key company-active-map "\M-S" nil)
+
+      (define-key company-search-map "G" nil)
+      (define-key company-search-map "S" nil)
+      (define-key company-search-map "R" nil)
+      (define-key company-search-map "O" nil))
     ;; transient
     (when (boundp 'transient-map)
       (define-key transient-map "G" nil))
