@@ -11,29 +11,38 @@
 
 ;;; Code:
 
-(require 'magit-popup)
+(require 'docker-utils)
 (message "Importing docker-config")
 
-;; (with-eval-after-load 'docker-container
-(setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
-      docker-container-logs-popup
-      (list :variable 'docker-container-logs-arguments
-            :man-page "docker-logs"
-            :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
-            :options  '((?T "Tail" "--tail="))
-            :actions  '((?L "Logs" docker-container-logs-selection))
-            :default-arguments '("-f" "-t" "--tail=150")
-            :setup-function #'docker-utils-setup-popup))
-(magit-define-popup docker-container-logs-popup
-  "Popup for showing containers logs."
-  'docker-container
-  :man-page "docker-logs"
-  :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
-  :options  '((?T "Tail" "--tail="))
-  :actions  '((?L "Logs" docker-container-logs-selection))
-  :default-arguments '("-f" "-t" "--tail=150")
-  :setup-function #'docker-utils-setup-popup)
-;; )
+(docker-utils-define-transient-command docker-container-logs ()
+  "Transient for showing containers logs."
+  :man-page "docker-container-logs"
+  :value '("--tail=100")
+  ["Arguments"
+   ("-T" "Tail" "--tail=" read-string)
+   ("-f" "Follow" "-f")
+   ("-t" "Timestamps" "--timestamps")]
+  [:description docker-utils-generic-actions-heading
+                ("L" "Logs" docker-utils-generic-action-with-command)])
+
+;; (setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
+;;       docker-container-logs-popup
+;;       (list :variable 'docker-container-logs-arguments
+;;             :man-page "docker-logs"
+;;             :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
+;;             :options  '((?T "Tail" "--tail="))
+;;             :actions  '((?L "Logs" docker-container-logs-selection))
+;;             :default-arguments '("-f" "-t" "--tail=150")
+;;             :setup-function #'docker-utils-setup-popup))
+;; (magit-define-popup docker-container-logs-popup
+;;   "Popup for showing containers logs."
+;;   'docker-container
+;;   :man-page "docker-logs"
+;;   :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
+;;   :options  '((?T "Tail" "--tail="))
+;;   :actions  '((?L "Logs" docker-container-logs-selection))
+;;   :default-arguments '("-f" "-t" "--tail=150")
+;;   :setup-function #'docker-utils-setup-popup)
 
 ;;;;;;;;;;
 ;; Keys ;;
