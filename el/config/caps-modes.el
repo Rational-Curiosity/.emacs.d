@@ -69,30 +69,33 @@
                   this-original-command binding
                   this-command binding))))))
 
+(defvar caps--post-command-countdown nil)
+
 (define-minor-mode caps-lock-mode
   "Make self-inserting keys invert the capitalization."
   :global t
   :lighter (:propertize "⇪" font-lock-face
                         (:foreground "red" :weight bold))
   (if caps-lock-mode
-      (add-hook 'pre-command-hook #'caps-lock--upcase)
-    (remove-hook 'pre-command-hook #'caps-lock--upcase)))
-
-(defvar caps--post-command-countdown nil)
+      (progn
+        (when caps--post-command-countdown
+          (remove-hook 'post-command-hook 'caps--enable-mode-and-remove-from-hook)
+          (setq caps--post-command-countdown nil))
+        (add-hook 'pre-command-hook 'caps-lock--upcase))
+    (when caps--post-command-countdown
+      (remove-hook 'post-command-hook 'caps--disable-mode-and-remove-from-hook)
+      (setq caps--post-command-countdown nil))
+    (remove-hook 'pre-command-hook 'caps-lock--upcase)))
 
 (defun caps--enable-mode-and-remove-from-hook ()
   (if (< 0 caps--post-command-countdown)
       (cl-decf caps--post-command-countdown)
-    (caps-lock-mode 1)
-    (remove-hook 'post-command-hook 'caps--enable-mode-and-remove-from-hook)
-    (setq caps--post-command-countdown nil)))
+    (caps-lock-mode 1)))
 
 (defun caps--disable-mode-and-remove-from-hook ()
   (if (< 0 caps--post-command-countdown)
       (cl-decf caps--post-command-countdown)
-    (caps-lock-mode 0)
-    (remove-hook 'post-command-hook 'caps--disable-mode-and-remove-from-hook)
-    (setq caps--post-command-countdown nil)))
+    (caps-lock-mode 0)))
 
 (defun caps-lock-mode-post-command (times)
   (interactive "p")
@@ -100,13 +103,13 @@
       (setq caps--post-command-countdown (+ caps--post-command-countdown times 1))
     (when (and (numberp times)
                (< 0 times))
-      (setq caps--post-command-countdown times)
       (if caps-lock-mode
           (progn
             (caps-lock-mode 0)
             (add-hook 'post-command-hook 'caps--enable-mode-and-remove-from-hook))
         (caps-lock-mode 1)
-        (add-hook 'post-command-hook 'caps--disable-mode-and-remove-from-hook)))))
+        (add-hook 'post-command-hook 'caps--disable-mode-and-remove-from-hook))
+      (setq caps--post-command-countdown times))))
 
 
 (provide 'caps-modes)
