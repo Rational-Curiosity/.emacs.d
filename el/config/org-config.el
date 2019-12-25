@@ -836,9 +836,7 @@ You can also customize this for each buffer, using something like
                               return folder)
                         org-directory)
       org-default-notes-file (concat (or org-directory "~") "/.notes.org")
-      org-agenda-files (if org-directory
-                           `(,org-directory)
-                         nil)
+      org-agenda-files (list org-directory) ;; reset in config.el
       ;; <property>
       org-agenda-property-list '("REQUIRED")
       ;; <Calendar>

@@ -105,7 +105,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
         (define-key indent-rigidly-map "f" #'indent-rigidly-right)
         (define-key indent-rigidly-map "b" #'indent-rigidly-left)
         ;; company
-	(when (boundp 'company-active-map)
+        (when (boundp 'company-active-map)
           (modal-config-company-enable))
         ;; transient
         (when (boundp 'transient-map)

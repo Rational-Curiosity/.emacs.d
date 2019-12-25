@@ -17,7 +17,7 @@
 (docker-utils-define-transient-command docker-container-logs ()
   "Transient for showing containers logs."
   :man-page "docker-container-logs"
-  :value '("--tail=100")
+  :value '("--tail=150" "-f" "--timestamps")
   ["Arguments"
    ("-T" "Tail" "--tail=" read-string)
    ("-f" "Follow" "-f")
