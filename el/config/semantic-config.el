@@ -102,10 +102,10 @@ Improve default ia jump at point."
 (define-key semantic-symref-results-mode-map "e" #'semantic-symref-list-expand-all)
 (define-key semantic-symref-results-mode-map "c" #'semantic-symref-list-contract-all)
 
-(semantic-mode 1)
+;;(semantic-mode 1)
 
 (require 'srecode)
-(global-srecode-minor-mode 1)
+;;(global-srecode-minor-mode 1)
 
 
 (provide 'semantic-config)

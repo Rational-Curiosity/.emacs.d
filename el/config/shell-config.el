@@ -31,11 +31,6 @@
 (add-hook 'shell-mode-hook 'compilation-shell-minor-mode)
 ;; Update 'default-directory' parsing prompt
 (add-hook 'shell-mode-hook #'dirtrack-mode)
-;;;;;;;;;;;;;;;;;;
-;; Autocomplete ;;
-;;;;;;;;;;;;;;;;;;
-(require 'bash-completion)
-(bash-completion-setup)
 
 ;;;;;;;;;;;;;
 ;; Options ;;

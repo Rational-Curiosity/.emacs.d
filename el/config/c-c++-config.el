@@ -117,12 +117,6 @@
         (goto-char pos-end)))
     (message "Found %i pointers by ref" counts)))
 
-;;;;;;;;;;;;
-;; Estilo ;;
-;;;;;;;;;;;;
-(require 'clang-format)
-;;(require 'clang-format-bug)
-;; (setq clang-format-executable "clang-format-3.6")
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;

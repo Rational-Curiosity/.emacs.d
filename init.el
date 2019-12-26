@@ -37,7 +37,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ac-php-core ace-window ag anaconda-mode android-mode async auctex avy bash-completion clang-format cmake-font-lock cmake-mode company company-anaconda company-c-headers company-php company-rtags company-tern crm-custom csharp-mode cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet flycheck flycheck-haskell flycheck-julia flycheck-popup-tip flymake flymake-lua format-all free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hierarchy highlight-thing ht htmlize hydra ido-at-point ido-completing-read+ js2-mode js2-refactor json-mode json-navigator json-reformat json-snatcher let-alist link-hint lua-mode lv magit markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-super-agenda ox-gfm ox-mediawiki ox-rst ox-twbs php-mode pkg-info plantuml-mode popup projectile protobuf-mode pythonic rainbow-delimiters rebox2 request request-deferred rtags rust-mode s seq smartparens smartscan sphinx-doc sphinx-frontend srefactor stickyfunc-enhance string-inflection swap-regions tablist tern transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf which-key with-editor xahk-mode xcscope xref-js2 xterm-color yasnippet yasnippet-snippets))))
+    (ace-window ag async auctex avy cmake-font-lock cmake-mode company company-lsp crm-custom cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet flycheck free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode ht htmlize hydra ido-at-point ido-completing-read+ json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-super-agenda ox-gfm ox-mediawiki ox-rst ox-twbs php-mode pkg-info plantuml-mode projectile protobuf-mode rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf which-key with-editor xahk-mode xterm-color yasnippet yasnippet-snippets))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -164,21 +164,10 @@
 (with-eval-after-load 'ispell
   (require 'ispell-config))
 
-;; Highlight thing
-(add-hook 'prog-mode-hook #'highlight-thing-mode)
-(with-eval-after-load 'highlight-thing
-  (require 'highlight-thing-config))
-
 ;; Smartscan
 (add-hook 'prog-mode-hook #'smartscan-mode)
 (with-eval-after-load 'smartscan
   (require 'smartscan-config))
-
-;; highlight-indent-guides (started inside typing-config when emacs server)
-;; poor performance and annoying cursor movement
-;; (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
-(with-eval-after-load 'highlight-indent-guides
-  (require 'highlight-indent-guides-config))
 
 ;; rainbow-delimiters-mode (before smartparens-mode)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
@@ -211,24 +200,9 @@
 ;;;;;;;;;;;;;;;;;
 (with-eval-after-load 'compile
   (require 'compile-config))
-;; flycheck-mode
-(add-hook 'prog-mode-hook #'flycheck-mode)
-(add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)
-(with-eval-after-load 'flycheck
-  (require 'flycheck-config)
-  (require 'srefactor-config)
-  (when (load "flycheck-popup-tip" t)
-    (setq flycheck-popup-tip-error-prefix "")
-    (add-hook 'flycheck-mode-hook #'flycheck-popup-tip-mode)))
+(with-eval-after-load 'etags
+  (require 'etags-config))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
-(add-hook 'prog-mode-hook #'projectile-mode)
-(with-eval-after-load 'projectile
-  ;; after semantic
-  (require 'projectile-config))
-(add-hook 'prog-mode-hook (lambda ()
-                            (require 'etags-config)
-                            (require 'ede)
-                            (ede-minor-mode)))
 (with-eval-after-load 'ede
   (require 'ede-config))
 ;; Snippets
@@ -236,18 +210,28 @@
 (add-hook 'org-mode-hook #'yas-minor-mode)
 (with-eval-after-load 'yasnippet
   (require 'yasnippet-config))
+;; flycheck
+(add-hook 'prog-mode-hook #'flycheck-mode)
+(with-eval-after-load 'flycheck
+  (with-current-buffer "*scratch*"
+    (lisp-interaction-mode))
+  (require 'flycheck-config))
+;; projectile
+(add-hook 'prog-mode-hook #'projectile-mode)
+(with-eval-after-load 'projectile
+  ;; after semantic
+  (require 'projectile-config))
 ;; [ elisp-mode
 (setq eldoc-minor-mode-string "")
 ;; last hook then first loaded
-(add-hook 'prog-mode-hook #'semantic-mode)
+(add-hook 'emacs-lisp-mode-hook #'semantic-mode)
+(add-hook 'lisp-mode-hook #'semantic-mode)
 (with-eval-after-load 'semantic
   (require 'semantic-config)
   ;; stickfunc improved
   (require 'stickyfunc-enhance)
   (require 'gud-config)
-  (require 'speedbar-config)
-  (with-current-buffer "*scratch*"
-    (lisp-interaction-mode)))
+  (require 'speedbar-config))
 ;; ]
 ;; cmake-mode
 (setq auto-mode-alist
@@ -260,27 +244,40 @@
 (add-hook 'cmake-mode-hook #'cmake-font-lock-activate)
 ;; flymake-mode
 ;; thanks to: stackoverflow.com/questions/6110691/is-there-a-way-to-make-flymake-to-compile-only-when-i-save
-(with-eval-after-load 'flymake
-  (defun flymake-after-change-function (start stop len)
-    "Start syntax check for current buffer if it isn't already running."
-    ;; Do nothing, don't want to run checks until I save.
-    ))
+;; (with-eval-after-load 'flymake
+;;   (defun flymake-after-change-function (start stop len)
+;;     "Start syntax check for current buffer if it isn't already running."
+;;     ;; Do nothing, don't want to run checks until I save.
+;;     ))
+
+;; lsp
+(with-eval-after-load 'lsp-mode
+  (when (bug-check-function-bytecode
+         'lsp-mode-line
+         "wCCJgxcAwcLDAyLExcYDAyO2glCCHgDBx8jJyiNQhw==")
+    (defun lsp-mode-line ()
+      "Construct the mode line text."
+      (if-let (workspaces (lsp-workspaces))
+          (string-join (--map (format "[%s]" (lsp--workspace-print it))
+                              workspaces))
+        (propertize "[Disconnected]" 'face 'warning))))
+  (add-hook 'lsp-mode-hook #'lsp-ui-mode)
+  (setq lsp-prefer-flymake nil)
+  (require 'lsp-ui)
+  (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
+  (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references))
 
 ;; [ cc-mode
+(add-hook 'c-mode-hook   #'lsp-deferred)
+(add-hook 'c++-mode-hook #'lsp-deferred)
 (defun c-c++-config ()
   ;; run only once
   (remove-hook 'c-mode-hook 'c-c++-config)
   (remove-hook 'c++-mode-hook 'c-c++-config)
   (require 'c-c++-config)
-  ;; Después de semantic
-  ;; Después de ede-projects-config
-  (require 'cmake-make-config)
-  ;; rtags: Jumping and Completion (after semantic)
-  (when (load "rtags" t)
-    (require 'rtags-config)
-    (when (executable-find "rdm")
-      (add-hook 'c-mode-hook   #'rtags-start-process-unless-running)
-      (add-hook 'c++-mode-hook #'rtags-start-process-unless-running))))
+  ;; After semantic
+  ;; After ede-projects-config
+  (require 'cmake-make-config))
 (add-hook 'c-mode-hook   'c-c++-config)
 (add-hook 'c++-mode-hook 'c-c++-config)
 ;; ]
@@ -288,6 +285,26 @@
 ;; [ lua-mode
 (with-eval-after-load 'lua-mode
   (require 'lua-config))
+;; ]
+
+;; [ python
+(add-hook 'python-mode-hook #'lsp-deferred)
+(setq python-shell-interpreter "python3")
+(with-eval-after-load 'python
+;;  (require 'semantic/wisent/python)
+  (require 'python-config)
+  (add-hook 'python-mode-hook #'detect-python-project-version))
+(with-eval-after-load 'virtualenvwrapper
+  (require 'virtualenvwrapper-config))
+;; ]
+
+
+;; [ javascript
+(add-hook 'js-mode-hook #'lsp-deferred)
+;; ]
+
+;; [ php
+(add-hook 'php-mode-hook #'lsp-deferred)
 ;; ]
 
 ;; loads only when necessary
@@ -298,45 +315,6 @@
   (add-hook 'markdown-mode-hook #'smartparens-mode)
   (message "Importing markdown-mode+")
   (require 'markdown-mode+))
-
-;; [ python
-(setq python-shell-interpreter "python3")
-(with-eval-after-load 'python
-  (require 'semantic/wisent/python)
-  (require 'python-config)
-  (add-hook 'python-mode-hook #'detect-python-project-version)
-  ;; ANACONDA
-  (when (load "anaconda-mode" t)
-    (require 'anaconda-config)
-    (add-hook 'python-mode-hook #'anaconda-mode)
-    (add-hook 'python-mode-hook #'anaconda-eldoc-mode)))
-(with-eval-after-load 'virtualenvwrapper
-  (require 'virtualenvwrapper-config))
-;; ]
-
-
-;; [ javascript
-(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.jsx?\\'" . js2-jsx-mode))
-(with-eval-after-load 'js
-  (when (load "js2-mode" t)
-    ;; (add-hook 'js-mode-hook #'js2-minor-mode)
-    (add-hook 'js2-mode-hook #'js2-refactor-mode)
-    ;; Better imenu
-    (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
-    (add-to-list 'interpreter-mode-alist '("node" . js2-jsx-mode))
-    (require 'javascript-config)
-    (when (load "xref-js2" t)
-      (add-hook 'js2-mode-hook (lambda ()
-                                 (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t))))
-    (when (and (executable-find "tern") (load "tern" t))
-      (add-hook 'js2-mode-hook #'tern-mode))))
-;; ]
-
-;; [ php
-(with-eval-after-load 'php-mode
-  (require 'php-config))
-;; ]
 
 ;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
 ;(autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
@@ -363,14 +341,6 @@
   (require 'redmine-api))
 (add-hook 'org-mode-hook #'org-super-agenda-mode)
 ;; ]
-
-(with-eval-after-load 'android-mode
-  (require 'android-config))
-
-
-;; (add-hook 'c-mode-common-hook 'cscope-minor-mode)
-;; (with-eval-after-load 'cscope-minor-mode
-;;   (require 'xcscope-config))
 
 ;; <ahk> AutoHotKey programming
 (add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
@@ -411,13 +381,10 @@
   "Command line arg `--all'.  SWITCH ignored."
   (require 'semantic)
   (require 'ede)
-  (require 'projectile)
   (require 'cc-mode)
   (require 'latex)
   (require 'org)
-  (require 'yasnippet)
-  (require 'flycheck)
-  (require 'rtags))
+  (require 'yasnippet))
 (add-to-list 'command-switch-alist '("--all" . argument--all))
 (defun argument--agenda (switch)
   "Command line arg `--agenda'.  SWITCH ignored."

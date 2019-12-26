@@ -56,12 +56,12 @@
 (require 'hl-line)
 (set-face-attribute 'hl-line nil
                     :foreground 'unspecified
-                    :background 'unspecified
+                    :background "#000000"
                     :overline 'unspecified
-                    :underline t
+                    :underline 'unspecified
                     :box 'unspecified
                     :inherit 'unspecified)
-;; (global-hl-line-mode 1)
+(global-hl-line-mode 1)
 
 ;;;;;;;;;;;;;;;
 ;; Functions ;;

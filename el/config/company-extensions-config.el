@@ -12,10 +12,10 @@
 ;;(add-to-list 'load-path "~/.emacs.d/elpa/elpa/company-c-headers-20150801.901")
 (require 'company-template)
 ;; [
-(require 'company-capf)
+;;(require 'company-capf)
 ;; ]
-(require 'company-c-headers)
-(require 'company-yasnippet)
+;;(require 'company-c-headers)
+;;(require 'company-yasnippet)
 
 (defface mode-line-company-mode
   '((t :inherit (mode-line) :foreground "slate blue" :weight bold))
@@ -43,10 +43,10 @@
 (define-key company-active-map (kbd "<backtab>") #'company-complete-common-or-cycle)
 ;;(define-key company-mode-map [(control tab)] 'company-complete)
 ;; `company-complete` conflicts with `company-template-forward-field` with TAB #515
+(define-key company-template-nav-map [(shift tab)] (lookup-key company-template-nav-map [tab]))
+(define-key company-template-nav-map (kbd "<backtab>") (lookup-key company-template-nav-map (kbd "TAB")))
 (define-key company-template-nav-map [tab] nil)
 (define-key company-template-nav-map (kbd "TAB") nil)
-(define-key company-template-nav-map (kbd "<backtab>") #'company-template-forward-field)
-(define-key company-template-nav-map [(shift tab)] #'company-template-forward-field)
 
 ;; Colors
 (face-spec-set 'company-preview '((t (:foreground "darkgray" :underline t))))
@@ -61,18 +61,18 @@
 
 
 ;; company-c-headers
-(add-to-list 'company-backends 'company-c-headers)
+;; (add-to-list 'company-backends 'company-c-headers)
 ;; company c++ system headers
-(with-eval-after-load 'cc-mode
-  (require 'semantic/bovine/gcc)
-  (let ((dirs (semantic-gcc-get-include-paths "c++")))
-    (dolist (dir dirs)
-      (add-to-list 'company-c-headers-path-system (concat dir "/"))))
-  (delete-dups company-c-headers-path-system))
+;; (with-eval-after-load 'cc-mode
+;;   (require 'semantic/bovine/gcc)
+;;   (let ((dirs (semantic-gcc-get-include-paths "c++")))
+;;     (dolist (dir dirs)
+;;       (add-to-list 'company-c-headers-path-system (concat dir "/"))))
+;;   (delete-dups company-c-headers-path-system))
 ;; company c++ user headers
-(with-eval-after-load 'c-c++-config
-  (dolist (path c-c++-include-paths)
-    (add-to-list 'company-c-headers-path-user path)))
+;; (with-eval-after-load 'c-c++-config
+;;   (dolist (path c-c++-include-paths)
+;;     (add-to-list 'company-c-headers-path-user path)))
 ;; hs-minor-mode for folding source code
 ;;(add-hook 'c-mode-common-hook 'hs-minor-mode)
 
@@ -97,26 +97,6 @@
 (with-eval-after-load 'auctex
   (require 'company-auctex)
   (company-auctex-init))
-
-;;;;;;;;;;
-;; Java ;;
-;;;;;;;;;;
-(with-eval-after-load 'eclim
-  (require 'company-emacs-eclim)
-  (company-emacs-eclim-setup))
-
-;;;;;;;;;;;;
-;; Python ;;
-;;;;;;;;;;;;
-(with-eval-after-load 'anaconda-mode
-  (add-to-list 'company-backends '(company-anaconda)))  ;; :with company-capf)))
-
-;;;;;;;;;
-;; C++ ;;
-;;;;;;;;;
-(with-eval-after-load 'rtags-mode
-  (add-to-list 'company-backends '(company-rtags)))
-
 
 (global-set-key (kbd "<f7> ,") 'toggle-company-semantic)
 (global-set-key (kbd "C-c y") 'company-yasnippet)
