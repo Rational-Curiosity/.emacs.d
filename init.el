@@ -252,20 +252,8 @@
 
 ;; lsp
 (with-eval-after-load 'lsp-mode
-  (when (bug-check-function-bytecode
-         'lsp-mode-line
-         "wCCJgxcAwcLDAyLExcYDAyO2glCCHgDBx8jJyiNQhw==")
-    (defun lsp-mode-line ()
-      "Construct the mode line text."
-      (if-let (workspaces (lsp-workspaces))
-          (string-join (--map (format "[%s]" (lsp--workspace-print it))
-                              workspaces))
-        (propertize "[Disconnected]" 'face 'warning))))
   (add-hook 'lsp-mode-hook #'lsp-ui-mode)
-  (setq lsp-prefer-flymake nil)
-  (require 'lsp-ui)
-  (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
-  (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references))
+  (require 'lsp-config))
 
 ;; [ cc-mode
 (add-hook 'c-mode-hook   #'lsp-deferred)
@@ -282,6 +270,10 @@
 (add-hook 'c++-mode-hook 'c-c++-config)
 ;; ]
 
+;; [ rust
+(add-hook 'rust-mode-hook #'lsp-deferred)
+;; ]
+
 ;; [ lua-mode
 (with-eval-after-load 'lua-mode
   (require 'lua-config))
@@ -293,7 +285,8 @@
 (with-eval-after-load 'python
 ;;  (require 'semantic/wisent/python)
   (require 'python-config)
-  (add-hook 'python-mode-hook #'detect-python-project-version))
+;;  (add-hook 'python-mode-hook #'detect-python-project-version)
+  )
 (with-eval-after-load 'virtualenvwrapper
   (require 'virtualenvwrapper-config))
 ;; ]
@@ -305,6 +298,8 @@
 
 ;; [ php
 (add-hook 'php-mode-hook #'lsp-deferred)
+(with-eval-after-load 'php-mode
+  (define-key php-mode-map (kbd "M-b") nil))
 ;; ]
 
 ;; loads only when necessary
