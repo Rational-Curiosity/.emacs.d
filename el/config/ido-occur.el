@@ -4,11 +4,18 @@
 
 (require 'ido)
 (require 'dash)
+(require 'highlight)
 
 (defgroup ido-occur nil
   "Yet another `occur' with `ido'."
   :group 'help
   :group 'convenience)
+
+(defface ido-hl-contrast
+  '((((min-colors 88)) (:weight bold :foreground "red1" :background "yellow1"))
+    (t (:weight bold :foreground "red" :background "yellow")))
+  "Face for ido mode."
+  :group 'ido-occur)
 
 (defcustom ido-occur--prompt "List lines matching: "
   "Minibuffer prompt."
@@ -65,6 +72,7 @@ and from end of `BUFFER' to beginning of `BUFFER'."
 (defun ido-occur--run (&optional query)
   "Yet another `occur' with `ido'.
 When non-nil, QUERY is the initial search pattern."
+  (setq ido-regexp-buffer query)
   (let ((initial-point (point))
         (ido-occur--line-number (line-number-at-pos)))
     (unwind-protect
@@ -83,6 +91,9 @@ When non-nil, QUERY is the initial search pattern."
             (forward-line (- line-number ido-occur--line-number))
             (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
             (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0))))
+      (when ido-regexp-buffer
+        (hlt-+/--highlight-regexp-region t nil nil ido-regexp-buffer nil nil nil 0)
+        (setq ido-regexp-buffer nil))
       (if initial-point (goto-char initial-point)))))
 
 (defun ido-recenter-top-botton (&optional arg)
@@ -97,6 +108,17 @@ When non-nil, QUERY is the initial search pattern."
       (with-selected-window (minibuffer-selected-window)
         (forward-line (- line-number ido-occur--line-number))
         (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
+        (when ido-regexp-buffer
+          (hlt-+/--highlight-regexp-region
+           t nil nil ido-regexp-buffer nil nil nil 0)
+          (let ((w (window-total-width))
+                (h (window-total-height))
+                (p (point)))
+            (let ((a (* w h)))
+              (hlt-+/--highlight-regexp-region
+               nil
+               (max (point-min) (- p a))
+               (min (point-max) (+ p a)) ido-regexp-buffer nil nil nil 0))))
         (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0)))
       (setq ido-occur--line-number line-number))))
 

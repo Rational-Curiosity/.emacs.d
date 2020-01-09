@@ -54,6 +54,7 @@
   :group 'hi-lock-faces)
 
 (require 'hl-line)
+(require 'hl-line+)
 (set-face-attribute 'hl-line nil
                     :foreground 'unspecified
                     :background "#000000"

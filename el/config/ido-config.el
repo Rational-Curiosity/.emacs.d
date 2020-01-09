@@ -8,6 +8,7 @@
 ;;; Code:
 
 (require 'ag)
+(require 'highlight)
 (require 'ido)
 (require 'ido-occur)
 
@@ -76,9 +77,40 @@ remaining completion.  If absent, elements 5 and 6 are used instead."
   :type '(repeat string)
   :group 'ido)
 
+(defvar ido-regexp-buffer nil)
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
+(defun ido-highlight-matches (name str)
+  (if (/= 0 (length name))
+      (let ((regexp (if ido-enable-regexp name (regexp-quote name)))
+            (pos 0)
+            end)
+        (when ido-regexp-buffer
+          (with-selected-window (minibuffer-selected-window)
+            (hlt-+/--highlight-regexp-region
+             t nil nil ido-regexp-buffer nil nil nil 0)
+            (let ((w (window-total-width))
+                  (h (window-total-height))
+                  (p (point)))
+              (let ((a (* w h)))
+                (hlt-+/--highlight-regexp-region
+                 nil
+                 (max (point-min) (- p a))
+                 (min (point-max) (+ p a)) regexp nil nil nil 0))))
+          (setq ido-regexp-buffer regexp))
+        (while (and (condition-case nil
+                        (string-match regexp str pos)
+                      (invalid-regexp nil))
+                    (< pos (setq end (match-end 0))))
+          (ignore-errors
+            (add-face-text-property (match-beginning 0)
+                                    (match-end 0)
+                                    'ido-substring-match-face
+                                    nil str))
+          (setq pos end)))))
+
 (bug-check-function-bytecode 'ido-completions
                              "CIlAOoURAIlAQUfGVoURAAnHQwGDJAAKgyQAyMnGyssGBiWICoNqAAKDagDMA0AhiUcCzQMhoIjIyQLKBghHxlWDUAALg0wAw4JRAM6CUQDPBgeiJYgDg2EAAomiBVCgiAKiBUFCsgW2AgKEqQAMg3wA0A04hlcB0YJXAQ4sg4sA0g04hlcB04JXAQ4tg5oA1A04hlcB1YJXAQ4ug6UA1g04glcB14JXAQuDtADYA0BQglcBAkGEBwEOL4TJAMwDQCFHBEdVgt0A2QTMBUAhIojaycwFQCEizARAIZiD5ADXgvsA2w04hu0A3A04zARAId0NOIb6AN4NOFEKP4UDAd8NOFCCVwEOMMlWgxQBDjBUghUB4EPh4uHj5OXm5+jpBgsGCyLqItTrJQYJIiJBIg4xO4VOAQ4xRwYGR1aFTgHcDTgOMQYHR8dP3g04UQ1AAg1BQFK2goc=")
 (defun ido-completions (name)
@@ -132,21 +164,30 @@ Modified from `icomplete-completions'."
            ;;               (string-match name (ido-name (car comps)))                 ;; -
            ;;               (string-equal (match-string 0 (ido-name (car comps)))      ;; -
            ;;                             (ido-name (car comps))))                     ;; -
-           (concat (if (if ido-enable-regexp                                           ;; +
-                           (condition-case nil                                         ;; +
-                               (progn                                                  ;; +
-                                 (string-match name (ido-name (car comps)))            ;; +
-                                 (string-equal (match-string 0 (ido-name (car comps))) ;; +
-                                               (ido-name (car comps))))                ;; +
-                             (invalid-regexp nil))                                     ;; +
-                         (= (length (ido-name (car comps))) (length name)))            ;; +
-                       ""
-                     ;; When there is only one match, show the matching file
-                     ;; name in full, wrapped in [ ... ].
-                     (concat
-                      (or (nth 11 ido-decorations) (nth 4 ido-decorations))
-                      (ido-name (car comps))
-                      (or (nth 12 ido-decorations) (nth 5 ido-decorations))))
+           ;;             ""                                                           ;; -
+           ;;           ;; When there is only one match, show the matching file        ;; -
+           ;;           ;; name in full, wrapped in [ ... ].                           ;; -
+           ;;           (concat                                                        ;; -
+           ;;            (or (nth 11 ido-decorations) (nth 4 ido-decorations))         ;; -
+           ;;            (ido-name (car comps))                                        ;; -
+           ;;            (or (nth 12 ido-decorations) (nth 5 ido-decorations))))       ;; -
+           (concat (let ((str (substring (car comps) 0)))                              ;; +
+                     (if (if ido-enable-regexp                                         ;; +
+                             (condition-case nil                                       ;; +
+                                 (progn                                                ;; +
+                                   (string-match name (ido-name str))                  ;; +
+                                   (string-equal (match-string 0 (ido-name str))       ;; +
+                                                 (ido-name str)))                      ;; +
+                               (invalid-regexp nil))                                   ;; +
+                           (= (length (ido-name str)) (length name)))                  ;; +
+                         ""                                                            ;; +
+                       ;; When there is only one match, show the matching file         ;; +
+                       ;; name in full, wrapped in [ ... ].                            ;; +
+                       (ido-highlight-matches name str)                                ;; +
+                       (concat                                                         ;; +
+                        (or (nth 11 ido-decorations) (nth 4 ido-decorations))          ;; +
+                        (ido-name str)                                                 ;; +
+                        (or (nth 12 ido-decorations) (nth 5 ido-decorations)))))       ;; +
                    (if (not ido-use-faces) (nth 7 ido-decorations))))  ;; [Matched]
           (t                           ;multiple matches
            (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
@@ -167,24 +208,11 @@ Modified from `icomplete-completions'."
                                      (let ((str (substring com 0)))
                                        (when ido-use-faces                                                  ;; +
                                          (if (and
-                                              ;; ido-use-faces ;; -
+                                              ;; ido-use-faces                                              ;; -
                                               (not (string= str first))
                                               (ido-final-slash str))
                                              (put-text-property 0 (length str) 'face 'ido-subdir str))
-                                         (if (/= 0 (length name))                                           ;; +
-                                             (let ((regexp (if ido-enable-regexp name (regexp-quote name))) ;; +
-                                                   (pos 0)                                                  ;; +
-                                                   end)                                                     ;; +
-                                               (while (and (condition-case nil                              ;; +
-                                                               (string-match regexp str pos)                ;; +
-                                                             (invalid-regexp nil))                          ;; +
-                                                           (< pos (setq end (match-end 0))))                ;; +
-                                                 (ignore-errors                                             ;; +
-                                                   (add-face-text-property (match-beginning 0)              ;; +
-                                                                           (match-end 0)                    ;; +
-                                                                           'ido-substring-match-face        ;; +
-                                                                           nil str))                        ;; +
-                                                 (setq pos end)))))                                         ;; +
+                                         (ido-highlight-matches name str))                                  ;; +
                                        str)))))
                            comps))))))
 
