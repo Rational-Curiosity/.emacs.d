@@ -37,7 +37,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ace-window ag async auctex avy cmake-font-lock cmake-mode company company-lsp crm-custom cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet flycheck free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode ht htmlize hydra ido-at-point ido-completing-read+ json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-super-agenda ox-gfm ox-mediawiki ox-rst ox-twbs php-mode pkg-info plantuml-mode projectile protobuf-mode rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf which-key with-editor xahk-mode xterm-color yasnippet yasnippet-snippets))))
+    (ace-window ag async auctex avy bookmark+ cmake-font-lock cmake-mode company company-lsp crm-custom cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet flycheck free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt highlight hl-line+ ht htmlize hydra ido-at-point ido-completing-read+ json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode projectile protobuf-mode rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf which-key with-editor xahk-mode xterm-color yasnippet yasnippet-snippets))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -105,8 +105,6 @@
 (require 'highlight-config)
 
 (require 'bookmark+-config)
-
-(require 'thingatpt+-autoloads)
 
 (require 'which-key-config)
 

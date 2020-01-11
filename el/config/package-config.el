@@ -12,17 +12,20 @@
 ;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
 ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
-       (urls '("://orgmode.org/elpa/"
-               "://melpa.org/packages/"
-               "://stable.melpa.org/packages/"
-               "://marmalade-repo.org/packages/"
-               "://jorgenschaefer.github.io/packages/"))
-       (names '("org" "melpa" "melpa-stable" "marmalade" "elpy"))
-       (urls (mapcar (lambda (s) (concat (if no-ssl "http" "https") s)) urls)))
-  (cl-mapcar (lambda (n u) (add-to-list 'package-archives (cons n u) t))
-             names urls))
+(let* ((protocol (if (and (memq system-type '(windows-nt ms-dos))
+                          (not (gnutls-available-p)))
+                     "http"
+                   "https"))
+       (repos '(("org"          . "://orgmode.org/elpa/")
+                ("melpa"        . "://melpa.org/packages/")
+                ("melpa-stable" . "://stable.melpa.org/packages/")
+                ("marmalade"    . "://marmalade-repo.org/packages/")
+                ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
+  (mapc (lambda (p)
+          (add-to-list
+           'package-archives
+           (cons (car p) (concat protocol (cdr p))) t))
+        repos))
 
 (package-initialize)
 ;; sort package list
