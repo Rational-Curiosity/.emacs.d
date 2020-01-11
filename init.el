@@ -132,6 +132,8 @@
 
 (require 'comment-config)
 
+(require 'thing-cmds-autoloads)
+
 (require 'rotate-text-config)
 
 (require 'multiple-cursors-config)
