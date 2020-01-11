@@ -82,34 +82,33 @@ remaining completion.  If absent, elements 5 and 6 are used instead."
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
-(defun ido-highlight-matches (name str)
-  (if (/= 0 (length name))
-      (let ((regexp (if ido-enable-regexp name (regexp-quote name)))
-            (pos 0)
-            end)
-        (when ido-regexp-buffer
-          (with-selected-window (minibuffer-selected-window)
-            (hlt-+/--highlight-regexp-region
-             t nil nil ido-regexp-buffer nil nil nil 0)
-            (let ((w (window-total-width))
-                  (h (window-total-height))
-                  (p (point)))
-              (let ((a (* w h)))
-                (hlt-+/--highlight-regexp-region
-                 nil
-                 (max (point-min) (- p a))
-                 (min (point-max) (+ p a)) regexp nil nil nil 0))))
-          (setq ido-regexp-buffer regexp))
-        (while (and (condition-case nil
-                        (string-match regexp str pos)
-                      (invalid-regexp nil))
-                    (< pos (setq end (match-end 0))))
-          (ignore-errors
-            (add-face-text-property (match-beginning 0)
-                                    (match-end 0)
-                                    'ido-substring-match-face
-                                    nil str))
-          (setq pos end)))))
+(defun ido-highlight-buffer (regexp)
+  (when ido-regexp-buffer
+    (with-selected-window (minibuffer-selected-window)
+      (hlt-+/--highlight-regexp-region
+       t nil nil ido-regexp-buffer nil nil nil 0)
+      (let ((w (window-total-width))
+            (h (window-total-height))
+            (p (point)))
+        (let ((a (* w h)))
+          (hlt-+/--highlight-regexp-region
+           nil
+           (max (point-min) (- p a))
+           (min (point-max) (+ p a)) regexp nil nil nil 0))))
+    (setq ido-regexp-buffer regexp)))
+
+(defun ido-highlight-matches (regexp str)
+  (let ((pos 0) end)
+    (while (and (condition-case nil
+                    (string-match regexp str pos)
+                  (invalid-regexp nil))
+                (< pos (setq end (match-end 0))))
+      (ignore-errors
+        (add-face-text-property (match-beginning 0)
+                                (match-end 0)
+                                'ido-substring-match-face
+                                nil str))
+      (setq pos end))))
 
 (bug-check-function-bytecode 'ido-completions
                              "CIlAOoURAIlAQUfGVoURAAnHQwGDJAAKgyQAyMnGyssGBiWICoNqAAKDagDMA0AhiUcCzQMhoIjIyQLKBghHxlWDUAALg0wAw4JRAM6CUQDPBgeiJYgDg2EAAomiBVCgiAKiBUFCsgW2AgKEqQAMg3wA0A04hlcB0YJXAQ4sg4sA0g04hlcB04JXAQ4tg5oA1A04hlcB1YJXAQ4ug6UA1g04glcB14JXAQuDtADYA0BQglcBAkGEBwEOL4TJAMwDQCFHBEdVgt0A2QTMBUAhIojaycwFQCEizARAIZiD5ADXgvsA2w04hu0A3A04zARAId0NOIb6AN4NOFEKP4UDAd8NOFCCVwEOMMlWgxQBDjBUghUB4EPh4uHj5OXm5+jpBgsGCyLqItTrJQYJIiJBIg4xO4VOAQ4xRwYGR1aFTgHcDTgOMQYHR8dP3g04UQ1AAg1BQFK2goc=")
@@ -183,7 +182,12 @@ Modified from `icomplete-completions'."
                          ""                                                            ;; +
                        ;; When there is only one match, show the matching file         ;; +
                        ;; name in full, wrapped in [ ... ].                            ;; +
-                       (ido-highlight-matches name str)                                ;; +
+                       (when (/= 0 (length name))                                      ;; +
+                         (let ((regexp (if ido-enable-regexp                           ;; +
+                                           name                                        ;; +
+                                         (regexp-quote name))))                        ;; +
+                           (ido-highlight-buffer regexp)                               ;; +
+                           (ido-highlight-matches regexp str)))                        ;; +
                        (concat                                                         ;; +
                         (or (nth 11 ido-decorations) (nth 4 ido-decorations))          ;; +
                         (ido-name str)                                                 ;; +
@@ -191,6 +195,7 @@ Modified from `icomplete-completions'."
                    (if (not ido-use-faces) (nth 7 ido-decorations))))  ;; [Matched]
           (t                           ;multiple matches
            (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
+                  (regexp (if ido-enable-regexp name (regexp-quote name)))             ;; +
                   (alternatives
                    (apply
                     #'concat
@@ -212,9 +217,10 @@ Modified from `icomplete-completions'."
                                               (not (string= str first))
                                               (ido-final-slash str))
                                              (put-text-property 0 (length str) 'face 'ido-subdir str))
-                                         (ido-highlight-matches name str))                                  ;; +
+                                         (if (/= 0 (length name)) (ido-highlight-matches regexp str)))      ;; +
                                        str)))))
                            comps))))))
+             (if (/= 0 (length name)) (ido-highlight-buffer regexp))                                        ;; +
 
              (concat
               ;; put in common completion item -- what you get by pressing tab
