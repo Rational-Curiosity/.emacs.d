@@ -134,7 +134,7 @@ Set this to nil to disable fuzzy matching."
         (ido-setup-hook (cons 'smex-prepare-ido-bindings ido-setup-hook))
         (ido-enable-prefix nil)
         (ido-enable-flex-matching smex-flex-matching)
-        (ido-max-prospects 10)
+        ;; (ido-max-prospects 10) ;; -
         (minibuffer-completion-table choices))
     (ido-completing-read (smex-prompt-with-prefix-arg) choices nil t
                          initial-input 'extended-command-history (car choices))))

@@ -194,8 +194,9 @@ Modified from `icomplete-completions'."
                         (or (nth 12 ido-decorations) (nth 5 ido-decorations)))))       ;; +
                    (if (not ido-use-faces) (nth 7 ido-decorations))))  ;; [Matched]
           (t                           ;multiple matches
-           (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
-                  (regexp (if ido-enable-regexp name (regexp-quote name)))             ;; +
+           ;; (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))   ;; -
+           (let* ((regexp (if ido-enable-regexp name (regexp-quote name)))             ;; +
+                  (max (if (> ido-max-prospects 0) ido-max-prospects 999))
                   (alternatives
                    (apply
                     #'concat
@@ -204,22 +205,24 @@ Modified from `icomplete-completions'."
                           (mapcar
                            (lambda (com)
                              (setq com (ido-name com))
-                             (setq items (1- items))
-                             (cond
-                              ((< items 0) ())
-                              ((= items 0) (list (nth 3 ido-decorations))) ; " | ..."
-                              (t
-                               (list (or ido-separator (nth 2 ido-decorations)) ; " | "
-                                     (let ((str (substring com 0)))
-                                       (when ido-use-faces                                                  ;; +
-                                         (if (and
-                                              ;; ido-use-faces                                              ;; -
-                                              (not (string= str first))
-                                              (ido-final-slash str))
-                                             (put-text-property 0 (length str) 'face 'ido-subdir str))
-                                         (if (/= 0 (length name)) (ido-highlight-matches regexp str)))      ;; +
-                                       str)))))
-                           comps))))))
+                             ;; (setq items (1- items))                                                     ;; -
+                             ;; (cond                                                                       ;; -
+                             ;;  ((< items 0) ())                                                           ;; -
+                             ;;  ((= items 0) (list (nth 3 ido-decorations))) ; " | ..."                    ;; -
+                             ;; (t                                                                          ;; -
+                             (list (or ido-separator (nth 2 ido-decorations)) ; " | "
+                                   (let ((str (substring com 0)))
+                                     (when ido-use-faces                                                  ;; +
+                                       (if (and
+                                            ;; ido-use-faces                                              ;; -
+                                            (not (string= str first))
+                                            (ido-final-slash str))
+                                           (put-text-property 0 (length str) 'face 'ido-subdir str))
+                                       (if (/= 0 (length name)) (ido-highlight-matches regexp str)))      ;; +
+                                     str)))                                                               ;; +
+                                     ;; str)))))                                                          ;; -
+                           ;; comps))))))                                                                   ;; -
+                           (if (< max (length comps)) (subseq comps 0 max) comps)))))))                     ;; +
              (if (/= 0 (length name)) (ido-highlight-buffer regexp))                                        ;; +
 
              (concat
@@ -233,6 +236,7 @@ Modified from `icomplete-completions'."
               ;; list all alternatives
               (nth 0 ido-decorations)  ;; { ... }
               alternatives
+              (nth 3 ido-decorations)                                                                       ;; +
               (nth 1 ido-decorations)))))))
 
 ;; (defun ido-completions-advice (orig-fun name)
