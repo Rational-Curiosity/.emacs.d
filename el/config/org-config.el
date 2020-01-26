@@ -157,6 +157,7 @@
 
 (setq org-hide-block-startup t
       org-descriptive-links nil ;; nil display the full links
+      org-replace-disputed-keys t
       org-startup-folded 'content
       org-startup-with-inline-images t
       org-pretty-entities t

@@ -182,6 +182,7 @@
     ("API Proxy"          "AXY")
     ("gigas_api_panel"    "APN")
     ("gigas_api"          "API")
+    ("gigas_hapi"         "BLY")
     ("MApp"               "MAP")
     ("gigas_mapp"         "MAP")
     ("gigas_mercury"      "MCY")
