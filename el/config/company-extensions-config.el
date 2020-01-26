@@ -91,6 +91,8 @@
 ;;  c-default-style "linux" ;; set style to "linux"
 ;;  )
 
+(with-eval-after-load 'company-dabbrev
+  (setq company-dabbrev-downcase nil))
 ;;;;;;;;;;;;
 ;; Auxtex ;;
 ;;;;;;;;;;;;
