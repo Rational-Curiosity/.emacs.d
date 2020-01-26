@@ -9,14 +9,18 @@
 (message "Importing version-control-config")
 (require 'frames-windows-buffers-config)
 
-;; Refresh mode line branch
 (with-eval-after-load 'magit-mode
+  ;; Refresh mode line branch
   (defun vc-refresh-buffers ()
     (interactive)
     (dolist (buffer (buffers-from-file))
       (with-current-buffer buffer
         (vc-refresh-state))))
   (advice-add 'magit-refresh :after 'vc-refresh-buffers))
+
+(with-eval-after-load 'magit-utils
+  ;; Completion
+  (setq magit-completing-read-function 'magit-ido-completing-read))
 
 ;; (with-eval-after-load 'magit-status
 ;;   (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
