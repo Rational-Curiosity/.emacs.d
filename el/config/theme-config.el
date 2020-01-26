@@ -17,9 +17,11 @@
 ;;       curchg-default-cursor-type 'bar
 ;;       curchg-overwrite/read-only-cursor-type 'box)
 (add-to-list 'default-frame-alist '(cursor-color . "red"))
-(setq blink-cursor-blinks 0)
-(eval-and-when-daemon frame
-  (blink-cursor-mode 1))
+;; [ not working
+;; (setq blink-cursor-blinks 0)
+;; (eval-and-when-daemon frame
+;;   (blink-cursor-mode 1))
+;; ]
 ;; [ Cycle themes
 (require 'ring)
 (defvar theme-ring nil)
