@@ -37,7 +37,14 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ace-window ag async auctex avy bookmark+ cmake-font-lock cmake-mode company company-lsp crm-custom cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet flycheck free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt highlight hl-line+ ht htmlize hydra ido-at-point ido-completing-read+ json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode projectile protobuf-mode rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf which-key with-editor xahk-mode xterm-color yasnippet yasnippet-snippets))))
+    (ace-window ag amx async auctex avy bookmark+ cmake-font-lock cmake-mode company company-lsp crm-custom cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region f figlet flycheck free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt highlight hl-line+ ht htmlize hydra ido-at-point ido-completing-read+ json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode projectile protobuf-mode rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xterm-color yasnippet yasnippet-snippets)))
+ '(safe-local-variable-values
+   (quote
+    ((eval set
+           (quote org-agenda-files)
+           (list
+            (file-name-directory
+             (buffer-file-name))))))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -300,6 +307,21 @@
 (add-hook 'php-mode-hook #'lsp-deferred)
 (with-eval-after-load 'php-mode
   (define-key php-mode-map (kbd "M-b") nil))
+;; ]
+
+;; [ web
+(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+
+(add-to-list 'auto-mode-alist '("\\.tpl\\'" . web-mode))
+(with-eval-after-load 'web-mode
+  (require 'web-config))
 ;; ]
 
 ;; loads only when necessary
