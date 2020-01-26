@@ -77,16 +77,16 @@ remaining completion.  If absent, elements 5 and 6 are used instead."
   :type '(repeat string)
   :group 'ido)
 
-(defvar ido-regexp-buffer nil)
+(defvar ido-regexp-window nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 (defun ido-highlight-buffer (regexp)
-  (when ido-regexp-buffer
-    (with-selected-window (minibuffer-selected-window)
+  (when ido-regexp-window
+    (with-selected-window (cdr ido-regexp-window)
       (hlt-+/--highlight-regexp-region
-       t nil nil ido-regexp-buffer nil nil nil 0)
+       t nil nil (car ido-regexp-window) nil nil nil 0)
       (let ((w (window-total-width))
             (h (window-total-height))
             (p (point)))
@@ -95,7 +95,7 @@ remaining completion.  If absent, elements 5 and 6 are used instead."
            nil
            (max (point-min) (- p a))
            (min (point-max) (+ p a)) regexp nil nil nil 0))))
-    (setq ido-regexp-buffer regexp)))
+    (setcar ido-regexp-window regexp)))
 
 (defun ido-highlight-matches (regexp str)
   (let ((pos 0) end)
@@ -205,11 +205,11 @@ Modified from `icomplete-completions'."
                           (mapcar
                            (lambda (com)
                              (setq com (ido-name com))
-                             ;; (setq items (1- items))                                                     ;; -
-                             ;; (cond                                                                       ;; -
-                             ;;  ((< items 0) ())                                                           ;; -
-                             ;;  ((= items 0) (list (nth 3 ido-decorations))) ; " | ..."                    ;; -
-                             ;; (t                                                                          ;; -
+                             ;; (setq items (1- items))                                                   ;; -
+                             ;; (cond                                                                     ;; -
+                             ;;  ((< items 0) ())                                                         ;; -
+                             ;;  ((= items 0) (list (nth 3 ido-decorations))) ; " | ..."                  ;; -
+                             ;; (t                                                                        ;; -
                              (list (or ido-separator (nth 2 ido-decorations)) ; " | "
                                    (let ((str (substring com 0)))
                                      (when ido-use-faces                                                  ;; +
@@ -221,9 +221,9 @@ Modified from `icomplete-completions'."
                                        (if (/= 0 (length name)) (ido-highlight-matches regexp str)))      ;; +
                                      str)))                                                               ;; +
                                      ;; str)))))                                                          ;; -
-                           ;; comps))))))                                                                   ;; -
-                           (if (< max (length comps)) (subseq comps 0 max) comps)))))))                     ;; +
-             (if (/= 0 (length name)) (ido-highlight-buffer regexp))                                        ;; +
+                           ;; comps))))))                                                                 ;; -
+                           (if (< max (length comps)) (subseq comps 0 max) comps)))))))                   ;; +
+             (if (/= 0 (length name)) (ido-highlight-buffer regexp))                                      ;; +
 
              (concat
               ;; put in common completion item -- what you get by pressing tab
@@ -232,11 +232,11 @@ Modified from `icomplete-completions'."
                   (concat (nth 4 ido-decorations)   ;; [ ... ]
                           (substring ido-common-match-string (length name))
                           (nth 5 ido-decorations)))
-              " " (nth 4 ido-decorations) (int-to-string (length ido-matches)) (nth 5 ido-decorations)      ;; +
+              " " (nth 4 ido-decorations) (int-to-string (length ido-matches)) (nth 5 ido-decorations)    ;; +
               ;; list all alternatives
               (nth 0 ido-decorations)  ;; { ... }
               alternatives
-              (nth 3 ido-decorations)                                                                       ;; +
+              (if (< max (length comps)) (nth 3 ido-decorations))                                         ;; +
               (nth 1 ido-decorations)))))))
 
 ;; (defun ido-completions-advice (orig-fun name)
@@ -396,15 +396,17 @@ Modified from `icomplete-completions'."
 ;;;;;;;;;;
 ;; smex ;;
 ;;;;;;;;;;
-(require 'smex)
-(smex-initialize)  ;; Can be omitted. This might cause a (minimal) delay
-                   ;; when Smex is auto-initialized on its first run.
+(require 'amx)
+(amx-mode)
+;; (require 'smex)
+;; (smex-initialize)  ;; Can be omitted. This might cause a (minimal) delay
+;;                    ;; when Smex is auto-initialized on its first run.
 
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "M-X") 'smex-major-mode-commands)
+;; (global-set-key (kbd "M-x") 'smex)
+;; (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is your old M-x.
 ;; (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 ;; icomplete keys

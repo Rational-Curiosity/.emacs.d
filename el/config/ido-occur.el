@@ -72,7 +72,7 @@ and from end of `BUFFER' to beginning of `BUFFER'."
 (defun ido-occur--run (&optional query)
   "Yet another `occur' with `ido'.
 When non-nil, QUERY is the initial search pattern."
-  (setq ido-regexp-buffer query)
+  (setq ido-regexp-window (cons (regexp-quote query) (selected-window)))
   (let ((initial-point (point))
         (ido-occur--line-number (line-number-at-pos)))
     (unwind-protect
@@ -82,7 +82,7 @@ When non-nil, QUERY is the initial search pattern."
                                                                      ido-occur--line-number)
                                            nil
                                            t
-                                           query)))
+                                           (if ido-enable-regexp (car ido-regexp-window) query))))
                (line-number (string-to-number (car (split-string line)))))
           (if (< line-number 1)
               (user-error "Wrong selection `%s' corresponds to line %s" line line-number)
@@ -91,9 +91,9 @@ When non-nil, QUERY is the initial search pattern."
             (forward-line (- line-number ido-occur--line-number))
             (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
             (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0))))
-      (when ido-regexp-buffer
-        (hlt-+/--highlight-regexp-region t nil nil ido-regexp-buffer nil nil nil 0)
-        (setq ido-regexp-buffer nil))
+      (with-selected-window (cdr ido-regexp-window)
+        (hlt-+/--highlight-regexp-region t nil nil (car ido-regexp-window) nil nil nil 0))
+      (setq ido-regexp-window nil)
       (if initial-point (goto-char initial-point)))))
 
 (defun ido-recenter-top-botton (&optional arg)
@@ -105,20 +105,19 @@ When non-nil, QUERY is the initial search pattern."
   (interactive)
   (when (< 0 ido-occur--line-number)
     (let ((line-number (string-to-number (car (split-string (car ido-matches))))))
-      (with-selected-window (minibuffer-selected-window)
+      (with-selected-window (cdr ido-regexp-window)
         (forward-line (- line-number ido-occur--line-number))
         (re-search-forward (if ido-enable-regexp ido-text (regexp-quote ido-text)))
-        (when ido-regexp-buffer
-          (hlt-+/--highlight-regexp-region
-           t nil nil ido-regexp-buffer nil nil nil 0)
-          (let ((w (window-total-width))
-                (h (window-total-height))
-                (p (point)))
-            (let ((a (* w h)))
-              (hlt-+/--highlight-regexp-region
-               nil
-               (max (point-min) (- p a))
-               (min (point-max) (+ p a)) ido-regexp-buffer nil nil nil 0))))
+        (hlt-+/--highlight-regexp-region
+         t nil nil (car ido-regexp-window) nil nil nil 0)
+        (let ((w (window-total-width))
+              (h (window-total-height))
+              (p (point)))
+          (let ((a (* w h)))
+            (hlt-+/--highlight-regexp-region
+             nil
+             (max (point-min) (- p a))
+             (min (point-max) (+ p a)) (car ido-regexp-window) nil nil nil 0)))
         (ido-occur--visible-momentary-highlight-region (match-beginning 0) (match-end 0)))
       (setq ido-occur--line-number line-number))))
 
