@@ -83,10 +83,12 @@
 ;;;;;;;;;;;;;
 ;; Windows ;;
 ;;;;;;;;;;;;;
-(require 'ace-window)
+(require 'ido-select-window)
 
-(set-face-attribute 'aw-leading-char-face nil
-                    :bold t :foreground "red" :background "green" :height 160)
+;; [ ace-window 1
+;; (set-face-attribute 'aw-leading-char-face nil
+;;                     :bold t :foreground "red" :background "green" :height 160)
+;; ]
 
 (defvar hscroll-aggressive nil)
 (setq split-width-threshold 140
@@ -101,11 +103,13 @@
       hscroll-margin 2
       hscroll-step 1
       message-truncate-lines nil
-      ;; ace-window
-      aw-scope 'visible
-      aw-char-position 'left
-      aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
-      aw-background t)
+      ;; [ ace-window 2
+      ;; aw-scope 'visible
+      ;; aw-char-position 'left
+      ;; aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
+      ;; aw-background t
+      ;; ]
+      )
 
 (add-hook 'term-mode-hook
           (lambda ()
@@ -540,7 +544,7 @@ others."
 ;;   ("<up>" windmove-up)
 ;;   ("<down>" windmove-down))
 
-(global-set-key (kbd "C-x o") #'ace-window)
+(global-set-key (kbd "C-x o") #'ido-select-window)
 (global-set-key (kbd "C-c M-r") #'revert-buffer)
 (global-set-key (kbd "C-x C-c") 'save-buffers-kill-terminal-with-choice)
 (global-set-key (kbd "C-x k") 'kill-buffer-or-buffers-from-file)
