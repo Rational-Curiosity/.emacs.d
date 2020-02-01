@@ -27,7 +27,9 @@
       tool-bar-style 'image)
 ;; There are machine dependent configurations
 (with-eval-after-load 'machine-config
-  (recentf-mode 1))
+  (cl-letf (((symbol-function 'sit-for)
+             (lambda (secs))))
+    (recentf-mode 1)))
 
 
 (provide 'menu-config)
