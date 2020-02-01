@@ -1,9 +1,55 @@
+;; Functions
+(defun exwm-screensaver-lock ()
+  (interactive)
+  (when (not (member "xscreensaver"
+                     (mapcar
+                      (lambda (item) (cdr (assoc 'comm item)))
+                      (mapcar 'process-attributes (list-system-processes)))))
+    (start-process "xscreensaver" nil "xscreensaver" "-no-splash")
+    (sleep-for 1))
+  (start-process "xscreensaver-command" nil "xscreensaver-command" "-lock"))
+
+(defun exwm-update-screens ()
+  (interactive)
+  (let ((xrandr-monitor-regexp "\n\\([^ ]+\\) connected ")
+        default-monitor)
+    (with-temp-buffer
+      (call-process "xrandr" nil t nil)
+      (goto-char (point-min))
+      (re-search-forward xrandr-monitor-regexp nil 'noerror)
+      (setq default-monitor (match-string 1))
+      (forward-line)
+      (if (not (re-search-forward xrandr-monitor-regexp nil 'noerror))
+          (progn
+            (call-process "xrandr" nil nil nil "--output" default-monitor "--auto")
+            (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor)
+                  exwm-workspace-number 1))
+        (call-process "setup" nil nil nil "monitor" "left")
+        (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor 1 (match-string 1)))
+        (forward-line)
+        (let ((monitor-number 1))
+          (while (re-search-forward xrandr-monitor-regexp nil 'noerror)
+            (setq exwm-randr-workspace-monitor-plist
+                  (nconc exwm-randr-workspace-monitor-plist (list (incf monitor-number)
+                                                                  (match-string 1))))
+            (forward-line))
+          (setq exwm-workspace-number monitor-number))))))
+
+(defun exwm-screen-count ()
+  (let ((monitor-number 0))
+    (with-temp-buffer
+      (call-process "xrandr" nil t nil)
+      (goto-char (point-min))
+      (while (re-search-forward "\n\\([^ ]+\\) connected " nil 'noerror)
+        (incf monitor-number)
+        (forward-line)))
+    monitor-number))
+
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
       display-time-day-and-date t
       display-time-24hr-format t
       display-time-mail-string "✉")
-(display-time-mode t)
 
 ;; You are strongly encouraged to enable something like `ido-mode' to alter
 ;; the default behavior of 'C-x b', or you will take great pains to switch
@@ -15,6 +61,9 @@
 ;; Emacs server is not required to run EXWM but it has some interesting uses
 ;; (see next section).
 (server-start)
+
+;; (require 'mini-modeline)                     ;; + with mini-modeline
+;; (setq mini-modeline-frame (selected-frame))  ;; + with mini-modeline
 
 ;;;; Below are configurations for EXWM.
 
@@ -30,7 +79,10 @@
 (exwm-config-ido)
 
 ;; Set the initial number of workspaces (they can also be created later).
-(setq exwm-workspace-number 4)
+(setq exwm-workspace-number (exwm-screen-count)
+      exwm-workspace-minibuffer-position nil
+      exwm-workspace-show-all-buffers t
+      exwm-layout-show-all-buffers t)
 
 ;; All buffers created in EXWM mode are named "*EXWM*". You may want to
 ;; change it in `exwm-update-class-hook' and `exwm-update-title-hook', which
@@ -72,12 +124,16 @@
         ;; Bind "s-&" to launch applications ('M-&' also works if the output
         ;; buffer does not bother you).
         ([?\s-&] . (lambda (command)
-		     (interactive (list (read-shell-command "$ ")))
-		     (start-process-shell-command command nil command)))
+                     (interactive (list (read-shell-command "$ ")))
+                     (start-process-shell-command command nil command)))
         ;; Bind "s-<f2>" to "slock", a simple X display locker.
         ([s-f2] . (lambda ()
-		    (interactive)
-		    (start-process "" nil "/usr/bin/slock")))))
+                    (interactive)
+                    (start-process "" nil "/usr/bin/slock")))
+        ;; Bind lock screen
+        (,(kbd "<s-escape>") . exwm-screensaver-lock)
+        ;; Display datetime
+        (,(kbd "s-s") . display-time-mode)))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
@@ -116,32 +172,53 @@
 
 ;; Do not forget to enable EXWM. It will start by itself when things are
 ;; ready.  You can put it _anywhere_ in your configuration.
-(require 'exwm-randr)
-(defun exwm-change-screen-hook ()
-  (let ((xrandr-monitor-regexp "\n\\([^ ]+\\) connected ")
-        default-monitor)
-    (with-temp-buffer
-      (call-process "xrandr" nil t nil)
-      (goto-char (point-min))
-      (re-search-forward xrandr-monitor-regexp nil 'noerror)
-      (setq default-monitor (match-string 1))
-      (forward-line)
-      (if (not (re-search-forward xrandr-monitor-regexp nil 'noerror))
-          (progn
-            (call-process "xrandr" nil nil nil "--output" default-monitor "--auto")
-            (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor)))
-        (call-process "setup" nil nil nil "monitor" "left")
-        (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor 1 (match-string 1)))
-        (forward-line)
-        (let ((monitor-number 1))
-          (while (re-search-forward xrandr-monitor-regexp nil 'noerror)
-            (setq exwm-randr-workspace-monitor-plist
-                  (nconc exwm-randr-workspace-monitor-plist (list (incf monitor-number)
-                                                                  (match-string 1))))
-            (forward-line)))))))
-(add-hook 'exwm-randr-screen-change-hook 'exwm-change-screen-hook)
-(exwm-randr-enable)
 (exwm-enable)
+
+;; Multi-monitor
+(require 'exwm-randr)
+(add-hook 'exwm-randr-screen-change-hook 'exwm-update-screens)
+(exwm-randr-enable)
+
+;; System tray
+(require 'exwm-systemtray)
+(exwm-systemtray-enable)
+
+(require 'symon)
+
+(defun symon--message (format-string &rest args)
+  (with-selected-window (minibuffer-window (next-frame (selected-frame) 'visible))
+    (delete-region (minibuffer-prompt-end) (point-max))
+    (insert (apply #'format-message format-string args))))
+
+(when (bug-check-function-bytecode
+       'symon--display-update
+       "CIYGAMYgP4VIAMeJyBkaGwzHHYkeEYNDAA4RQBUJDhJVgzIAycrLzM3ODSIiIoiCNwDPzg0iiAlUEQ4RQYkWEYQZAC3QiRYThw==")
+  (defun symon--display-update ()
+    "update symon display"
+    (unless (or cursor-in-echo-area (active-minibuffer-window))
+      (let ((message-log-max nil)  ; do not insert to *Messages* buffer
+            (display-string nil)
+            (page 0))
+        (dolist (lst symon--display-fns)
+          (if (= page symon--active-page)
+              (symon--message "%s" (apply 'concat (mapcar 'funcall lst)))
+            (mapc 'funcall lst))
+          (setq page (1+ page))))
+      (setq symon--display-active t))))
+
+(setcdr (last symon-monitors)
+        `(,(cond ((memq system-type '(gnu/linux cygwin))
+                  'symon-linux-battery-monitor)
+                 ((memq system-type '(darwin))
+                  'symon-darwin-battery-monitor)
+                 ((memq system-type '(windows-nt))
+                  'symon-windows-battery-monitor))
+          symon-current-time-monitor))
+
+(setq symon-delay 3
+      symon-refresh-rate 5)
+
+(symon-mode)
 
 
 (provide 'exwm-startup-config)
