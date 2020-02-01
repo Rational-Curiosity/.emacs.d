@@ -218,7 +218,7 @@
           (if message-advice-timestamp (message-timestamp-advice msg))
           (apply orig-fun msg args)))
     (apply orig-fun msg args)))
-(advice-add 'message :around #'message-filter)
+;;(advice-add 'message :around #'message-filter)
 
 ;; Don't show on windows buffers currently showed
 (defun display-buffer-if-not-showed (orig-fun buffer-or-name &rest args)
@@ -230,6 +230,13 @@ Don't show on windows buffers currently showed."
       (apply orig-fun buffer-or-name args))))
 (advice-add 'display-buffer :around #'display-buffer-if-not-showed)
 
+;; Thanks to: https://superuser.com/questions/132225/how-to-get-back-to-an-active-minibuffer-prompt-in-emacs-without-the-mouse
+(defun switch-to-minibuffer-window ()
+  "switch to minibuffer window (if active)"
+  (interactive)
+  (when (active-minibuffer-window)
+    (select-frame-set-input-focus (window-frame (active-minibuffer-window)))
+    (select-window (active-minibuffer-window))))
 
 ;; undo and redo window distributions
 (setq winner-dont-bind-my-keys t)
@@ -337,33 +344,34 @@ ARG non-nil resize window to ARG height."
 (defhydra hydra-win (:foreign-keys warn)
   "WIN"
   ("C-<right>" (lambda () (interactive)
-               (enlarge-window-horizontally 1)
-               (message "Width: %i" (window-width))))
+                 (enlarge-window-horizontally 1)
+                 (message "Width: %i" (window-width))))
   ("S-<right>" (lambda () (interactive)
                  (enlarge-window-horizontally 10)
                  (message "Width: %i" (window-width))) "↔+")
   ("C-<left>" (lambda () (interactive)
-              (shrink-window-horizontally 1)
-              (message "Width: %i" (window-width))))
+                (shrink-window-horizontally 1)
+                (message "Width: %i" (window-width))))
   ("S-<left>" (lambda () (interactive)
-              (shrink-window-horizontally 10)
-              (message "Width: %i" (window-width))) "↔-")
+                (shrink-window-horizontally 10)
+                (message "Width: %i" (window-width))) "↔-")
   ("C-<up>" (lambda () (interactive)
-            (enlarge-window 1)
-            (message "Height: %i" (window-height))))
-  ("S-<up>" (lambda () (interactive)
-            (enlarge-window 10)
-            (message "Height: %i" (window-height))) "↕+")
-  ("C-<down>" (lambda () (interactive)
-              (shrink-window 1)
+              (enlarge-window 1)
               (message "Height: %i" (window-height))))
+  ("S-<up>" (lambda () (interactive)
+              (enlarge-window 10)
+              (message "Height: %i" (window-height))) "↕+")
+  ("C-<down>" (lambda () (interactive)
+                (shrink-window 1)
+                (message "Height: %i" (window-height))))
   ("S-<down>" (lambda () (interactive)
-              (shrink-window 10)
-              (message "Height: %i" (window-height))) "↕-")
+                (shrink-window 10)
+                (message "Height: %i" (window-height))) "↕-")
   ("C-p" winner-undo "undo")
   ("C-n" winner-redo "redo")
   ("M-q" nil "quit"))
 (global-set-key (kbd "C-c w m") 'hydra-win/body)
+(global-set-key (kbd "<f9>") 'switch-to-minibuffer-window)
 
 ;;;;;;;;;;;;
 ;; Frames ;;

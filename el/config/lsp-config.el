@@ -34,7 +34,8 @@
       lsp-ui-doc-alignment 'frame
       lsp-file-watch-ignored
       (cons "[/\\\\]tmp$"
-            lsp-file-watch-ignored))
+            lsp-file-watch-ignored)
+      lsp-pyls-plugins-flake8-enabled t)
 
 (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
 (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references)
