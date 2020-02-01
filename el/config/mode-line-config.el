@@ -14,8 +14,8 @@
 
 ;;; Code:
 
-(require 'mini-modeline)
-(setcar (cdr (assq 'mini-modeline-mode minor-mode-alist)) "")
+;; (require 'mini-modeline)                                       ;; + with mini-modeline
+;; (setcar (cdr (assq 'mini-modeline-mode minor-mode-alist)) "")  ;; + with mini-modeline
 
 ;;;;;;;;;;;
 ;; Faces ;;
@@ -347,19 +347,19 @@ mouse-3: Toggle minor modes"
  ;; #     # #    # #    # #         #       # #   ## #
  ;; #     #  ####  #####  ######    ####### # #    # ######
  mode-line-vc nil
- ;; mode-line-format  ;; -  without mini-modeline
- mini-modeline-r-format  ;; +  with mimi-modeline
+ mode-line-format  ;; -  without mini-modeline
+ ;; mini-modeline-r-format  ;; +  with mimi-modeline
  `("%e"
    ,@(cdr mode-line-pre-filename)
-   ;; (:eval (mode-line-buffer-identification-shorten))  ;; - without mini-modeline
-   (:eval (mini-modeline-buffer-identification-shorten))  ;; + with mini-modeline
+   (:eval (mode-line-buffer-identification-shorten))  ;; - without mini-modeline
+   ;; (:eval (mini-modeline-buffer-identification-shorten))  ;; + with mini-modeline
    (:eval mode-line-vc)
    ,@(cdr mode-line-post-filename)))
 
-;; [ mini modeline options
-(setq mini-modeline-truncate-p nil
-      mini-modeline-echo-duration 5)
-(mini-modeline-mode t)  ;; + with mini-modeline
+;; [ mini-modeline options
+;; (setq mini-modeline-truncate-p nil
+;;       mini-modeline-echo-duration 5)
+;; (mini-modeline-mode t)  ;; + with mini-modeline
 ;; ]
 
 (defun mode-line-abbreviate-file-name ()
