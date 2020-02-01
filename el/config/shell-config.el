@@ -48,6 +48,13 @@
 (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
 (set-face-attribute 'comint-highlight-prompt nil
                     :inherit nil)
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Bash Completion ;;
+;;;;;;;;;;;;;;;;;;;;;
+(require 'bash-completion)
+(bash-completion-setup)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Variables de entorno ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -180,6 +187,7 @@
 (global-set-key (kbd "C-!") #'execute)
 
 (with-eval-after-load 'shell
+  (require 'term)
   (define-key shell-mode-map (kbd "C-c C-k") #'term-char-mode)
   (define-key shell-mode-map (kbd "C-c C-j") #'term-line-mode))
 
