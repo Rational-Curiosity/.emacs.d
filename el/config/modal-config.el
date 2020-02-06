@@ -1,4 +1,3 @@
-
 ;;; modal-config.el --- Configure modal
 
 ;;; Commentary:
@@ -19,7 +18,7 @@
                              ediff-mode
                              ;; eshell-mode
                              ;; org-agenda-mode
-                             git-rebase-mode
+                             ;; git-rebase-mode
                              ;; docker-container-mode
                              magit-popup-mode
                              ;; magit-mode
@@ -345,9 +344,16 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X 2") (kbd "C-x 2"))  ;; vsplit-last-buffer
 (modal-define-key (kbd "X 3") (kbd "C-x 3"))  ;; hsplit-last-buffer
 (modal-define-key (kbd "X 4 F") (kbd "C-x 4 C-f"))  ;; ido-find-file-other-window
+(modal-define-key (kbd "X 4 O") (kbd "C-x 4 C-o"))  ;; ido-display-buffer
 (modal-define-key (kbd "X 4 b") (kbd "C-x 4 b"))  ;; ido-switch-buffer-other-window
 (modal-define-key (kbd "X 5 F") (kbd "C-x 5 C-f"))  ;; ido-find-file-other-frame
+(modal-define-key (kbd "X 5 O") (kbd "C-x 5 C-o"))  ;; ido-display-buffer-other-frame
+(modal-define-key (kbd "X 5 0") (kbd "C-x 5 0"))  ;; delete-frame
+(modal-define-key (kbd "X 5 1") (kbd "C-x 5 1"))  ;; delete-other-frame
+(modal-define-key (kbd "X 5 2") (kbd "C-x 5 2"))  ;; make-frame-command
+(modal-define-key (kbd "X 5 B") (kbd "C-x 5 B"))  ;; bookmark-jump-other-frame
 (modal-define-key (kbd "X 5 b") (kbd "C-x 5 b"))  ;; ido-switch-buffer-other-frame
+(modal-define-key (kbd "X 5 o") (kbd "C-x 5 o"))  ;; other-frame
 (modal-define-key (kbd "X C") (kbd "C-x C-c"))  ;; save-buffers-kill-emacs
 (modal-define-key (kbd "X c") (kbd "C-x c"))  ;; rotate-or-inflection
 (modal-define-key (kbd "X B") (kbd "C-x C-b"))  ;; list-buffers
@@ -416,6 +422,10 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X W") (kbd "C-x C-w"))  ;; write-file
 (modal-define-key (kbd "X X") (kbd "C-x C-x"))  ;; exchange-point-and-mark
 (modal-define-key (kbd "X z") (kbd "C-x z"))  ;; repeat
+(modal-define-key (kbd "X M-0") (kbd "C-x C-0"))  ;; text-scale-adjust
+(modal-define-key (kbd "X M-=") (kbd "C-x C-="))  ;; text-scale-adjust
+(modal-define-key (kbd "X M--") (kbd "C-x C--"))  ;; text-scale-adjust
+(modal-define-key (kbd "X M-+") (kbd "C-x C-+"))  ;; text-scale-adjust
 ;; x - ] command prefix
 (modal-define-key (kbd "Y") (kbd "C-y"))  ;; yank
 (modal-define-key (kbd "Z") (kbd "C-x z"))  ;; repeat (suspend-frame)
