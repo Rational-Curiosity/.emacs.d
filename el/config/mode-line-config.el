@@ -21,65 +21,67 @@
 ;; Faces ;;
 ;;;;;;;;;;;
 (defface mode-line-correct
-  '((t :foreground "green4" :inherit (mode-line)))
+  '((t :foreground "green4"))
   "Correct" :group 'mode-line)
 (defface mode-line-notready
-  '((t :foreground "brown4" :inherit (mode-line)))
+  '((t :foreground "brown4"))
   "Correct" :group 'mode-line)
 (defface mode-line-warning
-  '((t :foreground "yellow4" :inherit (mode-line)))
+  '((t :foreground "yellow4"))
   "Warning" :group 'mode-line)
 (defface mode-line-error
-  '((t :foreground "red4" :inherit (mode-line)))
+  '((t :foreground "red4"))
   "Error" :group 'mode-line)
 
 (defface mode-line-outside-modified
-  '((t :inherit (mode-line) :foreground "#ffffff" :background "#c82829"))
+  '((t :foreground "#ffffff" :background "#c82829"))
   "Outside modified" :group 'mode-line)
 
 (defface mode-line-modified
-  '((t :inherit (mode-line) :foreground "Red" :weight bold))
+  '((t :foreground "Red" :weight bold))
   "Modified" :group 'mode-line)
 
 (defface mode-line-read-only
-  '((t :inherit (mode-line) :foreground "Yellow"))
+  '((t :foreground "Yellow"))
   "Read only" :group 'mode-line)
 
 (defface mode-line-not-modified
-  '((t :inherit (mode-line) :foreground "Green"))
+  '((t :foreground "Green"))
   "Not modified" :group 'mode-line)
 
 (defface mode-line-coding-system
-  '((t :inherit (mode-line) :foreground "SaddleBrown"))
+  '((t :foreground "SaddleBrown"))
   "Coding system" :group 'mode-line)
 
 (defface mode-line-eol
-  '((t :inherit (mode-line) :foreground "DarkOliveGreen"))
+  '((t  :foreground "DarkOliveGreen"))
   "End of line" :group 'mode-line)
 
 (defface mode-line-column
-  '((t :inherit (mode-line) :foreground "White" :weight bold))
+  '((t :foreground "White" :weight bold))
   "Column number" :group 'mode-line)
 
 (defface mode-line-percentage
-  '((t :inherit (mode-line) :foreground "DodgerBlue"))
+  '((t :foreground "DodgerBlue"))
   "Percentage" :group 'mode-line)
 
 (defface mode-line-battery
-  '((t :inherit (mode-line) :foreground "Blue"))
+  '((t :foreground "DodgerBlue3"))
   "Column number" :group 'mode-line)
 
 (defface mode-line-major-mode
-  '((t :inherit (mode-line) :foreground "DarkBlue" :weight ultra-bold))
+  '((t :foreground "DarkBlue" :weight ultra-bold))
   "Major mode" :group 'mode-line)
 
 (defface mode-line-project-name
-  '((t :inherit (mode-line) :foreground "SaddleBrown" :weight bold))
+  '((t :foreground "SaddleBrown" :weight bold))
   "Project name" :group 'mode-line)
 
 (defface mode-line-abbrev-mode
-  '((t :inherit (mode-line) :foreground "light slate blue" :weight bold))
+  '((t :foreground "light slate blue" :weight bold))
   "Project name" :group 'mode-line)
+
+(set-face-attribute 'mode-line nil :background "#003445")
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers packages ;;
