@@ -1,3 +1,9 @@
+;; Inhibit dangerous functions
+(with-eval-after-load 'frame
+  (defun suspend-frame ()
+    (interactive)
+    (message "Command `suspend-frame' is dangerous in EXWM.")))
+
 ;; Functions
 (defun exwm-screensaver-lock ()
   (interactive)
@@ -44,6 +50,36 @@
         (incf monitor-number)
         (forward-line)))
     monitor-number))
+
+(defun exwm-workspace-index-plus (arg)
+  (exwm-workspace-switch
+   (let* ((workspace-count (exwm-workspace--count))
+          (remainer (% (+ arg exwm-workspace-current-index) workspace-count)))
+     (if (< remainer 0)
+         (+ remainer workspace-count)
+       remainer))))
+
+(defun exwm-workspace-next ()
+  (interactive)
+  (exwm-workspace-index-plus 1))
+
+(defun exwm-workspace-prev ()
+  (interactive)
+  (exwm-workspace-index-plus -1))
+
+(defun exwm-randr-workspace-move (workspace monitor)
+  (setq exwm-randr-workspace-monitor-plist
+        (plist-put exwm-randr-workspace-monitor-plist workspace monitor)))
+
+(defun exwm-randr-workspace-move-current (monitor)
+  (interactive (list (let* ((result (if exwm-randr--compatibility-mode
+                                        (exwm-randr--get-outputs)
+                                      (exwm-randr--get-monitors)))
+                            (primary-monitor (elt result 0))
+                            (monitor-list (mapcar 'car (elt result 2))))
+                       (completing-read "Move to monitor: " monitor-list nil t nil nil primary-monitor))))
+  (exwm-randr-workspace-move exwm-workspace-current-index monitor)
+  (exwm-randr-refresh))
 
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
@@ -130,10 +166,17 @@
         ([s-f2] . (lambda ()
                     (interactive)
                     (start-process "" nil "/usr/bin/slock")))
-        ;; Bind lock screen
-        (,(kbd "<s-escape>") . exwm-screensaver-lock)
+        ;; Toggle char-line modes
+        ([?\s-c] . exwm-input-toggle-keyboard)
         ;; Display datetime
-        (,(kbd "s-s") . display-time-mode)))
+        ([?\s-a] . display-time-mode)
+        ;; Workspaces
+        ([?\s-n] . exwm-workspace-next)
+        ([?\s-p] . exwm-workspace-prev)
+        ([?\s-s] . exwm-workspace-swap)
+        ([?\s-m] . exwm-randr-workspace-move-current)
+        ;; Bind lock screen
+        (,(kbd "<s-escape>") . exwm-screensaver-lock)))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
@@ -183,6 +226,7 @@
 (require 'exwm-systemtray)
 (exwm-systemtray-enable)
 
+;; System monitor
 (require 'symon)
 
 (defun symon--message (format-string &rest args)
