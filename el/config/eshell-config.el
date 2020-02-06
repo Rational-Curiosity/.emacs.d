@@ -12,6 +12,9 @@
 
 (message "Importing eshell-config")
 
+(require 'esh-module)
+(add-to-list 'eshell-modules-list 'eshell-tramp)
+
 (require 'eshell-ido-pcomplete)
 ;;;;;;;;;;;;
 ;; Colors ;;
@@ -23,18 +26,31 @@
 ;; Emacs Shell ;;
 ;;;;;;;;;;;;;;;;;
 (with-eval-after-load 'em-term
+  (add-to-list 'eshell-visual-commands "apt")
   (add-to-list 'eshell-visual-commands "htop")
   (add-to-list 'eshell-visual-commands "atop")
   (add-to-list 'eshell-visual-commands "ag")
+  (add-to-list 'eshell-visual-commands "unison")
   (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
   (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show")))
 (setq eshell-prefer-lisp-functions nil
+      eshell-prefer-lisp-variables nil
       eshell-destroy-buffer-when-process-dies nil
       eshell-cmpl-cycle-completions nil)
+
+(require 'esh-var)
+(setcdr (assoc "COLUMNS" eshell-variable-aliases-list) '((lambda (indices) (window-width-without-margin)) t))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
+(defun eshell-send-chars-interactive-process ()
+  (interactive)
+  (let ((char (read-key "Char (C-c exits): ")))
+    (while (not (char-equal ?\C-c char))
+      (process-send-string (eshell-interactive-process) (char-to-string char))
+      (setq char (read-key "Char (C-c exits): ")))))
+
 (defun start-process-stderr (name buffer program &rest program-args)
   (unless (fboundp 'make-process)
     (error "Emacs was compiled without subprocess support"))
@@ -180,8 +196,7 @@
                               (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
                               (define-key eshell-mode-map (kbd "M-p") 'eshell-key-alt-previous)
                               (define-key eshell-mode-map (kbd "M-n") 'eshell-key-alt-next)
-                              (define-key eshell-mode-map (kbd "C-c C-k") #'term-char-mode)
-                              (define-key eshell-mode-map (kbd "C-c C-j") #'term-line-mode)
+                              (define-key eshell-mode-map (kbd "C-c C-k") 'eshell-send-chars-interactive-process)
                               (add-to-list 'eshell-complex-commands "ag")))
 ;; Colorize advices
 ;; brute force...
@@ -333,7 +348,7 @@
 
   (defun pcmpl-python-commands ()
     (with-temp-buffer
-      (call-process-shell-command "python" nil (current-buffer) nil "--help")
+      (call-process-shell-command "LC_ALL=C python" nil (current-buffer) nil "--help")
       (goto-char 0)
       (let (commands)
         (while (re-search-forward "^-\\([[:word:]-.]+\\)" nil t)
@@ -367,7 +382,7 @@
 
   (defun pcmpl-python3-commands ()
     (with-temp-buffer
-      (call-process-shell-command "python3" nil (current-buffer) nil "--help")
+      (call-process-shell-command "LC_ALL=C python3" nil (current-buffer) nil "--help")
       (goto-char 0)
       (let (commands)
         (while (re-search-forward "^-\\([[:word:]-.]+\\)" nil t)
@@ -402,17 +417,18 @@
   (defun pcmpl-git-commands ()
     "Return the most common git commands by parsing the git output."
     (with-temp-buffer
-      (call-process-shell-command "git" nil (current-buffer) nil "help" "--all")
+      (call-process-shell-command "LC_ALL=C git" nil (current-buffer) nil "help" "--all")
       (goto-char 0)
-      (search-forward "available git commands in")
-      (let (commands)
-        (while (re-search-forward
-                "^[[:blank:]]+\\([[:word:]-.]+\\)[[:blank:]]*\\([[:word:]-.]+\\)?"
-                nil t)
-          (push (match-string 1) commands)
-          (when (match-string 2)
-            (push (match-string 2) commands)))
-        (sort commands #'string<))))
+      (if (search-forward "available git commands in" nil t)
+          (let (commands)
+            (while (re-search-forward
+                    "^[[:blank:]]+\\([[:word:]-.]+\\)[[:blank:]]*\\([[:word:]-.]+\\)?"
+                    nil t)
+              (push (match-string 1) commands)
+              (when (match-string 2)
+                (push (match-string 2) commands)))
+            (sort commands #'string<))
+        (message "Git command's help changed."))))
 
   (defconst pcmpl-git-commands (pcmpl-git-commands)
     "List of `git' commands.")
@@ -456,7 +472,7 @@
   (defun pcmpl-bzr-commands ()
     "Return the most common bzr commands by parsing the bzr output."
     (with-temp-buffer
-      (call-process-shell-command "bzr" nil (current-buffer) nil "help" "commands")
+      (call-process-shell-command "LC_ALL=C bzr" nil (current-buffer) nil "help" "commands")
       (goto-char 0)
       (let (commands)
         (while (re-search-forward "^\\([[:word:]-]+\\)[[:blank:]]+" nil t)
@@ -482,7 +498,7 @@
   (defun pcmpl-hg-commands ()
     "Return the most common hg commands by parsing the hg output."
     (with-temp-buffer
-      (call-process-shell-command "hg" nil (current-buffer) nil "-v" "help")
+      (call-process-shell-command "LC_ALL=C hg" nil (current-buffer) nil "-v" "help")
       (goto-char 0)
       (search-forward "list of commands:")
       (let (commands
