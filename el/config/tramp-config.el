@@ -9,7 +9,8 @@
 
 (require 'tramp)
 
-(setq password-cache-expiry nil
+(setq password-cache t
+      password-cache-expiry 3600
       tramp-default-method "ssh")
 
 
