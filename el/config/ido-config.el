@@ -11,6 +11,7 @@
 (require 'highlight)
 (require 'ido)
 (require 'ido-occur)
+(require 'imenu-anywhere)
 
 ;; Colors
 (face-spec-set 'ido-subdir '((t (:foreground "#66ff00"))))
@@ -28,6 +29,7 @@
       ido-enable-regexp t
       ido-enable-prefix nil
       ido-max-prospects 25
+      ido-max-work-directory-list 500
       ido-max-dir-file-cache 1000
       ido-use-filename-at-point 'guess
       ido-use-url-at-point t
@@ -431,6 +433,7 @@ Modified from `icomplete-completions'."
 
 (global-set-key (kbd "M-i") #'ido-occur-dwim)
 (global-set-key (kbd "C-x C-r") #'ido-recentf-open)
+(global-set-key (kbd "C-.") #'imenu-anywhere)
 
 
 (provide 'ido-config)

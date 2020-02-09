@@ -144,6 +144,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 ;; Modal editing
 ;; ' (handy as self-inserting symbol)
 ;; " (handy as self-inserting symbol)
+(modal-define-key (kbd "M .") #'imenu-anywhere)
 (modal-define-key (kbd "M (") #'sp-rewrap-sexp-lc)
 (modal-define-key (kbd "M )") #'sp-unwrap-sexp-lc)
 (modal-define-key (kbd "M &") #'rotate-or-inflection)
