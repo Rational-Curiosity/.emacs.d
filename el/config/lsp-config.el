@@ -32,6 +32,7 @@
 (setq lsp-prefer-flymake nil
       lsp-ui-doc-position 'top
       lsp-ui-doc-alignment 'frame
+      lsp-ui-flycheck-live-reporting nil
       lsp-file-watch-ignored
       (cons "[/\\\\]tmp$"
             lsp-file-watch-ignored)
