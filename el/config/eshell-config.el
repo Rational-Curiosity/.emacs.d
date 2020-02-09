@@ -12,8 +12,8 @@
 
 (message "Importing eshell-config")
 
-(require 'esh-module)
-(add-to-list 'eshell-modules-list 'eshell-tramp)
+(with-eval-after-load 'esh-module
+  (add-to-list 'eshell-modules-list 'eshell-tramp))
 
 (require 'eshell-ido-pcomplete)
 ;;;;;;;;;;;;
@@ -32,14 +32,15 @@
   (add-to-list 'eshell-visual-commands "ag")
   (add-to-list 'eshell-visual-commands "unison")
   (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
-  (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show")))
+  (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show" "reflog")))
 (setq eshell-prefer-lisp-functions nil
       eshell-prefer-lisp-variables nil
       eshell-destroy-buffer-when-process-dies nil
       eshell-cmpl-cycle-completions nil)
 
-(require 'esh-var)
-(setcdr (assoc "COLUMNS" eshell-variable-aliases-list) '((lambda (indices) (window-width-without-margin)) t))
+(with-eval-after-load 'esh-var
+  (setcdr (assoc "COLUMNS" eshell-variable-aliases-list)
+          '((lambda (indices) (window-width-without-margin)) t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
