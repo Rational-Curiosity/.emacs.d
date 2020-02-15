@@ -32,7 +32,7 @@
   (add-to-list 'eshell-visual-commands "ag")
   (add-to-list 'eshell-visual-commands "unison")
   (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
-  (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show" "reflog")))
+  (add-to-list 'eshell-visual-subcommands '("git" "help" "log" "diff" "show" "reflog")))
 (setq eshell-prefer-lisp-functions nil
       eshell-prefer-lisp-variables nil
       eshell-destroy-buffer-when-process-dies nil
@@ -418,18 +418,26 @@
   (defun pcmpl-git-commands ()
     "Return the most common git commands by parsing the git output."
     (with-temp-buffer
-      (call-process-shell-command "LC_ALL=C git" nil (current-buffer) nil "help" "--all")
+      (call-process-shell-command "LC_ALL=C git" nil (current-buffer) nil "--no-pager" "help" "--all")
       (goto-char 0)
-      (if (search-forward "available git commands in" nil t)
-          (let (commands)
-            (while (re-search-forward
-                    "^[[:blank:]]+\\([[:word:]-.]+\\)[[:blank:]]*\\([[:word:]-.]+\\)?"
-                    nil t)
-              (push (match-string 1) commands)
-              (when (match-string 2)
-                (push (match-string 2) commands)))
-            (sort commands #'string<))
-        (message "Git command's help changed."))))
+      (cond
+       ((search-forward "available git commands in " nil t)
+        (let (commands)
+          (while (and (re-search-forward
+                       "[[:blank:]]+\\([[:word:]-]+\\)"
+                       nil t)
+                      (not (string-equal (match-string 1) "commands")))
+            (push (match-string 1) commands))
+          (sort commands #'string<)))
+       ((search-forward "Main Porcelain Commands" nil t)
+        (let (commands)
+          (while (re-search-forward
+                  "^[[:blank:]]+\\([[:word:]-]+\\)"
+                  nil t)
+            (push (match-string 1) commands))
+          (sort commands #'string<)))
+       (t
+        (message "Git command's help changed.")))))
 
   (defconst pcmpl-git-commands (pcmpl-git-commands)
     "List of `git' commands.")
