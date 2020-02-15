@@ -24,6 +24,15 @@
   '((t (:foreground "#ffd700" :bold t :underline t)))
   "Face used by ido-config for the matched part.")
 ;; ido mode
+(defun ido-ignore-buffers-custom (name)
+  (let ((beg (substring name 0 1)))
+    (cond
+     ((string-equal beg " ")
+      t)
+     ((string-equal beg "*")
+      (not (or (string-equal (substring name 1 4) "esh")
+               (string-equal (substring name 1 3) "sh")))))))
+
 (setq ido-case-fold t
       ido-enable-flex-matching nil
       ido-enable-regexp t
@@ -36,7 +45,8 @@
       ido-create-new-buffer 'always
       ido-use-virtual-buffers nil
       ido-default-buffer-method 'selected-window
-      ido-default-file-method 'selected-window)
+      ido-default-file-method 'selected-window
+      ido-ignore-buffers '(ido-ignore-buffers-custom "magit[-a-z]*: "))
 
 (ido-mode 1)
 (ido-everywhere 1)
@@ -47,6 +57,8 @@
 ;; ido-completing-read+
 (require 'ido-completing-read+)
 (ido-ubiquitous-mode 1)
+(require 'ido-yes-or-no)
+(ido-yes-or-no-mode 1)
 (require 'crm-custom)
 (crm-custom-mode 1)
 
