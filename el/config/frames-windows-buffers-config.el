@@ -79,6 +79,15 @@
       ((?w ?W)
        (kill-buffers-with-window frame)))))
 
+(defun list-all-buffers (&optional files-only)
+  "Display a list of names of existing buffers.
+The list is displayed in a buffer named `*Buffer List*'.
+Non-null optional arg FILES-ONLY means mention only file buffers.
+
+For more information, see the function `buffer-menu'."
+  (interactive "P")
+  (select-window
+   (display-buffer (list-buffers-noselect files-only (buffer-list)))))
 
 ;;;;;;;;;;;;;
 ;; Windows ;;
@@ -581,6 +590,8 @@ others."
 (global-set-key (kbd "C-c w u t") 'window-undedicate-this)
 (global-set-key (kbd "C-c w C-h") 'window-resize-height)
 (global-set-key (kbd "C-c w C-w") 'window-resize-width)
+
+(define-key global-map [remap list-buffers] 'ibuffer)
 
 
 (provide 'frames-windows-buffers-config)

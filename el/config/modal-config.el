@@ -357,7 +357,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (modal-define-key (kbd "X 5 o") (kbd "C-x 5 o"))  ;; other-frame
 (modal-define-key (kbd "X C") (kbd "C-x C-c"))  ;; save-buffers-kill-emacs
 (modal-define-key (kbd "X c") (kbd "C-x c"))  ;; rotate-or-inflection
-(modal-define-key (kbd "X B") (kbd "C-x C-b"))  ;; list-buffers
+(modal-define-key (kbd "X B") 'ibuffer)
 (modal-define-key (kbd "X b") (kbd "C-x b"))  ;; switch-buffer
 (modal-define-key (kbd "X D") (kbd "C-x C-d"))  ;; list-directory
 (modal-define-key (kbd "X d") (kbd "C-x d"))  ;; dired
