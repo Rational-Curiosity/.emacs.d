@@ -14,8 +14,10 @@
 (setq-default truncate-lines t
               ;; ignore case searching
               case-fold-search t)
+;; [ Demasiado agresivo, mejor con ido
 ;; Cambia todas las preguntas yes-or-no-p por y-or-n-p
-(fset 'yes-or-no-p 'y-or-n-p)
+;; (fset 'yes-or-no-p 'y-or-n-p)
+;; ]
 (setq column-number-mode t
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
@@ -663,7 +665,32 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 ;; Prompt ;;
 ;;;;;;;;;;;;
-(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
+;(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
+
+(defvar minibuffer-try-this-command nil
+  "Store current this-command on minibuffer")
+
+(defun pre-minibuffer-try ()
+  (setq minibuffer-try-this-command this-command
+        this-command (lambda () (interactive)
+                       (condition-case _
+                           (call-interactively minibuffer-try-this-command)
+                         (text-read-only (goto-char (minibuffer-prompt-end)))
+                         (beginning-of-buffer (goto-char (minibuffer-prompt-end)))
+                         (end-of-buffer (goto-char (point-max)))))))
+(defun post-minibuffer-try ()
+  (setq this-command minibuffer-try-this-command
+        minibuffer-try-this-command nil))
+
+(defun minibuffer-try-add-hooks ()
+  (add-hook 'pre-command-hook 'pre-minibuffer-try)
+  (add-hook 'post-command-hook 'post-minibuffer-try))
+(defun minibuffer-try-remove-hooks ()
+  (remove-hook 'post-command-hook 'post-minibuffer-try)
+  (remove-hook 'pre-command-hook 'pre-minibuffer-try))
+
+(add-hook 'minibuffer-setup-hook 'minibuffer-try-add-hooks)
+(add-hook 'minibuffer-exit-hook 'minibuffer-try-remove-hooks)
 
 ;;;;;;;;;;;;;;;
 ;; Kill ring ;;
