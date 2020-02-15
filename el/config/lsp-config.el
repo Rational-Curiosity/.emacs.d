@@ -28,14 +28,19 @@
 
 (require 'lsp-ui)
 (require 'lsp-ui-doc)
+(require 'lsp-pyls)
 
-(setq lsp-prefer-flymake nil
-      lsp-ui-doc-position 'top
-      lsp-ui-doc-alignment 'frame
-      lsp-ui-flycheck-live-reporting nil
+(setq lsp-diagnostic-package :auto
+      lsp-flycheck-live-reporting nil
       lsp-file-watch-ignored
       (cons "[/\\\\]tmp$"
             lsp-file-watch-ignored)
+      lsp-signature-auto-activate nil ;; <xor signature>
+      ;; lsp-ui
+      lsp-ui-doc-include-signature t  ;; <xor signature>
+      lsp-ui-doc-position 'top
+      lsp-ui-doc-alignment 'frame
+      ;; lsp-pyls
       lsp-pyls-plugins-flake8-enabled t)
 
 (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
