@@ -4,6 +4,13 @@
     (interactive)
     (message "Command `suspend-frame' is dangerous in EXWM.")))
 
+;; Variables
+(defvar exwm-default-transparency 0.85
+  "EXWM default transparency")
+
+(defvar exwm-default-monitor-position nil
+  "EXWM default monitor position")
+
 ;; Functions
 (defun exwm-screensaver-lock ()
   (interactive)
@@ -15,8 +22,33 @@
     (sleep-for 1))
   (start-process "xscreensaver-command" nil "xscreensaver-command" "-lock"))
 
+(defun set-random-wallpaper (path)
+  (interactive (list (read-directory-name "Random image from: " 
+                                          "~/Pictures/backgrounds/")))
+  (let ((paths (directory-files path t nil t)))
+   (start-process "feh" "*feh outputs*" "feh" "--bg-fill"
+                  (nth (random (length paths)) paths))))
+
+(defun set-buffer-transparency (buffer opacity)
+  (interactive (list (current-buffer)
+                     (read-number "Opacity: " exwm-default-transparency)))
+  (let ((window-id (exwm--buffer->id buffer)))
+    (if window-id
+        (start-process "transset" "*transset outputs*"
+                       "transset" "--id"
+                       (int-to-string window-id)
+                       (int-to-string opacity))
+      (message "Buffer %s without window." (buffer-name buffer)))))
+
 (defun exwm-update-screens ()
   (interactive)
+  (if (or (null exwm-default-monitor-position)
+          (called-interactively-p 'interactive))
+      (setq exwm-default-monitor-position
+            (completing-read "External monitor position: "
+                             '("left" "right")
+                             nil t nil nil
+                             (or exwm-default-monitor-position "left"))))
   (let ((xrandr-monitor-regexp "\n\\([^ ]+\\) connected ")
         default-monitor)
     (with-temp-buffer
@@ -30,7 +62,7 @@
             (call-process "xrandr" nil nil nil "--output" default-monitor "--auto")
             (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor)
                   exwm-workspace-number 1))
-        (call-process "setup" nil nil nil "monitor" "left")
+        (call-process "setup" nil nil nil "monitor" exwm-default-monitor-position)
         (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor 1 (match-string 1)))
         (forward-line)
         (let ((monitor-number 1))
@@ -39,7 +71,8 @@
                   (nconc exwm-randr-workspace-monitor-plist (list (incf monitor-number)
                                                                   (match-string 1))))
             (forward-line))
-          (setq exwm-workspace-number monitor-number))))))
+          (setq exwm-workspace-number monitor-number)))))
+  (set-random-wallpaper "~/Pictures/backgrounds/"))
 
 (defun exwm-screen-count ()
   (let ((monitor-number 0))
@@ -52,20 +85,40 @@
     monitor-number))
 
 (defun exwm-workspace-index-plus (arg)
-  (exwm-workspace-switch
-   (let* ((workspace-count (exwm-workspace--count))
-          (remainer (% (+ arg exwm-workspace-current-index) workspace-count)))
-     (if (< remainer 0)
-         (+ remainer workspace-count)
-       remainer))))
+  (let* ((workspace-count (exwm-workspace--count))
+         (remainer (% (+ arg exwm-workspace-current-index) workspace-count)))
+    (if (< remainer 0)
+        (+ remainer workspace-count)
+      remainer)))
 
 (defun exwm-workspace-next ()
   (interactive)
-  (exwm-workspace-index-plus 1))
+  (exwm-workspace-switch (exwm-workspace-index-plus 1)))
 
 (defun exwm-workspace-prev ()
   (interactive)
-  (exwm-workspace-index-plus -1))
+  (exwm-workspace-switch (exwm-workspace-index-plus -1)))
+
+(defun exwm-workspace-monitor-index-plus (arg)
+  (interactive)
+  (let ((monitor (plist-get exwm-randr-workspace-monitor-plist exwm-workspace-current-index))
+        (next arg)
+        (inc (if (< 0 arg) 1 -1))
+        (workspace-index exwm-workspace-current-index))
+    (while (not (string-equal
+                 monitor
+                 (plist-get exwm-randr-workspace-monitor-plist
+                            (setq workspace-index (exwm-workspace-index-plus next)))))
+      (setq next (+ inc next)))
+    workspace-index))
+
+(defun exwm-workspace-monitor-next ()
+  (interactive)
+  (exwm-workspace-switch (exwm-workspace-monitor-index-plus 1)))
+
+(defun exwm-workspace-monitor-prev ()
+  (interactive)
+  (exwm-workspace-switch (exwm-workspace-monitor-index-plus -1)))
 
 (defun exwm-randr-workspace-move (workspace monitor)
   (setq exwm-randr-workspace-monitor-plist
@@ -77,7 +130,8 @@
                                       (exwm-randr--get-monitors)))
                             (primary-monitor (elt result 0))
                             (monitor-list (mapcar 'car (elt result 2))))
-                       (completing-read "Move to monitor: " monitor-list nil t nil nil primary-monitor))))
+                       (completing-read "Move to monitor: "
+                                        monitor-list nil t nil nil primary-monitor))))
   (exwm-randr-workspace-move exwm-workspace-current-index monitor)
   (exwm-randr-refresh))
 
@@ -134,7 +188,8 @@
           (lambda ()
             (unless (or (string-prefix-p "sun-awt-X11-" exwm-instance-name)
                         (string= "gimp" exwm-instance-name))
-              (exwm-workspace-rename-buffer exwm-class-name))))
+              (exwm-workspace-rename-buffer exwm-class-name)
+              (set-buffer-transparency (current-buffer) exwm-default-transparency))))
 (add-hook 'exwm-update-title-hook
           (lambda ()
             (when (or (not exwm-instance-name)
@@ -171,6 +226,8 @@
         ;; Display datetime
         ([?\s-a] . display-time-mode)
         ;; Workspaces
+        ([?\s-j] . exwm-workspace-monitor-next)
+        ([?\s-k] . exwm-workspace-monitor-prev)
         ([?\s-n] . exwm-workspace-next)
         ([?\s-p] . exwm-workspace-prev)
         ([?\s-s] . exwm-workspace-swap)
@@ -229,6 +286,11 @@
 ;; System monitor
 (require 'symon)
 
+(defun message-advice (orig-fun format-string &rest args)
+  (if format-string
+      (apply orig-fun format-string args)))
+(advice-add #'message :around 'message-advice)
+
 (defun symon--message (format-string &rest args)
   (with-selected-window (minibuffer-window (next-frame (selected-frame) 'visible))
     (delete-region (minibuffer-prompt-end) (point-max))
@@ -250,6 +312,9 @@
           (setq page (1+ page))))
       (setq symon--display-active t))))
 
+(define-symon-monitor symon-current-datetime-monitor
+  :display (format-time-string "%b %e %H:%M"))
+
 (setcdr (last symon-monitors)
         `(,(cond ((memq system-type '(gnu/linux cygwin))
                   'symon-linux-battery-monitor)
@@ -257,12 +322,16 @@
                   'symon-darwin-battery-monitor)
                  ((memq system-type '(windows-nt))
                   'symon-windows-battery-monitor))
-          symon-current-time-monitor))
+          symon-current-datetime-monitor))
 
 (setq symon-delay 3
       symon-refresh-rate 5)
 
 (symon-mode)
+
+;; Background
+(start-process "compton" "*compton outputs*" "compton")
+(run-at-time 600 600 'set-random-wallpaper "~/Pictures/backgrounds/")
 
 
 (provide 'exwm-startup-config)
