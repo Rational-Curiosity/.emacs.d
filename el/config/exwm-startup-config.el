@@ -8,8 +8,11 @@
 (defvar exwm-default-transparency 0.85
   "EXWM default transparency")
 
-(defvar exwm-default-monitor-position nil
+(defvar exwm-default-monitor-position (getenv "EXWM_MONITOR_POSITION")
   "EXWM default monitor position")
+
+(defvar exwm-default-wallpaper-folder "~/Pictures/backgrounds/"
+  "EXWM default wallpaper folder")
 
 ;; Functions
 (defun exwm-screensaver-lock ()
@@ -24,7 +27,7 @@
 
 (defun exwm-set-random-wallpaper (path)
   (interactive (list (read-directory-name "Random image from: " 
-                                          "~/Pictures/backgrounds/")))
+                                          exwm-default-wallpaper-folder)))
   (let ((paths (directory-files path t nil t)))
    (start-process "feh" "*feh outputs*" "feh" "--bg-fill"
                   (nth (random (length paths)) paths))))
@@ -72,7 +75,7 @@
                                                                   (match-string 1))))
             (forward-line))
           (setq exwm-workspace-number monitor-number)))))
-  (exwm-set-random-wallpaper "~/Pictures/backgrounds/"))
+  (exwm-set-random-wallpaper exwm-default-wallpaper-folder))
 
 (defun exwm-screen-count ()
   (let ((monitor-number 0))
@@ -330,8 +333,6 @@
 (symon-mode)
 
 ;; Background
-(start-process "compton" "*compton outputs*" "compton")
-
 (defvar exwm-timer-random-wallpaper nil
   "Random wallpaper timer")
 
@@ -341,7 +342,7 @@
       (message "Exists previous random wallpaper timer")
     (setq exwm-timer-random-wallpaper
           (run-at-time 600 600
-                       'exwm-set-random-wallpaper "~/Pictures/backgrounds/"))))
+                       'exwm-set-random-wallpaper exwm-default-wallpaper-folder))))
 (exwm-start-random-wallpaper)
 
 (defun exwm-cancel-random-wallpaper ()
@@ -350,6 +351,12 @@
       (message "Nil random wallpaper timer")
     (cancel-timer exwm-timer-random-wallpaper)
     (setq exwm-timer-random-wallpaper nil)))
+
+;; Applications
+(dolist (executable '("compton" "volumeicon" "nm-applet"))
+  (if (executable-find executable)
+      (start-process executable (concat "*" executable " outputs*") executable)
+    (message "Unable to find `%s' executable." executable)))
 
 
 (provide 'exwm-startup-config)

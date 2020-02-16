@@ -8,6 +8,7 @@ xrdb ~/.Xresources
 # edit files in place (used by e.g. `git commit`).
 export VISUAL=emacsclient
 export EDITOR="$VISUAL"
+export EXWM_MONITOR_POSITION=left
 
 # Finally launch emacs.
 exec dbus-launch --exit-with-session emacs --exwm
