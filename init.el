@@ -440,4 +440,5 @@
                       (debug-on-entry (intern ,arg2)))))))
 (add-to-list 'command-switch-alist '("--debug-on-entry" . argument--debug-on-entry))
 
+(put 'list-timers 'disabled nil)
 ;;; init.el ends here
