@@ -45,9 +45,9 @@
         (let ((default-directory tags-directory)
               (extension (file-name-extension (buffer-file-name))))
           (if (= 0
-                 (shell-command (concat "rm TAGS && find . -type f -name \"*."
+                 (shell-command (concat "rm TAGS && find . ! -readable -prune -o -type f -name \"*."
                                         extension
-                                        "\" -print -exec etags --append {} \\; 2>/dev/null")))
+                                        "\" -print -exec etags --append {} \\;")))
               (message "%s file created with .%s files."
                        (expand-file-name tags-default-file-name tags-directory)
                        extension)
@@ -63,9 +63,9 @@
       (let ((default-directory directory)
             (extension (file-name-extension (buffer-file-name))))
         (if (= 0
-               (shell-command (concat "find . -type f -name \"*."
+               (shell-command (concat "find . ! -readable -prune -o -type f -name \"*."
                                       extension
-                                      "\" -print -exec etags --append {} \\; 2>/dev/null")))
+                                      "\" -print -exec etags --append {} \\;")))
             (message "%s file created with .%s files." tags-path extension)
           (message "%s file creation failed." tags-path))))))
 
