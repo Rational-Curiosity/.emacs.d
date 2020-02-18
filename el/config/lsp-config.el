@@ -30,7 +30,8 @@
 (require 'lsp-ui-doc)
 (require 'lsp-pyls)
 
-(setq lsp-diagnostic-package :auto
+(setq lsp-enable-xref nil  ;; lsp-enable-xref t suppress etags--xref-backend
+      lsp-diagnostic-package :auto
       lsp-flycheck-live-reporting nil
       lsp-file-watch-ignored
       (cons "[/\\\\]tmp$"
