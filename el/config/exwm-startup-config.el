@@ -21,15 +21,15 @@
                      (mapcar
                       (lambda (item) (cdr (assoc 'comm item)))
                       (mapcar 'process-attributes (list-system-processes)))))
-    (start-process "xscreensaver" nil "xscreensaver" "-no-splash")
+    (start-process "* xscreensaver" nil "xscreensaver" "-no-splash")
     (sleep-for 1))
-  (start-process "xscreensaver-command" nil "xscreensaver-command" "-lock"))
+  (start-process "* xscreensaver-command" nil "xscreensaver-command" "-lock"))
 
 (defun exwm-set-random-wallpaper (path)
   (interactive (list (read-directory-name "Random image from: " 
                                           exwm-default-wallpaper-folder)))
   (let ((paths (directory-files path t nil t)))
-   (start-process "feh" "*feh outputs*" "feh" "--bg-fill"
+   (start-process "* feh" "*feh outputs*" "feh" "--bg-fill"
                   (nth (random (length paths)) paths))))
 
 (defun exwm-set-buffer-transparency (buffer opacity)
@@ -37,7 +37,7 @@
                      (read-number "Opacity: " exwm-default-transparency)))
   (let ((window-id (exwm--buffer->id buffer)))
     (if window-id
-        (start-process "transset" "*transset outputs*"
+        (start-process "* transset" "*transset outputs*"
                        "transset" "--id"
                        (int-to-string window-id)
                        (int-to-string opacity))
@@ -355,7 +355,7 @@
 ;; Applications
 (dolist (executable '("compton" "volumeicon" "nm-applet"))
   (if (executable-find executable)
-      (start-process executable (concat "*" executable " outputs*") executable)
+      (start-process (concat "* " executable) (concat "*" executable " outputs*") executable)
     (message "Unable to find `%s' executable." executable)))
 
 
