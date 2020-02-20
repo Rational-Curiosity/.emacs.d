@@ -29,6 +29,9 @@
 (require 'lsp-ui)
 (require 'lsp-ui-doc)
 (require 'lsp-pyls)
+(when (and (featurep 'company)
+           (load "company-lsp" t))
+  (push 'company-lsp company-backends))
 
 (setq lsp-enable-xref nil  ;; lsp-enable-xref t suppress etags--xref-backend
       lsp-diagnostic-package :auto

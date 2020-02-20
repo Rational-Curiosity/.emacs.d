@@ -654,10 +654,11 @@
   (interactive)
   (condition-case nil
       (eshell-ido-pcomplete)
-    (error (eshell-insert-history))))
+    (error (company-complete))))
 
 (defun eshell-cmpl-initialize-advice ()
   (define-key eshell-mode-map [tab] 'eshell-ido-complete-dwim)
+  (define-key eshell-mode-map (kbd "M-TAB") 'eshell-insert-history)
   (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
   (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr))
 (advice-add 'eshell-cmpl-initialize :after 'eshell-cmpl-initialize-advice)
