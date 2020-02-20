@@ -92,8 +92,6 @@ For more information, see the function `buffer-menu'."
 ;;;;;;;;;;;;;
 ;; Windows ;;
 ;;;;;;;;;;;;;
-(require 'ido-select-window)
-
 ;; [ ace-window 1
 ;; (set-face-attribute 'aw-leading-char-face nil
 ;;                     :bold t :foreground "red" :background "green" :height 160)
@@ -275,14 +273,14 @@ Don't show on windows buffers currently showed."
   "Split last buffer vertically."
   (interactive)
   (split-window-vertically)
-  (other-window 1 nil)
+  (other-window 1)
   (switch-to-other-buffer))
 
 (defun hsplit-last-buffer ()
   "Split last buffer horizontally."
   (interactive)
   (split-window-horizontally)
-  (other-window 1 nil)
+  (other-window 1)
   (switch-to-other-buffer))
 
 ;; Desbalancea el split vertical
@@ -561,7 +559,6 @@ others."
 ;;   ("<up>" windmove-up)
 ;;   ("<down>" windmove-down))
 
-(global-set-key (kbd "C-x o") #'ido-select-window)
 (global-set-key (kbd "C-c M-r") #'revert-buffer)
 (global-set-key (kbd "C-x C-c") 'save-buffers-kill-terminal-with-choice)
 (global-set-key (kbd "C-x k") 'kill-buffer-or-buffers-from-file)

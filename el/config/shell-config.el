@@ -190,6 +190,7 @@
   (require 'term)
   (define-key shell-mode-map (kbd "C-c C-k") #'term-char-mode)
   (define-key shell-mode-map (kbd "C-c C-j") #'term-line-mode))
+(define-key shell-mode-map (kbd "C-c C-l") 'helm-comint-input-ring)
 
 ;; (global-set-key (kbd "M-!") 'shell-execute)
 ;; (global-set-key (kbd "M-s RET") 'shell-execute)

@@ -2,6 +2,11 @@
 
 ;;; Commentary:
 
+;; Usage:
+
+;; (when (load "company" t)
+;;   (require 'company-extensions-config))
+
 ;;; Code:
 
 
@@ -33,7 +38,7 @@
   (interactive)
   (if (memq 'company-semantic company-backends)
       (delete 'company-semantic company-backends)
-    (add-to-list 'company-backends 'company-semantic)))
+    (push 'company-semantic company-backends)))
 ;; (define-key c-mode-map  [(tab)] 'company-complete)
 ;; (define-key c++-mode-map  [(tab)] 'company-complete)
 (define-key company-active-map [return] nil)
@@ -58,7 +63,6 @@
 (face-spec-set 'company-tooltip-common-selection
                '((((type x)) (:inherit company-tooltip-selection :weight bold))
                  (t (:inherit company-tooltip-selection))))
-
 
 ;; company-c-headers
 ;; (add-to-list 'company-backends 'company-c-headers)

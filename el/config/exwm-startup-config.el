@@ -21,15 +21,15 @@
                      (mapcar
                       (lambda (item) (cdr (assoc 'comm item)))
                       (mapcar 'process-attributes (list-system-processes)))))
-    (start-process "* xscreensaver" nil "xscreensaver" "-no-splash")
-    (sleep-for 1))
-  (start-process "* xscreensaver-command" nil "xscreensaver-command" "-lock"))
+    (start-process " * xscreensaver" nil "xscreensaver" "-no-splash")
+    (sit-for 1))
+  (start-process " * xscreensaver-command" nil "xscreensaver-command" "-lock"))
 
 (defun exwm-set-random-wallpaper (path)
   (interactive (list (read-directory-name "Random image from: " 
                                           exwm-default-wallpaper-folder)))
   (let ((paths (directory-files path t nil t)))
-   (start-process "* feh" "*feh outputs*" "feh" "--bg-fill"
+   (start-process " *feh" " *feh outputs*" "feh" "--bg-fill"
                   (nth (random (length paths)) paths))))
 
 (defun exwm-set-buffer-transparency (buffer opacity)
@@ -37,7 +37,7 @@
                      (read-number "Opacity: " exwm-default-transparency)))
   (let ((window-id (exwm--buffer->id buffer)))
     (if window-id
-        (start-process "* transset" "*transset outputs*"
+        (start-process " *transset" " *transset outputs*"
                        "transset" "--id"
                        (int-to-string window-id)
                        (int-to-string opacity))
@@ -138,6 +138,20 @@
   (exwm-randr-workspace-move exwm-workspace-current-index monitor)
   (exwm-randr-refresh))
 
+(defun exwm-buffer-list ()
+  (cl-remove-if-not (lambda (buffer)
+                      (with-current-buffer buffer
+                        (eq major-mode 'exwm-mode)))
+                    (buffer-list)))
+
+(defun exwm-kill-emacs-query-function ()
+  (let ((buffers (exwm-buffer-list)))
+    (if buffers
+        (progn
+          (mapc #'kill-buffer buffers)
+          (sit-for 1))
+      t)))
+
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
       display-time-day-and-date t
@@ -149,11 +163,12 @@
 ;; to or back from a floating frame (remember 'C-x 5 o' if you refuse this
 ;; proposal however).
 ;; You may also want to call `exwm-config-ido' later (see below).
-(ido-mode 1)
+;; (ido-mode 1)
 
 ;; Emacs server is not required to run EXWM but it has some interesting uses
 ;; (see next section).
 (server-start)
+(push 'exwm-kill-emacs-query-function kill-emacs-query-functions)
 
 ;; (require 'mini-modeline)                     ;; + with mini-modeline
 ;; (setq mini-modeline-frame (selected-frame))  ;; + with mini-modeline
@@ -169,7 +184,7 @@
 
 ;; Fix problems with Ido (if you use it).
 (require 'exwm-config)
-(exwm-config-ido)
+;; (exwm-config-ido)
 
 ;; Set the initial number of workspaces (they can also be created later).
 (setq exwm-workspace-number (exwm-screen-count)
@@ -355,8 +370,15 @@
 ;; Applications
 (dolist (executable '("compton" "volumeicon" "nm-applet"))
   (if (executable-find executable)
-      (start-process (concat "* " executable) (concat "*" executable " outputs*") executable)
+      (start-process (concat " *" executable) (concat " *" executable " outputs*") executable)
     (message "Unable to find `%s' executable." executable)))
+
+(when (load "helm-exwm" nil t)
+  (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source)
+        helm-exwm-source (helm-exwm-build-source)
+        helm-mini-default-sources `(helm-exwm-emacs-buffers-source
+                                    helm-exwm-source
+                                    helm-source-recentf)))
 
 
 (provide 'exwm-startup-config)

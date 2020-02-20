@@ -15,7 +15,6 @@
 (with-eval-after-load 'esh-module
   (add-to-list 'eshell-modules-list 'eshell-tramp))
 
-(require 'eshell-ido-pcomplete)
 ;;;;;;;;;;;;
 ;; Colors ;;
 ;;;;;;;;;;;;
@@ -643,25 +642,17 @@
         (eshell-previous-matching-input "." arg)
       (line-move-1 (- arg)))))
 
-(defun eshell-insert-history ()
-  "Displays the eshell history to select and insert back into your eshell."
-  (interactive)
-  (insert (ido-completing-read "History: "
-                               (delete-dups
-                                (ring-elements eshell-history-ring)))))
-
-(defun eshell-ido-complete-dwim ()
-  (interactive)
-  (condition-case nil
-      (eshell-ido-pcomplete)
-    (error (company-complete))))
-
 (defun eshell-cmpl-initialize-advice ()
-  (define-key eshell-mode-map [tab] 'eshell-ido-complete-dwim)
-  (define-key eshell-mode-map (kbd "M-TAB") 'eshell-insert-history)
   (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
+  (when (featurep 'helm)
+    (define-key eshell-mode-map [tab] #'helm-esh-pcomplete))
   (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr))
 (advice-add 'eshell-cmpl-initialize :after 'eshell-cmpl-initialize-advice)
+
+(defun eshell-hist-initialize-advice ()
+  (when (featurep 'helm)
+    (define-key eshell-command-map [(control ?l)] #'helm-eshell-history)))
+(advice-add 'eshell-hist-initialize :after 'eshell-hist-initialize-advice)
 
 
 (provide 'eshell-config)

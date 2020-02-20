@@ -18,6 +18,20 @@
 ;; Cambia todas las preguntas yes-or-no-p por y-or-n-p
 ;; (fset 'yes-or-no-p 'y-or-n-p)
 ;; ]
+;; Option 2
+;; (defun yes-or-no-p (prompt)
+;;   (interactive)
+;;   (pcase (downcase (read-string (concat prompt "(yes, no) ")))
+;;     ("y" t)
+;;     ("ye" t)
+;;     ("yes" t)
+;;     (_ nil)))
+(defun yes-or-no-p (prompt)
+  (interactive)
+  (string-equal
+   "yes"
+   (completing-read prompt '("yes" "no") nil t nil nil "no")))
+
 (setq column-number-mode t
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
@@ -188,15 +202,14 @@ xmodmap -e 'add control = Alt_R'")))))
 (setq-default indent-tabs-mode nil
               tab-width 4
               sh-indent-for-case-label 0
-              sh-indent-for-case-alt '+
-              ;; line numbers
-              display-line-numbers-width-start t
-              display-line-numbers-grow-only t
-              display-line-numbers 'visual)
+              sh-indent-for-case-alt '+)
 ;; Line numbers
-;; (add-hook 'prog-mode-hook #'display-line-numbers-mode)
-
-(setq c-default-style "linux"
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
+(setq display-line-numbers-width-start t
+      display-line-numbers-grow-only t
+      display-line-numbers-type 'visual
+      ;; styles
+      c-default-style "linux"
       tab-width 4
       indent-tabs-mode nil
       c-basic-offset 4
@@ -838,6 +851,9 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-s b") #'mark-enclosing-list-backward)
 (global-set-key (kbd "M-s n") #'next-visible-thing-repeat)
 (global-set-key (kbd "M-s p") #'previous-visible-thing-repeat)
+(global-set-key (kbd "C-c l") #'display-line-numbers-mode)
+
+(define-key minibuffer-local-map (kbd "C-c C-l") 'helm-minibuffer-history)
 
 ;; Usa el clipboard del sistema
 ;; (global-set-key [(shift delete)] 'clipboard-kill-region)

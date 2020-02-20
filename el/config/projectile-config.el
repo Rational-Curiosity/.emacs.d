@@ -90,7 +90,7 @@
         projectile-root-bottom-up
         projectile-root-top-down)
       ;; projectile-switch-project-action 'counsel-projectile
-      projectile-completion-system 'ido
+      projectile-completion-system 'helm
       projectile-mode-line-function (lambda () (concat "[" (projectile-project-name) "]")))
 
 

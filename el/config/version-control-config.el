@@ -18,10 +18,6 @@
         (vc-refresh-state))))
   (advice-add 'magit-refresh :after 'vc-refresh-buffers))
 
-(with-eval-after-load 'magit-utils
-  ;; Completion
-  (setq magit-completing-read-function 'magit-ido-completing-read))
-
 ;; (with-eval-after-load 'magit-status
 ;;   (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
 ;;   (define-key magit-status-mode-map (kbd "M-g C") #'avy-goto-char-2)

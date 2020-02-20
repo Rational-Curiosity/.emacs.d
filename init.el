@@ -37,7 +37,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ag amx async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp crm-custom cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode hide-comnt highlight hl-line+ ht htmlize hydra ido-at-point ido-completing-read+ ido-yes-or-no imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode projectile protobuf-mode rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets)))
+    (ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets)))
  '(safe-local-variable-values
    (quote
     ((eval set
@@ -67,13 +67,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'package-config)
 
-(require 'undo-tree)
 (global-undo-tree-mode)
 (setq undo-tree-mode-lighter ""
 ;;       undo-tree-visualizer-diff t
 ;;       undo-tree-visualizer-timestamps t
 ;;       undo-tree-visualizer-relative-timestamps t
- )
+      )
+(psession-mode 1)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                               ;;
 ;;   Configuration files         ;;
@@ -86,9 +86,10 @@
 (load-all-in-directory "~/.emacs.d/el/bugs/")
 ;; [ <Always required>
 
-(require 'modal-config)
+;; (require 'modal-config)
 
-(require 'ido-config)
+(when (load "helm" t)
+  (require 'helm-extensions-config))
 
 (when (load "company" t)
   (require 'company-extensions-config))
