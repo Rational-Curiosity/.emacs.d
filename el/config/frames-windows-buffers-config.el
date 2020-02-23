@@ -322,6 +322,31 @@ Don't show on windows buffers currently showed."
   (dolist (window (window-list frame))
     (set-window-dedicated-p window nil)))
 
+;; Switch window
+(defun switch-to-window (arg)
+  (interactive "P")
+  (let ((windows (pcase arg
+                   ('()
+                    (window-list))
+                   ('(4)
+                    (apply #'append (mapcar #'window-list (visible-frame-list))))
+                   ('(16)
+                    (apply #'append (mapcar #'window-list (frame-list)))))))
+    (setq windows (delq (selected-window) windows))
+    (pcase (length windows)
+      (0)
+      (1 (select-window (car windows)))
+      (_
+       (let* ((windows-strings (mapcar #'buffer-name (mapcar #'window-buffer windows)))
+              (windows-alist (cl-mapcar #'cons windows-strings windows)))
+         (select-window
+          (cdr (assoc
+                (completing-read
+                 "Switch to: "
+                 windows-strings
+                 nil t nil nil (car windows-strings)) windows-alist))))))))
+
+
 ;; window resize
 (defun window-resize-width (arg &optional window max-width min-width preserve-size)
   "ARG nil Fit WINDOW according to its buffer's width.
@@ -567,6 +592,7 @@ others."
 (global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
 (global-set-key (kbd "C-c e") 'toggle-message-truncate-lines)
 
+(global-set-key (kbd "C-x o") 'switch-to-window)
 (global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
 (global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
 
