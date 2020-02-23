@@ -74,6 +74,9 @@
 ;;       undo-tree-visualizer-relative-timestamps t
       )
 (psession-mode 1)
+(assq-delete-all 'psession--save-buffers-alist psession-object-to-save-alist)
+(assq-delete-all 'psession--winconf-alist psession-object-to-save-alist)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                               ;;
 ;;   Configuration files         ;;
