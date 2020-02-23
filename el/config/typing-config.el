@@ -178,18 +178,23 @@ prompt the user for a coding system."
   (defun keyboard-swap-ctrl-caps (arg)
     (interactive "P")
     (if arg
-        (shell-command "setxkbmap -option")
-      (shell-command "setxkbmap -option ctrl:swapcaps")))
+        (start-process " * setxkbmap" nil
+                       "setxkbmap" "-option")
+      (start-process " * setxkbmap" nil
+                     "setxkbmap" "-option" "ctrl:swapcaps")))
   (defun keyboard-swap-ctrl-win (arg)
     (interactive "P")
     (if arg
-        (shell-command "setxkbmap -option")
-      (shell-command "setxkbmap -option ctrl:swap_lwin_lctl")))
+        (start-process " * setxkbmap" nil
+                       "setxkbmap" "-option")
+      (start-process " * setxkbmap" nil
+                     "setxkbmap" "-option" "ctrl:swap_lwin_lctl")))
   (when (executable-find "xmodmap")
     (defun keyboard-swap-ctrl-altgr (arg)
       (interactive "P")
       (if arg
-          (shell-command "setxkbmap -option")
+          (start-process " * setxkbmap" nil
+                         "setxkbmap" "-option")
         (shell-command
          "setxkbmap -option lv3:switch && \
 xmodmap -e 'keycode 108 = Alt_R' && \
