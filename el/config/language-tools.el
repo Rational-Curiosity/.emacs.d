@@ -166,14 +166,13 @@ By default insert it, with prefix display a message with it."
                 (language-get-phonemic-script (thing-at-point 'word 'no-properties)))
                parenthesis))))))
 
-
-(mapc (lambda (x)
-        (global-set-key
-          (kbd (concat "C-c l " (car x))) (cdr x)))
-      '(("p" . language-phonemic-script-at-point)
-        ("t" . language-en-es-translation-at-point)
-        ("b" . language-en-es-phonemic-script-and-translation-at-point)))
-
+(defun language-tools-config ()
+  (mapc (lambda (x)
+          (global-set-key
+           (kbd (concat "C-c l " (car x))) (cdr x)))
+        '(("p" . language-phonemic-script-at-point)
+          ("t" . language-en-es-translation-at-point)
+          ("b" . language-en-es-phonemic-script-and-translation-at-point))))
 
 
 (provide 'language-tools)
