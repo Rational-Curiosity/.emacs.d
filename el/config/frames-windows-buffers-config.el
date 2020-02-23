@@ -576,6 +576,12 @@ others."
 (global-set-key (kbd "C-c <right>") 'windmove-right)
 (global-set-key (kbd "C-c <up>") 'windmove-up)
 (global-set-key (kbd "C-c <down>") 'windmove-down)
+(global-set-key (kbd "C-c w b") 'windmove-left)
+(global-set-key (kbd "C-c w f") 'windmove-right)
+(global-set-key (kbd "C-c w p") 'windmove-up)
+(global-set-key (kbd "C-c w n") 'windmove-down)
+(global-set-key (kbd "C-c b p") #'previous-buffer)
+(global-set-key (kbd "C-c b n") #'next-buffer)
 
 ;; (defhydra hydra-win (global-map "C-c")
 ;;   "WIN"
