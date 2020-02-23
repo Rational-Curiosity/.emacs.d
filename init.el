@@ -9,12 +9,6 @@
 
 ;;; Code:
 
-;; Usage: emacs --exwm
-(defun argument--exwm (switch)
-  "Command line arg `--exwm'.  SWITCH ignored."
-  (require 'exwm-startup-config))
-(add-to-list 'command-switch-alist '("--exwm" . argument--exwm))
-
 (package-initialize)
 
 (require 'cl-lib)
@@ -37,7 +31,7 @@
     ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets)))
+    (ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key winum with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets)))
  '(safe-local-variable-values
    (quote
     ((eval set
@@ -67,15 +61,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'package-config)
 
-(global-undo-tree-mode)
+(require 'mode-line-config)
+
+(require 'undo-tree)
 (setq undo-tree-mode-lighter ""
 ;;       undo-tree-visualizer-diff t
 ;;       undo-tree-visualizer-timestamps t
 ;;       undo-tree-visualizer-relative-timestamps t
       )
-(psession-mode 1)
+(global-undo-tree-mode)
+
+(require 'psession)
+(defun psession-restore-last-winconf())
 (assq-delete-all 'psession--save-buffers-alist psession-object-to-save-alist)
 (assq-delete-all 'psession--winconf-alist psession-object-to-save-alist)
+(psession-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                               ;;
@@ -96,6 +96,9 @@
 
 (when (load "company" t)
   (require 'company-extensions-config))
+
+;; after (require 'mode-line-config)
+(require 'winum-config)
 
 (require 'hydra-config)
 
@@ -394,9 +397,14 @@
 ;; Hide modes ;;
 ;; ---------- ;;
 ;; Último de todos
-(require 'mode-line-config)
-
 (require 'machine-config)
+
+;; Usage: emacs --exwm
+;; first of all in command-switch-alist
+(defun argument--exwm (switch)
+  "Command line arg `--exwm'.  SWITCH ignored."
+  (require 'exwm-startup-config))
+(add-to-list 'command-switch-alist '("--exwm" . argument--exwm))
 
 (defun argument--all (switch)
   "Command line arg `--all'.  SWITCH ignored."

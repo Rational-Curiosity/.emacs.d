@@ -149,7 +149,8 @@
     (if buffers
         (progn
           (mapc #'kill-buffer buffers)
-          (sit-for 1))
+          (sit-for 1)
+          t)
       t)))
 
 ;; Turn on `display-time-mode' if you don't use an external bar.
@@ -379,6 +380,14 @@
         helm-mini-default-sources `(helm-exwm-emacs-buffers-source
                                     helm-exwm-source
                                     helm-source-recentf)))
+
+(when (featurep 'winum)
+  (defun exwm-winum-bindings ()
+    (if winum-mode
+        (winum--define-keys exwm-mode-map)
+      (winum--undefine-keys exwm-mode-map)))
+  (exwm-winum-bindings)
+  (add-hook 'winum-mode-hook 'exwm-winum-bindings))
 
 
 (provide 'exwm-startup-config)
