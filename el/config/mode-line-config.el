@@ -191,6 +191,9 @@
       eol-mnemonic-dos "CRLF"
       eol-mnemonic-mac "CR")
 
+(defvar-local mode-line-cached nil)
+(defvar-local mode-line-identification nil)
+
 (setq-default
  ;; #     #
  ;; ##   ## #    # #      ######
@@ -317,30 +320,6 @@ mouse-3: Toggle minor modes"
                                  'mouse-2 #'mode-line-widen))
          (propertize "%]" 'help-echo recursive-edit-help-echo)
          " "))
- ;;  ####  #####   ####  #    # #####   ####
- ;; #    # #    # #    # #    # #    # #
- ;; #      #    # #    # #    # #    #  ####
- ;; #  ### #####  #    # #    # #####       #
- ;; #    # #   #  #    # #    # #      #    #
- ;;  ####  #    #  ####   ####  #       ####
- ;; Pre Filename
- mode-line-pre-filename
- '("%e"
-   mode-line-position
-   ;; mode-line-front-space  ;; display-graphic-p
-   mode-line-mule-info
-   mode-line-client
-   mode-line-modified
-   mode-line-remote
-   ;; mode-line-frame-identification
-   )
- ;; Post Filename
- mode-line-post-filename
- '("%e"
-   mode-line-modes
-   mode-line-misc-info
-   ;; mode-line-end-spaces
-   )
  ;; #     #                         #
  ;; ##   ##  ####  #####  ######    #       # #    # ######
  ;; # # # # #    # #    # #         #       # ##   # #
@@ -348,15 +327,22 @@ mouse-3: Toggle minor modes"
  ;; #     # #    # #    # #         #       # #  # # #
  ;; #     # #    # #    # #         #       # #   ## #
  ;; #     #  ####  #####  ######    ####### # #    # ######
- mode-line-vc nil
  mode-line-format  ;; -  without mini-modeline
  ;; mini-modeline-r-format  ;; +  with mimi-modeline
  `("%e"
-   ,@(cdr mode-line-pre-filename)
+   mode-line-position
+   ;; mode-line-front-space  ;; display-graphic-p
+   mode-line-mule-info
+   mode-line-client
+   mode-line-modified
+   mode-line-remote
+   ;; mode-line-frame-identification
    (:eval (mode-line-buffer-identification-shorten))  ;; - without mini-modeline
    ;; (:eval (mini-modeline-buffer-identification-shorten))  ;; + with mini-modeline
-   (:eval mode-line-vc)
-   ,@(cdr mode-line-post-filename)))
+   mode-line-modes
+   mode-line-misc-info
+   ;; mode-line-end-spaces
+   ))
 
 ;; [ mini-modeline options
 ;; (setq mini-modeline-truncate-p nil
@@ -369,16 +355,56 @@ mouse-3: Toggle minor modes"
     (if name
         (abbreviate-file-name name))))
 
-(defun abbrev-string-try (string len abbrev-len)
-  (let ((old "")
-        (regexp (concat "\\(\\([A-Za-z]\\{"
-                        (int-to-string abbrev-len)
-                        "\\}\\)[A-Za-z]+\\).*\\'")))
-    (while (and (< len (length string))
+(defun abbrev-string-try (len string)
+  (let ((old ""))
+    (while (and (< len (string-width string))
                 (not (string-equal string old)))
       (setq old string
-            string (replace-regexp-in-string regexp "\\2" string nil nil 1))))
+            string (replace-regexp-in-string
+                    "\\(\\([A-Za-z]\\{3\\}\\)[A-Za-z]+\\).*\\'"
+                    "\\2"
+                    string t nil 1))))
   string)
+
+(defvar mode-line-filename-replacements
+  '(("config"   . "c^")
+    ("test"     . "t*")
+    ("invoice"  . "i*")
+    ("class"    . "c*")
+    ("resource" . "r*"))
+  "Mode line file name replacements")
+
+(defun abbrev-strings-try (len string &rest strings)
+  (let ((i -1)
+        (len-list (length strings))
+        (len-short (- len (string-width string)))
+        len-strings)
+    (while (and (< (cl-incf i) len-list)
+                (< len-short (setq len-strings (apply '+ (mapcar 'string-width strings)))))
+      (let ((len-i (- (string-width (nth i strings)) (- len-strings len-short)))
+            (old ""))
+        (while (and (< len-i (string-width (nth i strings)))
+                    (not (string-equal (nth i strings) old)))
+          (setq old (nth i strings))
+          (setcar (nthcdr i strings)
+                  (replace-regexp-in-string
+                   "\\(\\([A-Za-z]\\{2\\}\\)[A-Za-z]+\\).*\\'"
+                   "\\2"
+                   (nth i strings) t nil 1)))))
+    (if (< 0 (setq len-strings (- len (apply '+ (mapcar 'string-width strings)))))
+        (let ((len-list (length mode-line-filename-replacements))
+              (i -1))
+          (while (and (< len-strings (string-width string))
+                      (< (cl-incf i) len-list))
+            (let ((replacement (nth i mode-line-filename-replacements)))
+              (let ((pos (string-match-p (car replacement) string)))
+                (if pos
+                    (setq string
+                          (concat
+                           (substring string 0 pos)
+                           (cdr replacement)
+                           (substring string (+ pos (length (car replacement)))))))))))))
+  `(,string ,@strings))
 
 (defun shorten-path (path len abbrev-len)
   (let ((path-old "")
@@ -390,7 +416,7 @@ mouse-3: Toggle minor modes"
                 (not (string-equal path path-old))
                 (string-equal filename (file-name-nondirectory path)))
       (setq path-old path
-            path (replace-regexp-in-string regexp "\\2" path nil nil 1))))
+            path (replace-regexp-in-string regexp "\\2" path t nil 1))))
   (if (< len (length path))
       (let ((len/2 (max 1 (/ len 2))))
         (concat
@@ -399,90 +425,49 @@ mouse-3: Toggle minor modes"
          (substring path (- len/2))))
     path))
 
-(defvar mode-line-path-abbrev-len 2)
-(defvar mode-line-vc-abbrev-len 2)
+(defun abbrev-string (len string)
+  (if (< len (string-width string))
+      (let ((len/2 (max 1 (/ len 2))))
+        (concat
+         (substring string 0 (- len/2 1))
+         "…"
+         (substring string (- len/2))))
+    string))
 
-(defun mini-modeline-buffer-identification-shorten ()
-  (setq mode-line-vc (or vc-mode ""))
-  (let ((total-len (frame-total-cols))
-        (pre-len (string-width (format-mode-line mode-line-pre-filename)))
-        (post-len (string-width (format-mode-line mode-line-post-filename)))
-        (vc-len (string-width mode-line-vc))
-        (file-path (or (mode-line-abbreviate-file-name) (buffer-name))))
-    (let* ((len (- total-len pre-len vc-len post-len))
-           (final-file-path
-            (if (<= (string-width file-path) len)
-                file-path
-              (setq file-path (let ((file-name (replace-regexp-in-string "\\`.*/" "" file-path)))
-                                (concat (abbrev-string-try (replace-regexp-in-string "[^/]*\\'" "" file-path)
-                                                           (- len (string-width file-name))
-                                                           mode-line-path-abbrev-len)
-                                        file-name)))
-              (let ((file-path-len (string-width file-path)))
-                (if (<= file-path-len len)
-                    file-path
-                  (if (< 0 vc-len)
-                      (setq vc-len (- vc-len (- file-path-len len))
-                            mode-line-vc (abbrev-string-try mode-line-vc
-                                                            vc-len
-                                                            mode-line-vc-abbrev-len)
-                            len (+ vc-len (- file-path-len (string-width mode-line-vc)))))
-                  (if (<= file-path-len len)
-                      file-path
-                    (setq file-path (let ((path (replace-regexp-in-string "[^/]*\\'" "" file-path)))
-                                      (concat path
-                                              (abbrev-string-try (replace-regexp-in-string "\\`.*/" "" file-path)
-                                                                 (- len (string-width path))
-                                                                 mode-line-path-abbrev-len))))
-                    (if (<= (string-width file-path) len)
-                        file-path
-                      (let ((len/2 (max 1 (/ len 2))))
-                        (concat
-                         (substring file-path 0 (- len/2 1))
-                         "…"
-                         (substring file-path (- len/2)))))))))))
-      final-file-path)))
-
+(defvar mode-line-mock nil)
 (defun mode-line-buffer-identification-shorten ()
-  (setq mode-line-vc (or vc-mode ""))
-  (let ((total-len (window-total-width))
-        (pre-len (string-width (format-mode-line mode-line-pre-filename)))
-        (post-len (string-width (format-mode-line mode-line-post-filename)))
-        (vc-len (string-width mode-line-vc))
-        (file-path (or (mode-line-abbreviate-file-name) (buffer-name))))
-    (let* ((len (- total-len pre-len vc-len post-len))
-           (final-file-path
-            (if (<= (string-width file-path) len)
-                file-path
-              (setq file-path (let ((file-name (replace-regexp-in-string "\\`.*/" "" file-path)))
-                                (concat (abbrev-string-try (replace-regexp-in-string "[^/]*\\'" "" file-path)
-                                                           (- len (string-width file-name))
-                                                           mode-line-path-abbrev-len)
-                                        file-name)))
-              (let ((file-path-len (string-width file-path)))
-                (if (<= file-path-len len)
-                    file-path
-                  (if (< 0 vc-len)
-                      (setq vc-len (- vc-len (- file-path-len len))
-                            mode-line-vc (abbrev-string-try mode-line-vc
-                                                            vc-len
-                                                            mode-line-vc-abbrev-len)
-                            len (+ vc-len (- file-path-len (string-width mode-line-vc)))))
-                  (if (<= file-path-len len)
-                      file-path
-                    (setq file-path (let ((path (replace-regexp-in-string "[^/]*\\'" "" file-path)))
-                                      (concat path
-                                              (abbrev-string-try (replace-regexp-in-string "\\`.*/" "" file-path)
-                                                                 (- len (string-width path))
-                                                                 mode-line-path-abbrev-len))))
-                    (if (<= (string-width file-path) len)
-                        file-path
-                      (let ((len/2 (max 1 (/ len 2))))
-                        (concat
-                         (substring file-path 0 (- len/2 1))
-                         "…"
-                         (substring file-path (- len/2)))))))))))
-      (format (concat "%-" (int-to-string len) "s") final-file-path))))
+  (if mode-line-mock ""
+    (let ((total-len (window-total-width))
+          (final-name (or (mode-line-abbreviate-file-name) (buffer-name)))
+          (vc-name (or vc-mode ""))
+          (others-len (string-width (let ((mode-line-mock t))
+                                     (format-mode-line mode-line-format)))))
+      (if (equal mode-line-cached (list total-len others-len vc-name final-name))
+          mode-line-identification
+        (prog1
+            (let ((len (- total-len others-len)))
+              (if (< len (+ (string-width final-name) (string-width vc-name)))
+                  (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
+                      (let ((dir-name (match-string 1 final-name))
+                            (base-name (match-string 2 final-name)))
+                        (if vc-mode
+                            (let ((result (abbrev-strings-try len base-name dir-name vc-name)))
+                              (setq vc-name (car (cdr (cdr result)))
+                                    len (- len (string-width vc-name))
+                                    final-name (abbrev-string len (concat (car (cdr result)) (car result)))))
+                          (let ((result (abbrev-strings-try len base-name dir-name)))
+                            (setq final-name (abbrev-string len (concat (car (cdr result)) (car result)))))))
+                    (if vc-mode
+                        (let ((result (abbrev-strings-try len "" final-name vc-name)))
+                          (setq vc-name (car (cdr (cdr result)))
+                                len (- len (string-width vc-name))
+                                final-name (abbrev-string len (car (cdr result)))))
+                      (setq final-name (abbrev-string len (abbrev-string-try len final-name)))))
+                (setq len (- len (string-width vc-name))))
+              (setq mode-line-identification (concat
+                                              (format (concat "%-" (int-to-string (max len 0)) "s") final-name)
+                                              vc-name)))
+          (setq mode-line-cached (list total-len others-len vc-name final-name)))))))
 
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
@@ -545,7 +530,7 @@ mouse-3: Toggle minor modes"
   (defun vc-mode-line-advice (&rest args)
     "Color `vc-mode'."
     (when (stringp vc-mode)
-      (let ((noback (replace-regexp-in-string (format "^ %s" (vc-backend buffer-file-name)) " " vc-mode)))
+      (let ((noback (replace-regexp-in-string (format "^ %s" (vc-backend buffer-file-name)) " " vc-mode t)))
         (setq vc-mode
               (propertize noback
                           'face (cond ((string-match "^ -" noback)    'mode-line-not-modified)
