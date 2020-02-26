@@ -144,14 +144,27 @@
                         (eq major-mode 'exwm-mode)))
                     (buffer-list)))
 
+;; (defun exwm-kill-emacs-query-function ()
+;;   (let ((buffers (exwm-buffer-list)))
+;;     (if buffers
+;;         (progn
+;;           (mapc #'kill-buffer buffers)
+;;           (sit-for 1)
+;;           t)
+;;       t)))
+(defun exwm-windows-processes ()
+  (cl-remove-if-not (lambda (p)
+                      (and (eq 'run (process-status p))
+                           (null (process-buffer p))))
+                    (process-list)))
 (defun exwm-kill-emacs-query-function ()
-  (let ((buffers (exwm-buffer-list)))
-    (if buffers
-        (progn
-          (mapc #'kill-buffer buffers)
-          (sit-for 1)
-          t)
-      t)))
+  (mapc #'interrupt-process (exwm-windows-processes))
+  (let (processes)
+    (while (setq processes (exwm-windows-processes))
+      (sit-for 0.1)
+      (message "Waiting processes: %s" (mapconcat #'process-name processes ", "))))
+  (message "All processes terminated.")
+  t)
 
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
