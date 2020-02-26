@@ -1,0 +1,12 @@
+partial modifier_keys
+xkb_symbols "swap_shift_ctrl" {
+    replace key <LCTL>  { [ Shift_L ] };
+    replace key <RCTL>  { [ Shift_R ] };
+    replace key <LFSH> { [ Control_L ] };
+    replace key <RTSH> { [ Control_R ] };
+};
+xkb_symbols "swap_ralt_ctrl" {
+    replace key <RALT>  { [ Control_L ] };
+    replace key <RCTL>  { [ ISO_Level3_Shift ] };
+    replace key <LCTL>  { [ ISO_Level3_Shift ] };
+};
