@@ -81,8 +81,6 @@
   '((t :foreground "light slate blue" :weight bold))
   "Project name" :group 'mode-line)
 
-(set-face-attribute 'mode-line nil :background "#003445")
-
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers packages ;;
 ;;;;;;;;;;;;;;;;;;;;;;

@@ -9,6 +9,7 @@
 
 ;; (set 'custom-enabled-themes 'wheatgrass)
 (load-theme 'wombat t)
+(set-face-attribute 'mode-line nil :background "#003445")
 
 ;; (require 'cursor-chg)  ; Load this library
 ;; (change-cursor-mode 1) ; On for overwrite/read-only/input mode
@@ -47,10 +48,10 @@
                      ;; Also handle undocumented (<active> <inactive>) form.
                      ((numberp (cadr alpha)) (cadr alpha)))
                100)
-          '(85 . 50) '(100 . 100)))))
+          '(85 . 65) '(100 . 100)))))
 
-(set-frame-parameter (selected-frame) 'alpha '(85 . 50))
-(add-to-list 'default-frame-alist '(alpha . (85 . 50)))
+(set-frame-parameter (selected-frame) 'alpha '(85 . 65))
+(add-to-list 'default-frame-alist '(alpha . (85 . 65)))
 ;; ]
 
 (global-set-key (kbd "<f6> t") #'cycle-themes)
