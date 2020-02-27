@@ -242,6 +242,12 @@
                     `(,(kbd (format "s-%d" i)) .
                       (lambda ()
                         (interactive)
+                        (exwm-workspace-switch ,i))))
+                  (number-sequence 0 9))
+        ,@(mapcar (lambda (i)
+                    `(,(kbd (format "S-s-%d" i)) .
+                      (lambda ()
+                        (interactive)
                         (exwm-workspace-switch-create ,i))))
                   (number-sequence 0 9))
         ;; Bind "s-&" to launch applications ('M-&' also works if the output
