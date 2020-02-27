@@ -15,6 +15,8 @@
 
 (message "Importing lsp-config")
 
+(set-face-attribute 'lsp-face-highlight-read nil :underline nil)
+
 (when (bug-check-function-bytecode
        'lsp-mode-line
        "wCCJgxcAwcLDAyLExcYDAyO2glCCHgDBx8jJyiNQhw==")
