@@ -788,7 +788,7 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(global-set-key (kbd "M-y") #'kill-ring-insert)
+;; (global-set-key (kbd "M-y") #'kill-ring-insert)
 (global-set-key (kbd "<f1> E") #'manual-entry)
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
