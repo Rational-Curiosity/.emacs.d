@@ -51,6 +51,3 @@
                  "Completion function %S uses a deprecated calling convention" fun)
                 (push fun completion--capf-misbehave-funs))))
             (if res (cons fun res)))))))
-
-
-(provide 'minibuffer-bug)

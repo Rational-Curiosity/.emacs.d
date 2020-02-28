@@ -279,6 +279,3 @@ completion for them."
                  (ido-cr+-assume-static-collection nil))
              (ido-cr+--explain-fallback sig)
              (apply ido-cr+-fallback-function ido-cr+-orig-completing-read-args))))))))
-
-
-  (provide 'ido-completing-read+-bug)

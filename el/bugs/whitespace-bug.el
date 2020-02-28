@@ -11,6 +11,3 @@
       (funcall orig-fun column force)))
 
   (advice-add 'move-to-column :around #'avoid-whitespace-mode-advice))
-
-
-(provide 'whitespace-bug)

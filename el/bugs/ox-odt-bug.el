@@ -9,6 +9,3 @@ channel."
       (format "<text:span text:style-name=\"%s\">%s</text:span>"
               "OrgVerbatim" (org-odt--encode-plain-text
                              (org-element-property :value verbatim))))))
-
-
-(provide 'ox-odt-bug)

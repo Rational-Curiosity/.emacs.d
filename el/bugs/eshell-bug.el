@@ -219,6 +219,3 @@ newline."
           (if eshell-escape-control-x
               (term-set-escape-char ?\C-x))))
       nil)))
-
-
-(provide 'eshell-bug)
