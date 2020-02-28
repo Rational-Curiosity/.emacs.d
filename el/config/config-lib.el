@@ -60,10 +60,19 @@
                             (message "key: %s, keymap: %S, bind: %s" key-str ob m)))))
               obarray)))
 
-;; Recursibe byte compile
-(defun byte-compile-recursively (directory)
-  (interactive "DByte compile and recompile directory: ")
+;; Recursive byte compile
+(defun byte-compile-force-recompile-recursively (directory)
+  "Force recompile '.el' when '.elc' file exists and compile when
+does not exist.  Files in subdirectories of DIRECTORY are processed also."
+  (interactive "DByte compile and force recompile recursively directory: ")
   (byte-recompile-directory directory 0 t))
+
+(defun byte-compile-emacs-config ()
+  "Recompile '.el' when '.elc' is out of date or does not exist.
+'init.el' file and 'el/' folder are processed recursively."
+  (interactive)
+  (byte-recompile-file (expand-file-name "init.el" user-emacs-directory) nil 0)
+  (byte-recompile-directory (expand-file-name "el/" user-emacs-directory) 0))
 
 (require 'cl-lib)
 ;; [ get current function name
