@@ -175,14 +175,14 @@ prompt the user for a coding system."
 ;; Control ;;
 ;;;;;;;;;;;;;
 (when (executable-find "setxkbmap")
-  (defun keyboard-swap-ctrl-caps (arg)
+  (defun xkb-swap-ctrl-caps (&optional arg)
     (interactive "P")
     (if arg
         (start-process " *setxkbmap" nil
                        "setxkbmap" "-option")
       (start-process " *setxkbmap" nil
                      "setxkbmap" "-option" "ctrl:swapcaps")))
-  (defun keyboard-swap-ctrl-win (arg)
+  (defun xkb-swap-ctrl-win (&optional arg)
     (interactive "P")
     (if arg
         (start-process " *setxkbmap" nil
@@ -191,7 +191,7 @@ prompt the user for a coding system."
                      "setxkbmap" "-option" "ctrl:swap_lwin_lctl"))))
 
 (when (executable-find "xkbcomp")
-  (defun keyboard-swap-ralt-ctrl (arg)
+  (defun xkb-swap-ralt-ctrl (&optional arg)
     (interactive "P")
     (let ((xkb-path (expand-file-name "~/.emacs.d/cache/xkb")))
      (if arg
@@ -202,7 +202,9 @@ prompt the user for a coding system."
        (start-process " *xkbcomp" nil
                       "xkbcomp" (concat "-I" xkb-path)
                       (concat xkb-path "/keymap/kbd_swap_ralt_ctrl")
-                      (getenv "DISPLAY"))))))
+                      (getenv "DISPLAY")))))
+  (when (display-graphic-p)
+    (xkb-swap-ralt-ctrl)))
 
 ;;;;;;;;;;;;;;;;;
 ;; Indentation ;;
