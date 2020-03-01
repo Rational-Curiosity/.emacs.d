@@ -239,6 +239,11 @@ prompt the user for a coding system."
   (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) "")
   (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) ""))
 
+(define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
+(define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
+(define-key indent-rigidly-map "f" #'indent-rigidly-right)
+(define-key indent-rigidly-map "b" #'indent-rigidly-left)
+
 (add-hook 'prog-mode-hook #'(lambda ()
                               (interactive)
                               ;; use make-local-variable with all variables
