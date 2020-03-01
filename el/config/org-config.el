@@ -105,7 +105,7 @@
       '(("@business"      :foreground "deep sky blue") ;; #00bfff
         ("@admin"         :foreground "blue")          ;; #0000ff
         ("@health"        :foreground "pink")          ;; #ffc0cb
-        ("@job"           :foreground "black")         ;; #000000
+        ("@job"           :foreground "dim gray")
         ("@improvement"   :foreground "green")         ;; #00ff00
         ("@research"      :foreground "yellow")        ;; #ffff00
         ("@language"      :foreground "orange")        ;; #ffa500
@@ -114,7 +114,7 @@
         ("@others"        :foreground "red")           ;; #ff0000
         ("business"       :foreground "#00a0e0")
         ("admin"          :foreground "#0000e0")
-        ("job"            :foreground "#1f1f1f")
+        ("job"            :foreground "dark gray")
         ("health"         :foreground "#e0a1ba")
         ("improvement"    :foreground "#00e000")
         ("research"       :foreground "#e0e000")
