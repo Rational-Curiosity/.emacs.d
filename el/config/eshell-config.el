@@ -12,6 +12,7 @@
 
 (message "Importing eshell-config")
 
+(require 'pcomplete)
 (with-eval-after-load 'esh-module
   (add-to-list 'eshell-modules-list 'eshell-tramp))
 
@@ -183,6 +184,7 @@
 ;;;;;;;;
 ;; ag ;;
 ;;;;;;;;
+(require 'ag)
 (defun eshell/ag (&rest args)
   "Use Emacs grep facility instead of calling external grep."
   (ag/search (mapconcat #'shell-quote-argument args " ") default-directory))
@@ -348,7 +350,7 @@
 
   (defun pcmpl-python-commands ()
     (with-temp-buffer
-      (call-process-shell-command "LC_ALL=C python" nil (current-buffer) nil "--help")
+      (call-process-shell-command "LC_ALL=C python --help" nil (current-buffer))
       (goto-char 0)
       (let (commands)
         (while (re-search-forward "^-\\([[:word:]-.]+\\)" nil t)
@@ -360,7 +362,7 @@
 
   (defun pcmpl-python-packages ()
     (with-temp-buffer
-      (call-process-shell-command "python" nil (current-buffer) nil "-m" "pip" "freeze")
+      (call-process-shell-command "python -m pip freeze" nil (current-buffer))
       (goto-char 0)
       (let (packages)
         (while (re-search-forward "^\\([[:word:]-.]+\\)=" nil t)
@@ -382,7 +384,7 @@
 
   (defun pcmpl-python3-commands ()
     (with-temp-buffer
-      (call-process-shell-command "LC_ALL=C python3" nil (current-buffer) nil "--help")
+      (call-process-shell-command "LC_ALL=C python3 --help" nil (current-buffer))
       (goto-char 0)
       (let (commands)
         (while (re-search-forward "^-\\([[:word:]-.]+\\)" nil t)
@@ -394,7 +396,7 @@
 
   (defun pcmpl-python3-packages ()
     (with-temp-buffer
-      (call-process-shell-command "python3" nil (current-buffer) nil "-m" "pip" "freeze")
+      (call-process-shell-command "python3 -m pip freeze" nil (current-buffer))
       (goto-char 0)
       (let (packages)
         (while (re-search-forward "^\\([[:word:]-.]+\\)=" nil t)
@@ -417,7 +419,7 @@
   (defun pcmpl-git-commands ()
     "Return the most common git commands by parsing the git output."
     (with-temp-buffer
-      (call-process-shell-command "LC_ALL=C git" nil (current-buffer) nil "--no-pager" "help" "--all")
+      (call-process-shell-command "LC_ALL=C git --no-pager help --all" nil (current-buffer))
       (goto-char 0)
       (cond
        ((search-forward "available git commands in " nil t)
@@ -480,7 +482,7 @@
   (defun pcmpl-bzr-commands ()
     "Return the most common bzr commands by parsing the bzr output."
     (with-temp-buffer
-      (call-process-shell-command "LC_ALL=C bzr" nil (current-buffer) nil "help" "commands")
+      (call-process-shell-command "LC_ALL=C bzr help commands" nil (current-buffer))
       (goto-char 0)
       (let (commands)
         (while (re-search-forward "^\\([[:word:]-]+\\)[[:blank:]]+" nil t)
@@ -506,7 +508,7 @@
   (defun pcmpl-hg-commands ()
     "Return the most common hg commands by parsing the hg output."
     (with-temp-buffer
-      (call-process-shell-command "LC_ALL=C hg" nil (current-buffer) nil "-v" "help")
+      (call-process-shell-command "LC_ALL=C hg -v help" nil (current-buffer))
       (goto-char 0)
       (search-forward "list of commands:")
       (let (commands
