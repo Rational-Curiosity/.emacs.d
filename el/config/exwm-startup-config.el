@@ -166,6 +166,17 @@
   (message "All processes terminated.")
   t)
 
+(defun exwm-start-process (command)
+  (interactive (list (read-shell-command "> ")))
+  (cond ((string-match-p "\\\\ " command)
+         (start-process-shell-command command nil command))
+        ((string-match-p "\"" command)
+         (let ((split (split-string-and-unquote command)))
+           (apply #'start-process (car split) nil (pop split) split)))
+        (t
+         (let ((split (split-string command)))
+           (apply #'start-process (car split) nil (pop split) split)))))
+
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
       display-time-day-and-date t
@@ -252,13 +263,7 @@
                   (number-sequence 0 9))
         ;; Bind "s-&" to launch applications ('M-&' also works if the output
         ;; buffer does not bother you).
-        ([?\s-$] . (lambda (command)
-                     (interactive (list (read-shell-command "$ ")))
-                     (start-process-shell-command command nil command)))
-        ([?\s-&] . (lambda (command)
-                     (interactive (list (read-shell-command "& ")))
-                     (let ((split (split-string command)))
-                       (apply #'start-process (car split) nil (pop split) split))))
+        ([?\s-&] . exwm-start-process)
         ;; Bind "s-<f2>" to "slock", a simple X display locker.
         ([s-f2] . (lambda ()
                     (interactive)
