@@ -252,9 +252,13 @@
                   (number-sequence 0 9))
         ;; Bind "s-&" to launch applications ('M-&' also works if the output
         ;; buffer does not bother you).
-        ([?\s-&] . (lambda (command)
+        ([?\s-$] . (lambda (command)
                      (interactive (list (read-shell-command "$ ")))
                      (start-process-shell-command command nil command)))
+        ([?\s-&] . (lambda (command)
+                     (interactive (list (read-shell-command "& ")))
+                     (let ((split (split-string command)))
+                       (apply #'start-process (car split) nil (pop split) split))))
         ;; Bind "s-<f2>" to "slock", a simple X display locker.
         ([s-f2] . (lambda ()
                     (interactive)
