@@ -67,12 +67,72 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   (interactive "DByte compile and force recompile recursively directory: ")
   (byte-recompile-directory directory 0 t))
 
-(defun byte-compile-emacs-config ()
+(defun byte-compile-emacs-config (&optional force)
   "Recompile '.el' when '.elc' is out of date or does not exist.
 'init.el' file and 'el/' folder are processed recursively."
   (interactive)
-  (byte-recompile-file (expand-file-name "init.el" user-emacs-directory) nil 0)
-  (byte-recompile-directory (expand-file-name "el/" user-emacs-directory) 0))
+  (save-some-buffers
+   nil (lambda ()
+        (let ((file (buffer-file-name)))
+          (and file
+               (string-match-p emacs-lisp-file-regexp file)
+               (file-in-directory-p file directory)))))
+  (force-mode-line-update)
+  (with-current-buffer (get-buffer-create byte-compile-log-buffer)
+    (setq default-directory (expand-file-name user-emacs-directory))
+    ;; compilation-mode copies value of default-directory.
+    (unless (derived-mode-p 'compilation-mode)
+      (emacs-lisp-compilation-mode))
+    (let ((default-directory (expand-file-name "el/" user-emacs-directory)))
+      (let ((directories (list default-directory))
+            (skip-count 0)
+            (fail-count 0)
+            (file-count 0)
+            (dir-count 0)
+            last-dir)
+        (displaying-byte-compile-warnings
+         (cl-incf
+          (pcase (byte-recompile-file
+                  (expand-file-name "init.el" user-emacs-directory) force 0)
+            ('no-byte-compile skip-count)
+            ('t file-count)
+            (_ fail-count)))
+         (while directories
+           (setq directory (car directories))
+           (message "Checking %s..." directory)
+           (dolist (file (directory-files directory))
+             (let ((source (expand-file-name file directory)))
+               (if (file-directory-p source)
+                   (and (not (member file '("RCS" "CVS")))
+                        (not (eq ?\. (aref file 0)))
+                        (not (file-symlink-p source))
+                        ;; This file is a subdirectory.  Handle them differently.
+                        (setq directories (nconc directories (list source))))
+                 ;; It is an ordinary file.  Decide whether to compile it.
+                 (if (and (string-match emacs-lisp-file-regexp source)
+                          ;; The next 2 tests avoid compiling lock files
+                          (file-readable-p source)
+                          (not (string-match "\\`\\.#" file))
+                          (not (auto-save-file-name-p source))
+                          (not (string-equal dir-locals-file
+                                             (file-name-nondirectory source))))
+                     (progn (cl-incf
+                             (pcase (byte-recompile-file source force 0)
+                               ('no-byte-compile skip-count)
+                               ('t file-count)
+                               (_ fail-count)))
+                            (or noninteractive
+                                (message "Checking %s..." directory))
+                            (if (not (eq last-dir directory))
+                                (setq last-dir directory
+                                      dir-count (1+ dir-count))))))))
+           (setq directories (cdr directories))))
+        (message "Done (Total of %d file%s compiled%s%s%s)"
+                 file-count (if (= file-count 1) "" "s")
+                 (if (> fail-count 0) (format ", %d failed" fail-count) "")
+                 (if (> skip-count 0) (format ", %d skipped" skip-count) "")
+                 (if (> dir-count 1)
+                     (format " in %d directories" dir-count) ""))))))
 
 (require 'cl-lib)
 ;; [ get current function name
@@ -119,11 +179,9 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   (list 'and (list 'fboundp func) (list 'apply func (list 'quote args))))
 
 ;; Return function that check bound before
-(defun lambda-bound-and-eval (func &rest args)
+(defmacro lambda-bound-and-eval (func &rest args)
   "Return lambda that ensures FUNC exist and eval with ARGS."
-  (lexical-let ((func func)
-                (args args))
-    (lambda () (and (fboundp func) (apply func args)))))
+  `(lambda () (and (fboundp ,func) (apply ,func (quote ,args)))))
 
 ;; write message in *Messages* buffer with colors
 ;; Thanks to: https://emacs.stackexchange.com/a/20178
@@ -362,6 +420,10 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
         (when
             ,processes-number-condition
           ,@body)))))
+
+;; Deprecated replacements
+(define-obsolete-function-alias 'incf 'cl-incf)
+(define-obsolete-function-alias 'remove-duplicates 'cl-remove-duplicates)
 
 
 (provide 'config-lib)

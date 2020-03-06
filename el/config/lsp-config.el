@@ -15,7 +15,16 @@
 
 (message "Importing lsp-config")
 
-(set-face-attribute 'lsp-face-highlight-read nil :underline nil)
+(set-face-attribute 'lsp-face-highlight-read nil
+                    :inherit 'unspecified
+                    :underline t
+                    :weight 'bold
+                    :background 'unspecified)
+(set-face-attribute 'lsp-face-highlight-write nil
+                    :inherit 'unspecified
+                    :underline t
+                    :weight 'bold
+                    :background 'unspecified)
 
 (when (bug-check-function-bytecode
        'lsp-mode-line

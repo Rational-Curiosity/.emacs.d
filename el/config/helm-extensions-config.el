@@ -62,6 +62,7 @@
 (setq helm-show-completion-display-function #'helm-show-completion-default-display-function)
 
 (require 'helm-swoop)
+(setq helm-swoop-split-with-multiple-windows t)
 ;; Change the keybinds to whatever you like :)
 (global-set-key (kbd "M-i") 'helm-swoop)
 (global-set-key (kbd "M-I") 'helm-swoop-back-to-last-point)
