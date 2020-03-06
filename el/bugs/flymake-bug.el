@@ -1,7 +1,7 @@
 (with-eval-after-load 'flymake
   (when (bug-check-function-bytecode
          'flymake--mode-line-format
-         "CMRDxcbHyMnKBgYhyyLMzSUDIoiJop+2gs4gzyDQINEgAoUnAAM/0gUEIsXGx9PJygYIIdQi1dYlCCKI19jZ2tvc3QYNRyLc3gYNRyLc3wYNRyLg4bAF4uMg5AHlCSOI5AHm5yOIibIBrwjoBgiEdQDpgo4AAoOFAOrr3OwGBkciRYKOAAODjQDtgo4A7olAAUGJQAFBiUABQQEEBgeJhboA79cC8AXbBgji4yDkAfHyI4iJsgGvCERDtoO2hwSGxQAGCT8/hfIB8/T19gYJxEPFxsfIycoGBiHLIszNJQMiiImin7aC9yIi+Pn6JMSJiYmJBTqDuAEFQLIFBIlBsgaisgT7BAYNIrID/AT9/iOyAgKEIAEE/4FAACFZg7EBidfcgUEABgZHIvAF2dri4yAGDOQCyoFCAAoixoFDAIFEAMnKBgghgUUAIoFGAIFHAIFIACYGI4jkAsqBQgALIsaBQwCBRADJygYIIYFJACKBRgCBRwCBSAAmBiOIAbaC29yBSgCBSwDcgUEABhFHIvAGECOBSwDcgUwABhMi8AYRIyPcgU0ACgsjUK8KQ6SyAQVBsgaC8wCBTgDoAsSJiQM6g+cBA7IDAolBsgSisgIBAUKyAQKD4AGBTwABQrIBA0GyBILAAYmftoSBUAAiQraGIkKH")
+         "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UlAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYn5BTqD6wEFQLIFiYMdAfoFBg8igiIB+gUGDyKyBImDMAH7Bfz9I4I1AfsF/P0jsgMDhFMBCvk9hOEBCoNPAfYFIf4KIVmCUAH5g+EBAdjd/wYHRyLwBgba2+LjIAYN5ALLgUAACyLHgUEAgUIAyssGCCGBQwAigUQAgUUAgUYAJgYjiOQCy4FAAAwix4FBAIFCAMrLBgghgUcAIoFEAIFFAIFGACYGI4gBtoLc3YFIAIFJAN3/BhJHIvAGESOBSQDdgUoABhQi8AYSIyPdgUsACwwjUK8KQ6SyAgVBsgbFsgGCCAGBTADoA8WJiQM6gxoCA7IDAolBsgSisgIBAUKyAQKDEwKBTQABQrIBA0GyBILzAYmftoSBTgAiQraIIkKH")
     (defun flymake--mode-line-format ()
       "Produce a pretty minor mode indicator."
       (let* ((known (hash-table-keys flymake--backend-state))
@@ -37,16 +37,16 @@
                           map))
           ,@(pcase-let ((`(,ind ,face ,explain)
                          (cond ((null known)
-                                `("?" mode-line "No known backends"))
+                                '("?" mode-line "No known backends"))
                                (some-waiting
                                 `("Wait" compilation-mode-line-run
                                   ,(format "Waiting for %s running backend(s)"
                                            (length some-waiting))))
                                (all-disabled
-                                `("!" compilation-mode-line-run
+                                '("!" compilation-mode-line-run
                                   "All backends disabled"))
                                (t
-                                `(nil nil nil)))))
+                                '(nil nil nil)))))
               (when ind
                 `((":"
                    (:propertize ,ind
@@ -60,22 +60,23 @@
           ,@(unless (or all-disabled
                         (null known))
               (cl-loop
-               for (type . severity)
-               in (cl-sort (mapcar (lambda (type)
-                                     (cons type (flymake--lookup-type-property
-                                                 type
-                                                 'severity
-                                                 (warning-numeric-level :error))))
-                                   (cl-union (hash-table-keys diags-by-type)
-                                             '(:error :warning)))
-                           #'>
-                           :key #'cdr)
+               with types = (hash-table-keys diags-by-type)
+               with _augmented = (cl-loop for extra in '(:error :warning)
+                                          do (cl-pushnew extra types
+                                                         :key #'flymake--severity))
+               for type in (cl-sort types #'> :key #'flymake--severity)
                for diags = (gethash type diags-by-type)
                for face = (flymake--lookup-type-property type
                                                          'mode-line-face
                                                          'compilation-error)
                when (or diags
-                        (>= severity (warning-numeric-level :warning)))
+                        (cond ((eq flymake-suppress-zero-counters t)
+                               nil)
+                              (flymake-suppress-zero-counters
+                               (>= (flymake--severity type)
+                                   (warning-numeric-level
+                                    flymake-suppress-zero-counters)))
+                              (t t)))
                collect `(:propertize
                          ,(format "%d" (length diags))
                          face ,face

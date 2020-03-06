@@ -51,8 +51,6 @@
 ;;
 ;;; Code:
 
-(eval-when-compile (require 'cl))
-
 (add-to-list 'debug-ignored-errors "^Nothing to rotate$")
 
 (defgroup rotate-text nil

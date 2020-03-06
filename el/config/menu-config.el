@@ -23,13 +23,15 @@
       recentf-filename-handlers '(recentf-remove-sudo-tramp-prefix-remove-sudo
                                   file-truename
                                   abbreviate-file-name)
+      ;; recentf-keep '()
       tool-bar-max-label-size 12
       tool-bar-style 'image)
 ;; There are machine dependent configurations
-(with-eval-after-load 'machine-config
-  (cl-letf (((symbol-function 'sit-for)
-             (lambda (secs))))
-    (recentf-mode 1)))
+;; (with-eval-after-load 'machine-config
+;;   (cl-letf (((symbol-function 'sit-for)
+;;              (lambda (secs))))
+;;     (let ((tramp-message-show-message nil))
+;;       (recentf-mode 1))))
 
 
 (provide 'menu-config)

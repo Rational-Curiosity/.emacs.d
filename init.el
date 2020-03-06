@@ -9,9 +9,10 @@
 
 ;;; Code:
 
-(package-initialize)
+;; emacs 27 avoids (package-initialize)
 
 (require 'cl-lib)
+;; Package cl is deprecated
 (eval-when-compile
   (require 'cl))
 
@@ -128,12 +129,6 @@
 
 (require 'term-config)
 
-(with-eval-after-load 'shell
-  (require 'shell-config))
-
-(with-eval-after-load 'esh-mode
-  (require 'eshell-config))
-
 (require 'tramp-config)
 
 (require 'eww-config)
@@ -169,6 +164,12 @@
 
 
 ;; [ <Not always required>
+(with-eval-after-load 'shell
+  (require 'shell-config))
+
+(with-eval-after-load 'esh-mode
+  (require 'eshell-config))
+
 ;; csv-mode
 (require 'csv-mode-autoloads)
 (with-eval-after-load 'csv-mode
@@ -177,6 +178,11 @@
 ;; ispell
 (with-eval-after-load 'ispell
   (require 'ispell-config))
+
+;; HideShow
+(add-hook 'prog-mode-hook #'hs-minor-mode)
+(with-eval-after-load 'hideshow
+  (require 'hideshow-config))
 
 ;; Smartscan
 (add-hook 'prog-mode-hook #'smartscan-mode)
@@ -313,7 +319,7 @@
 ;; [ php
 (add-hook 'php-mode-hook #'lsp-deferred)
 (with-eval-after-load 'php-mode
-  (define-key php-mode-map (kbd "M-b") nil))
+  (require 'php-config))
 ;; ]
 
 ;; [ web
