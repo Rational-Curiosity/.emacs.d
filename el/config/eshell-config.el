@@ -245,7 +245,7 @@
 
 (defun esh-prompt-func ()
   "Build `eshell-prompt-function'"
-  (setq esh-prompt-num (incf esh-prompt-num))
+  (setq esh-prompt-num (cl-incf esh-prompt-num))
   (concat esh-header
           (-reduce-from 'esh-acc "" eshell-funcs)
           "\n"

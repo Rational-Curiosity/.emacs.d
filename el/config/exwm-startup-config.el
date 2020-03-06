@@ -71,7 +71,7 @@
         (let ((monitor-number 1))
           (while (re-search-forward xrandr-monitor-regexp nil 'noerror)
             (setq exwm-randr-workspace-monitor-plist
-                  (nconc exwm-randr-workspace-monitor-plist (list (incf monitor-number)
+                  (nconc exwm-randr-workspace-monitor-plist (list (cl-incf monitor-number)
                                                                   (match-string 1))))
             (forward-line))
           (setq exwm-workspace-number monitor-number)))))
@@ -83,7 +83,7 @@
       (call-process "xrandr" nil t nil)
       (goto-char (point-min))
       (while (re-search-forward "\n\\([^ ]+\\) connected " nil 'noerror)
-        (incf monitor-number)
+        (cl-incf monitor-number)
         (forward-line)))
     monitor-number))
 
@@ -155,6 +155,7 @@
 (defun exwm-windows-processes ()
   (cl-remove-if-not (lambda (p)
                       (and (eq 'run (process-status p))
+                           (process-tty-name p)
                            (null (process-buffer p))))
                     (process-list)))
 (defun exwm-kill-emacs-query-function ()
