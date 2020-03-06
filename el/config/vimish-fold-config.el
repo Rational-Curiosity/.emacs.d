@@ -9,7 +9,6 @@
 
 ;; folding
 (require 'vimish-fold)
-(require 'cl)
 (set-face-attribute 'vimish-fold-overlay nil
                     :foreground 'unspecified
                     :background "#0f0f0f"
@@ -381,19 +380,20 @@
 (define-key vimish-fold-folded-keymap "d" #'vimish-fold-delete)
 (define-key vimish-fold-folded-keymap "D" #'vimish-fold-delete-all)
 
-(global-set-key (kbd "C-c v +") #'vimish-fold-unfold)
-(global-set-key (kbd "C-c v *") #'vimish-fold-unfold-all)
-(global-set-key (kbd "C-c v -") #'vimish-fold-refold)
-(global-set-key (kbd "C-c v _") #'vimish-fold-refold-all)
-(global-set-key (kbd "C-c v .") #'vimish-fold-toggle)
-(global-set-key (kbd "C-c v :") #'vimish-fold-toggle-all)
-(global-set-key (kbd "C-c v d") #'vimish-fold-delete)
-(global-set-key (kbd "C-c v D") #'vimish-fold-delete-all)
-(global-set-key (kbd "C-c v f") #'vimish-fold)
-(global-set-key (kbd "C-c v M-g") #'vimish-fold-avy)
-(global-set-key (kbd "C-c v p") #'vimish-fold-previous-fold)
-(global-set-key (kbd "C-c v n") #'vimish-fold-next-fold)
-(global-set-key (kbd "M-*") #'fold-dwim)
+(global-set-key (kbd "C-c @ +") #'vimish-fold-unfold)
+(global-set-key (kbd "C-c @ *") #'vimish-fold-unfold-all)
+(global-set-key (kbd "C-c @ -") #'vimish-fold-refold)
+(global-set-key (kbd "C-c @ _") #'vimish-fold-refold-all)
+(global-set-key (kbd "C-c @ .") #'vimish-fold-toggle)
+(global-set-key (kbd "C-c @ :") #'vimish-fold-toggle-all)
+(global-set-key (kbd "C-c @ d") #'vimish-fold-delete)
+(global-set-key (kbd "C-c @ D") #'vimish-fold-delete-all)
+(global-set-key (kbd "C-c @ f") #'vimish-fold)
+(global-set-key (kbd "C-c @ M-g") #'vimish-fold-avy)
+(global-set-key (kbd "C-c @ p") #'vimish-fold-previous-fold)
+(global-set-key (kbd "C-c @ n") #'vimish-fold-next-fold)
+(global-set-key (kbd "C-c @ w") #'fold-dwim)
+(define-key prog-mode-map (kbd "M-+") #'fold-dwin)
 
 
 (provide 'vimish-fold-config)

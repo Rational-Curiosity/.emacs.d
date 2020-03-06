@@ -808,14 +808,16 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "ð") #'kill-sexp)                              ;; AltGr-d
 (global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-k
 (global-set-key (kbd "«") #'goto-last-change)                       ;; AltGr-z
+(global-set-key [(control ?.)] #'goto-last-change)
 (global-set-key (kbd "»") #'goto-last-change-reverse)               ;; AltGr-x
+(global-set-key [(control ?,)] #'goto-last-change-reverse)
 (global-set-key (kbd "“") #'scroll-other-window)                    ;; AltGr-v
 (global-set-key (kbd "”") 'sp-or-backward-sexp)                     ;; AltGr-b
 (global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
 (global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
 (global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
-(global-set-key (kbd "─") #'fold-dwim)                              ;; AltGr-,
-(global-set-key (kbd "C-+") #'fold-dwim)
+(define-key prog-mode-map (kbd "─") #'hs-toggle-hiding)             ;; AltGr-,
+(define-key prog-mode-map (kbd "C-+") #'hs-toggle-hiding)
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
