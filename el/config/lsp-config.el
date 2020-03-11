@@ -37,8 +37,8 @@
                             workspaces))
       (propertize "[Disconnected]" 'face 'warning))))
 
-(require 'lsp-ui)
 (require 'lsp-ui-doc)
+(require 'lsp-ui)
 (require 'lsp-pyls)
 (when (and (featurep 'company)
            (load "company-lsp" t))
@@ -55,6 +55,8 @@
       lsp-ui-doc-include-signature t  ;; <xor signature>
       lsp-ui-doc-position 'top
       lsp-ui-doc-alignment 'frame
+      lsp-ui-doc-max-height 10
+      lsp-ui-doc-max-width 80
       ;; lsp-pyls
       lsp-pyls-plugins-flake8-enabled t)
 
