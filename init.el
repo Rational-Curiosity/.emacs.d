@@ -9,6 +9,13 @@
 
 ;;; Code:
 
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq gc-cons-percentage ,gc-cons-percentage
+                   gc-cons-threshold ,gc-cons-threshold)) t)
+(setq gc-cons-percentage 0.6
+      gc-cons-threshold 100000000)
+
 ;; emacs 27 avoids (package-initialize)
 
 (require 'cl-lib)
@@ -28,18 +35,14 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
-   (quote
-    ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
+   '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   (quote
-    (ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit map markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-bullets org-plus-contrib org-ql org-super-agenda ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key winum with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets)))
+   '(ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit map markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors org org-agenda-property org-brain org-plus-contrib org-ql org-super-agenda org-superstar ov ox-gfm ox-mediawiki ox-rst ox-twbs peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key winum with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets))
  '(safe-local-variable-values
-   (quote
-    ((eval set
-           (quote org-agenda-files)
+   '((eval set 'org-agenda-files
            (list
             (file-name-directory
-             (buffer-file-name))))))))
+             (buffer-file-name)))))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -402,7 +405,7 @@
 ;; ---------- ;;
 ;; Hide modes ;;
 ;; ---------- ;;
-;; Último de todos
+;; Last config file
 (require 'machine-config)
 
 ;; Usage: emacs --exwm

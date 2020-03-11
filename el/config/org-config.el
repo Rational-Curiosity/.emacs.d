@@ -42,21 +42,11 @@
                     :underline nil
                     :overline "#A7A6AA") ;; :foreground "#388EFF" :background "#222210")
 
-(defface my-face-org-keystroke
-  '((t (:inherit shadow
-                 :box (:line-width -2 ;neg. in order to keep the same size of lines
-                                   :color "grey75"
-                                   :style pressed-button)))) "Face for keystrokes"
-                                   :group 'org-faces)
-
-
 (org-link-set-parameters
  "file"
  :face (lambda (path) (if (file-exists-p path) 'org-link 'org-warning)))
 
 (setq org-hide-emphasis-markers nil
-      org-bullets-bullet-list
-      '("α" "β" "γ" "δ" "ε" "ζ")
       org-priority-faces
       '((?A . "#C39BD3")
         (?B . "#AF7AC5")
@@ -136,8 +126,32 @@
 ;;(:box t :foreground "#AAF")
 
 (require 'language-tools)
-(require 'org-bullets)
-(add-hook 'org-mode-hook #'org-bullets-mode)
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Heading markers ;;
+;;;;;;;;;;;;;;;;;;;;;
+(require 'org-superstar)
+(setq org-superstar-todo-bullet-alist
+      '(("TODO" . ?☐)
+        ("NEXT" . ?⇒)
+        ("DONE" . ?✓)
+        ("PLAN" . ?☶)
+        ("STAR" . ?☆)
+        ("REOP" . ?◯)
+        ("FINI" . ?☑)
+        ("ENOU" . ?~)
+        ("DELE" . ?↓)
+        ("LINK" . ?⛓)
+        ("WAIT" . ?⏳)
+        ("HOLD" . ?✋)
+        ("CANC" . ?⛔)
+        ("FIXM" . ?!)
+        ("VERI" . ??)
+        ("UNDO" . ?←))
+      org-superstar-special-todo-items t
+      org-superstar-headline-bullets-list
+      '("α" "β" "γ" "δ" "ε" "ζ"))
+(add-hook 'org-mode-hook #'org-superstar-mode)
 
 ;;;;;;;;;;;;;
 ;; Modules ;;
