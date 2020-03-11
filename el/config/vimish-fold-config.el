@@ -393,7 +393,7 @@
 (global-set-key (kbd "C-c @ p") #'vimish-fold-previous-fold)
 (global-set-key (kbd "C-c @ n") #'vimish-fold-next-fold)
 (global-set-key (kbd "C-c @ w") #'fold-dwim)
-(define-key prog-mode-map (kbd "M-+") #'fold-dwin)
+(define-key prog-mode-map (kbd "M-+") #'fold-dwim)
 
 
 (provide 'vimish-fold-config)
