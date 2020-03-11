@@ -239,10 +239,10 @@ prompt the user for a coding system."
   (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) "")
   (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) ""))
 
-(define-key indent-rigidly-map "F" #'indent-rigidly-right-to-tab-stop)
-(define-key indent-rigidly-map "B" #'indent-rigidly-left-to-tab-stop)
-(define-key indent-rigidly-map "f" #'indent-rigidly-right)
-(define-key indent-rigidly-map "b" #'indent-rigidly-left)
+(define-key indent-rigidly-map (kbd "M-f") #'indent-rigidly-right-to-tab-stop)
+(define-key indent-rigidly-map (kbd "M-b") #'indent-rigidly-left-to-tab-stop)
+(define-key indent-rigidly-map (kbd "C-f") #'indent-rigidly-right)
+(define-key indent-rigidly-map (kbd "C-b") #'indent-rigidly-left)
 
 (add-hook 'prog-mode-hook #'(lambda ()
                               (interactive)
@@ -385,29 +385,27 @@ prompt the user for a coding system."
                             :weight 'light
                             :slant 'normal
                             :width 'normal)))
-      (cond
-       ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-                (font-family-list))
-        (set-fontset-font "fontset-default" '(#x2100 . #x230F)
-                          (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-        (set-fontset-font "fontset-default" '(#x25A0 . #x25FF)
-                          (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-        (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                          (font-spec :family "DejaVu Sans Mono monospacified for Iosevka Term Light")))
-       ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
-        (set-fontset-font "fontset-default" '(#x2100 . #x230F)
-                          (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
-        (set-fontset-font "fontset-default" '(#x25A0 . #x25FF)
-                          (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
-        (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                          (font-spec :name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1")))
-       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
-        (set-fontset-font "fontset-default" '(#x2100 . #x230F)
-                          (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))
-        (set-fontset-font "fontset-default" '(#x25A0 . #x25FF)
-                          (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))
-        (set-fontset-font "fontset-default" '(#x2692 . #x26A0)
-                          (font-spec :name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"))))
+      (let ((font-spec-args
+             (cond
+              ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
+                       (font-family-list))
+               '(:family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
+              ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
+                       (x-list-fonts "*" nil (selected-frame)))
+               '(:name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
+              ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
+                       (x-list-fonts "*" nil (selected-frame)))
+               '(:name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1")))))
+        (if font-spec-args
+            (dolist (range '((#x2100 . #x230F)
+                             (#x23F0 . #x23F3)
+                             (#x25A0 . #x25FF)
+                             (#x2610 . #x2613)
+                             (#x2692 . #x26A0)
+                             (#x26D2 . #x26D4)
+                             (#x2709 . #x270C)))
+              (set-fontset-font "fontset-default" range
+                                (apply 'font-spec font-spec-args)))))
       ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
       ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
       ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
@@ -798,10 +796,12 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
-(global-set-key (kbd "ŧ") #'rotate-text)                            ;; AltGr-t
+;; (global-set-key (kbd "ŧ") #'rotate-text)                            ;; AltGr-t
+(define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
+(define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
 (global-set-key (kbd "ħ") #'pulse-momentary-highlight-current-line) ;; AltGr-h
-(global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
-(global-set-key (kbd "C-x _") #'string-inflection-all-cycle)
+;; (global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
+(define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
 (global-set-key (kbd "½") #'query-replace-regexp)                   ;; AltGr-5
 (global-set-key (kbd "↓") #'undo-tree-undo)                         ;; AltGr-u
 (global-set-key (kbd "¶") #'undo-tree-redo)                         ;; AltGr-r
@@ -816,8 +816,6 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
 (global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
 (global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
-(define-key prog-mode-map (kbd "─") #'hs-toggle-hiding)             ;; AltGr-,
-(define-key prog-mode-map (kbd "C-+") #'hs-toggle-hiding)
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
