@@ -37,7 +37,7 @@
 
 (setq flycheck-check-syntax-automatically '(save mode-enabled)
       ;; sudo apt install php-codesniffer
-      flycheck-phpcs-standard "psr2")
+      flycheck-phpcs-standard "PSR2")
 
 ;; (require 'semantic)
 ;; (setq flycheck-clang-system-path (list))

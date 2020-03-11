@@ -13,6 +13,7 @@
 
 ;;; Code:
 
+(setq php-mode-coding-style 'psr2)
 
 (c-mode)
 (php-set-style "psr2")
