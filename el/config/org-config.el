@@ -144,13 +144,13 @@
         ("LINK" . ?⛓)
         ("WAIT" . ?⏳)
         ("HOLD" . ?✋)
-        ("CANC" . ?⛔)
+        ("CANC" . ?✗)
         ("FIXM" . ?!)
         ("VERI" . ??)
         ("UNDO" . ?←))
       org-superstar-special-todo-items t
       org-superstar-headline-bullets-list
-      '("α" "β" "γ" "δ" "ε" "ζ"))
+      '("α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "λ" "μ"))
 (add-hook 'org-mode-hook #'org-superstar-mode)
 
 ;;;;;;;;;;;;;
@@ -248,7 +248,8 @@
 ;; Activated by default
 ;; (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
 ;; (add-to-list 'org-src-lang-modes '("conf" . conf))
-(add-to-list 'org-src-lang-modes '("ini" . conf))
+(push '("ini" . conf) org-src-lang-modes)
+(push '("log" . compilation) org-src-lang-modes)
 ;;;;;;;;;;;;;;;;;;
 ;; TODO options ;;
 ;;;;;;;;;;;;;;;;;;
@@ -298,7 +299,9 @@
           (replace-regexp-in-string
            (concat " \\("
                    (mapconcat 'identity
-                              '("el" "la" "lo" "las" "los"
+                              '("al" "un" "uno" "una" "unos" "unas"
+                                ;; prepositions
+                                "el" "la" "lo" "las" "los"
                                 "a" "ante" "bajo" "cabe" "con"
                                 "contra" "de" "desde" "durante"
                                 "en" "entre" "hacia" "hasta"
