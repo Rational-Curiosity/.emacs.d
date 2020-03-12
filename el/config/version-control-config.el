@@ -8,6 +8,7 @@
 ;;; Code:
 (message "Importing version-control-config")
 (require 'frames-windows-buffers-config)
+(require 'multi-magit-autoloads)
 
 (with-eval-after-load 'magit-mode
   ;; Refresh mode line branch
@@ -16,7 +17,52 @@
     (dolist (buffer (buffers-from-file))
       (with-current-buffer buffer
         (vc-refresh-state))))
-  (advice-add 'magit-refresh :after 'vc-refresh-buffers))
+  (advice-add 'magit-refresh :after 'vc-refresh-buffers)
+  (require 'magit-todos)
+  (add-hook 'magit-mode-hook 'magit-todos-mode)
+  (require 'multi-magit)
+  (setq multi-magit-repolist-columns '(("Name" 25 multi-magit-repolist-column-repo nil)
+                                       ("Dirty" 5 multi-magit-repolist-column-status
+                                        ((:right-align t)
+                                         (:help-echo "N - untracked, U - unstaged, S - staged")))
+                                       ("Branch" 25 magit-repolist-column-branch nil)
+                                       ("Version" 25 magit-repolist-column-version nil)
+                                       ("#B~" 3 magit-repolist-column-stashes
+                                        ((:right-align t)
+                                         (:help-echo "Number of stashes")))
+                                       ("B<U" 3 magit-repolist-column-unpulled-from-upstream
+                                        ((:right-align t)
+                                         (:help-echo "Upstream changes not in branch")))
+                                       ("B>U" 3 magit-repolist-column-unpushed-to-upstream
+                                        ((:right-align t)
+                                         (:help-echo "Local changes not in upstream")))
+                                       ("B<R" 3 magit-repolist-column-unpulled-from-pushremote
+                                        ((:right-align t)
+                                         (:help-echo "Push branch changes not in current branch")))
+                                       ("B>R" 3 magit-repolist-column-unpushed-to-pushremote
+                                        ((:right-align t)
+                                         (:help-echo "Current branch changes not in push branch")))
+                                       ("Path" 99 magit-repolist-column-path nil))))
+(with-eval-after-load 'magit-repos
+  (setq magit-repolist-columns '(("Name" 25 magit-repolist-column-ident nil)
+                                 ("Branch" 25 magit-repolist-column-branch nil)
+                                 ("Version" 25 magit-repolist-column-version nil)
+                                 ("#B~" 3 magit-repolist-column-stashes
+                                  ((:right-align t)
+                                   (:help-echo "Number of stashes")))
+                                 ("B<U" 3 magit-repolist-column-unpulled-from-upstream
+                                  ((:right-align t)
+                                   (:help-echo "Upstream changes not in branch")))
+                                 ("B>U" 3 magit-repolist-column-unpushed-to-upstream
+                                  ((:right-align t)
+                                   (:help-echo "Local changes not in upstream")))
+                                 ("B<R" 3 magit-repolist-column-unpulled-from-pushremote
+                                  ((:right-align t)
+                                   (:help-echo "Push branch changes not in current branch")))
+                                 ("B>R" 3 magit-repolist-column-unpushed-to-pushremote
+                                  ((:right-align t)
+                                   (:help-echo "Current branch changes not in push branch")))
+                                 ("Path" 99 magit-repolist-column-path nil))))
 
 ;; (with-eval-after-load 'magit-status
 ;;   (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
