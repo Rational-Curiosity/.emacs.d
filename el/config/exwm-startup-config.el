@@ -249,19 +249,31 @@
         ([?\s-r] . exwm-reset)
         ;; Bind "s-w" to switch workspace interactively.
         ([?\s-w] . exwm-workspace-switch)
-        ;; Bind "s-0" to "s-9" to switch to a workspace by its index.
+        ;; Bind "s-1" to "s-0" to switch to a workspace by its index.
+        ([?\s-0] . (lambda ()
+                     (interactive)
+                     (exwm-workspace-switch 9)))
         ,@(mapcar (lambda (i)
-                    `(,(kbd (format "s-%d" i)) .
+                    `(,(kbd (format "s-%d" (1+ i))) .
                       (lambda ()
                         (interactive)
                         (exwm-workspace-switch ,i))))
-                  (number-sequence 0 9))
+                  (number-sequence 0 8))
+        (,(kbd "S-s-0") . (lambda ()
+                            (interactive)
+                            (exwm-workspace-switch-create 9)))
         ,@(mapcar (lambda (i)
-                    `(,(kbd (format "S-s-%d" i)) .
+                    `(,(kbd (format "S-s-%d" (1+ i))) .
                       (lambda ()
                         (interactive)
                         (exwm-workspace-switch-create ,i))))
-                  (number-sequence 0 9))
+                  (number-sequence 0 8))
+        ;; Window fast selection
+        (,(kbd "M-0") . winum-select-window-0-or-10)
+        ,@(mapcar (lambda (i)
+                    `(,(kbd (format "M-%d" i))
+                      ,(intern (format "winum-select-window-%d" i))))
+                  (number-sequence 1 9))
         ;; Bind "s-&" to launch applications ('M-&' also works if the output
         ;; buffer does not bother you).
         ([?\s-&] . exwm-start-process)
@@ -281,7 +293,8 @@
         ([?\s-s] . exwm-workspace-swap)
         ([?\s-m] . exwm-randr-workspace-move-current)
         ;; Bind lock screen
-        (,(kbd "<s-escape>") . exwm-screensaver-lock)))
+        (,(kbd "<s-escape>") . exwm-screensaver-lock))
+      exwm-manage-configurations '(((equal exwm-class-name "XTerm") char-mode t)))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
@@ -317,7 +330,10 @@
         ;; search
         ([?\C-s] . [?\C-f])
         ;; files
-        ([?\C-x ?\C-s] . [?\C-s])))
+        ([?\C-x ?\C-s] . [?\C-s])
+        ;; undo redo
+        (,(kbd "C-_") . [?\C-z])
+        (,(kbd "M-_") . [?\C-y])))
 
 ;; You can hide the minibuffer and echo area when they're not used, by
 ;; uncommenting the following line.
@@ -345,9 +361,12 @@
 (advice-add #'message :around 'message-advice)
 
 (defun symon--message (format-string &rest args)
-  (with-selected-window (minibuffer-window (next-frame (selected-frame) 'visible))
-    (delete-region (minibuffer-prompt-end) (point-max))
-    (insert (apply #'format-message format-string args))))
+  (let ((current-minibuffer-window (minibuffer-window (next-frame (selected-frame) 'visible))))
+    (if current-minibuffer-window
+        (with-selected-window current-minibuffer-window
+          (delete-region (minibuffer-prompt-end) (point-max))
+          (insert (apply #'format-message format-string args)))
+      (apply 'message format-string args))))
 
 (when (bug-check-function-bytecode
        'symon--display-update
