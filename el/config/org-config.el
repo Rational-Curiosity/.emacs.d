@@ -230,26 +230,34 @@
     (sqlite     . t)))
 
 (require 'ob)
+(require 'ob-screen)
+(require 'ob-async)
 
 (defvar org-babel-default-header-args:Python
   '((:session . "*python*")
     (:results . "output ")
     (:cache   . "yes")
     (:exports . "results")))
-;; new Babel languages
-(defun org-babel-execute:sh-async (body params)
-  "Execute a block of shell code BODY asynchronously.  PARAMS ignored."
-  (message "executing shell source code block asynchronously")
-  (async-start
-   `(lambda ()
-      (shell-command ,body))
-   (lambda (result)
-     (message "%s" result))))
 ;; Activated by default
 ;; (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
 ;; (add-to-list 'org-src-lang-modes '("conf" . conf))
-(push '("ini" . conf) org-src-lang-modes)
-(push '("log" . compilation) org-src-lang-modes)
+(push '("ini"      . conf) org-src-lang-modes)
+(push '("log"      . compilation) org-src-lang-modes)
+;; [ replaced by ob-async
+;; (push '("sh-async" . sh) org-src-lang-modes)
+;; ;; new Babel languages
+;; (defun org-babel-execute:sh-async (body params)
+;;   "Execute a block of shell code BODY asynchronously.  PARAMS ignored."
+;;   (let ((pid (process-id
+;;               (async-start
+;;                `(lambda ()
+;;                   (org-babel-execute:shell ,body ,params))
+;;                (lambda (result)
+;;                  (message "sh-async result: %s" result))))))
+;;     (message "Launched shell source code block asynchronously. PID: %s" pid)
+;;     (format "PID: %s" pid)))
+;; ]
+
 ;;;;;;;;;;;;;;;;;;
 ;; TODO options ;;
 ;;;;;;;;;;;;;;;;;;
@@ -295,9 +303,9 @@
         (replace-regexp-in-string
          "  +" " "
          (replace-regexp-in-string
-          "\\([a-zA-Z]\\{4\\}\\)[a-zA-Z]+" "\\1"
+          "\\([^[:space:]]\\{2\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
           (replace-regexp-in-string
-           (concat " \\("
+           (concat "\\("
                    (mapconcat 'identity
                               '("al" "un" "uno" "una" "unos" "unas"
                                 ;; prepositions
@@ -308,8 +316,8 @@
                                 "mediante" "para" "por" "según"
                                 "sin" "so" "sobre" "tras")
                               "\\|")
-                   "\\) ") " "
-           (org-entry-get nil "ITEM"))))))
+                   "\\)\\( \\|\\'\\)") " "
+           (org-entry-get nil "ITEM") t)))))
 
 (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
 
