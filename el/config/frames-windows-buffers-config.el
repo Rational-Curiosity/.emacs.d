@@ -338,13 +338,15 @@ Don't show on windows buffers currently showed."
       (1 (select-window (car windows)))
       (_
        (let* ((windows-strings (mapcar #'buffer-name (mapcar #'window-buffer windows)))
-              (windows-alist (cl-mapcar #'cons windows-strings windows)))
-         (select-window
-          (cdr (assoc
-                (completing-read
-                 "Switch to: "
-                 windows-strings
-                 nil t nil nil (car windows-strings)) windows-alist))))))))
+              (windows-alist (cl-mapcar #'cons windows-strings windows))
+              (option (completing-read
+                       "Switch to: "
+                       `(,@windows-strings windmove-left windmove-right windmove-up windmove-down)
+                       nil t nil nil (car windows-strings)))
+              (window-assoc (assoc option windows-alist)))
+         (if window-assoc
+             (select-window (cdr window-assoc))
+           (funcall (intern option))))))))
 
 
 ;; window resize
