@@ -110,34 +110,7 @@ merge-base betweenn HEAD and @{upstream}."
   (magit-list-repos-uniquify
    (--map (cons (multi-magit--repo-name it)
                 it)
-          multi-magit-selected-repositories)))
-
-;;;###autoload
-(defun multi-magit-select-repository (&optional directory)
-  "Select DIRECTORY's repository."
-  (interactive)
-  (let ((repo (magit-toplevel directory)))
-    (if (null repo)
-        (user-error "multi-magit: couldn't find a repository here.")
-      (setq multi-magit-selected-repositories
-            (cl-delete-duplicates
-             (cl-merge 'list
-                       (list repo)
-                       (cl-copy-list multi-magit-selected-repositories)
-                       #'string<)
-             :test #'string=))
-      (message "multi-magit: %s selected." repo))))
-
-;;;###autoload
-(defun multi-magit-unselect-repository (&optional directory)
-  "Unselect DIRECTORY's repository."
-  (interactive)
-  (let ((repo (magit-toplevel directory)))
-    (if (null repo)
-        (user-error "multi-magit: couldn't find a repository here.")
-      (setq multi-magit-selected-repositories
-            (remove repo multi-magit-selected-repositories))
-      (message "multi-magit: %s unselected." repo))))
+          (multi-magit-get-selected-repositories))))
 
 ;;;; Multi-repository Commands
 
@@ -225,7 +198,7 @@ merge-base betweenn HEAD and @{upstream}."
   (-reduce '-intersection
            (--map (let ((default-directory it))
                     (magit-list-refs "refs/heads/" "%(refname:short)"))
-                  multi-magit-selected-repositories)))
+                  (multi-magit-get-selected-repositories))))
 
 (defun multi-magit--read-branch (prompt)
   (magit-completing-read prompt
@@ -234,28 +207,28 @@ merge-base betweenn HEAD and @{upstream}."
                          'magit-revision-history))
 
 ;;;###autoload
-(defun multi-magit-checkout (branch)
+(defun multi-magit-checkout (branch &optional repo-list)
   "Checkout BRANCH for each selected repository."
   (interactive (list (multi-magit--read-branch "Checkout")))
   (multi-magit--with-process
-    (dolist (repo multi-magit-selected-repositories)
+    (dolist (repo (or repo-list (multi-magit-get-selected-repositories)))
       (let ((default-directory repo)
             (inhibit-message t))
         (magit-checkout branch)))))
 
 ;;;###autoload
-(defun multi-magit-branch-delete (branch)
+(defun multi-magit-branch-delete (branch &optional repo-list)
   "Delete BRANCH for each selected repository."
   (interactive (list (multi-magit--read-branch "Delete")))
   (multi-magit--with-process
-    (dolist (repo multi-magit-selected-repositories)
+    (dolist (repo (or repo-list (multi-magit-get-selected-repositories)))
       (let ((default-directory repo)
             (inhibit-message t))
         (magit-branch-delete (list branch) t)))))
 
 (defun multi-magit--shell-command (command)
   (multi-magit--with-process
-    (dolist (repo multi-magit-selected-repositories)
+    (dolist (repo (multi-magit-get-selected-repositories))
       (let ((default-directory repo)
             (inhibit-message t)
             (process-environment process-environment))
@@ -344,57 +317,20 @@ actually support that yet."
                                                (symbol))
                                        (sexp   :tag "Value"))))))
 
-(defun multi-magit-repolist-toggle-repository ()
-  "Select or unselect DIRECTORY's repository."
-  (interactive)
-  (let* ((item (tabulated-list-get-id))
-         (repo (when item (magit-toplevel item))))
-    (cond ((null repo)
-           (user-error "There is no repository at point"))
-          ((member repo multi-magit-selected-repositories)
-           (multi-magit-unselect-repository repo)
-           (tabulated-list-put-tag " ")
-           (forward-line))
-          (t
-           (multi-magit-select-repository repo)
-           (tabulated-list-put-tag "*")
-           (forward-line)))))
-
-(defun multi-magit-repolist-select-repository ()
-  "Select DIRECTORY's repository."
-  (interactive)
-  (let* ((item (tabulated-list-get-id))
-         (repo (when item (magit-toplevel item))))
-    (cond ((null repo)
-           (user-error "There is no repository at point"))
-          ((not (member repo multi-magit-selected-repositories))
-           (multi-magit-select-repository repo)
-           (tabulated-list-put-tag "*")
-           (forward-line))
-          (t (forward-line)))))
-
-(defun multi-magit-repolist-unselect-repository ()
-  "Select or unselect DIRECTORY's repository."
-  (interactive)
-  (let* ((item (tabulated-list-get-id))
-         (repo (when item (magit-toplevel item))))
-    (cond ((null repo)
-           (user-error "There is no repository at point"))
-          ((member repo multi-magit-selected-repositories)
-           (multi-magit-unselect-repository repo)
-           (tabulated-list-put-tag " ")
-           (forward-line))
-          (t (forward-line)))))
+(defun multi-magit-get-selected-repositories ()
+  (let ((tablist-buffer (get-buffer "*Multi-Magit Repositories*")))
+    (if tablist-buffer
+        (mapcar (lambda (x)
+                  (magit-toplevel (car x)))
+                (with-current-buffer tablist-buffer
+                  (tablist-get-marked-items))))))
 
 (defvar multi-magit-repolist-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map "g" 'multi-magit-list-repositories)
     (define-key map (if (featurep 'jkl) [return] (kbd "C-m"))
-      'multi-magit-repolist-toggle-repository)
-    (define-key map "m" 'multi-magit-repolist-select-repository)
-    (define-key map "u" 'multi-magit-repolist-unselect-repository)
-    (define-key map "G" 'multi-magit-status)
+      'multi-magit-status)
     (define-key map "b" 'multi-magit-checkout)
     (define-key map "c" 'multi-magit-git-command)
     (define-key map "s" 'multi-magit-shell-command)
@@ -421,6 +357,7 @@ repositories are displayed."
       (with-current-buffer (get-buffer-create "*Multi-Magit Repositories*")
         (let ((magit-repolist-columns multi-magit-repolist-columns))
           (multi-magit-repolist-mode))
+        (tablist-minor-mode)
         (setq tabulated-list-entries
               (mapcar (-lambda ((id . path))
                         (let ((default-directory path))
@@ -429,13 +366,6 @@ repositories are displayed."
                                                 multi-magit-repolist-columns)))))
                       (multi-magit--all-repositories)))
         (tabulated-list-print)
-        (save-excursion
-          (goto-char (point-min))
-          (while (tabulated-list-get-id)
-            (when (member (file-name-as-directory (tabulated-list-get-id))
-                          multi-magit-selected-repositories)
-              (tabulated-list-put-tag "*"))
-            (forward-line)))
         (switch-to-buffer (current-buffer)))
     (message "You need to customize `magit-repository-directories' %s"
              "before you can list repositories")))
@@ -518,9 +448,7 @@ repositories are displayed."
     (when (yes-or-no-p (format "Select %s and checkout `%s'? "
                                (mapconcat #'multi-magit--repo-name repos ", ")
                                branch))
-      (setq multi-magit-selected-repositories
-            (--map (file-name-as-directory it) repos))
-      (multi-magit-checkout branch))))
+      (multi-magit-checkout branch (--map (file-name-as-directory it) repos)))))
 
 (defun multi-magit-branchlist-delete ()
   "Delete branch at point in its respective repositories."
@@ -537,8 +465,7 @@ repositories are displayed."
                     branch repo-names))
       (when (yes-or-no-p (format "Delete `%s' in %s? " branch repo-names))
         (tabulated-list-delete-entry)
-        (let ((multi-magit-selected-repositories repos))
-          (multi-magit-branch-delete branch))))))
+        (multi-magit-branch-delete branch repos)))))
 
 (defun multi-magit--repo-branches+mtime (repo-path)
   ;; (magit-list-refs "refs/heads/" "%(refname:short)") would be the proper way
@@ -557,7 +484,7 @@ repositories are displayed."
                                  (insert-file-contents packed-refs)
                                  (split-string (buffer-string) "\n" t)))
                         (heads (--filter (when it (string-match-p "^refs/heads/" it))
-                                         (--map (second (split-string it " " t))
+                                         (--map (cl-second (split-string it " " t))
                                                 lines))))
                    (--map (list (file-name-nondirectory it) mtime) heads))))
              (--map (list (file-name-nondirectory it)
@@ -646,7 +573,7 @@ repositories are displayed."
   (let ((buffers (apply original-function args))
         (multi-magit-status-buffer (get-buffer multi-magit-status-buffer-name)))
     (if (and multi-magit-status-buffer
-             (member default-directory multi-magit-selected-repositories))
+             (member default-directory (multi-magit-get-selected-repositories)))
         (cons multi-magit-status-buffer buffers)
         buffers)))
 
@@ -666,7 +593,7 @@ after running git for side-effects on a selected repository."
 (defun multi-magit--maybe-refresh ()
   (--when-let (and magit-refresh-status-buffer
                    multi-magit-refresh-status-buffer
-                   (member default-directory multi-magit-selected-repositories)
+                   (member default-directory (multi-magit-get-selected-repositories))
                    (get-buffer multi-magit-status-buffer-name))
     (multi-magit--refresh-status it)))
 
@@ -674,7 +601,7 @@ after running git for side-effects on a selected repository."
 
 (defun multi-magit--set-current-repo ()
   (let ((repo (or (multi-magit--current-repo)
-                  (cl-first multi-magit-selected-repositories))))
+                  (cl-first (multi-magit-get-selected-repositories)))))
     (setq default-directory repo)
     (setq magit--default-directory repo)))
 
@@ -707,9 +634,9 @@ after running git for side-effects on a selected repository."
 (defun multi-magit--selected-repo-names ()
   (let ((repo->name (multi-magit--uniquify-repo-names
                      (--map (cons (file-name-nondirectory (directory-file-name it)) it)
-                            multi-magit-selected-repositories))))
+                            (multi-magit-get-selected-repositories)))))
     (--map (cdr (assoc it repo->name))
-           multi-magit-selected-repositories)))
+           (multi-magit-get-selected-repositories))))
 
 (defun multi-magit--refresh-status (buffer)
   (with-current-buffer buffer
@@ -719,7 +646,7 @@ after running git for side-effects on a selected repository."
       (multi-magit-status-mode)
       (save-excursion
         (magit-insert-section (multi-magit-toplevel)
-          (cl-loop for repo in multi-magit-selected-repositories
+          (cl-loop for repo in (multi-magit-get-selected-repositories)
                    for repo-name in (multi-magit--selected-repo-names)
                    do (let ((default-directory repo)
                             (magit--default-directory repo))
@@ -732,7 +659,7 @@ after running git for side-effects on a selected repository."
 ;;;###autoload
 (defun multi-magit-status ()
   (interactive)
-  (if (null multi-magit-selected-repositories)
+  (if (null (multi-magit-get-selected-repositories))
       (when (y-or-n-p "`multi-magit-selected-repositories' is empty. Would you \
 like to select some using `multi-magit-list-repositories'? ")
         (multi-magit-list-repositories))
@@ -753,46 +680,47 @@ like to select some using `multi-magit-list-repositories'? ")
 
 (defun multi-magit-repo-visit (repo &optional _other-window)
   "Visit REPO by calling `magit-status' on it."
-  (interactive (list (magit-section-when multi-magit-repo)
+  (interactive (list (magit-section-value-if multi-magit-repo)
                      current-prefix-arg))
   (when repo
-    (magit-status-internal repo)))
+    (magit-status-setup-buffer repo)))
 
 ;;;###autoload
 (defun multi-magit-insert-repos-overview ()
   "Insert sections for all selected repositories."
-  (when multi-magit-selected-repositories
-    (let* ((repos multi-magit-selected-repositories)
-           (repo-names (multi-magit--selected-repo-names))
-           (path-format (format "%%-%is "
-                                (min (apply 'max (mapcar 'length repo-names))
-                                     (/ (window-width) 2))))
-           (branch-format (format "%%-%is " (min 25 (/ (window-width) 3)))))
-      (magit-insert-heading (format "%s (%d)"
-                                    (propertize "Selected repositories"
-                                                'face 'magit-section-heading)
-                                    (length repos)))
-      (cl-loop for repo in repos
-               for repo-name in repo-names
-               do (let ((default-directory repo))
-                    (magit-insert-section (multi-magit-repo repo t)
-                      (insert (propertize (format path-format repo-name)
-                                          'face 'magit-diff-file-heading))
-                      (insert (format branch-format
-                                      (--if-let (magit-get-current-branch)
-                                          (propertize it 'face 'magit-branch-local)
-                                        (propertize "(detached)" 'face 'warning))))
-                      (insert (mapconcat
-                               'identity
-                               (remove nil
-                                       (list (--when-let (magit-untracked-files)
-                                               (format "%d untracked" (length it)))
-                                             (--when-let (magit-unstaged-files)
-                                               (format "%d unstaged" (length it)))
-                                             (--when-let (magit-staged-files)
-                                               (format "%d staged" (length it)))))
-                               ", "))
-                      (insert "\n"))))))
+  (let ((repo-list (multi-magit-get-selected-repositories)))
+    (when repo-list
+      (let* ((repos repo-list)
+             (repo-names (multi-magit--selected-repo-names))
+             (path-format (format "%%-%is "
+                                  (min (apply 'max (mapcar 'length repo-names))
+                                       (/ (window-width) 2))))
+             (branch-format (format "%%-%is " (min 25 (/ (window-width) 3)))))
+        (magit-insert-heading (format "%s (%d)"
+                                      (propertize "Selected repositories"
+                                                  'face 'magit-section-heading)
+                                      (length repos)))
+        (cl-loop for repo in repos
+                 for repo-name in repo-names
+                 do (let ((default-directory repo))
+                      (magit-insert-section (multi-magit-repo repo t)
+                        (insert (propertize (format path-format repo-name)
+                                            'face 'magit-diff-file-heading))
+                        (insert (format branch-format
+                                        (--if-let (magit-get-current-branch)
+                                            (propertize it 'face 'magit-branch-local)
+                                          (propertize "(detached)" 'face 'warning))))
+                        (insert (mapconcat
+                                 'identity
+                                 (remove nil
+                                         (list (--when-let (magit-untracked-files)
+                                                 (format "%d untracked" (length it)))
+                                               (--when-let (magit-unstaged-files)
+                                                 (format "%d unstaged" (length it)))
+                                               (--when-let (magit-staged-files)
+                                                 (format "%d staged" (length it)))))
+                                 ", "))
+                        (insert "\n")))))))
   (insert "\n"))
 
 (provide 'multi-magit)

@@ -13,25 +13,15 @@ Insert a diffstat of changes in worktree relative to HEAD." nil nil)
 Insert a diffstat and commit log of commits since the
 merge-base betweenn HEAD and @{upstream}." nil nil)
 
-(autoload 'multi-magit-select-repository "multi-magit" "\
-Select DIRECTORY's repository.
-
-\(fn &optional DIRECTORY)" t nil)
-
-(autoload 'multi-magit-unselect-repository "multi-magit" "\
-Unselect DIRECTORY's repository.
-
-\(fn &optional DIRECTORY)" t nil)
-
 (autoload 'multi-magit-checkout "multi-magit" "\
 Checkout BRANCH for each selected repository.
 
-\(fn BRANCH)" t nil)
+\(fn BRANCH &optional REPO-LIST)" t nil)
 
 (autoload 'multi-magit-branch-delete "multi-magit" "\
 Delete BRANCH for each selected repository.
 
-\(fn BRANCH)" t nil)
+\(fn BRANCH &optional REPO-LIST)" t nil)
 
 (autoload 'multi-magit-git-command "multi-magit" "\
 Execute COMMAND asynchronously for each selected repository.
