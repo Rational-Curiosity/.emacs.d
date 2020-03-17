@@ -871,6 +871,8 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-s p") #'previous-visible-thing-repeat)
 (global-set-key (kbd "C-c l") #'display-line-numbers-mode)
 
+(global-set-key (kbd "M-g f") #'find-dired)
+
 (define-key minibuffer-local-map (kbd "C-c C-l") 'helm-minibuffer-history)
 
 ;; Usa el clipboard del sistema
