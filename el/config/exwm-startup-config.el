@@ -102,27 +102,6 @@
   (interactive)
   (exwm-workspace-switch (exwm-workspace-index-plus -1)))
 
-(defun exwm-workspace-monitor-index-plus (arg)
-  (interactive)
-  (let ((monitor (plist-get exwm-randr-workspace-monitor-plist exwm-workspace-current-index))
-        (next arg)
-        (inc (if (< 0 arg) 1 -1))
-        (workspace-index exwm-workspace-current-index))
-    (while (not (string-equal
-                 monitor
-                 (plist-get exwm-randr-workspace-monitor-plist
-                            (setq workspace-index (exwm-workspace-index-plus next)))))
-      (setq next (+ inc next)))
-    workspace-index))
-
-(defun exwm-workspace-monitor-next ()
-  (interactive)
-  (exwm-workspace-switch (exwm-workspace-monitor-index-plus 1)))
-
-(defun exwm-workspace-monitor-prev ()
-  (interactive)
-  (exwm-workspace-switch (exwm-workspace-monitor-index-plus -1)))
-
 (defun exwm-randr-workspace-move (workspace monitor)
   (setq exwm-randr-workspace-monitor-plist
         (plist-put exwm-randr-workspace-monitor-plist workspace monitor)))
@@ -138,26 +117,27 @@
   (exwm-randr-workspace-move exwm-workspace-current-index monitor)
   (exwm-randr-refresh))
 
-(defun exwm-buffer-list ()
-  (cl-remove-if-not (lambda (buffer)
-                      (with-current-buffer buffer
-                        (eq major-mode 'exwm-mode)))
-                    (buffer-list)))
+(defun exwm-buffer-p (buffer-or-name)
+  (with-current-buffer buffer-or-name
+    (derived-mode-p 'exwm-mode)))
 
-;; (defun exwm-kill-emacs-query-function ()
-;;   (let ((buffers (exwm-buffer-list)))
-;;     (if buffers
-;;         (progn
-;;           (mapc #'kill-buffer buffers)
-;;           (sit-for 1)
-;;           t)
-;;       t)))
+(defun exwm-display-buffer-condition (buffer-name &optional action)
+  (and (exwm-buffer-p buffer-name)
+       (exwm-buffer-p (current-buffer))))
+
+(defun exwm-display-buffer-function (buffer &optional alist)
+  (if (< (length (frame-list)) 2)
+      (display-buffer-pop-up-window buffer alist)
+    (select-frame (next-frame))
+    (set-window-buffer (frame-first-window (selected-frame)) buffer)))
+
 (defun exwm-windows-processes ()
   (cl-remove-if-not (lambda (p)
                       (and (eq 'run (process-status p))
                            (process-tty-name p)
                            (null (process-buffer p))))
                     (process-list)))
+
 (defun exwm-kill-emacs-query-function ()
   (mapc #'interrupt-process (exwm-windows-processes))
   (let (processes)
@@ -177,6 +157,20 @@
         (t
          (let ((split (split-string command)))
            (apply #'start-process (car split) nil (pop split) split)))))
+
+(defun exwm-ace-window (arg)
+  (interactive "p")
+  (if (and (derived-mode-p 'exwm-mode)
+           (eq exwm--input-mode 'char-mode))
+      (let ((id (exwm--buffer->id (window-buffer))))
+        (exwm-input-grab-keyboard id)
+        (unwind-protect
+            (ace-window arg)
+          (exwm-input-release-keyboard id)))
+    (ace-window arg)))
+
+;; display buffer rules
+(push '(exwm-display-buffer-condition exwm-display-buffer-function) display-buffer-alist)
 
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
@@ -268,12 +262,6 @@
                         (interactive)
                         (exwm-workspace-switch-create ,i))))
                   (number-sequence 0 8))
-        ;; Window fast selection
-        (,(kbd "M-0") . winum-select-window-0-or-10)
-        ,@(mapcar (lambda (i)
-                    `(,(kbd (format "M-%d" i))
-                      ,(intern (format "winum-select-window-%d" i))))
-                  (number-sequence 1 9))
         ;; Bind "s-&" to launch applications ('M-&' also works if the output
         ;; buffer does not bother you).
         ([?\s-&] . exwm-start-process)
@@ -282,16 +270,16 @@
                     (interactive)
                     (start-process "" nil "/usr/bin/slock")))
         ;; Toggle char-line modes
-        ([?\s-c] . exwm-input-toggle-keyboard)
+        ([?\s-q] . exwm-input-toggle-keyboard)
         ;; Display datetime
         ([?\s-a] . display-time-mode)
         ;; Workspaces
-        ([?\s-j] . exwm-workspace-monitor-next)
-        ([?\s-k] . exwm-workspace-monitor-prev)
         ([?\s-n] . exwm-workspace-next)
         ([?\s-p] . exwm-workspace-prev)
         ([?\s-s] . exwm-workspace-swap)
         ([?\s-m] . exwm-randr-workspace-move-current)
+        ;; ace-window
+        (,(kbd "M-o") . exwm-ace-window)
         ;; Bind lock screen
         (,(kbd "<s-escape>") . exwm-screensaver-lock))
       exwm-manage-configurations '(((equal exwm-class-name "XTerm") char-mode t)))
@@ -361,7 +349,7 @@
 (advice-add #'message :around 'message-advice)
 
 (defun symon--message (format-string &rest args)
-  (let ((current-minibuffer-window (minibuffer-window (next-frame (selected-frame) 'visible))))
+  (let ((current-minibuffer-window (minibuffer-window (selected-frame))))
     (if current-minibuffer-window
         (with-selected-window current-minibuffer-window
           (delete-region (minibuffer-prompt-end) (point-max))
