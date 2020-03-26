@@ -170,7 +170,7 @@
 ;;;;;;;;;;;;;;;;;;;;;
 
 (setq org-hide-block-startup t
-      org-descriptive-links nil ;; nil display the full links
+      org-link-descriptive nil ;; nil display the full links
       org-replace-disputed-keys t
       org-startup-folded 'content
       org-startup-with-inline-images t
@@ -233,11 +233,16 @@
 (require 'ob-screen)
 (require 'ob-async)
 
-(defvar org-babel-default-header-args:Python
-  '((:session . "*python*")
-    (:results . "output ")
-    (:cache   . "yes")
-    (:exports . "results")))
+(setq org-babel-default-header-args:python
+      '((:results . "output")
+        (:exports . "results"))
+      org-babel-default-header-args:sh
+      '((:results . "output")
+        (:exports . "results"))
+      org-babel-default-header-args:bash
+      '((:results . "output")
+        (:exports . "results")))
+
 ;; Activated by default
 ;; (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
 ;; (add-to-list 'org-src-lang-modes '("conf" . conf))
