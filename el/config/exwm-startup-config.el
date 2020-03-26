@@ -6,13 +6,19 @@
 
 ;; Variables
 (defvar exwm-default-transparency 0.85
-  "EXWM default transparency")
+  "EXWM default transparency.")
 
 (defvar exwm-default-monitor-position (getenv "EXWM_MONITOR_POSITION")
-  "EXWM default monitor position")
+  "EXWM default monitor position.")
 
 (defvar exwm-default-wallpaper-folder "~/Pictures/backgrounds/"
-  "EXWM default wallpaper folder")
+  "EXWM default wallpaper folder.")
+
+(defvar exwm-display-buffer-choose-frame 'next-frame
+  "Function without args that returns new buffer frame.")
+
+(defvar exwm-display-buffer-choose-window 'frame-first-window
+  "Function receive new buffer frame then returns new buffer window.")
 
 ;; Functions
 (defun exwm-screensaver-lock ()
@@ -128,8 +134,9 @@
 (defun exwm-display-buffer-function (buffer &optional alist)
   (if (< (length (frame-list)) 2)
       (display-buffer-pop-up-window buffer alist)
-    (select-frame (next-frame))
-    (set-window-buffer (frame-first-window (selected-frame)) buffer)))
+    (select-frame (funcall exwm-display-buffer-choose-frame))
+    (set-window-buffer (funcall exwm-display-buffer-choose-window
+                                (selected-frame)) buffer)))
 
 (defun exwm-windows-processes ()
   (cl-remove-if-not (lambda (p)
@@ -235,54 +242,59 @@
                       (string= "gimp" exwm-instance-name))
               (exwm-workspace-rename-buffer exwm-title))))
 
-;; Global keybindings can be defined with `exwm-input-global-keys'.
-;; Here are a few examples:
-(setq exwm-input-global-keys
-      `(
-        ;; Bind "s-r" to exit char-mode and fullscreen mode.
-        ([?\s-r] . exwm-reset)
-        ;; Bind "s-w" to switch workspace interactively.
-        ([?\s-w] . exwm-workspace-switch)
-        ;; Bind "s-1" to "s-0" to switch to a workspace by its index.
-        ([?\s-0] . (lambda ()
-                     (interactive)
-                     (exwm-workspace-switch 9)))
-        ,@(mapcar (lambda (i)
-                    `(,(kbd (format "s-%d" (1+ i))) .
-                      (lambda ()
-                        (interactive)
-                        (exwm-workspace-switch ,i))))
-                  (number-sequence 0 8))
-        (,(kbd "S-s-0") . (lambda ()
-                            (interactive)
-                            (exwm-workspace-switch-create 9)))
-        ,@(mapcar (lambda (i)
-                    `(,(kbd (format "S-s-%d" (1+ i))) .
-                      (lambda ()
-                        (interactive)
-                        (exwm-workspace-switch-create ,i))))
-                  (number-sequence 0 8))
-        ;; Bind "s-&" to launch applications ('M-&' also works if the output
-        ;; buffer does not bother you).
-        ([?\s-&] . exwm-start-process)
-        ;; Bind "s-<f2>" to "slock", a simple X display locker.
-        ([s-f2] . (lambda ()
-                    (interactive)
-                    (start-process "" nil "/usr/bin/slock")))
-        ;; Toggle char-line modes
-        ([?\s-q] . exwm-input-toggle-keyboard)
-        ;; Display datetime
-        ([?\s-a] . display-time-mode)
-        ;; Workspaces
-        ([?\s-n] . exwm-workspace-next)
-        ([?\s-p] . exwm-workspace-prev)
-        ([?\s-s] . exwm-workspace-swap)
-        ([?\s-m] . exwm-randr-workspace-move-current)
-        ;; ace-window
-        (,(kbd "M-o") . exwm-ace-window)
-        ;; Bind lock screen
-        (,(kbd "<s-escape>") . exwm-screensaver-lock))
-      exwm-manage-configurations '(((equal exwm-class-name "XTerm") char-mode t)))
+(with-eval-after-load 'exwm-input
+  ;; line-mode prefix keys
+  (push ?\M-o exwm-input-prefix-keys)
+  ;; Global keybindings can be defined with `exwm-input-global-keys'.
+  ;; Here are a few examples:
+  (setq exwm-input-global-keys
+        `(;; Bind "s-r" to exit char-mode and fullscreen mode.
+          ([?\s-r] . exwm-reset)
+          ;; Bind "s-w" to switch workspace interactively.
+          ([?\s-w] . exwm-workspace-switch)
+          ;; Bind "s-1" to "s-0" to switch to a workspace by its index.
+          ([?\s-0] . (lambda ()
+                       (interactive)
+                       (exwm-workspace-switch 9)))
+          ,@(mapcar (lambda (i)
+                      `(,(kbd (format "s-%d" (1+ i))) .
+                        (lambda ()
+                          (interactive)
+                          (exwm-workspace-switch ,i))))
+                    (number-sequence 0 8))
+          (,(kbd "S-s-0") . (lambda ()
+                              (interactive)
+                              (exwm-workspace-switch-create 9)))
+          ,@(mapcar (lambda (i)
+                      `(,(kbd (format "S-s-%d" (1+ i))) .
+                        (lambda ()
+                          (interactive)
+                          (exwm-workspace-switch-create ,i))))
+                    (number-sequence 0 8))
+          ;; Bind "s-&" to launch applications ('M-&' also works if the output
+          ;; buffer does not bother you).
+          ([?\s-&] . exwm-start-process)
+          ;; Bind "s-<f2>" to "slock", a simple X display locker.
+          ([s-f2] . (lambda ()
+                      (interactive)
+                      (start-process "" nil "/usr/bin/slock")))
+          ;; Toggle char-line modes
+          ([?\s-q] . exwm-input-toggle-keyboard)
+          ;; Display datetime
+          ([?\s-a] . display-time-mode)
+          ;; Workspaces
+          ([?\s-n] . exwm-workspace-next)
+          ([?\s-p] . exwm-workspace-prev)
+          ([?\s-s] . exwm-workspace-swap)
+          ([?\s-m] . exwm-randr-workspace-move-current)
+          ;; ace-window
+          ([?\s-o] . exwm-ace-window)
+          ;; Bind lock screen
+          (,(kbd "<s-escape>") . exwm-screensaver-lock))))
+
+(with-eval-after-load 'exwm-manage
+  (setq exwm-manage-configurations
+        '(((equal exwm-class-name "XTerm") char-mode t))))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
