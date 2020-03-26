@@ -71,68 +71,69 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   "Recompile '.el' when '.elc' is out of date or does not exist.
 'init.el' file and 'el/' folder are processed recursively."
   (interactive)
-  (save-some-buffers
-   nil (lambda ()
-        (let ((file (buffer-file-name)))
-          (and file
-               (string-match-p emacs-lisp-file-regexp file)
-               (file-in-directory-p file directory)))))
-  (force-mode-line-update)
-  (with-current-buffer (get-buffer-create byte-compile-log-buffer)
-    (setq default-directory (expand-file-name user-emacs-directory))
-    ;; compilation-mode copies value of default-directory.
-    (unless (derived-mode-p 'compilation-mode)
-      (emacs-lisp-compilation-mode))
-    (let ((default-directory (expand-file-name "el/" user-emacs-directory)))
-      (let ((directories (list default-directory))
-            (skip-count 0)
-            (fail-count 0)
-            (file-count 0)
-            (dir-count 0)
-            last-dir)
-        (displaying-byte-compile-warnings
-         (cl-incf
-          (pcase (byte-recompile-file
-                  (expand-file-name "init.el" user-emacs-directory) force 0)
-            ('no-byte-compile skip-count)
-            ('t file-count)
-            (_ fail-count)))
-         (while directories
-           (setq directory (car directories))
-           (message "Checking %s..." directory)
-           (dolist (file (directory-files directory))
-             (let ((source (expand-file-name file directory)))
-               (if (file-directory-p source)
-                   (and (not (member file '("RCS" "CVS")))
-                        (not (eq ?\. (aref file 0)))
-                        (not (file-symlink-p source))
-                        ;; This file is a subdirectory.  Handle them differently.
-                        (setq directories (nconc directories (list source))))
-                 ;; It is an ordinary file.  Decide whether to compile it.
-                 (if (and (string-match emacs-lisp-file-regexp source)
-                          ;; The next 2 tests avoid compiling lock files
-                          (file-readable-p source)
-                          (not (string-match "\\`\\.#" file))
-                          (not (auto-save-file-name-p source))
-                          (not (string-equal dir-locals-file
-                                             (file-name-nondirectory source))))
-                     (progn (cl-incf
-                             (pcase (byte-recompile-file source force 0)
-                               ('no-byte-compile skip-count)
-                               ('t file-count)
-                               (_ fail-count)))
-                            (or noninteractive
-                                (message "Checking %s..." directory))
-                            (if (not (eq last-dir directory))
-                                (setq last-dir directory
-                                      dir-count (1+ dir-count))))))))
-           (setq directories (cdr directories))))
-        (message "Done (Total of %d file%s compiled%s%s%s)"
-                 file-count (if (= file-count 1) "" "s")
-                 (if (> fail-count 0) (format ", %d failed" fail-count) "")
-                 (if (> skip-count 0) (format ", %d skipped" skip-count) "")
-                 (if (> dir-count 1)
-                     (format " in %d directories" dir-count) ""))))))
+  (let ((emacs-el-directory (expand-file-name "el/" user-emacs-directory)))
+    (save-some-buffers
+     nil (lambda ()
+          (let ((file (buffer-file-name)))
+            (and file
+                 (string-match-p emacs-lisp-file-regexp file)
+                 (file-in-directory-p file emacs-el-directory)))))
+    (force-mode-line-update)
+    (with-current-buffer (get-buffer-create byte-compile-log-buffer)
+      (setq default-directory (expand-file-name user-emacs-directory))
+      ;; compilation-mode copies value of default-directory.
+      (unless (derived-mode-p 'compilation-mode)
+        (emacs-lisp-compilation-mode))
+      (let ((default-directory emacs-el-directory))
+        (let ((directories (list default-directory))
+              (skip-count 0)
+              (fail-count 0)
+              (file-count 0)
+              (dir-count 0)
+              last-dir)
+          (displaying-byte-compile-warnings
+           (cl-incf
+            (pcase (byte-recompile-file
+                    (expand-file-name "init.el" user-emacs-directory) force 0)
+              ('no-byte-compile skip-count)
+              ('t file-count)
+              (_ fail-count)))
+           (while directories
+             (setq directory (car directories))
+             (message "Checking %s..." directory)
+             (dolist (file (directory-files directory))
+               (let ((source (expand-file-name file directory)))
+                 (if (file-directory-p source)
+                     (and (not (member file '("RCS" "CVS")))
+                          (not (eq ?\. (aref file 0)))
+                          (not (file-symlink-p source))
+                          ;; This file is a subdirectory.  Handle them differently.
+                          (setq directories (nconc directories (list source))))
+                   ;; It is an ordinary file.  Decide whether to compile it.
+                   (if (and (string-match emacs-lisp-file-regexp source)
+                            ;; The next 2 tests avoid compiling lock files
+                            (file-readable-p source)
+                            (not (string-match "\\`\\.#" file))
+                            (not (auto-save-file-name-p source))
+                            (not (string-equal dir-locals-file
+                                               (file-name-nondirectory source))))
+                       (progn (cl-incf
+                               (pcase (byte-recompile-file source force 0)
+                                 ('no-byte-compile skip-count)
+                                 ('t file-count)
+                                 (_ fail-count)))
+                              (or noninteractive
+                                  (message "Checking %s..." directory))
+                              (if (not (eq last-dir directory))
+                                  (setq last-dir directory
+                                        dir-count (1+ dir-count))))))))
+             (setq directories (cdr directories))))
+          (message "Done (Total of %d file%s compiled%s%s%s)"
+                   file-count (if (= file-count 1) "" "s")
+                   (if (> fail-count 0) (format ", %d failed" fail-count) "")
+                   (if (> skip-count 0) (format ", %d skipped" skip-count) "")
+                   (if (> dir-count 1)
+                       (format " in %d directories" dir-count) "")))))))
 
 (require 'cl-lib)
 ;; [ get current function name
