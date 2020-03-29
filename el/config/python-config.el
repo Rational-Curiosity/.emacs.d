@@ -18,7 +18,6 @@
 
 (message "Importing python-config")
 (require 'python) ;; inferior-python-mode-map
-(require 'flycheck)
 
 ;;;;;;;;;;;;;
 ;; Helpers ;;
@@ -53,68 +52,6 @@
     (define-key inferior-python-mode-map (kbd "M-w") nil)
     (setq python-shell-interpreter-args "-i"))))
 
-(defun set-python-interpreter (interpreter)
-  (if (string-match-p "[^0-9]3[.0-9]*$" interpreter)
-      (setq python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python3/flake8")
-                                            "flake8")
-            flycheck-python-flake8-executable python-syntax-check-command
-            flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python3/pylint")
-                                                  "pylint")
-            flycheck-python-mypy-executable (or (executable-find "~/.emacs.d/cache/python3/mypy")
-                                                "mypy"))
-    (setq python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake8")
-                                          "flake8")
-          flycheck-python-flake8-executable python-syntax-check-command
-          flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python/pylint")
-                                                "pylint")
-          flycheck-python-mypy-executable nil))
-  (setq python-shell-interpreter interpreter)
-  (set-python-interpreter-args))
-
-(defun detect-python-project-version ()
-  (let* ((python-version-filename ".python-version")
-         (python-version-directory (locate-dominating-file default-directory python-version-filename)))
-    (when python-version-directory
-      (message "%s file founded in %s" python-version-filename python-version-directory)
-      (with-temp-buffer
-        (insert-file-contents (concat python-version-directory python-version-filename))
-        (cond
-         ((search-forward-regexp "^[^0-9]*3[.0-9]*$" nil t)
-          (set-python-interpreter (or (executable-find (match-string 0))
-                                      (executable-find "pypy3")
-                                      (executable-find "python3"))))
-         ((search-forward-regexp "^[^0-9]*2[.0-9]*$" nil t)
-          (set-python-interpreter (or (executable-find (match-string 0))
-                                      (executable-find "pypy")
-                                      (executable-find "python")))))))))
-
-(defun toggle-python-version ()
-  (interactive)
-  (if (string-match-p "[^0-9]3[.0-9]*$" python-shell-interpreter)
-      (setq python-shell-interpreter (or
-                                      (executable-find (replace-regexp-in-string "\\([^0-9]\\)3[.0-9]*$" "\\1"
-                                                                                 python-shell-interpreter))
-                                      (executable-find "pypy")
-                                      "python")
-            python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python/flake8")
-                                            "flake8")
-            flycheck-python-flake8-executable python-syntax-check-command
-            flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python/pylint")
-                                                  "pylint")
-            flycheck-python-mypy-executable nil)
-    (setq python-shell-interpreter (or
-                                    (executable-find (concat python-shell-interpreter "3"))
-                                    (executable-find "pypy3")
-                                    "python3")
-          python-syntax-check-command (or (executable-find "~/.emacs.d/cache/python3/flake8")
-                                          "flake8")
-          flycheck-python-flake8-executable python-syntax-check-command
-          flycheck-python-pylint-executable (or (executable-find "~/.emacs.d/cache/python3/pylint")
-                                                "pylint")
-          flycheck-python-mypy-executable (or (executable-find "~/.emacs.d/cache/python3/mypy")
-                                              "mypy")))
-  (set-python-interpreter-args))
-
 ;;;;;;;;;;;;;;;;;;;
 ;; Configuration ;;
 ;;;;;;;;;;;;;;;;;;;
@@ -123,14 +60,7 @@
                                         python-paths
                                         (mapcar 'expand-file-name
                                                 (split-string python-paths ":"))))
-      py-custom-temp-directory temporary-file-directory
       python-indent-guess-indent-offset nil)
-
-(set-python-interpreter (or (executable-find "pypy3")
-                            (executable-find "python3")
-                            (executable-find "pypy")
-                            (executable-find "python")
-                            "python"))
 
 ;;;;;;;;;;;;;;;
 ;; Functions ;;

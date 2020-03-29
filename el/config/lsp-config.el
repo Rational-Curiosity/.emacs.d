@@ -46,7 +46,6 @@
 
 (setq lsp-enable-xref nil  ;; lsp-enable-xref t suppress etags--xref-backend
       lsp-diagnostic-package :auto
-      lsp-flycheck-live-reporting nil
       lsp-file-watch-ignored
       (cons "[/\\\\]tmp$"
             lsp-file-watch-ignored)

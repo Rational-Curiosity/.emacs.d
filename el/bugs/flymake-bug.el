@@ -1,7 +1,7 @@
 (with-eval-after-load 'flymake
   (when (bug-check-function-bytecode
          'flymake--mode-line-format
-         "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UlAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYn5BTqD6wEFQLIFiYMdAfoFBg8igiIB+gUGDyKyBImDMAH7Bfz9I4I1AfsF/P0jsgMDhFMBCvk9hOEBCoNPAfYFIf4KIVmCUAH5g+EBAdjd/wYHRyLwBgba2+LjIAYN5ALLgUAACyLHgUEAgUIAyssGCCGBQwAigUQAgUUAgUYAJgYjiOQCy4FAAAwix4FBAIFCAMrLBgghgUcAIoFEAIFFAIFGACYGI4gBtoLc3YFIAIFJAN3/BhJHIvAGESOBSQDdgUoABhQi8AYSIyPdgUsACwwjUK8KQ6SyAgVBsgbFsgGCCAGBTADoA8WJiQM6gxoCA7IDAolBsgSisgIBAUKyAQKDEwKBTQABQrIBA0GyBILzAYmftoSBTgAiQraIIkKH")
+         "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UNAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYn5BTqD0wEFQLIF+gUGDyKyBPsF/P0jsgMDhDsBCvk9hMkBCoM3AfYFIf4KIVmCOAH5g8kBAdjd/wYHRyLwBgba2+LjIAYN5ALLgUAACyLHgUEAgUIAyssGCCGBQwAigUQAgUUAgUYAJgYjiOQCy4FAAAwix4FBAIFCAMrLBgghgUcAIoFEAIFFAIFGACYGI4gBtoLc3YFIAIFJAN3/BhJHIvAGESOBSQDdgUoABhQi8AYSIyPdgUsACwwjUK8KQ6SyAgVBsgbFsgGCCAGBTADoA8WJiQM6gwICA7IDAolBsgSisgIBAUKyAQKD+wGBTQABQrIBA0GyBILbAYmftoSBTgAiQraIIkKH")
     (defun flymake--mode-line-format ()
       "Produce a pretty minor mode indicator."
       (let* ((known (hash-table-keys flymake--backend-state))
@@ -109,8 +109,8 @@
                                           mouse-wheel-up-event)))
                into forms
                finally return
-               `((:propertize "[")
+               `((:propertize "{")
                  ,@(cl-loop for (a . rest) on forms by #'cdr
                             collect a when rest collect
                             '(:propertize " "))
-                 (:propertize "]")))))))))
+                 (:propertize "}")))))))))
