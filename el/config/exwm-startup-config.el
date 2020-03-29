@@ -5,6 +5,9 @@
     (message "Command `suspend-frame' is dangerous in EXWM.")))
 
 ;; Variables
+(defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces")
+  "EXWM instances without transparency.")
+
 (defvar exwm-default-transparency 0.85
   "EXWM default transparency.")
 
@@ -229,18 +232,20 @@
 ;;   more sense.
 ;; In the following example, we use class names for all windows expect for
 ;; Java applications and GIMP.
-(add-hook 'exwm-update-class-hook
-          (lambda ()
-            (unless (or (string-prefix-p "sun-awt-X11-" exwm-instance-name)
-                        (string= "gimp" exwm-instance-name))
-              (exwm-workspace-rename-buffer exwm-class-name)
-              (exwm-set-buffer-transparency (current-buffer) exwm-default-transparency))))
-(add-hook 'exwm-update-title-hook
-          (lambda ()
-            (when (or (not exwm-instance-name)
-                      (string-prefix-p "sun-awt-X11-" exwm-instance-name)
-                      (string= "gimp" exwm-instance-name))
-              (exwm-workspace-rename-buffer exwm-title))))
+(defun exwm-update-class-defaults ()
+  (unless (or (string-prefix-p "sun-awt-X11-" exwm-instance-name)
+              (string-equal "gimp" exwm-instance-name))
+    (exwm-workspace-rename-buffer exwm-class-name))
+  (unless (member exwm-instance-name exwm-exclude-transparency)
+    (exwm-set-buffer-transparency (current-buffer) exwm-default-transparency)))
+(add-hook 'exwm-update-class-hook 'exwm-update-class-defaults)
+
+(defun exwm-update-title-defaults ()
+  (when (or (not exwm-instance-name)
+            (string-prefix-p "sun-awt-X11-" exwm-instance-name)
+            (string-equal "gimp" exwm-instance-name))
+    (exwm-workspace-rename-buffer exwm-title)))
+(add-hook 'exwm-update-title-hook 'exwm-update-title-defaults)
 
 (with-eval-after-load 'exwm-input
   ;; line-mode prefix keys
@@ -248,7 +253,9 @@
   ;; Global keybindings can be defined with `exwm-input-global-keys'.
   ;; Here are a few examples:
   (setq exwm-input-global-keys
-        `(;; Bind "s-r" to exit char-mode and fullscreen mode.
+        `(;; Universal argument
+          ([?\s-u] . universal-argument)
+          ;; Bind "s-r" to exit char-mode and fullscreen mode.
           ([?\s-r] . exwm-reset)
           ;; Bind "s-w" to switch workspace interactively.
           ([?\s-w] . exwm-workspace-switch)
@@ -294,7 +301,8 @@
 
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
-        '(((equal exwm-class-name "XTerm") char-mode t))))
+        '(((string-equal exwm-class-name "XTerm") char-mode t)
+          ((string-equal exwm-class-name "darkplaces") floating nil))))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
@@ -422,10 +430,16 @@
     (setq exwm-timer-random-wallpaper nil)))
 
 ;; Applications
-(dolist (executable '("compton" "volumeicon" "nm-applet"))
-  (if (executable-find executable)
-      (start-process (concat " *" executable) (concat " *" executable " outputs*") executable)
-    (message "Unable to find `%s' executable." executable)))
+(dolist (program-and-args-list '(("compton")
+                                 ("volumeicon")
+                                 ("nm-applet")))
+  (let ((executable (car program-and-args-list)))
+   (if (executable-find executable)
+      (apply 'start-process
+             (concat " *" executable)
+             (concat " *" executable " outputs*")
+             program-and-args-list)
+    (message "Unable to find `%s' executable." executable))))
 
 (when (load "helm-exwm" nil t)
   (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source)
