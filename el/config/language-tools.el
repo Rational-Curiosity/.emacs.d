@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;; Usage:
-;; (require 'language-tools.el)
+;; (require 'language-tools)
 
 ;;; Code:
 
@@ -166,10 +166,48 @@ By default insert it, with prefix display a message with it."
                 (language-get-phonemic-script (thing-at-point 'word 'no-properties)))
                parenthesis))))))
 
+(defvar language-text-to-speak-process-name "*language-text-to-speak-process*")
+
+(require 'guess-language)
+(setq guess-language-languages '(en es))
+
+(defun language-text-to-speak-region (start end)
+  (interactive (if (use-region-p)
+                   (list (region-beginning) (region-end))
+                 (list (point) (point-max))))
+  (let ((process (get-process language-text-to-speak-process-name)))
+    (if process
+        (delete-process process)))
+  (let ((string (buffer-substring-no-properties start end))
+        (language (symbol-name (guess-language-region start end))))
+    (let ((process (cond
+                    ((executable-find "espeak")
+                     (start-process language-text-to-speak-process-name nil
+                                    "espeak" "--stdin" "-v" language))
+                    ((executable-find "festival")
+                     (make-process
+                      :name language-text-to-speak-process-name
+                      :command (list "festival" "--tts" "--language"
+                                     (pcase language
+                                       ("es" "spanish")
+                                       ("en" "english")))
+                      :coding 'latin-1)))))
+      (process-send-string process (concat string "\n"))
+      (process-send-eof process))))
+
+(defun language-text-to-speak-stop ()
+  (interactive)
+  (let ((process (get-process language-text-to-speak-process-name)))
+    (if process
+        (delete-process language-text-to-speak-process-name))))
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
 (defun language-tools-config ()
   (mapc (lambda (x)
           (global-set-key
-           (kbd (concat "C-c l " (car x))) (cdr x)))
+           (kbd (concat "C-c g " (car x))) (cdr x)))
         '(("p" . language-phonemic-script-at-point)
           ("t" . language-en-es-translation-at-point)
           ("b" . language-en-es-phonemic-script-and-translation-at-point))))

@@ -37,7 +37,7 @@
  '(custom-safe-themes
    '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   '(ace-window ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server epl expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ hl-todo ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit magit-todos map markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors ob-async org org-agenda-property org-brain org-plus-contrib org-ql org-super-agenda org-superstar ov ox-gfm ox-mediawiki ox-rst ox-twbs pcre2el peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets))
+   '(ace-window ag async auctex avy bash-completion bookmark+ cmake-font-lock cmake-mode company company-lsp cyphejor dash dash-functional deferred docker docker-tramp edit-server elfeed emms epl expand-region exwm f figlet flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode guess-language haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ hl-todo ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-mode lsp-ui lua-mode lv magit magit-todos map markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors ob-async org org-agenda-property org-brain org-plus-contrib org-ql org-super-agenda org-superstar ov ox-gfm ox-mediawiki ox-rst ox-twbs pcre2el peg php-mode pkg-info plantuml-mode popup projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions symon tablist thingatpt+ transient transpose-frame ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets))
  '(safe-local-variable-values
    '((eval set 'org-agenda-files
            (list
@@ -163,6 +163,9 @@
 (require 'minimap-config)
 
 (require 'figlet-config)
+
+(require 'language-tools)
+(language-tools-config)
 ;; ] <Always required>
 
 
@@ -233,12 +236,6 @@
 (add-hook 'org-mode-hook #'yas-minor-mode)
 (with-eval-after-load 'yasnippet
   (require 'yasnippet-config))
-;; flycheck
-(add-hook 'prog-mode-hook #'flycheck-mode)
-(with-eval-after-load 'flycheck
-  (with-current-buffer "*scratch*"
-    (lisp-interaction-mode))
-  (require 'flycheck-config))
 ;; projectile
 (add-hook 'prog-mode-hook #'projectile-mode)
 (with-eval-after-load 'projectile
@@ -272,6 +269,10 @@
 ;;     "Start syntax check for current buffer if it isn't already running."
 ;;     ;; Do nothing, don't want to run checks until I save.
 ;;     ))
+
+;; flymake
+(with-eval-after-load 'flymake
+  (require 'flymake-config))
 
 ;; lsp
 (with-eval-after-load 'lsp-mode
@@ -377,6 +378,17 @@
 
 ;; <ahk> AutoHotKey programming
 (add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
+
+;; [ <elfeed>
+(global-set-key (kbd "C-x w") 'elfeed)
+(with-eval-after-load 'elfeed
+  (require 'elfeed-config))
+;; ]
+
+;; [ <emms>
+(with-eval-after-load 'emms
+  (require 'emms-config))
+;; ]
 
 ;; [ <flyspell>
 ;; Desactivado por incómodo desplazamiento del cursor
