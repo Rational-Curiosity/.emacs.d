@@ -100,7 +100,8 @@ If no ITEMS `language-items-number'."
 By default insert it, with prefix display a message with it."
   (interactive "P")
   (cond
-   ((equal items '(4))
+   ((or (equal items '(4))
+        buffer-read-only)
     (let ((translation
            (language-get-translation
             (thing-at-point 'word 'no-properties) "en" "es" 3)))
@@ -121,7 +122,8 @@ By default insert it, with prefix display a message with it."
 By default insert it, with prefix display a message with it."
   (interactive "P")
   (cond
-   ((equal items '(4))
+   ((or (equal items '(4))
+        buffer-read-only)
     (let ((translation
            `(,(language-get-phonemic-script (thing-at-point 'word 'no-properties)) .
              ,(language-get-translation
@@ -150,7 +152,8 @@ By default insert it, with prefix display a message with it."
 By default insert it, with prefix display a message with it."
   (interactive "P")
   (cond
-   ((equal paren '(4))
+   ((or (equal paren '(4))
+        buffer-read-only)
     (message
      (concat "/"
              (decode-coding-string-to-current
@@ -210,7 +213,9 @@ By default insert it, with prefix display a message with it."
            (kbd (concat "C-c g " (car x))) (cdr x)))
         '(("p" . language-phonemic-script-at-point)
           ("t" . language-en-es-translation-at-point)
-          ("b" . language-en-es-phonemic-script-and-translation-at-point))))
+          ("b" . language-en-es-phonemic-script-and-translation-at-point)
+          ("R" . language-text-to-speak-region)
+          ("S" . language-text-to-speak-stop))))
 
 
 (provide 'language-tools)
