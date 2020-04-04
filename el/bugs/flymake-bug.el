@@ -86,16 +86,16 @@
                                 (type type))
                             (define-key map (vector 'mode-line
                                                     mouse-wheel-down-event)
-                              (lambda (event)
-                                (interactive "e")
-                                (with-selected-window (posn-window (event-start event))
-                                  (flymake-goto-prev-error 1 (list type) t))))
+                              `(lambda (event)
+                                 (interactive "e")
+                                 (with-selected-window (posn-window (event-start event))
+                                   (flymake-goto-prev-error 1 (list ,type) t))))
                             (define-key map (vector 'mode-line
                                                     mouse-wheel-up-event)
-                              (lambda (event)
-                                (interactive "e")
-                                (with-selected-window (posn-window (event-start event))
-                                  (flymake-goto-next-error 1 (list type) t))))
+                              `(lambda (event)
+                                 (interactive "e")
+                                 (with-selected-window (posn-window (event-start event))
+                                   (flymake-goto-next-error 1 (list ,type) t))))
                             map)
                          help-echo
                          ,(concat (format "%s diagnostics of type %s\n"
