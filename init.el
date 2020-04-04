@@ -198,6 +198,8 @@
 ;; rainbow-delimiters-mode (before smartparens-mode)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 (with-eval-after-load 'rainbow-delimiters
+  (with-current-buffer "*scratch*"
+    (lisp-interaction-mode))
   (require 'rainbow-delimiters-config))
 
 ;; smartparens-mode
@@ -365,8 +367,7 @@
   (require 'plantuml-config))
 
 ;; [ org
-(defcustom org-replace-disputed-keys t
-  "")
+(defvar org-replace-disputed-keys t)
 (with-eval-after-load 'org
   (require 'org-config)
   (require 'org-super-agenda-config)
@@ -374,6 +375,8 @@
   (require 'gitlab-api)
   (require 'redmine-api))
 (add-hook 'org-mode-hook #'org-super-agenda-mode)
+(with-eval-after-load 'org-brain
+  (require 'org-brain-config))
 ;; ]
 
 ;; <ahk> AutoHotKey programming
