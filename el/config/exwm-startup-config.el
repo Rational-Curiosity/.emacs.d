@@ -5,7 +5,7 @@
     (message "Command `suspend-frame' is dangerous in EXWM.")))
 
 ;; Variables
-(defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces")
+(defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces" "doom")
   "EXWM instances without transparency.")
 
 (defvar exwm-default-transparency 0.85
@@ -17,12 +17,6 @@
 (defvar exwm-default-wallpaper-folder "~/Pictures/backgrounds/"
   "EXWM default wallpaper folder.")
 
-(defvar exwm-display-buffer-choose-frame 'next-frame
-  "Function without args that returns new buffer frame.")
-
-(defvar exwm-display-buffer-choose-window 'frame-first-window
-  "Function receive new buffer frame then returns new buffer window.")
-
 ;; Functions
 (defun exwm-screensaver-lock ()
   (interactive)
@@ -30,9 +24,13 @@
                      (mapcar
                       (lambda (item) (cdr (assoc 'comm item)))
                       (mapcar 'process-attributes (list-system-processes)))))
-    (start-process " * xscreensaver" nil "xscreensaver" "-no-splash")
+    (start-process " *xscreensaver" nil "xscreensaver" "-no-splash")
     (sit-for 1))
-  (start-process " * xscreensaver-command" nil "xscreensaver-command" "-lock"))
+  (start-process " *xscreensaver-command" nil "xscreensaver-command" "-lock"))
+
+(defun exwm-screenshot ()
+  (interactive)
+  (start-process " *screenshot" nil "gnome-screenshot"))
 
 (defun exwm-set-random-wallpaper (path)
   (interactive (list (read-directory-name "Random image from: " 
@@ -135,11 +133,23 @@
        (exwm-buffer-p (current-buffer))))
 
 (defun exwm-display-buffer-function (buffer &optional alist)
-  (if (< (length (frame-list)) 2)
-      (display-buffer-pop-up-window buffer alist)
-    (select-frame (funcall exwm-display-buffer-choose-frame))
-    (set-window-buffer (funcall exwm-display-buffer-choose-window
-                                (selected-frame)) buffer)))
+  (let ((visible-window-list
+         (delete
+          (selected-window)
+          (apply #'append (mapcar #'window-list (visible-frame-list))))))
+    (if visible-window-list
+        (if (< 1 (length visible-window-list))
+            (let* ((window-width-list (mapcar (lambda (w)
+                                                (+ (* (window-width w) 1000) (window-height w)))
+                                              visible-window-list))
+                   (window (nth (cl-position
+                                 (seq-max window-width-list)
+                                 window-width-list) visible-window-list)))
+              (select-frame (window-frame window))
+              (set-window-buffer window buffer))
+          (select-frame (window-frame (car visible-window-list)))
+          (set-window-buffer (car visible-window-list) buffer))
+      (display-buffer-pop-up-window buffer alist))))
 
 (defun exwm-windows-processes ()
   (cl-remove-if-not (lambda (p)
@@ -297,12 +307,18 @@
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
           ;; Bind lock screen
-          (,(kbd "<s-escape>") . exwm-screensaver-lock))))
+          (,(kbd "<s-escape>") . exwm-screensaver-lock)
+          ;; Screenshot
+          (,(kbd "<s-print>") . exwm-screenshot)
+          ;; Execute command menu
+          ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command)))))
 
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
         '(((string-equal exwm-class-name "XTerm") char-mode t)
-          ((string-equal exwm-class-name "darkplaces") floating nil))))
+          ((member exwm-class-name
+                   '("darkplaces" "doom"))
+           floating nil))))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
