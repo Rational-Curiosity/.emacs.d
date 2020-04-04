@@ -955,17 +955,6 @@ You can also customize this for each buffer, using something like
         ;;("u" "[u]nscheduled tasks" tags "-SCHEDULED={.+}/!+TODO|+NEXT|+STARTED|+WAITING|+HOLD")
         ))
 
-;;;;;;;;;;;
-;; Brain ;;
-;;;;;;;;;;;
-(require 'org-brain)
-
-(setq org-brain-path (or (cl-loop for folder in
-                               '("~/var/Dropbox/Brain")
-                               when (file-exists-p folder)
-                               return folder)
-                         org-brain-path))
-
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
