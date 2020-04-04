@@ -20,6 +20,14 @@
                     :foreground "white"
                     :background "slate gray")
 
+(defun helm-insert-utf8 ()
+  (interactive)
+  (let ((utf8-hash-table (ucs-names)))
+    (helm :sources
+          `((name . "Unicode character by name")
+            (candidates . ,(hash-table-keys utf8-hash-table))
+            (action . (lambda (key) (insert (gethash key ,utf8-hash-table))))))))
+
 (require 'helm-config)
 (require 'helm-mode)
 (helm-mode 1)
