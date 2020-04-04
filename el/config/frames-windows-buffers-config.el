@@ -598,7 +598,7 @@ others."
 
 (global-set-key (kbd "C-c b t") #'toggle-tool-bar-mode-from-frame)
 (global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
-(global-set-key (kbd "C-c e") 'toggle-message-truncate-lines)
+(global-set-key (kbd "<f7> e") 'toggle-message-truncate-lines)
 
 (global-set-key (kbd "C-x o") 'switch-to-window)
 (global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
