@@ -189,6 +189,13 @@
           (exwm-input-release-keyboard id)))
     (ace-window arg)))
 
+(defun exwm-shutdown (&optional arg)
+  (interactive "P")
+  (add-hook 'kill-emacs-hook
+            (lambda ()
+              (call-process "systemctl" nil nil nil "poweroff")) t)
+  (save-buffers-kill-terminal-with-choice arg))
+
 ;; display buffer rules
 (push '(exwm-display-buffer-condition exwm-display-buffer-function) display-buffer-alist)
 
@@ -311,7 +318,9 @@
           ;; Screenshot
           (,(kbd "<s-print>") . exwm-screenshot)
           ;; Execute command menu
-          ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command)))))
+          ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command))
+          ;; shutdown computer
+          (,(kbd "<s-end>") . exwm-shutdown))))
 
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
