@@ -32,6 +32,15 @@
    "yes"
    (completing-read prompt '("yes" "no") nil t nil nil "no")))
 
+(defun insert-utf8 (&optional name)
+  (interactive)
+  (let ((utf8-hash-table (ucs-names)))
+    (insert (gethash (completing-read
+                      "Unicode character name: "
+                      (hash-table-keys utf8-hash-table)
+                      nil t)
+                     utf8-hash-table))))
+
 (setq column-number-mode t
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
@@ -39,7 +48,7 @@
 
 (require 'config-lib)
 ;;;;;;;;;;;;;;;;;;;
-;; Coding system ;;
+;; Coding system ;; 
 ;;;;;;;;;;;;;;;;;;;
 
 (set-default-coding-systems 'utf-8)
@@ -829,9 +838,9 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-<left>") #'left-word)
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "<S-delete>") #'kill-sexp)
-(global-set-key (kbd "<S-backspace>") #'backward-kill-sexp)
+(global-set-key (kbd "<S-backspace>") #'sp-backward-kill-sexp)
 (global-set-key (kbd "M-s s") #'swap-regions)
-(global-set-key (kbd "M-s k s") #'backward-kill-sexp)
+(global-set-key (kbd "<C-M-backspace>") #'backward-kill-sexp)
 ;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
 ;; (global-set-key (kbd "S-<delete>") #'kill-sexp)
 (global-set-key (kbd "M-s <deletechar>") #'kill-sexp)
