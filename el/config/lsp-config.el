@@ -45,7 +45,7 @@
   (push 'company-lsp company-backends))
 
 (setq lsp-enable-xref nil  ;; lsp-enable-xref t suppress etags--xref-backend
-      lsp-diagnostic-package :auto
+      lsp-diagnostic-package :flymake
       lsp-file-watch-ignored
       (cons "[/\\\\]tmp$"
             lsp-file-watch-ignored)
@@ -59,8 +59,20 @@
       ;; lsp-pyls
       lsp-pyls-plugins-flake8-enabled t)
 
-(define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
-(define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+(defun lsp-ui-or-xref-find-definitions ()
+  (interactive)
+  (condition-case nil
+      (call-interactively 'lsp-ui-peek-find-definitions)
+    (error (call-interactively 'xref-find-definitions))))
+
+(defun lsp-ui-or-xref-find-references ()
+  (interactive)
+  (condition-case nil
+      (call-interactively 'lsp-ui-peek-find-references)
+    (error (call-interactively 'xref-find-references))))
+
+(define-key lsp-ui-mode-map [remap xref-find-definitions] 'lsp-ui-or-xref-find-definitions)
+(define-key lsp-ui-mode-map [remap xref-find-references] 'lsp-ui-or-xref-find-references)
 
 
 (provide 'lsp-config)
