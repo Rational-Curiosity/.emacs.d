@@ -169,7 +169,7 @@ By default insert it, with prefix display a message with it."
                 (language-get-phonemic-script (thing-at-point 'word 'no-properties)))
                parenthesis))))))
 
-(defvar language-text-to-speak-process-name "*language-text-to-speak-process*")
+(defvar language-text-to-speak-process nil)
 
 (require 'guess-language)
 (setq guess-language-languages '(en es))
@@ -178,31 +178,28 @@ By default insert it, with prefix display a message with it."
   (interactive (if (use-region-p)
                    (list (region-beginning) (region-end))
                  (list (point) (point-max))))
-  (let ((process (get-process language-text-to-speak-process-name)))
-    (if process
-        (delete-process process)))
   (let ((string (buffer-substring-no-properties start end))
         (language (symbol-name (guess-language-region start end))))
-    (let ((process (cond
-                    ((executable-find "espeak")
-                     (start-process language-text-to-speak-process-name nil
-                                    "espeak" "--stdin" "-v" language))
-                    ((executable-find "festival")
-                     (make-process
-                      :name language-text-to-speak-process-name
-                      :command (list "festival" "--tts" "--language"
-                                     (pcase language
-                                       ("es" "spanish")
-                                       ("en" "english")))
-                      :coding 'latin-1)))))
-      (process-send-string process (concat string "\n"))
-      (process-send-eof process))))
+    (setq language-text-to-speak-process
+          (cond
+           ((executable-find "espeak")
+            (start-process "*espeak-process*" nil
+                           "espeak" "--stdin" "-v" language))
+           ((executable-find "festival")
+            (make-process
+             :name "*festival-process*"
+             :command (list "festival" "--tts" "--language"
+                            (pcase language
+                              ("es" "spanish")
+                              ("en" "english")))
+             :coding 'latin-1))))
+    (process-send-string language-text-to-speak-process (concat string "\n"))
+    (process-send-eof language-text-to-speak-process)))
 
 (defun language-text-to-speak-stop ()
   (interactive)
-  (let ((process (get-process language-text-to-speak-process-name)))
-    (if process
-        (delete-process language-text-to-speak-process-name))))
+  (if language-text-to-speak-process
+      (interrupt-process language-text-to-speak-process)))
 
 ;;;;;;;;;;
 ;; Keys ;;
