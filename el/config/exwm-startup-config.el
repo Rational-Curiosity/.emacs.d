@@ -4,6 +4,12 @@
     (interactive)
     (message "Command `suspend-frame' is dangerous in EXWM.")))
 
+;; Faces
+(defface exwm-record-face
+  '((t :foreground "red2"))
+  "Basic face used to highlight errors and to denote failure."
+  :group 'exwm)
+
 ;; Variables
 (defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces" "doom")
   "EXWM instances without transparency.")
@@ -11,13 +17,78 @@
 (defvar exwm-default-transparency 0.85
   "EXWM default transparency.")
 
-(defvar exwm-default-monitor-position (getenv "EXWM_MONITOR_POSITION")
-  "EXWM default monitor position.")
+(defvar exwm-default-monitor-order
+  (let ((monitor-order (getenv "EXWM_MONITOR_ORDER")))
+    (if monitor-order
+        (condition-case nil
+            (split-string monitor-order  " ")
+          (error nil))))
+  "EXWM default monitor order.")
 
 (defvar exwm-default-wallpaper-folder "~/Pictures/backgrounds/"
   "EXWM default wallpaper folder.")
 
+(defvar exwm-record-process nil
+  "EXWM record process when recording.")
+
+(defvar exwm-record-recording (propertize "⏺" 'face 'exwm-record-face)
+  "EXWM recording text displayed while recording")
+
 ;; Functions
+(defun exwm-record-stop ()
+  (interactive)
+  (when exwm-record-process
+    (interrupt-process exwm-record-process)
+    (message "EXWM Record process interrupted")))
+
+(defun exwm-record-start (&optional monitor-name)
+  (interactive)
+  (let ((monitors (exwm-xrandr-parse)))
+    (if (null monitor-name)
+        (setq monitor-name (completing-read
+                            "Select monitor: "
+                            (hash-table-keys monitors)
+                            nil t)))
+    (let ((monitor (gethash monitor-name monitors)))
+      (setq exwm-record-process
+            (start-process
+             "*exwm-record-process*" (if current-prefix-arg "*ffmpeg output*")
+             "ffmpeg" "-thread_queue_size" "512"
+             "-nostats" "-hide_banner"
+             "-loglevel" (if current-prefix-arg "warning" "quiet")
+             ;; video input
+             "-video_size" (gethash 'resolution monitor)
+             "-framerate" "20"
+             "-probesize" "30M"
+             "-f" "x11grab"
+             "-i" (concat ":0.0+" (gethash 'x monitor) "," (gethash 'y monitor))
+             ;; audio imput
+             "-f" "pulse" "-ac" "2" "-i" "default"
+             ;; audio codec
+             "-codec:a" "copy"
+             ;; video codec
+             "-codec:v" "libx264"
+             ;; options
+             "-crf" "0" "-preset" "ultrafast"
+             "-threads" "4"
+             (expand-file-name (concat
+                                monitor-name
+                                (format-time-string "_%Y-%m-%d_%H.%M.%S.mkv"))
+                               (if (file-directory-p "~/Videos/")
+                                   "~/Videos/"
+                                 "~/"))))))
+  (if (eq 'run (process-status exwm-record-process))
+      (message "EXWM Record process started")
+    (message "EXWM Record process failed")))
+
+(defun exwm-record-toggle ()
+  (interactive)
+  (if exwm-record-process
+      (if (eq 'run (process-status exwm-record-process))
+          (exwm-record-stop)
+        (exwm-record-start))
+    (exwm-record-start)))
+
 (defun exwm-screensaver-lock ()
   (interactive)
   (when (not (member "xscreensaver"
@@ -35,11 +106,13 @@
 (defun exwm-set-random-wallpaper (path)
   (interactive (list (read-directory-name "Random image from: " 
                                           exwm-default-wallpaper-folder)))
-  (let ((paths (directory-files path t nil t)))
+  (let* ((paths (directory-files path t nil t))
+         (random-picture (nth (random (length paths)) paths)))
    (start-process " *feh" " *feh outputs*" "feh" "--bg-fill"
-                  (nth (random (length paths)) paths))))
+                  random-picture)
+   (message "EXWM wallpaper: %s" (abbreviate-file-name random-picture))))
 
-(defun exwm-set-buffer-transparency (buffer opacity)
+(defun exwm-set-window-transparency (buffer opacity)
   (interactive (list (current-buffer)
                      (read-number "Opacity: " exwm-default-transparency)))
   (let ((window-id (exwm--buffer->id buffer)))
@@ -50,38 +123,91 @@
                        (int-to-string opacity))
       (message "Buffer %s without window." (buffer-name buffer)))))
 
-(defun exwm-update-screens ()
-  (interactive)
-  (if (or (null exwm-default-monitor-position)
-          (called-interactively-p 'interactive))
-      (setq exwm-default-monitor-position
-            (completing-read "External monitor position: "
-                             '("left" "right")
-                             nil t nil nil
-                             (or exwm-default-monitor-position "left"))))
-  (let ((xrandr-monitor-regexp "\n\\([^ ]+\\) connected ")
-        default-monitor)
+(defun exwm-xrandr-parse ()
+  (let ((monitors (make-hash-table :test 'equal)))
     (with-temp-buffer
       (call-process "xrandr" nil t nil)
       (goto-char (point-min))
-      (re-search-forward xrandr-monitor-regexp nil 'noerror)
-      (setq default-monitor (match-string 1))
-      (forward-line)
-      (if (not (re-search-forward xrandr-monitor-regexp nil 'noerror))
-          (progn
-            (call-process "xrandr" nil nil nil "--output" default-monitor "--auto")
-            (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor)
-                  exwm-workspace-number 1))
-        (call-process "setup" nil nil nil "monitor" exwm-default-monitor-position)
-        (setq exwm-randr-workspace-monitor-plist (list 0 default-monitor 1 (match-string 1)))
-        (forward-line)
-        (let ((monitor-number 1))
-          (while (re-search-forward xrandr-monitor-regexp nil 'noerror)
-            (setq exwm-randr-workspace-monitor-plist
-                  (nconc exwm-randr-workspace-monitor-plist (list (cl-incf monitor-number)
-                                                                  (match-string 1))))
-            (forward-line))
-          (setq exwm-workspace-number monitor-number)))))
+      (while (re-search-forward "\n\\([^ ]+\\) connected " nil 'noerror)
+        (let ((monitor (make-hash-table :test 'eq))
+              (monitor-name (match-string 1)))
+          (let ((primary (string-equal "primary" (thing-at-point 'word))))
+            (puthash 'primary primary monitor)
+            (when primary
+              (forward-word)
+              (forward-char)))
+          (let* ((resolution-pos (thing-at-point 'sexp))
+                 (values (split-string resolution-pos "+")))
+            (puthash 'resolution (nth 0 values) monitor)
+            (puthash 'x (nth 1 values) monitor)
+            (puthash 'y (nth 2 values) monitor))
+          (forward-line)
+          (forward-word)
+          (puthash 'max (thing-at-point 'sexp) monitor)
+          (puthash monitor-name monitor monitors))))
+    monitors))
+
+(require 'crm)
+(defun exwm-update-screens ()
+  (interactive)
+  (let* ((monitors (exwm-xrandr-parse))
+         (names (hash-table-keys monitors)))
+    (if (called-interactively-p 'interactive)
+        (setq exwm-default-monitor-order
+              (completing-read-multiple
+               (concat
+                "External monitor order (" crm-separator "): ")
+               names
+               nil t)))
+    (if (null exwm-default-monitor-order)
+        (setq exwm-default-monitor-order
+              (list
+               (cl-some (lambda (name)
+                          (if (gethash 'primary (gethash name monitors))
+                              name))
+                        names))))
+    (let* ((names (cl-remove-if-not (lambda (name)
+                                      (member name names))
+                                    exwm-default-monitor-order))
+           (posx 0)
+           (gety-lambda
+            (lambda (name)
+              (string-to-number
+               (nth 1 (split-string
+                       (gethash 'max (gethash name monitors)) "x")))))
+           (ymax
+            (apply 'max
+                   (mapcar
+                    gety-lambda
+                    names)))
+           (args
+            (apply
+             'nconc
+             (mapcar
+              (lambda (name)
+                (let* ((monitor (gethash name monitors))
+                       (max-resolution (gethash 'max monitor)))
+                  (prog1
+                      (list "--output" name
+                            "--mode" max-resolution
+                            "--pos" (concat (number-to-string posx)
+                                            "x"
+                                            (number-to-string
+                                             (- ymax (funcall gety-lambda name))))
+                            "--rotate" "normal")
+                    (setq posx (+ posx (string-to-number
+                                        (nth 0 (split-string
+                                                (gethash 'max monitor) "x"))))))))
+              names))))
+      (apply 'call-process "xrandr" nil nil nil args)
+      (setq exwm-randr-workspace-monitor-plist nil)
+      (let ((monitor-number -1))
+        (mapc (lambda (name)
+                (setq exwm-randr-workspace-monitor-plist
+                      (nconc exwm-randr-workspace-monitor-plist
+                             (list (cl-incf monitor-number) name))))
+              names)
+        (setq exwm-workspace-number (1+ monitor-number)))))
   (exwm-set-random-wallpaper exwm-default-wallpaper-folder))
 
 (defun exwm-screen-count ()
@@ -254,7 +380,7 @@
               (string-equal "gimp" exwm-instance-name))
     (exwm-workspace-rename-buffer exwm-class-name))
   (unless (member exwm-instance-name exwm-exclude-transparency)
-    (exwm-set-buffer-transparency (current-buffer) exwm-default-transparency)))
+    (exwm-set-window-transparency (current-buffer) exwm-default-transparency)))
 (add-hook 'exwm-update-class-hook 'exwm-update-class-defaults)
 
 (defun exwm-update-title-defaults ()
@@ -317,6 +443,8 @@
           (,(kbd "<s-escape>") . exwm-screensaver-lock)
           ;; Screenshot
           (,(kbd "<s-print>") . exwm-screenshot)
+          ;; Record audio and video
+          (,(kbd "<S-s-print>") . exwm-record-toggle)
           ;; Execute command menu
           ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command))
           ;; shutdown computer
@@ -420,6 +548,11 @@
 (define-symon-monitor symon-current-datetime-monitor
   :display (format-time-string "%b %e %H:%M"))
 
+(define-symon-monitor symon-recording-monitor
+  :display (if (and exwm-record-process
+                    (eq 'run (process-status exwm-record-process)))
+               exwm-record-recording))
+
 (setcdr (last symon-monitors)
         `(,(cond ((memq system-type '(gnu/linux cygwin))
                   'symon-linux-battery-monitor)
@@ -427,6 +560,7 @@
                   'symon-darwin-battery-monitor)
                  ((memq system-type '(windows-nt))
                   'symon-windows-battery-monitor))
+          symon-recording-monitor
           symon-current-datetime-monitor))
 
 (setq symon-delay 3
