@@ -1,24 +1,24 @@
 (with-eval-after-load 'virtualenvwrapper
   (when (bug-check-function-bytecode
          'venv-mkvirtualenv-using
-         "xiCICIMNAMfIIYIOAAkaCzuDHADJygshIYIdAAwdCoUlAMsKUB4gDiGDMQAOIYI1AMzNIUOJHiHOHiKJHiODtQAOI0AeJM/QIA4kIoNTANHSIYjT1CGI1Q4l1g4g1g0OJLAGIYgLPIOBAA0OJFCJHiYLnYN7AAuIgoAADiYLQhMpDA4nHigeKdcOJCGI2A4qIYjZjtPaIYgr29whg6YA3d4OJFAhiCkOIlQWIg4jQYkWI4RBACrX3w4hIUAhLIc=")
-    (defun venv-mkvirtualenv-using (&optional interpreter &rest names)
+         "xiCICIMNAMfIIYIOAAkaCzuDHADJygshIYIdAAwdCoUlAMsKUB4hDiKDMQAOIoI1AMzNIUOJHiLOHiOJHiSDpgAOJEAeJc/QIA4lIoNTANHSIYjT1CGI1Q4m1g4h1g0OJbAGIYgLPINyANfDDQ4lUCKIDA4nHigeKdgOJSGI2Q4qIYjajtPbIYgr3N0hg5cA3t8OJVAhiCkOI1QWIw4kQYkWJIRBACrY4A4iIUAhLIc=")
+    (defun venv-mkvirtualenv-using (interpreter &rest names)
       "Create new virtualenvs NAMES using INTERPRETER. If venv-location
 is a single directory, the new virtualenvs are made there; if it
 is a list of directories, the new virtualenvs are made in the
 current `default-directory'."
-      (interactive)
+      (interactive '(nil))
       (venv--check-executable)
-      (let* ((foo (if (or current-prefix-arg
-                          (null interpreter))
-                      (read-string "Python executable: ")
-                    interpreter))
+      (let* ((interpreter (if (or current-prefix-arg
+                                  (null interpreter))
+                              (read-string "Python executable: ")
+                            interpreter))
              (parent-dir (if (stringp venv-location)
                              (file-name-as-directory
                               (expand-file-name venv-location))
                            default-directory))
-             (python-exe-arg (when foo
-                               (concat "--python=" foo)))
+             (python-exe-arg (when interpreter
+                               (concat "--python=" interpreter)))
              (names (if names names
                       (list (read-from-minibuffer "New virtualenv: ")))))
         ;; map over all the envs we want to make
