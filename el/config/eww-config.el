@@ -54,6 +54,27 @@
 (setq eww-search-prefix "https://www.google.com/search?q="
       eww-download-directory "~/Descargas")
 
+(defun browse-url-browser-function-selection ()
+  (interactive)
+  (setq browse-url-browser-function
+        (intern
+         (completing-read
+          "Select function to open urls: "
+          (let (browsers)
+            (if (locate-library "w3") 'browse-url-w3)
+            (if (executable-find browse-url-xterm-program) (push 'browse-url-text-xterm browsers))
+            (if (executable-find browse-url-kde-program) (push 'browse-url-kde browsers))
+            (if (executable-find browse-url-conkeror-program) (push 'browse-url-conkeror browsers))
+            (if (executable-find browse-url-chrome-program) (push 'browse-url-chrome browsers))
+            (if (executable-find browse-url-chromium-program) (push 'browse-url-chromium browsers))
+            (if (executable-find browse-url-firefox-program) (push 'browse-url-firefox browsers))
+            (if (executable-find browse-url-mozilla-program) (push 'browse-url-mozilla browsers))
+            (push 'eww-browse-url browsers)
+            (push 'browse-url-default-browser browsers)
+            browsers)
+          nil t nil nil browse-url-browser-function))))
+
+(global-set-key (kbd "C-x W") 'browse-url-browser-function-selection)
 ;; Make the binding for `revert-buffer' do `eww-reload' in eww-mode
 (define-key eww-mode-map (kbd "<backtab>") 'shr-previous-link)
 (define-key eww-mode-map (kbd ":") 'eww)
