@@ -11,7 +11,7 @@
   :group 'exwm)
 
 ;; Variables
-(defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces" "doom")
+(defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces" "doom" "gzdoom")
   "EXWM instances without transparency.")
 
 (defvar exwm-default-transparency 0.85
@@ -106,11 +106,12 @@
 (defun exwm-set-random-wallpaper (path)
   (interactive (list (read-directory-name "Random image from: " 
                                           exwm-default-wallpaper-folder)))
-  (let* ((paths (directory-files path t nil t))
+  (let* ((paths (directory-files path t "^[^.]"))
          (random-picture (nth (random (length paths)) paths)))
    (start-process " *feh" " *feh outputs*" "feh" "--bg-fill"
                   random-picture)
-   (message "EXWM wallpaper: %s" (abbreviate-file-name random-picture))))
+   (let ((inhibit-message t))
+     (message "EXWM wallpaper: %s" (abbreviate-file-name random-picture)))))
 
 (defun exwm-set-window-transparency (buffer opacity)
   (interactive (list (current-buffer)
@@ -454,7 +455,7 @@
   (setq exwm-manage-configurations
         '(((string-equal exwm-class-name "XTerm") char-mode t)
           ((member exwm-class-name
-                   '("darkplaces" "doom"))
+                   '("darkplaces" "doom" "gzdoom"))
            floating nil))))
 
 ;; To add a key binding only available in line-mode, simply define it in
@@ -515,19 +516,64 @@
 
 ;; System monitor
 (require 'symon)
+;; (defun message-advice (orig-fun format-string &rest args)
+;;   (if format-string
+;;       (apply orig-fun format-string args)))
+;; (advice-add #'message :around 'message-advice)
 
-(defun message-advice (orig-fun format-string &rest args)
-  (if format-string
-      (apply orig-fun format-string args)))
-(advice-add #'message :around 'message-advice)
+;; (defvar symon--minibuffer-window
+;;   (minibuffer-window (car exwm-workspace--list)))
+;; (defun symon-message-trick (format-string &rest args)
+;;   (if (not (cdr exwm-workspace--list))
+;;       (apply #'message format-string args)
+;;     (if (null symon--minibuffer-window)
+;;         (setq symon--minibuffer-window
+;;               (minibuffer-window (car exwm-workspace--list))))
+;;     (with-selected-window symon--minibuffer-window
+;;       (delete-region (minibuffer-prompt-end) (point-max))
+;;       (insert (apply #'format-message format-string args)))))
 
-(defun symon--message (format-string &rest args)
-  (let ((current-minibuffer-window (minibuffer-window (selected-frame))))
-    (if current-minibuffer-window
-        (with-selected-window current-minibuffer-window
-          (delete-region (minibuffer-prompt-end) (point-max))
-          (insert (apply #'format-message format-string args)))
-      (apply 'message format-string args))))
+(defun symon-clean-echo-area ()
+  (message nil))
+(add-function :before after-focus-change-function 'symon-clean-echo-area)
+
+(defvar symon--last-message "")
+(defvar symon-message-width-diff 52)
+(defvar symon-systemtray-width 6)
+
+(defun symon-message-add (format-string &rest args)
+  (let ((symon-msg (apply #'format-message format-string args)))
+    (if (not (string-empty-p symon-msg))
+        (let ((msg (current-message))
+              (available-space (- (frame-width) (string-width symon-msg)
+                                  symon-message-width-diff
+                                  symon-systemtray-width)))
+          (if (and msg
+                   (setq msg (replace-regexp-in-string
+                              symon--last-message
+                              "" msg t t))
+                   (not (string-match-p "\\`[[:space:]]*\\'" msg)))
+              (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
+                     (last-line (if last-newline-pos
+                                    (substring msg (1+ last-newline-pos))
+                                  msg))
+                     (last-line-width (string-width last-line))
+                     (sep (cond
+                           ((< available-space last-line-width)
+                            (concat "\n" (make-string (max 0 available-space) ? )))
+                           ((string-empty-p last-line)
+                            (make-string (max 0 available-space) ? ))
+                           (t
+                            (make-string (- available-space last-line-width) ? )))))
+                (message nil)
+                (message "%s" (concat msg sep symon-msg))
+                (setq symon--last-message (concat sep symon-msg)))
+            (let* ((sep (if (< 0 available-space)
+                            (make-string available-space ? )
+                          ""))
+                   (symon-msg (concat sep symon-msg)))
+              (message "%s" symon-msg)
+              (setq symon--last-message symon-msg)))))))
 
 (when (bug-check-function-bytecode
        'symon--display-update
@@ -540,7 +586,7 @@
             (page 0))
         (dolist (lst symon--display-fns)
           (if (= page symon--active-page)
-              (symon--message "%s" (apply 'concat (mapcar 'funcall lst)))
+              (symon-message-add "%s" (apply 'concat (mapcar 'funcall lst)))
             (mapc 'funcall lst))
           (setq page (1+ page))))
       (setq symon--display-active t))))
