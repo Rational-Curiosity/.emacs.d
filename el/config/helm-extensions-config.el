@@ -55,7 +55,8 @@
   (define-key company-active-map (kbd "C-:") 'helm-company))
 
 (with-eval-after-load 'flycheck
-  (define-key flycheck-mode-map (kbd "C-c ! h") 'helm-flycheck))
+  (when (fboundp 'helm-flycheck)
+    (define-key flycheck-mode-map (kbd "C-c ! h") 'helm-flycheck)))
 
 (with-eval-after-load 'org
   (require 'helm-org)

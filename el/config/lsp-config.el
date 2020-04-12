@@ -14,6 +14,7 @@
 ;;; Code:
 
 (message "Importing lsp-config")
+(add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
 
 (set-face-attribute 'lsp-face-highlight-read nil
                     :inherit 'unspecified
@@ -37,27 +38,33 @@
                             workspaces))
       (propertize "[Disconnected]" 'face 'warning))))
 
-(require 'lsp-ui-doc)
 (require 'lsp-ui)
-(require 'lsp-pyls)
 (when (and (featurep 'company)
            (load "company-lsp" t))
   (push 'company-lsp company-backends))
 
-(setq lsp-enable-xref nil  ;; lsp-enable-xref t suppress etags--xref-backend
-      lsp-diagnostic-package :flymake
-      lsp-file-watch-ignored
-      (cons "[/\\\\]tmp$"
-            lsp-file-watch-ignored)
+(setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
+      ;; performance
+      gc-cons-threshold 100000000
+      read-process-output-max (* 3 1024 1024)
+      lsp-prefer-capf t
+      lsp-idle-delay 0.5
+      ;; lsp
+      lsp-keymap-prefix "s-l"
+      lsp-diagnostic-package :flycheck
+      lsp-file-watch-ignored (cons "[/\\\\]tmp$"
+                                   lsp-file-watch-ignored)
       lsp-signature-auto-activate nil ;; <xor signature>
-      ;; lsp-ui
+      ;; lsp-ui-doc
+      lsp-ui-doc-enable nil
       lsp-ui-doc-include-signature t  ;; <xor signature>
       lsp-ui-doc-position 'top
       lsp-ui-doc-alignment 'frame
       lsp-ui-doc-max-height 10
       lsp-ui-doc-max-width 80
-      ;; lsp-pyls
-      lsp-pyls-plugins-flake8-enabled t)
+      ;; lsp-ui-sideline
+      lsp-ui-sideline-delay 0.5
+      lsp-ui-sideline-show-hover t)
 
 (defun lsp-ui-or-xref-find-definitions ()
   (interactive)
