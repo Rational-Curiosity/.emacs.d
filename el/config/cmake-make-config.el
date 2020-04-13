@@ -30,7 +30,7 @@
     (compilation-start (concat "LC_ALL=C " (replace-regexp-in-string "\$p" (concat "\"" bufferpathname "\"")
                      (replace-regexp-in-string "\$n" (concat "\"" buffername "\"")
                        (replace-regexp-in-string "\$b" (concat "\"" bufferbasename "\"")
-                         command)))))))
+                         command t t) t t) t t)))))
 
 (defun recursive-find-to-root (file-list directory)
   "Search FILE-LIST in paths from DIRECTORY to root."

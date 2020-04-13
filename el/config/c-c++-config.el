@@ -42,12 +42,12 @@
                   (file-name-sans-extension buffer-file-name)))
            (proj-name (condition-case nil
                           (replace-regexp-in-string
-                           (file-name-directory (oref (ede-current-project) file)) ""
-                           (file-name-sans-extension buffer-file-name))
+                           (regexp-quote (file-name-directory (oref (ede-current-project) file))) ""
+                           (file-name-sans-extension buffer-file-name) nil t)
                         (error name)))
            (ext   (file-name-extension buffer-file-name))
            (label (concat "__" (upcase
-                                (replace-regexp-in-string "[^a-zA-Z0-9_]" "_" proj-name))
+                                (replace-regexp-in-string "[^a-zA-Z0-9_]" "_" proj-name t t))
                           "_" (upcase ext) "__")))
         (save-excursion
           (when (< (buffer-size) 5)

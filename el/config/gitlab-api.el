@@ -144,7 +144,7 @@
 (defun gitlab-api--fill-template (template alist)
   (mapc (lambda (key-value)
           (setq template (replace-regexp-in-string
-                          (concat "{" (car key-value) "}")
+                          (regexp-quote (concat "{" (car key-value) "}"))
                           (cdr key-value) template t 'literal)))
         alist)
   template)

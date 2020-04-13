@@ -137,7 +137,7 @@
       (apply orig-fun (replace-regexp-in-string
                        "/q \""
                        (concat "/q \"" cygwin-root-path)
-                       command) args))
+                       command nil t) args))
      ((or
        (string-match "^java" command)
        (string-match "^soffice" command))

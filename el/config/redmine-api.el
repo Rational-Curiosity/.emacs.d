@@ -53,7 +53,7 @@
 (defun redmine-api--fill-template (template alist)
   (mapc (lambda (key-value)
           (setq template (replace-regexp-in-string
-                          (concat "{" (car key-value) "}")
+                          (regexp-quote (concat "{" (car key-value) "}"))
                           (cdr key-value) template t 'literal)))
         alist)
   template)
@@ -109,11 +109,10 @@
 (defun redmine-api--format-field (field value indent)
   (concat indent (format "%-9s  %s" (concat ":" field ":")
                          (if (stringp value)
-                             (replace-regexp-in-string "\r?\n"
-                                                       (concat
-                                                        indent
-                                                        (format "%-9s " (concat ":" field "+:")))
-                                                       value t)
+                             (replace-regexp-in-string
+                              "\r?\n"
+                              (concat indent (format "%-9s " (concat ":" field "+:")))
+                              value t t)
                            value))))
 
 (defun redmine-api--convert-to-org (data keys &optional level resource)
@@ -137,7 +136,7 @@
                                                  (replace-regexp-in-string
                                                   "{id}"
                                                   (int-to-string (cdr (assoc 'id data)))
-                                                  resource t))))))
+                                                  resource t t))))))
       (dolist (key keys)
         (if (listp key)
             (let ((value (assoc-keys key data)))

@@ -119,13 +119,13 @@ if __name__ == \"__main__\":
     (replace-regexp-in-string
      "^Out\\[[0-9]+\\]: " ""
      (replace-regexp-in-string
-      "^  +\\.\\.\\.: " "... " string)))))
+      "^  +\\.\\.\\.: " "... " string t t) t t) t t) t t))
 
 (defun pypy-to-python-text (string)
    (replace-regexp-in-string
     "^>>>> " ">>> "
      (replace-regexp-in-string
-      "^\\.\\.\\.\\. " "... " string)))
+      "^\\.\\.\\.\\. " "... " string t t) t t))
 
 (defun python-import-to-multiline ()
   (interactive)

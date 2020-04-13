@@ -41,7 +41,7 @@ se ejecute esta función."
                (eq pytex-my-python-output-buffer (current-buffer)))
       (set 'pytex-filter-python-io-complete-string
         (concat pytex-filter-python-io-complete-string
-                (replace-regexp-in-string "" "" string)))
+                (replace-regexp-in-string "" "" string t t)))
       (when (equal (substring pytex-filter-python-io-complete-string
                               (- (min (length pytex-filter-python-io-complete-string)
                                       4))) ">>> ")
@@ -49,7 +49,7 @@ se ejecute esta función."
                                  "^\\(>>>\\|\\.\\.\\.\\) [^\n]*\n" ""
                                  (substring pytex-filter-python-io-complete-string
                                             (+ 1 (string-match "\n"
-                                       pytex-filter-python-io-complete-string)) -4)))
+                                       pytex-filter-python-io-complete-string)) -4) t t))
                (complete-string-length (length complete-string)))
           (set 'pytex-filter-python-io-complete-string "")
           (if (or (equal (substring complete-string
@@ -193,14 +193,14 @@ from pytex import *
                   (set 'str-command (cl-subseq str-command 0
                                       (string-match "#=" str-command)))
                   (set 'str-command (replace-regexp-in-string
-                                     "\\`\\( *\n\\)+" "" str-command))
+                                     "\\`\\( *\n\\)+" "" str-command t t))
                   (if (string-match "[^ \n]" str-command)
                     (progn
                       (set 'str-command (replace-regexp-in-string
-                                         "\\( *\n\\)* *\\'" "" str-command))
+                                         "\\( *\n\\)* *\\'" "" str-command t t))
                       (while (equal (cl-subseq str-command 0 1) " ")
                         (set 'str-command (replace-regexp-in-string
-                                              "\n " "\n" (cl-subseq str-command 1))))
+                                              "\n " "\n" (cl-subseq str-command 1) t t)))
                       (let* ((last-command (last (split-string str-command "\n"))))
                         (if (equal (cl-subseq last-command 0 1) " ")
                           (set 'str-command (concat str-command "\n\n"))
@@ -255,7 +255,7 @@ from pytex import *
           (insert
             (replace-regexp-in-string " +\\'" ""
               (replace-regexp-in-string "\\` +" ""
-                  (cl-subseq str-latex (+ 2 ind-latex) (- (length "»»")))))))
+                  (cl-subseq str-latex (+ 2 ind-latex) (- (length "»»"))) t t) t t)))
         (if (string-match "[^ ]" (buffer-substring (progn (beginning-of-line) (point))
                        (progn (end-of-line) (point))))
           (goto-char pos)

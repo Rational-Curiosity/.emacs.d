@@ -322,7 +322,7 @@
                                 "sin" "so" "sobre" "tras")
                               "\\|")
                    "\\)\\( \\|\\'\\)") " "
-           (org-entry-get nil "ITEM") t)))))
+           (org-entry-get nil "ITEM") t t) t) t t)))
 
 (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
 
@@ -1127,8 +1127,7 @@ SUFFIX - default .png"
                   (replace-regexp-in-string "[ \t\n]*\\'" ""
                                             (substring (buffer-string)
                                                        (- (region-beginning) 1)
-                                                       (region-end))))
-                 )
+                                                       (region-end)) t t) t t))
             ;; if none was stated by user, read property from user
             (prop (or property
                       (org-read-entry-property-name))))

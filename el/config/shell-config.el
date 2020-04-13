@@ -168,7 +168,7 @@
                            (cons "%b" (concat "\"" (file-name-nondirectory buffer-file-name) "\"")))))))
     (dolist (replacement replacements)
       (set 'command-replaced (replace-regexp-in-string
-                              (car replacement) (cdr replacement)
+                              (regexp-quote (car replacement)) (cdr replacement)
                               command-replaced
                               t t)))
     (funcall 'shell-command command-replaced output-buffer error-buffer)))

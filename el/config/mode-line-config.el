@@ -509,13 +509,13 @@ mouse-3: Toggle minor modes"
                  (short (replace-regexp-in-string
                          (concat "^" (regexp-quote (abbreviate-file-name proj)))
                          replacement
-                         in)))
+                         in t t)))
             (if (string= short in)
                 (let* ((true-in (abbreviate-file-name (file-truename in)))
                        (true-short
                         (replace-regexp-in-string
                          (concat "^" (regexp-quote (abbreviate-file-name (file-truename proj))))
-                         replacement true-in)))
+                         replacement true-in t t)))
                   (if (string= true-in true-short) in true-short))
               short))
         in)))
@@ -529,15 +529,18 @@ mouse-3: Toggle minor modes"
 ;; Version control ;;
 ;;;;;;;;;;;;;;;;;;;;;
 (with-eval-after-load 'vc-hooks
-  (defun vc-mode-line-advice (&rest args)
-    "Color `vc-mode'."
+  (defun vc-mode-line-advice (file &optional backend)
+    "Colorize and abbrev `vc-mode'."
     (when (stringp vc-mode)
-      (let ((noback (replace-regexp-in-string (format "^ %s" (vc-backend buffer-file-name)) " " vc-mode t)))
+      (let ((noback (replace-regexp-in-string
+                     (concat "^ " (regexp-quote (symbol-name backend)))
+                     " " vc-mode t t)))
         (setq vc-mode
               (propertize noback
-                          'face (cond ((string-match "^ -" noback)    'mode-line-not-modified)
-                                      ((string-match "^ [:@]" noback) 'mode-line-read-only)
-                                      ((string-match "^ [!\\?]" noback) 'mode-line-modified)))))))
+                          'face (cl-case (elt noback 1)
+                                  (?- 'mode-line-not-modified)
+                                  ((?: ?@) 'mode-line-read-only)
+                                  ((?! ?\\ ??) 'mode-line-modified)))))))
   (advice-add 'vc-mode-line :after 'vc-mode-line-advice))
 
 
