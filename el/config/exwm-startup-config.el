@@ -533,13 +533,52 @@
 ;;       (delete-region (minibuffer-prompt-end) (point-max))
 ;;       (insert (apply #'format-message format-string args)))))
 
+(setq symon-delay 2
+      symon-refresh-rate 4
+      symon-sparkline-type 'bounded
+      symon-sparkline-thickness 1
+      symon-history-size 24
+      symon-sparkline-width 24)
+
+(define-symon-monitor symon-current-datetime-monitor
+  :interval 10
+  :display (format-time-string "%b %e %H:%M"))
+
+(define-symon-monitor symon-venv-current-name
+  :interval 10
+  :display (if (and (boundp 'venv-current-name)
+                    venv-current-name
+                    (not (string-empty-p venv-current-name)))
+               (concat "[" (propertize venv-current-name 'face 'mode-line-correct) "]")))
+
+(define-symon-monitor symon-recording-monitor
+  :display (if (and exwm-record-process
+                    (eq 'run (process-status exwm-record-process)))
+               exwm-record-recording))
+
+(setcdr (last symon-monitors)
+        `(,(cond ((memq system-type '(gnu/linux cygwin))
+                  'symon-linux-battery-monitor)
+                 ((memq system-type '(darwin))
+                  'symon-darwin-battery-monitor)
+                 ((memq system-type '(windows-nt))
+                  'symon-windows-battery-monitor))
+          symon-current-datetime-monitor))
+
+(push 'symon-venv-current-name symon-monitors)
+(push 'symon-recording-monitor symon-monitors)
+
 (defun symon-clean-echo-area ()
   (message nil))
 (add-function :before after-focus-change-function 'symon-clean-echo-area)
 
 (defvar symon--last-message "")
-(defvar symon-message-width-diff 52)
-(defvar symon-systemtray-width 6)
+;; symon-sparkline-width symon-message-width-diff
+;; 80                    52
+;; 40                    23
+;; 24                    11
+;; 16                     6
+(defvar symon-message-width-diff (+ 4 (length symon-monitors)))
 
 (defun symon-message-add (format-string &rest args)
   (let ((symon-msg (apply #'format-message format-string args)))
@@ -547,11 +586,16 @@
         (let ((msg (current-message))
               (available-space (- (frame-width) (string-width symon-msg)
                                   symon-message-width-diff
-                                  symon-systemtray-width)))
+                                  (* 2 (length exwm-systemtray--list)))))
           (if (and msg
-                   (setq msg (replace-regexp-in-string
-                              symon--last-message
-                              "" msg t t))
+                   (let ((last-len (length symon--last-message))
+                         (msg-len (length msg)))
+                     (if (cond ((= last-len msg-len)
+                                (string-equal symon--last-message msg))
+                               ((< last-len msg-len)
+                                (string-equal symon--last-message (substring msg (- last-len)))))
+                         (setq msg (substring msg 0 (- last-len))))
+                     t)
                    (not (string-match-p "\\`[[:space:]]*\\'" msg)))
               (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
                      (last-line (if last-newline-pos
@@ -590,27 +634,6 @@
             (mapc 'funcall lst))
           (setq page (1+ page))))
       (setq symon--display-active t))))
-
-(define-symon-monitor symon-current-datetime-monitor
-  :display (format-time-string "%b %e %H:%M"))
-
-(define-symon-monitor symon-recording-monitor
-  :display (if (and exwm-record-process
-                    (eq 'run (process-status exwm-record-process)))
-               exwm-record-recording))
-
-(setcdr (last symon-monitors)
-        `(,(cond ((memq system-type '(gnu/linux cygwin))
-                  'symon-linux-battery-monitor)
-                 ((memq system-type '(darwin))
-                  'symon-darwin-battery-monitor)
-                 ((memq system-type '(windows-nt))
-                  'symon-windows-battery-monitor))
-          symon-recording-monitor
-          symon-current-datetime-monitor))
-
-(setq symon-delay 3
-      symon-refresh-rate 5)
 
 (symon-mode)
 
