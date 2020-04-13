@@ -32,9 +32,9 @@
            :headers (list (cons "X-Redmine-API-Key" redmine-api-token))
            :params params
            :parser (lambda ()
-                     (decode-coding-region (point) (point-max) 'utf-8)
-                     (utf8-fix-wrong-latin (point) (point-max))
-                     ;;(save-excursion (ascii-to-utf8-forward))
+                     (decode-coding-region (point-min) (point-max) 'utf-8)
+                     (utf8-fix-wrong-ascii (point-min) (point-max))
+                     (utf8-fix-wrong-latin (point-min) (point-max))
                      (json-read))
            :sync t))
 
@@ -52,11 +52,12 @@
 ;; Helpers ;;
 ;;;;;;;;;;;;;
 (defun redmine-api--fill-template (template alist)
-  (mapc (lambda (key-value)
-          (setq template (replace-regexp-in-string
-                          (regexp-quote (concat "{" (car key-value) "}"))
-                          (cdr key-value) template t 'literal)))
-        alist)
+  (let ((case-fold-search t))
+    (mapc (lambda (key-value)
+            (setq template (replace-regexp-in-string
+                            (regexp-quote (concat "{" (car key-value) "}"))
+                            (cdr key-value) template t 'literal)))
+          alist))
   template)
 
 (defun redmine-api-default-sort (a b)
@@ -190,8 +191,8 @@
              ""))
 
 (defun redmine-api-org-get-issue (level issue-id)
-  (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
-                     (read-string "Issue Id: ")))
+  (interactive (list (prefix-numeric-value current-prefix-arg)
+                     (read-string "Issue id: ")))
   (setq level (or level (1+ (org-outline-level))))
   (let* ((resource (concat "/issues/" issue-id))
          (issue (cdr (assoc 'issue (redmine-api-data resource "GET"))))

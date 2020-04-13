@@ -59,9 +59,9 @@
            :headers (list (cons "Private-Token" gitlab-api-token))
            :params params
            :parser (lambda ()
-                     (decode-coding-region (point) (point-max) 'utf-8)
-                     (utf8-fix-wrong-latin (point) (point-max))
-                     ;;(save-excursion (ascii-to-utf8-forward))
+                     (decode-coding-region (point-min) (point-max) 'utf-8)
+                     (utf8-fix-wrong-ascii (point-min) (point-max))
+                     (utf8-fix-wrong-latin (point-min) (point-max))
                      (json-read))
            :sync t))
 
@@ -143,11 +143,12 @@
 ;; Helpers ;;
 ;;;;;;;;;;;;;
 (defun gitlab-api--fill-template (template alist)
-  (mapc (lambda (key-value)
-          (setq template (replace-regexp-in-string
-                          (regexp-quote (concat "{" (car key-value) "}"))
-                          (cdr key-value) template t 'literal)))
-        alist)
+  (let ((case-fold-search t))
+    (mapc (lambda (key-value)
+            (setq template (replace-regexp-in-string
+                            (regexp-quote (concat "{" (car key-value) "}"))
+                            (cdr key-value) template t 'literal)))
+          alist))
   template)
 
 ;; (defun gitlab-api--assoc-keys (keys alist)
@@ -190,6 +191,8 @@
     ("gigas_executor"     "EX")
     ("Control Panel"      "CPN")
     ("Hostbill"           "HBL")
+    ("Nakivo Wrapper"     "NKW")
+    ("vmware-wrapper-lib" "VMW")
     (_ project-name)))
 
 (defun gitlab-api--format-field (field value indent)
@@ -341,6 +344,28 @@
            "/projects/{project_id}/issues/{iid}"
            level sort-func filter-funcs)))
 
+(defun gitlab-api-org-get-issue (level project-id iid)
+  (interactive (list (prefix-numeric-value current-prefix-arg)
+                     (car (rassoc
+                           (completing-read
+                            "Project: "
+                            (progn
+                              (unless gitlab-api-projects-alist
+                                (gitlab-api-get-projects))
+                              (mapcar 'cdr gitlab-api-projects-alist))
+                            nil t)
+                           gitlab-api-projects-alist))
+                     (read-number "Issue internal id: ")))
+  (insert
+   (gitlab-api-org-convert
+    (list (gitlab-api-template "/projects/{project_id}/issues/{iid}"
+                               (list
+                                (cons "project_id" (int-to-string project-id))
+                                (cons "iid" (int-to-string iid))) "GET"
+                               '(("scope" . "all")
+                                 ("state" . "all"))))
+    "/projects/{project_id}/issues/{iid}" level)))
+
 (defun gitlab-api-org-get-merge-requests (level &optional params sort-func &rest filter-funcs)
   (interactive "p")
   (map-put params "scope" "all" 'string-equal)
@@ -354,6 +379,28 @@
            (gitlab-api-data-all-pages "/merge_requests" "GET" params)
            "/projects/{project_id}/merge_requests/{iid}"
            level sort-func filter-funcs)))
+
+(defun gitlab-api-org-get-merge-request (level project-id iid)
+  (interactive (list (prefix-numeric-value current-prefix-arg)
+                     (car (rassoc
+                           (completing-read
+                            "Project: "
+                            (progn
+                              (unless gitlab-api-projects-alist
+                                (gitlab-api-get-projects))
+                              (mapcar 'cdr gitlab-api-projects-alist))
+                            nil t)
+                           gitlab-api-projects-alist))
+                     (read-number "Issue internal id: ")))
+  (insert
+   (gitlab-api-org-convert
+    (list (gitlab-api-template "/projects/{project_id}/merge_requests/{iid}"
+                               (list
+                                (cons "project_id" (int-to-string project-id))
+                                (cons "iid" (int-to-string iid))) "GET"
+                               '(("scope" . "all")
+                                 ("state" . "all"))))
+    "/projects/{project_id}/merge_requests/{iid}" level)))
 
 (defun gitlab-api-org-get-from-redmine-id (level &optional redmine-id property)
   (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
