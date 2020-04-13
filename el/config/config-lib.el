@@ -108,7 +108,7 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
                           (not (eq ?\. (aref file 0)))
                           (not (file-symlink-p source))
                           ;; This file is a subdirectory.  Handle them differently.
-                          (setq directories (nconc directories (list source))))
+                          (setcdr (last directories) (list source)))
                    ;; It is an ordinary file.  Decide whether to compile it.
                    (if (and (string-match emacs-lisp-file-regexp source)
                             ;; The next 2 tests avoid compiling lock files
@@ -388,8 +388,7 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 
 (defun processes-children-all (pid attrs-processes)
   (let ((pids (list pid))
-        (children)
-        (processes))
+        children processes)
     (while pids
       (setq children nil)
       (mapc (lambda (pid) (setq children (nconc children (processes-children pid attrs-processes)))) pids)

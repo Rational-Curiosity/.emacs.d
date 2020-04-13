@@ -31,7 +31,7 @@
         rebox-min-fill-column 90)
   (unless (memq 46 rebox-style-loop)
     (make-local-variable 'rebox-style-loop)
-    (nconc rebox-style-loop '(46 47))))
+    (setcdr (last rebox-style-loop) '(46 47))))
 (add-hook 'c++-mode-hook #'my-c++-setup)
 
 ;;(global-set-key [(shift meta q)] 'rebox-dwim)
