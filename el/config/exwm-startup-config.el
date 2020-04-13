@@ -533,16 +533,9 @@
 ;;       (delete-region (minibuffer-prompt-end) (point-max))
 ;;       (insert (apply #'format-message format-string args)))))
 
-(setq symon-delay 2
-      symon-refresh-rate 4
-      symon-sparkline-type 'bounded
-      symon-sparkline-thickness 1
-      symon-history-size 24
-      symon-sparkline-width 24)
-
 (define-symon-monitor symon-current-datetime-monitor
   :interval 10
-  :display (format-time-string "%b %e %H:%M"))
+  :display (format-time-string " %e %b %H:%M"))
 
 (define-symon-monitor symon-venv-current-name
   :interval 10
@@ -568,72 +561,17 @@
 (push 'symon-venv-current-name symon-monitors)
 (push 'symon-recording-monitor symon-monitors)
 
+(setq symon-delay 2
+      symon-refresh-rate 4
+      symon-sparkline-type 'bounded
+      symon-sparkline-thickness 1
+      symon-history-size 24
+      symon-sparkline-width 24
+      symon-message-width-diff 12)
+
 (defun symon-clean-echo-area ()
   (message nil))
 (add-function :before after-focus-change-function 'symon-clean-echo-area)
-
-(defvar symon--last-message "")
-;; symon-sparkline-width symon-message-width-diff
-;; 80                    52
-;; 40                    23
-;; 24                    11
-;; 16                     6
-(defvar symon-message-width-diff (+ 4 (length symon-monitors)))
-
-(defun symon-message-add (format-string &rest args)
-  (let ((symon-msg (apply #'format-message format-string args)))
-    (if (not (string-empty-p symon-msg))
-        (let ((msg (current-message))
-              (available-space (- (frame-width) (string-width symon-msg)
-                                  symon-message-width-diff
-                                  (* 2 (length exwm-systemtray--list)))))
-          (if (and msg
-                   (let ((last-len (length symon--last-message))
-                         (msg-len (length msg)))
-                     (if (cond ((= last-len msg-len)
-                                (string-equal symon--last-message msg))
-                               ((< last-len msg-len)
-                                (string-equal symon--last-message (substring msg (- last-len)))))
-                         (setq msg (substring msg 0 (- last-len))))
-                     t)
-                   (not (string-match-p "\\`[[:space:]]*\\'" msg)))
-              (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
-                     (last-line (if last-newline-pos
-                                    (substring msg (1+ last-newline-pos))
-                                  msg))
-                     (last-line-width (string-width last-line))
-                     (sep (cond
-                           ((< available-space last-line-width)
-                            (concat "\n" (make-string (max 0 available-space) ? )))
-                           ((string-empty-p last-line)
-                            (make-string (max 0 available-space) ? ))
-                           (t
-                            (make-string (- available-space last-line-width) ? )))))
-                (message nil)
-                (message "%s" (concat msg sep symon-msg))
-                (setq symon--last-message (concat sep symon-msg)))
-            (let* ((sep (if (< 0 available-space)
-                            (make-string available-space ? )
-                          ""))
-                   (symon-msg (concat sep symon-msg)))
-              (message "%s" symon-msg)
-              (setq symon--last-message symon-msg)))))))
-
-(when (bug-check-function-bytecode
-       'symon--display-update
-       "CIYGAMYgP4VIAMeJyBkaGwzHHYkeEYNDAA4RQBUJDhJVgzIAycrLzM3ODSIiIoiCNwDPzg0iiAlUEQ4RQYkWEYQZAC3QiRYThw==")
-  (defun symon--display-update ()
-    "update symon display"
-    (unless (or cursor-in-echo-area (active-minibuffer-window))
-      (let ((message-log-max nil)  ; do not insert to *Messages* buffer
-            (display-string nil)
-            (page 0))
-        (dolist (lst symon--display-fns)
-          (if (= page symon--active-page)
-              (symon-message-add "%s" (apply 'concat (mapcar 'funcall lst)))
-            (mapc 'funcall lst))
-          (setq page (1+ page))))
-      (setq symon--display-active t))))
 
 (symon-mode)
 
