@@ -60,6 +60,7 @@
            :params params
            :parser (lambda ()
                      (decode-coding-region (point) (point-max) 'utf-8)
+                     (utf8-fix-wrong-latin (point) (point-max))
                      ;;(save-excursion (ascii-to-utf8-forward))
                      (json-read))
            :sync t))
@@ -228,7 +229,10 @@
             (when value
               (setq entry (concat
                            entry
-                           (redmine-api--format-field (symbol-name key) value indent)))))))
+                           (redmine-api--format-field (if (eq key 'id)
+                                                          "id_"
+                                                        (symbol-name key))
+                                                      value indent)))))))
       (replace-regexp-in-string "\n\\*" "\n.*" (concat entry indent ":END:\n\n") t 'literal))))
 
 (defun gitlab-api-default-sort (a b)
@@ -398,33 +402,35 @@
 
 (defun gitlab-api-org-update-entry-at-point ()
   (interactive)
-  (let* ((properties (org-entry-properties nil 'standard))
-         (type (replace-regexp-in-string
-                "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
-                (or (assoc-default "web_url" properties)
-                    (assoc-default "RESOURCE" properties)) t))
-         (resource-datas (gitlab-api-template (cdr (assoc "RESOURCE" properties)) properties "GET"
-                                              '(("scope" . "all")
-                                                ("state" . "all")))))
-    (mapc (lambda (property)
-            (let* ((name (downcase (car property)))
-                   (value (cdr property))
-                   (resource-data (if (string-match-p "\\." name)
-                                      (assoc-keys (mapcar 'intern (split-string name "\\."))
-                                                              resource-datas)
-                                    (cdr (assoc (intern name) resource-datas)))))
-              (when resource-data
-                (let ((data (replace-regexp-in-string
-                             "\r" ""
-                             (if (stringp resource-data)
-                                 resource-data
-                               (format "%s" resource-data)) t t)))
-                  (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
-                    (org-entry-put-multiline-property nil name data)
-                    (pcase name
-                      ("state" (org-entry-put nil "TODO" (gitlab-api--convert-state data type)))
-                      ("project_id" (org-entry-put nil "PROJECT" (gitlab-api-get-project-name resource-data)))))))))
-          properties)))
+  (let ((properties (org-entry-properties nil 'standard)))
+    (let ((id-assoc (assoc "ID_" properties)))
+      (if id-assoc (setcar id-assoc "ID")))
+    (let ((type (replace-regexp-in-string
+                 "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
+                 (or (assoc-default "web_url" properties)
+                     (assoc-default "RESOURCE" properties)) t))
+          (resource-datas (gitlab-api-template (cdr (assoc "RESOURCE" properties)) properties "GET"
+                                               '(("scope" . "all")
+                                                 ("state" . "all")))))
+      (mapc (lambda (property)
+              (let* ((name (downcase (car property)))
+                     (value (cdr property))
+                     (resource-data (if (string-match-p "\\." name)
+                                        (assoc-keys (mapcar 'intern (split-string name "\\."))
+                                                    resource-datas)
+                                      (cdr (assoc (intern name) resource-datas)))))
+                (when resource-data
+                  (let ((data (replace-regexp-in-string
+                               "\r" ""
+                               (if (stringp resource-data)
+                                   resource-data
+                                 (format "%s" resource-data)) t t)))
+                    (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
+                      (org-entry-put-multiline-property nil name data)
+                      (pcase name
+                        ("state" (org-entry-put nil "TODO" (gitlab-api--convert-state data type)))
+                        ("project_id" (org-entry-put nil "PROJECT" (gitlab-api-get-project-name resource-data)))))))))
+            properties))))
 
 
 (provide 'gitlab-api)
