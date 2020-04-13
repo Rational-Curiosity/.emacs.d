@@ -106,7 +106,7 @@
       ;; [ solve ^M at the end of the line
       (goto-char (point-min))
       (while (re-search-forward "\xd" nil t)
-        (replace-match ""))
+        (replace-match "" t t))
       ;; ]
       ;; <xor>
       ;; [ solve both ^M at end and acutes
@@ -116,7 +116,7 @@
       ))
   ;; correct ascii characters
   (defun ascii-to-utf8-compilation-filter ()
-    (ascii-to-utf8-forward compilation-filter-start))
+    (ascii-to-utf8-forward compilation-filter-start (point-max)))
   (add-hook 'compilation-filter-hook 'ascii-to-utf8-compilation-filter)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; obtain linux style paths ;;

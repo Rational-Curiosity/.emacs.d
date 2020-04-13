@@ -98,7 +98,7 @@ if __name__ == \"__main__\":
       (save-excursion
         (goto-char (point-min))
         (while (re-search-forward "[^\n][ \t]*import +pdb *; *pdb.set_trace *() *#?[^\n]*" nil t)
-          (replace-match "" nil nil)))
+          (replace-match "" t t)))
     (insert "import pdb; pdb.set_trace()")))
 
 (defun run-python-in-directory ()
@@ -157,7 +157,7 @@ if __name__ == \"__main__\":
         (setq end (1- (match-end 0)))
         (while (re-search-forward pattern nil t)
           (setq import-list (concat import-list ", " (match-string-no-properties 1)))
-          (replace-match ""))
+          (replace-match "" t t))
         (goto-char end)
         (insert import-list)))))
 ;;;;;;;;;;;;

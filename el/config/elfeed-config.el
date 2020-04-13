@@ -103,7 +103,7 @@
         (tag (completing-read "Select tag: " elfeed-search--tags nil t)))
     (elfeed-search-set-filter
      (if (string-match (concat " ?[-+]" tag) elfeed-search-filter)
-         (replace-match "" t nil elfeed-search-filter)
+         (replace-match "" t t elfeed-search-filter)
        (concat elfeed-search-filter " " pre tag)))))
 
 (define-key elfeed-show-mode-map "h" nil)

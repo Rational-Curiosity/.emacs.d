@@ -56,7 +56,7 @@
         (replace-match
          (format
           (concat "%0." (if arg (number-to-string arg) "0") "f")
-          (string-to-number (match-string 1))))))))
+          (string-to-number (match-string 1))) t t)))))
 
 (require 'operate-on-number)
 
