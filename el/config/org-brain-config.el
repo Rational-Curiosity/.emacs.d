@@ -16,7 +16,8 @@
 (message "Importing org-brain-config")
 
 (setq org-brain-path (or (cl-loop for folder in
-                                  '("~/var/Dropbox/Brain")
+                                  '("~/var/Dropbox/Brain"
+                                    "~/Prog/org/brain")
                                   when (file-exists-p folder)
                                   return folder)
                          org-brain-path)
