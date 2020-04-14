@@ -303,27 +303,33 @@
       org-clock-string-limit 25
       org-clock-in-resume t
       org-clock-persist t
+      org-clock-clocked-in-display
+      (if (featurep 'symon)
+          t ;; org don't document this value, it's a trick
+        'frame-title)
       org-clock-heading-function
       `(lambda ()
          (replace-regexp-in-string
-          "  +" " "
+          " +\\'" ""
           (replace-regexp-in-string
-           "\\([^[:space:]]\\{2\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
-           (let ((case-fold-search t))
-             (replace-regexp-in-string
-              ,(concat "\\("
-                       (mapconcat 'identity
-                                  '("al" "un" "uno" "una" "unos" "unas"
-                                    ;; prepositions
-                                    "el" "la" "lo" "las" "los"
-                                    "a" "ante" "bajo" "cabe" "con"
-                                    "contra" "de" "desde" "durante"
-                                    "en" "entre" "hacia" "hasta"
-                                    "mediante" "para" "por" "según"
-                                    "sin" "so" "sobre" "tras")
-                                  "\\|")
-                       "\\)\\( \\|\\'\\)") " "
-              (org-entry-get nil "ITEM") nil t)) t) t t)))
+           "  +" " "
+           (replace-regexp-in-string
+            "\\([^[:space:]]\\{2\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
+            (let ((case-fold-search t))
+              (replace-regexp-in-string
+               ,(concat "\\("
+                        (mapconcat 'identity
+                                   '("al" "un" "uno" "una" "unos" "unas"
+                                     ;; prepositions
+                                     "el" "la" "lo" "las" "los"
+                                     "a" "ante" "bajo" "cabe" "con"
+                                     "contra" "de" "desde" "durante"
+                                     "en" "entre" "hacia" "hasta"
+                                     "mediante" "para" "por" "según"
+                                     "sin" "so" "sobre" "tras")
+                                   "\\|")
+                        "\\)\\( \\|\\'\\)") " "
+               (org-entry-get nil "ITEM") nil t)) t) t t) t t)))
 
 (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
 

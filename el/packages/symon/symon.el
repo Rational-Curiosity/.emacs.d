@@ -282,7 +282,7 @@ supoprted in PLIST:
              (cancel-timer (aref ,cell 1))
              ,(plist-get plist :cleanup)))
          (display-fn
-          (if display `(lambda () (concat ,display " "))
+          (if display `(lambda () ,display)
             `(lambda ()
                (let* ((lst (ring-elements (aref ,cell 0)))
                       (val (car lst)))

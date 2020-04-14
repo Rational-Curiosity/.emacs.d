@@ -537,7 +537,13 @@
   :interval 10
   :display (format-time-string " %e %b %H:%M"))
 
-(define-symon-monitor symon-venv-current-name
+(define-symon-monitor symon-org-clock-in-monitor
+  :interval 10
+  :display (if (bound-and-true-p org-clock-mode-line-timer)
+               org-mode-line-string)
+  :unit " ")
+
+(define-symon-monitor symon-venv-current-name-monitor
   :interval 10
   :display (if (and (boundp 'venv-current-name)
                     venv-current-name
@@ -558,7 +564,8 @@
                   'symon-windows-battery-monitor))
           symon-current-datetime-monitor))
 
-(push 'symon-venv-current-name symon-monitors)
+(push 'symon-org-clock-in-monitor symon-monitors)
+(push 'symon-venv-current-name-monitor symon-monitors)
 (push 'symon-recording-monitor symon-monitors)
 
 (setq symon-delay 2
