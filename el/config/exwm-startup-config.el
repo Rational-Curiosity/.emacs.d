@@ -540,8 +540,7 @@
 (define-symon-monitor symon-org-clock-in-monitor
   :interval 10
   :display (if (bound-and-true-p org-clock-mode-line-timer)
-               org-mode-line-string)
-  :unit " ")
+               org-mode-line-string))
 
 (define-symon-monitor symon-venv-current-name-monitor
   :interval 10
@@ -574,11 +573,7 @@
       symon-sparkline-thickness 1
       symon-history-size 24
       symon-sparkline-width 24
-      symon-message-width-diff 12)
-
-(defun symon-clean-echo-area ()
-  (message nil))
-(add-function :before after-focus-change-function 'symon-clean-echo-area)
+      symon-total-spark-width 13)
 
 (symon-mode)
 

@@ -314,7 +314,7 @@
           (replace-regexp-in-string
            "  +" " "
            (replace-regexp-in-string
-            "\\([^[:space:]]\\{2\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
+            "\\([^[:space:]]\\{3\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
             (let ((case-fold-search t))
               (replace-regexp-in-string
                ,(concat "\\("

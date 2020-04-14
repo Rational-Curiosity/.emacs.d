@@ -116,7 +116,7 @@ rendering."
   "upper-bound of sparkline for page file usage."
   :group 'symon)
 
-(defcustom symon-message-width-diff 10
+(defcustom symon-total-spark-width 10
   "Spark figures space."
   :group 'symon)
 
@@ -694,16 +694,21 @@ while(1)                                                            \
         (substring msg 0 (- last-len))
       msg)))
 
-(defun symon-message-add (format-string &rest args)
+(defun symon-clean-echo-area ()
+  (message nil))
+(add-function :before after-focus-change-function 'symon-clean-echo-area)
+
+(defun symon-message-update (format-string &rest args)
   (let ((symon-msg (apply #'format-message format-string args)))
     (if (not (string-empty-p symon-msg))
         (let ((msg (current-message))
               (available-space (- (frame-width) (string-width symon-msg)
-                                  symon-message-width-diff
+                                  symon-total-spark-width
                                   (* 2 (length (bound-and-true-p exwm-systemtray--list))))))
           (if (and msg
-                   (setq msg (symon-clean-msg msg))
-                   (not (string-match-p "\\`[[:space:]]*\\'" msg)))
+                   (not (string-match-p
+                         "\\`[[:space:]]*\\'"
+                         (setq msg (symon-clean-msg msg)))))
               (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
                      (last-line (if last-newline-pos
                                     (substring msg (1+ last-newline-pos))
@@ -733,7 +738,7 @@ while(1)                                                            \
             (page 0))
         (dolist (lst symon--display-fns)
           (if (= page symon--active-page)
-              (symon-message-add "%s" (apply 'concat (mapcar 'funcall lst)))
+              (symon-message-update "%s" (apply 'concat (mapcar 'funcall lst)))
             (mapc 'funcall lst))
           (setq page (1+ page))))
       (setq symon--display-active t)))
