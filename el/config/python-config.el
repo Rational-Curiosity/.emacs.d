@@ -112,14 +112,15 @@ if __name__ == \"__main__\":
     (python-shell-send-string (concat "import os;os.chdir('" default-directory "')"))))
 
 (defun ipython-to-python-text (string)
-  (replace-regexp-in-string
-   "-*\n.*Traceback (most recent call last)" "Traceback (most recent call last):"
-   (replace-regexp-in-string
-    "^In \\[[0-9]+\\]: " ">>> "
+  (let ((case-fold-search nil))
     (replace-regexp-in-string
-     "^Out\\[[0-9]+\\]: " ""
+     "-*\n.*Traceback (most recent call last)" "Traceback (most recent call last):"
      (replace-regexp-in-string
-      "^  +\\.\\.\\.: " "... " string t t) t t) t t) t t))
+      "^In \\[[0-9]+\\]: " ">>> "
+      (replace-regexp-in-string
+       "^Out\\[[0-9]+\\]: " ""
+       (replace-regexp-in-string
+        "^  +\\.\\.\\.: " "... " string t t) t t) t t) t t)))
 
 (defun pypy-to-python-text (string)
    (replace-regexp-in-string

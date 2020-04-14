@@ -165,7 +165,8 @@
          (append (list (cons "%n" (concat "\"" (buffer-name) "\"")))
                  (if buffer-file-name
                      (list (cons "%p" (concat "\"" buffer-file-name "\""))
-                           (cons "%b" (concat "\"" (file-name-nondirectory buffer-file-name) "\"")))))))
+                           (cons "%b" (concat "\"" (file-name-nondirectory buffer-file-name) "\""))))))
+        (case-fold-search nil))
     (dolist (replacement replacements)
       (set 'command-replaced (replace-regexp-in-string
                               (regexp-quote (car replacement)) (cdr replacement)

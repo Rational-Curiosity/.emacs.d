@@ -235,30 +235,19 @@ prompt the user for a coding system."
 
 ;; remove latin1 characters
 (defun remove-tildes (string)
-  (let ((case-fold-search nil))
+  (let ((case-fold-search t))
     (dolist (map '(("á" . "a")
                    ("é" . "e")
                    ("í" . "i")
                    ("ó" . "o")
                    ("ú" . "u")
                    ("ñ" . "n")
-                   ("Ñ" . "N")
-                   ("Á" . "A")
-                   ("É" . "E")
-                   ("Í" . "I")
-                   ("Ó" . "O")
-                   ("Ú" . "U")
                    ("ä" . "a")
                    ("ë" . "e")
                    ("ï" . "i")
                    ("ö" . "o")
-                   ("ü" . "u")
-                   ("Ä" . "A")
-                   ("Ë" . "E")
-                   ("Ï" . "I")
-                   ("Ö" . "O")
-                   ("Ü" . "U")) string)
-      (set 'string (replace-regexp-in-string (car map) (cdr map) string t t)))))
+                   ("ü" . "u")) string)
+      (set 'string (replace-regexp-in-string (car map) (cdr map) string nil t)))))
 
 ;;;;;;;;;;;;;
 ;; Control ;;

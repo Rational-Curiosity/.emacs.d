@@ -208,9 +208,10 @@
 (defun gitlab-api--convert-to-org (data keys &optional level resource)
   (setq level (or level 1))
   (let ((indent (concat "\n" (make-string (1+ level) ?\ )))
-        (type (replace-regexp-in-string
-               "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
-               (or (assoc-default 'web_url data) resource) t))
+        (type (let ((case-fold-search nil))
+                (replace-regexp-in-string
+                 "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
+                 (or (assoc-default 'web_url data) resource) t)))
         (project (gitlab-api-get-project-name (assoc-default 'project_id data))))
     (let ((entry (format "%s %s %-64s  :%s:%s:"
                          (make-string level ?*)
@@ -452,10 +453,12 @@
   (let ((properties (org-entry-properties nil 'standard)))
     (let ((id-assoc (assoc "ID_" properties)))
       (if id-assoc (setcar id-assoc "ID")))
-    (let ((type (replace-regexp-in-string
-                 "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
-                 (or (assoc-default "web_url" properties)
-                     (assoc-default "RESOURCE" properties)) t))
+    (let ((type (let ((case-fold-search nil))
+                  (replace-regexp-in-string
+                   "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
+                   (or (assoc-default "web_url" properties)
+                       (assoc-default "RESOURCE" properties))
+                   t)))
           (resource-datas (gitlab-api-template (cdr (assoc "RESOURCE" properties)) properties "GET"
                                                '(("scope" . "all")
                                                  ("state" . "all")))))
