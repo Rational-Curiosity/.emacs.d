@@ -357,7 +357,7 @@ supoprted in PLIST:
 (defvar symon-linux--last-cpu-ticks nil)
 
 (define-symon-monitor symon-linux-cpu-monitor
-  :index "↺" :unit "%" :sparkline t
+  :index "🖥" :unit "%" :sparkline t
   :setup (setq symon-linux--last-cpu-ticks nil)
   :fetch (cl-destructuring-bind (cpu)
              (symon-linux--read-lines
@@ -385,10 +385,16 @@ supoprted in PLIST:
                 (let ((swapped (/ (- swaptotal swapfree) 1000)))
                   (unless (zerop swapped) (format "%dMB Swapped" swapped)))))
 
+(defvar symon-linux-battery-symbol "🔋?")
 (define-symon-monitor symon-linux-battery-monitor
-  :index "🔋" :unit "%" :sparkline t
+  :index symon-linux-battery-symbol :unit "%" :sparkline t
   :fetch (when battery-status-function
-           (read (cdr (assoc ?p (funcall battery-status-function))))))
+           (let ((data (funcall battery-status-function)))
+             (setq symon-linux-battery-symbol (pcase (cdr (assq ?L data))
+                                                ("AC" "🔌")
+                                                ("BAT" "🔋")
+                                                (_ "🔋?")))
+             (read (cdr (assoc ?p data))))))
 
 (defvar symon-linux--last-network-rx nil)
 
@@ -677,6 +683,17 @@ while(1)                                                            \
   (mapc 'cancel-timer symon--timer-objects)
   (mapc 'funcall symon--cleanup-fns))
 
+(defun symon-clean-msg (msg)
+  (setq msg (replace-regexp-in-string "\n*\\'" "" msg t t))
+  (let ((last-len (length symon--last-message))
+        (msg-len (length msg)))
+    (if (cond ((= last-len msg-len)
+               (string-equal symon--last-message msg))
+              ((< last-len msg-len)
+               (string-equal symon--last-message (substring msg (- last-len)))))
+        (substring msg 0 (- last-len))
+      msg)))
+
 (defun symon-message-add (format-string &rest args)
   (let ((symon-msg (apply #'format-message format-string args)))
     (if (not (string-empty-p symon-msg))
@@ -685,14 +702,7 @@ while(1)                                                            \
                                   symon-message-width-diff
                                   (* 2 (length (bound-and-true-p exwm-systemtray--list))))))
           (if (and msg
-                   (let ((last-len (length symon--last-message))
-                         (msg-len (length msg)))
-                     (if (cond ((= last-len msg-len)
-                                (string-equal symon--last-message msg))
-                               ((< last-len msg-len)
-                                (string-equal symon--last-message (substring msg (- last-len)))))
-                         (setq msg (substring msg 0 (- last-len))))
-                     t)
+                   (setq msg (symon-clean-msg msg))
                    (not (string-match-p "\\`[[:space:]]*\\'" msg)))
               (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
                      (last-line (if last-newline-pos
@@ -706,7 +716,6 @@ while(1)                                                            \
                             (make-string (max 0 available-space) ? ))
                            (t
                             (make-string (- available-space last-line-width) ? )))))
-                (message nil)
                 (message "%s" (concat msg sep symon-msg))
                 (setq symon--last-message (concat sep symon-msg)))
             (let* ((sep (if (< 0 available-space)
