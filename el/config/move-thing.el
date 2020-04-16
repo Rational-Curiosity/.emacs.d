@@ -338,7 +338,7 @@
 ;; #     # #    #   ##   #  ####  #    #   #   #  ####  #    #
 (defun mt-forward-line (arg &optional column)
   (unless (and (not column) (= 0 arg))
-    (setq column (or column (current-column)))
+    (or column (setq column (current-column)))
     (unless (= 0 (forward-line arg))
       (error "Buffer limit reached"))
     (= column (move-to-column column))))

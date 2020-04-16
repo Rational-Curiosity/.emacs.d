@@ -24,7 +24,7 @@
                              start-cond
                              &optional while-cond
                              exclude-start include-end)
-  (setq while-cond (or while-cond start-cond))
+  (or while-cond (setq while-cond start-cond))
   (let* ((timesp (memq 'times params))
          (vimish-or-goback
           `(condition-case nil
@@ -279,7 +279,7 @@
          (= arg 0))
     (call-interactively 'fold-indent))
    ((derived-mode-p 'python-mode 'elpy-mode)
-    (setq arg (or arg -1))
+    (or arg (setq arg -1))
     (dolist (b blocks)
       (pcase b
         ("class"
@@ -296,7 +296,7 @@
          (fold-python-class-header arg fold-threshold))
         (_ (message "Case: `%s' not implemented" b)))))
    ((derived-mode-p 'php-mode)
-    (setq arg (or arg -1))
+    (or arg (setq arg -1))
     (dolist (b blocks)
       (pcase b
         ("class"

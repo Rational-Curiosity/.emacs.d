@@ -118,7 +118,7 @@
                            value))))
 
 (defun redmine-api--convert-to-org (data keys &optional level resource)
-  (setq level (or level 1))
+  (or level (setq level 1))
   (let ((indent (concat "\n" (make-string (1+ level) ?\ )))
         (type (replace-regexp-in-string
                "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
@@ -193,7 +193,7 @@
 (defun redmine-api-org-get-issue (level issue-id)
   (interactive (list (prefix-numeric-value current-prefix-arg)
                      (read-string "Issue id: ")))
-  (setq level (or level (1+ (org-outline-level))))
+  (or level (setq level (1+ (org-outline-level))))
   (let* ((resource (concat "/issues/" issue-id))
          (issue (cdr (assoc 'issue (redmine-api-data resource "GET"))))
          (result (redmine-api-org-convert (list issue) "/issues/{id}" level)))
@@ -209,7 +209,7 @@
                        (if (string-equal expr "")
                            nil
                          (eval-string expr)))))
-  (setq level (or level (1+ (org-outline-level))))
+  (or level (setq level (1+ (org-outline-level))))
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
     (if redmine-api-debug (let ((item-count 0))
@@ -229,7 +229,7 @@
                        (if (string-equal expr "")
                            nil
                          (eval-string expr)))))
-  (setq level (or level (1+ (org-outline-level))))
+  (or level (setq level (1+ (org-outline-level))))
   (map-put params "priority_id" "5" 'string-equal)
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
@@ -250,7 +250,7 @@
                        (if (string-equal expr "")
                            nil
                          (eval-string expr)))))
-  (setq level (or level (1+ (org-outline-level))))
+  (or level (setq level (1+ (org-outline-level))))
   (map-put params "tracker_name" "~bug" 'string-equal)
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))

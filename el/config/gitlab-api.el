@@ -206,7 +206,7 @@
                            value))))
 
 (defun gitlab-api--convert-to-org (data keys &optional level resource)
-  (setq level (or level 1))
+  (or level (setq level 1))
   (let ((indent (concat "\n" (make-string (1+ level) ?\ )))
         (type (let ((case-fold-search nil))
                 (replace-regexp-in-string
@@ -415,8 +415,8 @@
                                          '("ORIGIN" "BUG_IN"))))))
                ;; "p\nMRedmine issue id: "
                )
-  (setq level (or level (1+ (org-outline-level)))
-        redmine-id (if (and (stringp redmine-id) (not (string-empty-p redmine-id)))
+  (or level (setq level (1+ (org-outline-level))))
+  (setq redmine-id (if (and (stringp redmine-id) (not (string-empty-p redmine-id)))
                        redmine-id
                      (replace-regexp-in-string "^https?://.*/" "" (org-entry-get nil (or property "ORIGIN")))))
   (let* ((issues (gitlab-api-data-all-pages
