@@ -97,8 +97,24 @@ For more information, see the function `buffer-menu'."
 ;;                     :bold t :foreground "red" :background "green" :height 160)
 ;; ]
 
+(defun split-window-mode-sensibly (&optional window)
+  (or window (setq window (selected-window)))
+  (cond
+   ((with-selected-window window
+      (cl-some #'derived-mode-p '(prog-mode org-mode help-mode)))
+    (let ((split-height-threshold nil)
+          (split-width-threshold 140))
+      (split-window-sensibly window)))
+   ((with-selected-window window
+      (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode)))
+    (let ((split-height-threshold 20))
+      (split-window-sensibly window)))
+   (t
+    (split-window-sensibly window))))
+
 (defvar hscroll-aggressive nil)
-(setq split-width-threshold 140
+(setq split-window-preferred-function 'split-window-mode-sensibly
+      message-truncate-lines nil
       ;; Vertical Scroll
       ;;scroll-preserve-screen-position 'allways
       scroll-margin 2
@@ -109,7 +125,6 @@ For more information, see the function `buffer-menu'."
       ;; Horizontal Scroll
       hscroll-margin 2
       hscroll-step 1
-      message-truncate-lines nil
       ;; [ ace-window 2
       ;; aw-scope 'visible
       ;; aw-char-position 'left
@@ -121,7 +136,6 @@ For more information, see the function `buffer-menu'."
 (add-hook 'term-mode-hook
           (lambda ()
             (set (make-local-variable 'scroll-margin) 0)))
-
 
 (defun toggle-message-truncate-lines ()
   "Toggle truncate lines in messages."
@@ -584,6 +598,7 @@ others."
 (global-set-key (kbd "C-c w n") 'windmove-down)
 (global-set-key (kbd "C-c b p") #'previous-buffer)
 (global-set-key (kbd "C-c b n") #'next-buffer)
+(global-set-key (kbd "C-x C-b") 'list-all-buffers)
 
 ;; (defhydra hydra-win (global-map "C-c")
 ;;   "WIN"
