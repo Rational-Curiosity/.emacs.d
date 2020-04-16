@@ -55,6 +55,7 @@
       inhibit-startup-screen t
       initial-major-mode 'fundamental-mode
       visible-bell t
+      history-delete-duplicates t
       ;; avoids warnings
       ad-redefinition-action 'accept)
 

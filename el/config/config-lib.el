@@ -421,10 +421,6 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
             ,processes-number-condition
           ,@body)))))
 
-;; Deprecated replacements
-(define-obsolete-function-alias 'incf 'cl-incf)
-(define-obsolete-function-alias 'remove-duplicates 'cl-remove-duplicates)
-
 
 (provide 'config-lib)
 ;;; config-lib.el ends here
