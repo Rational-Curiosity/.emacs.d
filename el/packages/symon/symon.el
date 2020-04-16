@@ -16,6 +16,7 @@
 
 (require 'battery)
 (require 'ring)
+(require 'cl-macs)
 
 (defconst symon-version "1.2.0")
 
@@ -28,19 +29,22 @@
 ;; core
 
 (defcustom symon-refresh-rate 4
-  "refresh rate of symon display. *set this option BEFORE
+  "Refresh rate of symon display. *set this option BEFORE
   enabling `symon-mode'.*"
-  :group 'symon)
+  :group 'symon
+  :type 'float)
 
 (defcustom symon-delay 2
-  "delay in seconds until symon is displayed. *set this option
+  "Delay in seconds until symon is displayed. *set this option
 BEFORE enabling `symon-mode'.*"
-  :group 'symon)
+  :group 'symon
+  :type 'float)
 
 (defcustom symon-history-size 50
   "number of old values to keep. sparklines grow faster when set
 smaller. *set this option BEFORE enabling `symon-mode'.*"
-  :group 'symon)
+  :group 'symon
+  :type 'integer)
 
 (defcustom symon-monitors
   (cond ((memq system-type '(gnu/linux cygwin))
@@ -61,70 +65,84 @@ smaller. *set this option BEFORE enabling `symon-mode'.*"
   "List of monitors used to read system statuses. This variable
   also can be a list of lists from version 1.2, that case
   monitors are displayed in multiple pages. *set this option
-  BEFORE enabling `symon-mode'.*")
+  BEFORE enabling `symon-mode'.*"
+  :group 'symon
+  :type 'list)
 
 ;; sparkline
 
 (defcustom symon-sparkline-height 11
-  "height of sparklines."
-  :group 'symon)
+  "Height of sparklines."
+  :group 'symon
+  :type 'integer)
 
 (defcustom symon-sparkline-width 80
-  "width of sparklines."
-  :group 'symon)
+  "Width of sparklines."
+  :group 'symon
+  :type 'integer)
 
 (defcustom symon-sparkline-ascent 100
   "`:ascent' property for sparklines."
-  :group 'symon)
+  :group 'symon
+  :type 'integer)
 
 (defcustom symon-sparkline-thickness 2
-  "line width of sparklines."
-  :group 'symon)
+  "Line width of sparklines."
+  :group 'symon
+  :type 'integer)
 
 (defcustom symon-sparkline-type 'gridded
-  "type of sparklines."
-  :group 'symon)
+  "Type of sparklines."
+  :group 'symon
+  :type 'symbol)
 
 ;; some darwin builds cannot render xbm images (foreground color is
 ;; always black), so convert to xpm before rendering.
 (defcustom symon-sparkline-use-xpm (eq system-type 'darwin)
-  "when non-nil, convert sparklines to xpm from xbm before
+  "When non-nil, convert sparklines to xpm from xbm before
 rendering."
-  :group 'symon)
+  :group 'symon
+  :type 'boolean)
 
 ;; network monitor
 
 (defcustom symon-network-rx-upper-bound 300
-  "upper-bound of sparkline for network RX status."
-  :group 'symon)
+  "Upper-bound of sparkline for network RX status."
+  :group 'symon
+  :type 'float)
 
 (defcustom symon-network-tx-upper-bound 100
-  "upper-bound of sparkline for network TX status."
-  :group 'symon)
+  "Upper-bound of sparkline for network TX status."
+  :group 'symon
+  :type 'float)
 
 (defcustom symon-network-rx-lower-bound 0
-  "lower-bound of sparkline for network RX status."
-  :group 'symon)
+  "Lower-bound of sparkline for network RX status."
+  :group 'symon
+  :type 'float)
 
 (defcustom symon-network-tx-lower-bound 0
-  "lower-bound of sparkline for network TX status."
-  :group 'symon)
+  "Lower-bound of sparkline for network TX status."
+  :group 'symon
+  :type 'float)
 
 ;; page-file monitor
 
 (defcustom symon-windows-page-file-upper-bound 2000
-  "upper-bound of sparkline for page file usage."
-  :group 'symon)
+  "Upper-bound of sparkline for page file usage."
+  :group 'symon
+  :type 'integer)
 
 (defcustom symon-total-spark-width 10
   "Spark figures space."
-  :group 'symon)
+  :group 'symon
+  :type 'integer)
 
 ;; + utilities
 ;;   + general
 
 (defun symon--flatten (lst)
-  "flatten LST"
+  "Flatten LST."
   (if (consp lst)
       (apply 'nconc (mapcar 'symon--flatten lst))
     (list lst)))
@@ -149,7 +167,7 @@ rendering."
   (copy-sequence (aref symon--sparkline-base-cache 3)))
 
 (defun symon--make-sparkline (list &optional minimum maximum)
-  "make sparkline image from LIST."
+  "Make sparkline image from LIST."
   (let ((num-samples (length list)))
     (unless (zerop num-samples)
       (let* ((image-data (symon--get-sparkline-base))
@@ -174,7 +192,7 @@ rendering."
                 :height ,symon-sparkline-height :width ,symon-sparkline-width)))))
 
 (defun symon--convert-sparkline-to-xpm (sparkline)
-  "convert sparkline to an xpm image."
+  "Convert sparkline to an xpm image."
   (let ((data (plist-get (cdr sparkline) :data)))
     (with-temp-buffer
       (insert (format "/* XPM */
@@ -203,7 +221,7 @@ static char * sparkline_xpm[] = { \"%d %d 2 1\", \"@ c %s\", \". c none\""
 ;; monitor, and must return display string for the monitor.
 
 (defun symon--make-history-ring ()
-  "like `(make-ring symon-history-size)' but filled with `nil'."
+  "Like (make-ring `symon-history-size') but filled with nil."
   (cons 0 (cons symon-history-size (make-vector symon-history-size nil))))
 
 (defmacro define-symon-monitor (name &rest plist)
@@ -309,7 +327,7 @@ supoprted in PLIST:
 (defvar symon--process-reference-count 0)
 
 (defun symon--read-value-from-process-buffer (index)
-  "Read a value from a specific buffer"
+  "Read a value from a specific buffer."
   (when (get-buffer symon--process-buffer-name)
     (with-current-buffer symon--process-buffer-name
       (when (save-excursion
@@ -652,6 +670,7 @@ while(1)                                                            \
 (defvar symon--timer-objects  nil)
 
 (defvar symon--last-message "")
+(defvar symon--last-frame-width 0)
 
 (defun symon--initialize ()
   (unless symon-monitors
@@ -702,33 +721,40 @@ while(1)                                                            \
   (let ((symon-msg (apply #'format-message format-string args)))
     (if (not (string-empty-p symon-msg))
         (let ((msg (current-message))
-              (available-space (- (frame-width) (string-width symon-msg)
-                                  symon-total-spark-width
-                                  (* 2 (length (bound-and-true-p exwm-systemtray--list))))))
-          (if (and msg
-                   (not (string-match-p
-                         "\\`[[:space:]]*\\'"
-                         (setq msg (symon-clean-msg msg)))))
-              (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
-                     (last-line (if last-newline-pos
-                                    (substring msg (1+ last-newline-pos))
-                                  msg))
-                     (last-line-width (string-width last-line))
-                     (sep (cond
-                           ((< available-space last-line-width)
-                            (concat "\n" (make-string (max 0 available-space) ? )))
-                           ((string-empty-p last-line)
-                            (make-string (max 0 available-space) ? ))
-                           (t
-                            (make-string (- available-space last-line-width) ? )))))
-                (message "%s" (concat msg sep symon-msg))
-                (setq symon--last-message (concat sep symon-msg)))
-            (let* ((sep (if (< 0 available-space)
-                            (make-string available-space ? )
-                          ""))
-                   (symon-msg (concat sep symon-msg)))
-              (message "%s" symon-msg)
-              (setq symon--last-message symon-msg)))))))
+              (cur-frame-width (frame-width)))
+          (let ((available-space (- cur-frame-width (string-width symon-msg)
+                                    symon-total-spark-width
+                                    (* 2 (length (bound-and-true-p exwm-systemtray--list))))))
+            (if (and msg
+                     (not (string-match-p
+                           "\\`[[:space:]]*\\'"
+                           (setq msg (symon-clean-msg msg)))))
+                (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
+                       (last-line (if last-newline-pos
+                                      (substring msg (1+ last-newline-pos))
+                                    msg))
+                       (last-line-width (string-width last-line))
+                       (sep (cond
+                             ((< available-space last-line-width)
+                              (concat "\n" (make-string (max 0 available-space) ? )))
+                             ((string-empty-p last-line)
+                              (make-string (max 0 available-space) ? ))
+                             (t
+                              (make-string (- available-space last-line-width) ? )))))
+                  (when (/= cur-frame-width symon--last-frame-width)
+                    (setq symon--last-frame-width cur-frame-width)
+                    (message nil))
+                  (message "%s" (concat msg sep symon-msg))
+                  (setq symon--last-message (concat sep symon-msg)))
+              (let* ((sep (if (< 0 available-space)
+                              (make-string available-space ? )
+                            ""))
+                     (symon-msg (concat sep symon-msg)))
+                (when (/= cur-frame-width symon--last-frame-width)
+                  (setq symon--last-frame-width cur-frame-width)
+                  (message nil))
+                (message "%s" symon-msg)
+                (setq symon--last-message symon-msg))))))))
 
 (defun symon--display-update ()
     "update symon display"
