@@ -388,6 +388,10 @@ ARG non-nil resize window to ARG height."
     (let ((fit-window-to-buffer-horizontally nil))
       (fit-window-to-buffer window max-height min-height nil nil preserve-size))))
 
+(defun window-preserve-width (&optional window)
+  (interactive)
+  (window-preserve-size window t t))
+
 (require 'winner)
 (defhydra hydra-win (:foreign-keys warn)
   "WIN"
@@ -634,6 +638,7 @@ others."
 (global-set-key (kbd "C-c w u a") 'window-undedicate-all)
 (global-set-key (kbd "C-c w d t") 'window-dedicate-this)
 (global-set-key (kbd "C-c w u t") 'window-undedicate-this)
+(global-set-key (kbd "C-c w P w") 'window-preserve-width)
 (global-set-key (kbd "C-c w C-h") 'window-resize-height)
 (global-set-key (kbd "C-c w C-w") 'window-resize-width)
 
