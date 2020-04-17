@@ -113,7 +113,7 @@
    (let ((inhibit-message t))
      (message "EXWM wallpaper: %s" (abbreviate-file-name random-picture)))))
 
-(defun exwm-set-window-transparency (buffer opacity)
+(defun exwm-set-window-transparency (buffer &optional opacity)
   (interactive (list (current-buffer)
                      (read-number "Opacity: " exwm-default-transparency)))
   (let ((window-id (exwm--buffer->id buffer)))
@@ -121,8 +121,21 @@
         (start-process " *transset" " *transset outputs*"
                        "transset" "--id"
                        (int-to-string window-id)
-                       (int-to-string opacity))
+                       (int-to-string (or opacity exwm-default-transparency)))
       (message "Buffer %s without window." (buffer-name buffer)))))
+
+(defun exwm-toggle-transparency ()
+  (interactive)
+  (if (= 1 exwm-default-transparency)
+      (progn
+        (setq exwm-default-transparency 0.85)
+        (mapc (lambda (buffer)
+                (with-current-buffer buffer
+                  (unless (member exwm-instance-name exwm-exclude-transparency)
+                    (exwm-set-window-transparency buffer exwm-default-transparency))))
+              (exwm-buffer-list)))
+    (setq exwm-default-transparency 1)
+    (mapc 'exwm-set-window-transparency (exwm-buffer-list))))
 
 (defun exwm-xrandr-parse ()
   (let ((monitors (make-hash-table :test 'equal)))
@@ -254,6 +267,9 @@
 (defun exwm-buffer-p (buffer-or-name)
   (with-current-buffer buffer-or-name
     (derived-mode-p 'exwm-mode)))
+
+(defun exwm-buffer-list ()
+  (cl-remove-if-not 'exwm-buffer-p (buffer-list)))
 
 (defun exwm-display-buffer-condition (buffer-name &optional action)
   (and (exwm-buffer-p buffer-name)
@@ -623,6 +639,11 @@
       (winum--undefine-keys exwm-mode-map)))
   (exwm-winum-bindings)
   (add-hook 'winum-mode-hook 'exwm-winum-bindings))
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
+(global-set-key (kbd "<f7> T") 'exwm-toggle-transparency)
 
 
 (provide 'exwm-startup-config)
