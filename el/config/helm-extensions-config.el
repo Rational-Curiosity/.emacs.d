@@ -95,5 +95,6 @@
 
 (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers)
 
+
 (provide 'helm-extensions-config)
 ;;; helm-extensions-config.el ends here
