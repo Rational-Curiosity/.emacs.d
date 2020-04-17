@@ -669,7 +669,7 @@ while(1)                                                            \
 (defvar symon--total-page-num nil)
 (defvar symon--timer-objects  nil)
 
-(defvar symon--last-message "")
+(defvar symon--symon-message "")
 (defvar symon--last-frame-width 0)
 
 (defun symon--initialize ()
@@ -694,100 +694,119 @@ while(1)                                                            \
           (list (run-with-timer 0 symon-refresh-rate 'symon--redisplay)
                 (run-with-idle-timer symon-delay t 'symon-display)))
     (add-hook 'pre-command-hook 'symon--display-end)
-    (add-hook 'kill-emacs-hook 'symon--cleanup)))
+    ;; (add-hook 'post-command-hook 'symon-display)
+    (add-hook 'kill-emacs-hook 'symon--cleanup)
+    (add-function :before after-focus-change-function 'symon-clean-echo-area)
+    (advice-add #'message :around #'symon--message-advice)))
 
 (defun symon--cleanup ()
   (remove-hook 'kill-emacs-hook 'symon--cleanup)
+  ;; (remove-hook 'post-command-hook 'symon-display)
   (remove-hook 'pre-command-hook 'symon--display-end)
   (mapc 'cancel-timer symon--timer-objects)
-  (mapc 'funcall symon--cleanup-fns))
-
-(defun symon-clean-msg (msg)
-  (setq msg (replace-regexp-in-string "\n*\\'" "" msg t t))
-  (let ((last-len (length symon--last-message))
-        (msg-len (length msg)))
-    (if (cond ((= last-len msg-len)
-               (string-equal symon--last-message msg))
-              ((< last-len msg-len)
-               (string-equal symon--last-message (substring msg (- last-len)))))
-        (substring msg 0 (- last-len))
-      msg)))
+  (mapc 'funcall symon--cleanup-fns)
+  (remove-function after-focus-change-function 'symon-clean-echo-area)
+  (advice-remove #'message #'symon--message-advice))
 
 (defun symon-clean-echo-area ()
-  (message nil))
-(add-function :before after-focus-change-function 'symon-clean-echo-area)
+  (message 'clean))
 
-(defun symon-message-update (format-string &rest args)
-  (let ((symon-msg (apply #'format-message format-string args)))
-    (if (not (string-empty-p symon-msg))
-        (let ((msg (current-message))
-              (cur-frame-width (frame-width)))
-          (let ((available-space (- cur-frame-width (string-width symon-msg)
-                                    symon-total-spark-width
-                                    (* 2 (length (bound-and-true-p exwm-systemtray--list))))))
-            (if (and msg
-                     (not (string-match-p
-                           "\\`[[:space:]]*\\'"
-                           (setq msg (symon-clean-msg msg)))))
-                (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
-                       (last-line (if last-newline-pos
-                                      (substring msg (1+ last-newline-pos))
-                                    msg))
-                       (last-line-width (string-width last-line))
-                       (sep (cond
-                             ((< available-space last-line-width)
-                              (concat "\n" (make-string (max 0 available-space) ? )))
-                             ((string-empty-p last-line)
-                              (make-string (max 0 available-space) ? ))
-                             (t
-                              (make-string (- available-space last-line-width) ? )))))
-                  (when (/= cur-frame-width symon--last-frame-width)
-                    (setq symon--last-frame-width cur-frame-width)
-                    (message nil))
-                  (message "%s" (concat msg sep symon-msg))
-                  (setq symon--last-message (concat sep symon-msg)))
-              (let* ((sep (if (< 0 available-space)
-                              (make-string available-space ? )
-                            ""))
-                     (symon-msg (concat sep symon-msg)))
-                (when (/= cur-frame-width symon--last-frame-width)
-                  (setq symon--last-frame-width cur-frame-width)
-                  (message nil))
-                (message "%s" symon-msg)
-                (setq symon--last-message symon-msg))))))))
+(defun symon--available-space (cur-frame-width)
+  (- cur-frame-width (string-width symon--symon-message)
+     symon-total-spark-width
+     (* 2 (length (bound-and-true-p exwm-systemtray--list)))))
+
+(defun symon-compose-message (msg)
+  (let* ((cur-frame-width (frame-width))
+         (available-space (symon--available-space cur-frame-width)))
+    (if (not (string-empty-p msg))
+        (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
+               (last-line (if last-newline-pos
+                              (substring msg (1+ last-newline-pos))
+                            msg))
+               (last-line-width (string-width last-line))
+               (sep (cond
+                     ((< available-space last-line-width)
+                      (concat "\n" (make-string (max 0 available-space) ? )))
+                     ((string-empty-p last-line)
+                      (make-string (max 0 available-space) ? ))
+                     (t
+                      (make-string (- available-space last-line-width) ? )))))
+          (when (/= cur-frame-width symon--last-frame-width)
+            (setq symon--last-frame-width cur-frame-width)
+            (message 'clean))
+          (concat msg sep symon--symon-message))
+      (when (/= cur-frame-width symon--last-frame-width)
+        (setq symon--last-frame-width cur-frame-width)
+        (message 'clean))
+      (concat (if (< 0 available-space)
+                  (make-string available-space ? )
+                "")
+              symon--symon-message))))
+
+(defun symon-clean-message (msg)
+  (if msg
+      (replace-regexp-in-string
+       "[[:space:]]*\\'" ""
+       (let ((pos (cl-search symon--symon-message msg)))
+         (if pos
+             (substring msg 0 pos)
+           msg)))
+    ""))
+
+(defun symon--message-advice (orig-fun format-string &rest args)
+  (if format-string
+      (if (eq format-string 'clean)
+          (funcall orig-fun nil)
+        (if message-log-max
+            (let ((inhibit-message t))
+              (apply orig-fun format-string args)))
+        (let ((message-log-max nil))
+         (funcall orig-fun "%s"
+                 (symon-compose-message (apply #'format format-string args)))))
+    (funcall orig-fun nil)
+    (let ((message-log-max nil))
+      (funcall orig-fun
+               (concat
+                (make-string (symon--available-space (frame-width)) ? )
+                "%s")
+               symon--symon-message))))
 
 (defun symon--display-update ()
-    "update symon display"
+    "Update symon display"
     (unless (or cursor-in-echo-area (active-minibuffer-window))
       (let ((message-log-max nil)  ; do not insert to *Messages* buffer
             (display-string nil)
             (page 0))
         (dolist (lst symon--display-fns)
           (if (= page symon--active-page)
-              (symon-message-update "%s" (apply 'concat (mapcar 'funcall lst)))
+              (let ((msg (symon-clean-message (current-message))))
+                (setq symon--symon-message (apply 'concat (mapcar 'funcall lst)))
+                (message "%s" msg))
             (mapc 'funcall lst))
           (setq page (1+ page))))
       (setq symon--display-active t)))
 
 (defun symon-display ()
-  "activate symon display."
+  "Activate symon display."
   (interactive)
-  (setq symon--active-page 0)
-  (symon--display-update))
+  (unless symon--display-active
+    (setq symon--active-page 0)
+    (symon--display-update)))
 
 (defun symon--redisplay ()
-  "update symon display."
+  "Update symon display."
   (when symon--display-active
     (setq symon--active-page (% (1+ symon--active-page) symon--total-page-num))
     (symon--display-update)))
 
 (defun symon--display-end ()
-  "deactivate symon display."
+  "Deactivate symon display."
   (setq symon--display-active nil))
 
 ;;;###autoload
 (define-minor-mode symon-mode
-  "tiny graphical system monitor"
+  "Tiny graphical system monitor"
   :init-value nil
   :global t
   (if symon-mode (symon--initialize) (symon--cleanup)))
