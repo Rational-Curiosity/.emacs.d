@@ -320,6 +320,9 @@
                ,(concat "\\("
                         (mapconcat 'identity
                                    '("al" "un" "uno" "una" "unos" "unas"
+                                     "del"
+                                     ;; conjunciones
+                                     "y" "e" "o" "u"
                                      ;; prepositions
                                      "el" "la" "lo" "las" "los"
                                      "a" "ante" "bajo" "cabe" "con"
