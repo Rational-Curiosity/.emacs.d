@@ -453,7 +453,7 @@
 
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
-        '(((string-equal exwm-class-name "XTerm") char-mode t)
+        '(((member exwm-class-name '("XTerm" "Emacs")) char-mode t)
           ((member exwm-class-name
                    '("darkplaces" "doom" "gzdoom"))
            floating nil))))
@@ -567,7 +567,7 @@
 (push 'symon-venv-current-name-monitor symon-monitors)
 (push 'symon-recording-monitor symon-monitors)
 
-(setq symon-delay 2
+(setq symon-delay 0.5
       symon-refresh-rate 4
       symon-sparkline-type 'bounded
       symon-sparkline-thickness 1
