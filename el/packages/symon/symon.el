@@ -688,25 +688,27 @@ while(1)                                                            \
     (mapc (lambda (m) (funcall (aref m 0))) monitors-flattened) ; setup-fns
     (setq symon--cleanup-fns    (mapcar (lambda (m) (aref m 1)) monitors-flattened)
           symon--display-fns    (mapcar (lambda (l) (mapcar (lambda (m) (aref m 2)) l)) monitors)
-          symon--display-active nil
+          symon--display-active t
           symon--total-page-num (length symon-monitors)
           symon--timer-objects
           (list (run-with-timer 0 symon-refresh-rate 'symon--redisplay)
                 (run-with-idle-timer symon-delay t 'symon-display)))
-    (add-hook 'pre-command-hook 'symon--display-end)
-    ;; (add-hook 'post-command-hook 'symon-display)
+    (add-hook 'pre-command-hook 'symon--display-stop)
+    (add-hook 'post-command-hook 'symon--display-start)
     (add-hook 'kill-emacs-hook 'symon--cleanup)
     (add-function :before after-focus-change-function 'symon-clean-echo-area)
+    (advice-add #'current-message :around #'symon--current-message-advice)
     (advice-add #'message :around #'symon--message-advice)))
 
 (defun symon--cleanup ()
   (remove-hook 'kill-emacs-hook 'symon--cleanup)
-  ;; (remove-hook 'post-command-hook 'symon-display)
-  (remove-hook 'pre-command-hook 'symon--display-end)
+  (remove-hook 'post-command-hook 'symon--display-start)
+  (remove-hook 'pre-command-hook 'symon--display-stop)
   (mapc 'cancel-timer symon--timer-objects)
   (mapc 'funcall symon--cleanup-fns)
   (remove-function after-focus-change-function 'symon-clean-echo-area)
-  (advice-remove #'message #'symon--message-advice))
+  (advice-remove #'message #'symon--message-advice)
+  (advice-remove #'current-message #'symon--current-message-advice))
 
 (defun symon-clean-echo-area ()
   (message 'clean))
@@ -751,26 +753,46 @@ while(1)                                                            \
        (let ((pos (cl-search symon--symon-message msg)))
          (if pos
              (substring msg 0 pos)
+           ;; (when (< (length symon--symon-message) (length msg))
+           ;;   (message-log "Symon msg: <%s>" symon--symon-message)
+           ;;   (message-log "Curr. msg: <%s>" msg))
            msg)))
     ""))
 
 (defun symon--message-advice (orig-fun format-string &rest args)
-  (if format-string
-      (if (eq format-string 'clean)
-          (funcall orig-fun nil)
-        (if message-log-max
-            (let ((inhibit-message t))
-              (apply orig-fun format-string args)))
-        (let ((message-log-max nil))
-         (funcall orig-fun "%s"
-                 (symon-compose-message (apply #'format format-string args)))))
+  (cond
+   ;; original (message format args...) without symon message
+   ((or cursor-in-echo-area (active-minibuffer-window))
+    (apply orig-fun format-string args))
+   ;; actual (message nil) with symon message
+   ((null format-string)
     (funcall orig-fun nil)
     (let ((message-log-max nil))
       (funcall orig-fun
                (concat
                 (make-string (symon--available-space (frame-width)) ? )
                 "%s")
-               symon--symon-message))))
+               symon--symon-message))
+    ;; return value
+    nil)
+   ;; original (message nil) without symon message
+   ((eq format-string 'clean)
+    ;; return value from original message function
+    (funcall orig-fun nil))
+   ;; actual (message format args...) with symon message
+   (t
+    (if message-log-max
+        (let ((inhibit-message t))
+          (apply orig-fun format-string args)))
+    (let ((message-log-max nil)
+          (msg (apply #'format format-string args)))
+      (funcall orig-fun "%s"
+               (symon-compose-message msg))
+      ;; return value
+      msg))))
+
+(defun symon--current-message-advice (orig-fun)
+  (symon-clean-message (funcall orig-fun)))
 
 (defun symon--display-update ()
     "Update symon display"
@@ -780,27 +802,31 @@ while(1)                                                            \
             (page 0))
         (dolist (lst symon--display-fns)
           (if (= page symon--active-page)
-              (let ((msg (symon-clean-message (current-message))))
+              (let ((msg (current-message)))
                 (setq symon--symon-message (apply 'concat (mapcar 'funcall lst)))
                 (message "%s" msg))
             (mapc 'funcall lst))
           (setq page (1+ page))))
-      (setq symon--display-active t)))
+      (setq symon--display-active 'redisplay)))
 
 (defun symon-display ()
   "Activate symon display."
   (interactive)
-  (unless symon--display-active
+  (when (eq symon--display-active t)
     (setq symon--active-page 0)
     (symon--display-update)))
 
 (defun symon--redisplay ()
   "Update symon display."
-  (when symon--display-active
+  (when (eq symon--display-active 'redisplay)
     (setq symon--active-page (% (1+ symon--active-page) symon--total-page-num))
     (symon--display-update)))
 
-(defun symon--display-end ()
+(defun symon--display-start ()
+  "Activate symon display."
+  (setq symon--display-active t))
+
+(defun symon--display-stop ()
   "Deactivate symon display."
   (setq symon--display-active nil))
 
