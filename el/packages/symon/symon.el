@@ -795,19 +795,25 @@ while(1)                                                            \
   (symon-clean-message (funcall orig-fun)))
 
 (defun symon--display-update ()
-    "Update symon display"
-    (unless (or cursor-in-echo-area (active-minibuffer-window))
-      (let ((message-log-max nil)  ; do not insert to *Messages* buffer
-            (display-string nil)
-            (page 0))
-        (dolist (lst symon--display-fns)
-          (if (= page symon--active-page)
-              (let ((msg (current-message)))
-                (setq symon--symon-message (apply 'concat (mapcar 'funcall lst)))
-                (message "%s" msg))
-            (mapc 'funcall lst))
-          (setq page (1+ page))))
-      (setq symon--display-active 'redisplay)))
+  "Update symon display"
+  (unless (or cursor-in-echo-area
+              ;; (benchmark 100 (this-single-command-keys))
+              ;; "Elapsed time: 0.000004s"
+              ;; (benchmark 100 (this-single-command-raw-keys))
+              ;; "Elapsed time: 0.000009s"
+              (< 0 (length (this-single-command-keys)))
+              (active-minibuffer-window))
+    (let ((message-log-max nil)  ; do not insert to *Messages* buffer
+          (display-string nil)
+          (page 0))
+      (dolist (lst symon--display-fns)
+        (if (= page symon--active-page)
+            (let ((msg (current-message)))
+              (setq symon--symon-message (apply 'concat (mapcar 'funcall lst)))
+              (message "%s" msg))
+          (mapc 'funcall lst))
+        (setq page (1+ page))))
+    (setq symon--display-active 'redisplay)))
 
 (defun symon-display ()
   "Activate symon display."
