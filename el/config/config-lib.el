@@ -188,18 +188,20 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   `(lambda () (and (fboundp ,func) (apply ,func (quote ,args)))))
 
 ;; write message in *Messages* buffer with colors
-;; Thanks to: https://emacs.stackexchange.com/a/20178
-(defun message-color (format &rest args)
-  "Acts like `message' but preserves string properties in the *Messages* buffer."
-  (let ((message-log-max nil))
-    (apply 'message format args))
-  (with-current-buffer (get-buffer "*Messages*")
+(defun message-log (format-string &rest args)
+  (with-current-buffer "*Messages*"
     (save-excursion
       (goto-char (point-max))
       (let ((inhibit-read-only t))
         (unless (zerop (current-column)) (insert "\n"))
-        (insert (apply 'format format args))
+        (insert (apply 'format format-string args))
         (insert "\n")))))
+
+(defun message-color (format-string &rest args)
+  "Acts like `message' but preserves string properties in the *Messages* buffer."
+  (let ((message-log-max nil))
+    (apply 'message format-string args))
+  (apply 'message-log format-string args))
 
 ;; Silent messages
 ;; Usage:
