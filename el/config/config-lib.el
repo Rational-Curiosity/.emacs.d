@@ -90,6 +90,7 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
               (fail-count 0)
               (file-count 0)
               (dir-count 0)
+              directory
               last-dir)
           (displaying-byte-compile-warnings
            (cl-incf
@@ -97,10 +98,12 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
                     (expand-file-name "init.el" user-emacs-directory) force 0)
               ('no-byte-compile skip-count)
               ('t file-count)
-              (_ fail-count)))
+              (_
+               (message "Failed %s" source)
+               fail-count)))
            (while directories
              (setq directory (car directories))
-             (message "Checking %s..." directory)
+             ;; (message "Checking %s..." directory)
              (dolist (file (directory-files directory))
                (let ((source (expand-file-name file directory)))
                  (if (file-directory-p source)
@@ -121,9 +124,9 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
                                (pcase (byte-recompile-file source force 0)
                                  ('no-byte-compile skip-count)
                                  ('t file-count)
-                                 (_ fail-count)))
-                              (or noninteractive
-                                  (message "Checking %s..." directory))
+                                 (_
+                                  (message "Failed %s" source)
+                                  fail-count)))
                               (if (not (eq last-dir directory))
                                   (setq last-dir directory
                                         dir-count (1+ dir-count))))))))
