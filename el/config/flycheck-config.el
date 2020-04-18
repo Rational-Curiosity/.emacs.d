@@ -131,6 +131,12 @@ nil."
       ('interrupted '(:propertize "{.}" face mode-line-error))
       ('suspicious '(:propertize "{?}" face mode-line-warning)))))
 
+;;;;;;;;;;;;;;
+;; Posframe ;;
+;;;;;;;;;;;;;;
+(when (and (display-graphic-p) (load "flycheck-posframe" t))
+  (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode))
+
 ;; Keys
 (define-key flycheck-mode-map (kbd "C-c ! t w") 'flycheck-toggle-warnings)
 (define-key flycheck-mode-map (kbd "C-c ! t i") 'flycheck-toggle-includes)

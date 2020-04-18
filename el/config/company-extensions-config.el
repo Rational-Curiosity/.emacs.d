@@ -97,6 +97,14 @@
 
 (with-eval-after-load 'company-dabbrev
   (setq company-dabbrev-downcase nil))
+
+;;;;;;;;;;;;;;
+;; Posframe ;;
+;;;;;;;;;;;;;;
+(when (and (display-graphic-p) (load "company-posframe" t))
+  (setq company-posframe-lighter "")
+  (add-hook 'company-mode-hook #'company-posframe-mode))
+
 ;;;;;;;;;;;;
 ;; Auxtex ;;
 ;;;;;;;;;;;;

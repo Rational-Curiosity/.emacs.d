@@ -93,6 +93,15 @@
 ;; Go to the opposite side of line from the end or beginning of line
 (setq helm-swoop-move-to-line-cycle t)
 
+(when (and (display-graphic-p) (load "helm-posframe" t))
+  (add-hook 'helm-org-rifle-after-command-hook 'helm-posframe-cleanup)
+  (remove-hook 'delete-frame-functions 'helm--delete-frame-function)
+  (define-key helm-map (kbd "C-i") 'undefined)
+  (setq helm-posframe-poshandler 'posframe-poshandler-frame-center
+        helm-posframe-parameters '((internal-border-width . 5)
+                                   (z-group . above)))
+  (helm-posframe-enable))
+
 (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers)
 
 
