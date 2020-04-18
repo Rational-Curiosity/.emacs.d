@@ -103,15 +103,18 @@
   (interactive)
   (start-process " *screenshot" nil "gnome-screenshot"))
 
-(defun exwm-set-random-wallpaper (path)
-  (interactive (list (read-directory-name "Random image from: " 
+(defun exwm-set-random-wallpaper (path &optional reason)
+  (interactive (list (read-directory-name "Random image from: "
                                           exwm-default-wallpaper-folder)))
   (let* ((paths (directory-files path t "^[^.]"))
          (random-picture (nth (random (length paths)) paths)))
    (start-process " *feh" " *feh outputs*" "feh" "--bg-fill"
                   random-picture)
    (let ((inhibit-message t))
-     (message "EXWM wallpaper: %s" (abbreviate-file-name random-picture)))))
+     (message "EXWM wallpaper%s: %s" (if reason
+                                         (concat " (" reason ")")
+                                       "")
+              (abbreviate-file-name random-picture)))))
 
 (defun exwm-set-window-transparency (buffer &optional opacity)
   (interactive (list (current-buffer)
@@ -162,6 +165,7 @@
     monitors))
 
 (require 'crm)
+(require 'exwm-randr)
 (defun exwm-update-screens ()
   (interactive)
   (let* ((monitors (exwm-xrandr-parse))
@@ -214,6 +218,8 @@
                                                 (gethash 'max monitor) "x"))))))))
               names))))
       (apply 'call-process "xrandr" nil nil nil args)
+      (if exwm-randr-workspace-monitor-plist
+          (exwm-set-random-wallpaper exwm-default-wallpaper-folder "update"))
       (setq exwm-randr-workspace-monitor-plist nil)
       (let ((monitor-number -1))
         (mapc (lambda (name)
@@ -221,8 +227,7 @@
                       (nconc exwm-randr-workspace-monitor-plist
                              (list (cl-incf monitor-number) name))))
               names)
-        (setq exwm-workspace-number (1+ monitor-number)))))
-  (exwm-set-random-wallpaper exwm-default-wallpaper-folder))
+        (setq exwm-workspace-number (1+ monitor-number))))))
 
 (defun exwm-screen-count ()
   (let ((monitor-number 0))
@@ -522,7 +527,6 @@
 (exwm-enable)
 
 ;; Multi-monitor
-(require 'exwm-randr)
 (add-hook 'exwm-randr-screen-change-hook 'exwm-update-screens)
 (exwm-randr-enable)
 
@@ -603,7 +607,9 @@
       (message "Exists previous random wallpaper timer")
     (setq exwm-timer-random-wallpaper
           (run-at-time 600 600
-                       'exwm-set-random-wallpaper exwm-default-wallpaper-folder))))
+                       'exwm-set-random-wallpaper
+                       exwm-default-wallpaper-folder
+                       "timer"))))
 (exwm-start-random-wallpaper)
 
 (defun exwm-cancel-random-wallpaper ()
