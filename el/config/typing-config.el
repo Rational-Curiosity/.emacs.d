@@ -41,7 +41,8 @@
                       nil t)
                      utf8-hash-table))))
 
-(setq column-number-mode t
+(setq echo-keystrokes 0.5
+      column-number-mode t
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
       mode-require-final-newline nil)
