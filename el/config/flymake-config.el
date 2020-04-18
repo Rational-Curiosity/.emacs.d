@@ -27,7 +27,7 @@
 ;; custom modeline
 (when (bug-check-function-bytecode
        'flymake--mode-line-format
-       "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UNAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYn5BTqD0wEFQLIF+gUGDyKyBPsF/P0jsgMDhDsBCvk9hMkBCoM3AfYFIf4KIVmCOAH5g8kBAdjd/wYHRyLwBgba2+LjIAYN5ALLgUAACyLHgUEAgUIAyssGCCGBQwAigUQAgUUAgUYAJgYjiOQCy4FAAAwix4FBAIFCAMrLBgghgUcAIoFEAIFFAIFGACYGI4gBtoLc3YFIAIFJAN3/BhJHIvAGESOBSQDdgUoABhQi8AYSIyPdgUsACwwjUK8KQ6SyAgVBsgbFsgGCCAGBTADoA8WJiQM6gwICA7IDAolBsgSisgIBAUKyAQKD+wGBTQABQrIBA0GyBILbAYmftoSBTgAiQraIIkKH")
+       "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UlAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYn5BTqD6wEFQLIFiYMdAfoFBg8igiIB+gUGDyKyBImDMAH7Bfz9I4I1AfsF/P0jsgMDhFMBCvk9hOEBCoNPAfYFIf4KIVmCUAH5g+EBAdjd/wYHRyLwBgba2+LjIAYN5ALLgUAACyLHgUEAgUIAyssGCCGBQwAigUQAgUUAgUYAJgYjiOQCy4FAAAwix4FBAIFCAMrLBgghgUcAIoFEAIFFAIFGACYGI4gBtoLc3YFIAIFJAN3/BhJHIvAGESOBSQDdgUoABhQi8AYSIyPdgUsACwwjUK8KQ6SyAgVBsgbFsgGCCAGBTADoA8WJiQM6gxoCA7IDAolBsgSisgIBAUKyAQKDEwKBTQABQrIBA0GyBILzAYmftoSBTgAiQraIIkKH")
   (defun flymake--mode-line-format ()
     "Produce a pretty minor mode indicator."
     (let* ((known (hash-table-keys flymake--backend-state))
@@ -37,12 +37,12 @@
            (diags-by-type (make-hash-table))
            (all-disabled (and disabled (null running)))
            (some-waiting (cl-set-difference running reported)))
-      (maphash (lambda (_b state)
-                 (mapc (lambda (diag)
-                         (push diag
-                               (gethash (flymake--diag-type diag)
-                                        diags-by-type)))
-                       (flymake--backend-state-diags state)))
+      (maphash `(lambda (_b state)
+                  (mapc (lambda (diag)
+                          (push diag
+                                (gethash (flymake--diag-type diag)
+                                         ,diags-by-type)))
+                        (flymake--backend-state-diags state)))
                flymake--backend-state)
       `((:propertize "!"
                      mouse-face mode-line-highlight
