@@ -696,7 +696,10 @@ while(1)                                                            \
     (add-hook 'pre-command-hook 'symon--display-stop)
     (add-hook 'post-command-hook 'symon--display-start)
     (add-hook 'kill-emacs-hook 'symon--cleanup)
-    (add-function :before after-focus-change-function 'symon-clean-echo-area)
+    (if (boundp 'after-focus-change-function)
+        (add-function :before after-focus-change-function 'symon-clean-echo-area)
+      (add-hook 'focus-in-hook 'symon-clean-echo-area)
+      (add-hook 'focus-out-hook 'symon-clean-echo-area))
     (advice-add #'current-message :around #'symon--current-message-advice)
     (advice-add #'message :around #'symon--message-advice)))
 
@@ -706,7 +709,10 @@ while(1)                                                            \
   (remove-hook 'pre-command-hook 'symon--display-stop)
   (mapc 'cancel-timer symon--timer-objects)
   (mapc 'funcall symon--cleanup-fns)
-  (remove-function after-focus-change-function 'symon-clean-echo-area)
+  (if (boundp 'after-focus-change-function)
+      (remove-function after-focus-change-function 'symon-clean-echo-area)
+    (remove-hook 'focus-out-hook 'symon-clean-echo-area)
+    (remove-hook 'focus-in-hook 'symon-clean-echo-area))
   (advice-remove #'message #'symon--message-advice)
   (advice-remove #'current-message #'symon--current-message-advice))
 
