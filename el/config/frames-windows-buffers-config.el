@@ -392,6 +392,27 @@ ARG non-nil resize window to ARG height."
   (interactive)
   (window-preserve-size window t t))
 
+(defun window-resize-equal (arg size)
+  (interactive "P\nnSize: ")
+  (let ((window (selected-window))
+        (horizontal (not arg)))
+    (window-resize window (- (if (< 0 size) size 80)
+                             (window-size window horizontal))
+                   horizontal)))
+
+(defun window-resize-delta (arg delta)
+  (interactive "P\nnDelta: ")
+  (window-resize (selected-window) delta (not arg)))
+
+(defun window-resize-factor (arg factor)
+  (interactive "P\nnFactor: ")
+  (let ((window (selected-window))
+        (horizontal (not arg)))
+    (window-resize window (round
+                           (* (window-size window horizontal)
+                              (1- factor)))
+                   horizontal)))
+
 (require 'winner)
 (defhydra hydra-win (:foreign-keys warn)
   "WIN"
@@ -623,13 +644,19 @@ others."
 (global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
 (global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
 
+
+(define-key winner-mode-map [(control c) left] nil)
+(define-key winner-mode-map [(control c) right] nil)
+(define-key winner-mode-map (kbd "C-c w -") #'winner-undo)
+(define-key winner-mode-map (kbd "C-c w _") #'winner-redo)
+(global-set-key (kbd "C-c w =") 'window-resize-equal)
+(global-set-key (kbd "C-c w +") 'window-resize-delta)
+(global-set-key (kbd "C-c w *") 'window-resize-factor)
 (global-set-key (kbd "C-c w t") #'transpose-frame)
 (global-set-key (kbd "C-c w h") #'flop-frame)
 (global-set-key (kbd "C-c w v") #'flip-frame)
 (global-set-key (kbd "C-c w r") #'rotate-frame-clockwise)
 (global-set-key (kbd "C-c w C-r") #'rotate-frame-anticlockwise)
-(global-set-key (kbd "C-c w -") #'winner-undo)
-(global-set-key (kbd "C-c w _") #'winner-redo)
 (global-set-key (kbd "C-c w 2") 'shell-2-window-frame)
 (global-set-key (kbd "C-c w 3") 'shell-3-window-frame)
 (global-set-key (kbd "C-c w a") 'toggle-hscroll-aggressive)
