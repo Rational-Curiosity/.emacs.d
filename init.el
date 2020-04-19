@@ -282,6 +282,10 @@
   (add-hook 'lsp-after-open-hook #'lsp-enable-imenu)
   (require 'lsp-config))
 
+;; dap
+(with-eval-after-load 'dap-mode
+  (require 'dap-config))
+
 ;; [ cc-mode
 (add-hook 'c-mode-hook   #'lsp-deferred)
 (add-hook 'c++-mode-hook #'lsp-deferred)
@@ -311,23 +315,23 @@
 (setq python-shell-interpreter "python3")
 (with-eval-after-load 'python
   ;;  (require 'semantic/wisent/python)
-  (when (load "dap-python" t)
-    (dap-ui-mode)
-    (dap-tooltip-mode))
   (require 'python-config)
   ;;  (add-hook 'python-mode-hook #'detect-python-project-version)
-  )
+  (with-eval-after-load 'dap-mode
+    (require 'dap-python)))
+
+
 (with-eval-after-load 'virtualenvwrapper
   (require 'virtualenvwrapper-config))
 ;; ]
 
 ;; [ java
+(add-hook 'java-mode-hook (lambda ()
+                            (when (require 'lsp-java nil t)
+                              (lsp-deferred))))
 (defun load-once-java-stuff ()
-  (when (load "lsp-java" t)
-    (when (load "dap-java" t)
-      (dap-ui-mode)
-      (dap-tooltip-mode))
-    (lsp-deferred))
+  (with-eval-after-load 'dap-mode
+    (require 'dap-java))
   (remove-hook 'java-mode-hook 'load-once-java-stuff))
 (add-hook 'java-mode-hook 'load-once-java-stuff)
 ;; ]
@@ -335,18 +339,16 @@
 ;; [ javascript
 (add-hook 'js-mode-hook #'lsp-deferred)
 (with-eval-after-load 'js
-  (when (load "dap-firefox" t)
-    (dap-firefox-setup)
-    (dap-ui-mode)
-    (dap-tooltip-mode)))
+  (with-eval-after-load 'dap-mode
+    (require 'dap-firefox)
+    (dap-firefox-setup)))
 ;; ]
 
 ;; [ php
 (add-hook 'php-mode-hook #'lsp-deferred)
 (with-eval-after-load 'php-mode
-  (when (load "dap-php" t)
-    (dap-ui-mode)
-    (dap-tooltip-mode))
+  (with-eval-after-load 'dap-mode
+    (require 'dap-php))
   (require 'php-config))
 ;; ]
 
