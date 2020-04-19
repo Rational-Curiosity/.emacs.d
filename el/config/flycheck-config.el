@@ -35,7 +35,7 @@
             (setq flycheck-gcc-language-standard "c++11"
                   flycheck-clang-language-standard "c++11")))
 
-(setq flycheck-check-syntax-automatically nil ;; value without lsp-mode: '(save mode-enabled)
+(setq flycheck-check-syntax-automatically '(save mode-enabled)
       ;; sudo apt install php-codesniffer
       flycheck-phpcs-standard "PSR2")
 
