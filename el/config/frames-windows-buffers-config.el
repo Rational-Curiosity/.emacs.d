@@ -362,7 +362,6 @@ Don't show on windows buffers currently showed."
              (select-window (cdr window-assoc))
            (funcall (intern option))))))))
 
-
 ;; window resize
 (defun window-resize-width (arg &optional window max-width min-width preserve-size)
   "ARG nil Fit WINDOW according to its buffer's width.

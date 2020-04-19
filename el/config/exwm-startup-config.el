@@ -1,3 +1,17 @@
+;;;; Below are configurations for EXWM.
+
+;; Add paths (not required if EXWM is installed from GNU ELPA).
+;(add-to-list 'load-path "/path/to/xelb/")
+;(add-to-list 'load-path "/path/to/exwm/")
+
+;; Load EXWM.
+(require 'exwm)
+
+;; Fix problems with Ido (if you use it).
+;; (require 'exwm-config)
+;; (exwm-config-ido)
+(require 'exwm-randr)
+
 ;; Inhibit dangerous functions
 (with-eval-after-load 'frame
   (defun suspend-frame ()
@@ -165,7 +179,6 @@
     monitors))
 
 (require 'crm)
-(require 'exwm-randr)
 (defun exwm-update-screens ()
   (interactive)
   (let* ((monitors (exwm-xrandr-parse))
@@ -367,19 +380,6 @@
 
 ;; (require 'mini-modeline)                     ;; + with mini-modeline
 ;; (setq mini-modeline-frame (selected-frame))  ;; + with mini-modeline
-
-;;;; Below are configurations for EXWM.
-
-;; Add paths (not required if EXWM is installed from GNU ELPA).
-;(add-to-list 'load-path "/path/to/xelb/")
-;(add-to-list 'load-path "/path/to/exwm/")
-
-;; Load EXWM.
-(require 'exwm)
-
-;; Fix problems with Ido (if you use it).
-(require 'exwm-config)
-;; (exwm-config-ido)
 
 ;; Set the initial number of workspaces (they can also be created later).
 (setq exwm-workspace-number (exwm-screen-count)
