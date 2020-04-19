@@ -768,7 +768,9 @@ while(1)                                                            \
 (defun symon--message-advice (orig-fun format-string &rest args)
   (cond
    ;; original (message format args...) without symon message
-   ((or cursor-in-echo-area (active-minibuffer-window))
+   ((or cursor-in-echo-area
+        (< 0 (length (this-single-command-keys)))
+        (active-minibuffer-window))
     (apply orig-fun format-string args))
    ;; actual (message nil) with symon message
    ((null format-string)
