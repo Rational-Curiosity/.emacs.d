@@ -49,6 +49,8 @@
       read-process-output-max (* 3 1024 1024)
       lsp-prefer-capf t
       lsp-idle-delay 0.5
+      lsp-enable-file-watchers nil
+      lsp-file-watch-threshold 500
       ;; lsp log
       lsp-log-io nil    ;; `(lsp-workspace-show-log)' Display the log buffer
       lsp-log-max 1000  ;; Max lines in the log buffer
