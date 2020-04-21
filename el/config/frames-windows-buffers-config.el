@@ -412,6 +412,64 @@ ARG non-nil resize window to ARG height."
                               (1- factor)))
                    horizontal)))
 
+;; autoresize
+(defvar-local window-autoresize-size nil)
+
+(defun window-autoresize (window)
+  (when (and window-autoresize-size
+             (not (active-minibuffer-window)))
+    (let ((width-heigth (cdr (assoc (if (eq window (selected-window))
+                                        'selected
+                                      'unselected)
+                                    window-autoresize-size))))
+      (if width-heigth
+          (let ((width (car width-heigth))
+                (height (cdr width-heigth)))
+            (if (numberp width)
+                (let ((delta-width (- width (window-size window t))))
+                  (if (and (/= 0 delta-width)
+                           (/= 0 (setq delta-width
+                                       (window-resizable
+                                        window
+                                        delta-width
+                                        t))))
+                      (window-resize window
+                                     delta-width
+                                     t))))
+            (if (numberp height)
+                (let ((delta-height (- height (window-size window))))
+                  (if (and (/= 0 delta-height)
+                           (/= 0 (setq delta-height
+                                       (window-resizable
+                                        window
+                                        delta-height))))
+                      (window-resize window
+                                     delta-height)))))))))
+(add-hook 'pre-redisplay-functions 'window-autoresize)
+
+(defun window-autoresize-set-size (selected-width selected-height
+                                                  unselected-width unselected-height)
+  (interactive
+   "xWidth selected: \nxHeight selected: \nxWidth unselected: \nxHeight unselected: ")
+  (setq window-autoresize-size
+        (list (cons 'selected (cons selected-width selected-height))
+              (cons 'unselected (cons unselected-width unselected-height)))))
+
+(defun window-autoresize-set-default-width (unselected-width)
+  (interactive "p")
+  (cond
+   ((or (derived-mode-p 'org-mode)
+        (derived-mode-p 'python-mode))
+    (window-autoresize-set-size
+     82 nil
+     (if (<= unselected-width 1) 19 (+ 2 unselected-width))
+     nil))))
+
+(defun window-autoresize-unset ()
+  (interactive)
+  (setq window-autoresize-size nil))
+
+;; winner
 (require 'winner)
 (defhydra hydra-win (:foreign-keys warn)
   "WIN"
