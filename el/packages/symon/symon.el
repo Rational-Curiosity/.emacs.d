@@ -768,7 +768,8 @@ while(1)                                                            \
 (defun symon--message-advice (orig-fun format-string &rest args)
   (cond
    ;; original (message format args...) without symon message
-   ((or cursor-in-echo-area
+   ((or ;; cursor-in-echo-area
+        prefix-arg
         (< 0 (length (this-single-command-keys)))
         (active-minibuffer-window))
     (apply orig-fun format-string args))
@@ -804,7 +805,8 @@ while(1)                                                            \
 
 (defun symon--display-update ()
   "Update symon display"
-  (unless (or cursor-in-echo-area
+  (unless (or ;; cursor-in-echo-area
+              prefix-arg
               ;; (benchmark 100 (this-single-command-keys))
               ;; "Elapsed time: 0.000004s"
               ;; (benchmark 100 (this-single-command-raw-keys))
