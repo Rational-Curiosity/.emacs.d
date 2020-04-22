@@ -10,10 +10,18 @@
 ;;; Code:
 (setq helm-completion-mode-string ""
       helm-split-window-inside-p t
+      helm-always-two-windows nil
+      helm-reuse-last-window-split-state t
       ;; helm-display-function 'helm-display-buffer-in-own-frame
       ;; helm-display-function 'helm-display-buffer-popup-frame ;; transparent
       helm-autoresize-max-height 60
-      helm-autoresize-min-height 6)
+      helm-autoresize-min-height 6
+      helm-candidate-number-limit 150
+      helm-echo-input-in-header-line t
+      helm-default-display-buffer-functions '(display-buffer-in-side-window))
+(add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe)
+;; (push '("\\`\\*helm.*\\*\\'" (display-buffer-in-side-window)) display-buffer-alist)
+;; (push '("\\`\\*helm help\\*\\'" (display-buffer-pop-up-window)) display-buffer-alist)
 
 (set-face-attribute 'helm-source-header nil
                     :family 'unspecified
@@ -73,7 +81,9 @@
 (setq helm-show-completion-display-function #'helm-show-completion-default-display-function)
 
 (require 'helm-swoop)
-(setq helm-swoop-split-with-multiple-windows t)
+(setq helm-swoop-split-with-multiple-windows nil
+      helm-swoop-split-direction 'split-window-vertically
+      helm-swoop-split-window-function 'helm-default-display-buffer)
 ;; Change the keybinds to whatever you like :)
 (global-set-key (kbd "M-i") 'helm-swoop)
 (global-set-key (kbd "M-I") 'helm-swoop-back-to-last-point)
