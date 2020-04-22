@@ -10,6 +10,8 @@
 ;;; Code:
 (setq helm-completion-mode-string ""
       helm-split-window-inside-p t
+      ;; helm-display-function 'helm-display-buffer-in-own-frame
+      ;; helm-display-function 'helm-display-buffer-popup-frame ;; transparent
       helm-autoresize-max-height 60
       helm-autoresize-min-height 6)
 
