@@ -767,6 +767,11 @@ while(1)                                                            \
 
 (defun symon--message-advice (orig-fun format-string &rest args)
   (cond
+   ;; original (message nil) without symon message
+   ;; always first
+   ((eq format-string 'clean)
+    ;; return value from original message function
+    (funcall orig-fun nil))
    ;; original (message format args...) without symon message
    ((or ;; cursor-in-echo-area
         prefix-arg
@@ -784,10 +789,6 @@ while(1)                                                            \
                symon--symon-message))
     ;; return value
     nil)
-   ;; original (message nil) without symon message
-   ((eq format-string 'clean)
-    ;; return value from original message function
-    (funcall orig-fun nil))
    ;; actual (message format args...) with symon message
    (t
     (if message-log-max
