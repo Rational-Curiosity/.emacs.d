@@ -477,7 +477,8 @@ prompt the user for a coding system."
                '(:name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1")))))
         (if font-spec-args
             (dolist (range '((#x2100 . #x230F)
-                             (#x23F0 . #x23F3)
+                             (#x2380 . #x23F3)
+                             (#x2420 . #x2424)
                              (#x25A0 . #x25FF)
                              (#x2610 . #x2613)
                              (#x2692 . #x26A0)
@@ -908,7 +909,6 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-<left>") #'left-word)
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "<S-delete>") #'kill-sexp)
-(global-set-key (kbd "<S-backspace>") #'sp-backward-kill-sexp)
 (global-set-key (kbd "M-s s") #'swap-regions)
 (global-set-key (kbd "<C-M-backspace>") #'backward-kill-sexp)
 ;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
