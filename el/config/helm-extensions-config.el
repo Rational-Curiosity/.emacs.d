@@ -83,7 +83,10 @@
 (require 'helm-swoop)
 (setq helm-swoop-split-with-multiple-windows nil
       helm-swoop-split-direction 'split-window-vertically
-      helm-swoop-split-window-function 'helm-default-display-buffer)
+      helm-swoop-split-window-function 'helm-default-display-buffer
+      helm-swoop-min-overlay-length 1
+      helm-swoop-speed-or-color t
+      helm-swoop-use-line-number-face t)
 ;; Change the keybinds to whatever you like :)
 (global-set-key (kbd "M-i") 'helm-swoop)
 (global-set-key (kbd "M-I") 'helm-swoop-back-to-last-point)
@@ -105,6 +108,7 @@
 ;; Go to the opposite side of line from the end or beginning of line
 (setq helm-swoop-move-to-line-cycle t)
 
+;; [ postframe
 (when (and (display-graphic-p) (load "helm-posframe" t))
   (add-hook 'helm-org-rifle-after-command-hook 'helm-posframe-cleanup)
   (remove-hook 'delete-frame-functions 'helm--delete-frame-function)
@@ -113,6 +117,7 @@
         helm-posframe-parameters '((internal-border-width . 5)
                                    (z-group . above)))
   (helm-posframe-enable))
+;; ]
 
 (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers)
 
