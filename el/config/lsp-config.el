@@ -14,6 +14,8 @@
 ;;; Code:
 
 (message "Importing lsp-config")
+(add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
+
 
 (set-face-attribute 'lsp-face-highlight-read nil
                     :inherit 'unspecified
@@ -76,6 +78,23 @@
       ;; changing autopep8 for yapf
       lsp-pyls-plugins-autopep8-enabled nil
       lsp-pyls-plugins-yapf-enabled t)
+
+;; [ dap-mode
+(when (locate-library "dap-mode")
+  (defun dap-enable-which-key-integration ()
+    (apply
+     #'which-key-add-major-mode-key-based-replacements
+     major-mode
+     (lsp--prepend-prefix
+      (list "d" "debugging"
+            "d m" "dap hydra menu"
+            "d d" "start dap debugging"
+            "d t" "toggle dap tooltip mode"))))
+  (add-hook 'lsp-mode-hook #'dap-enable-which-key-integration)
+  (define-key lsp-command-map (kbd "d m") #'dap-hydra)
+  (define-key lsp-command-map (kbd "d d") #'dap-debug)
+  (define-key lsp-command-map (kbd "d t") #'dap-tooltip-mode))
+;; ]
 
 (defun lsp-ui-or-xref-find-definitions ()
   (interactive)
