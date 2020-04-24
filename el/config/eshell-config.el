@@ -53,20 +53,32 @@
       (setq char (read-key "Char (C-c exits): ")))))
 
 (defun start-process-stderr (name buffer program &rest program-args)
+  "Start PROGRAM with PROGRAM-ARGS process NAME sending stdout to BUFFER.
+
+This command send stderr to *stderr* buffer, not BUFFER."
   (unless (fboundp 'make-process)
     (error "Emacs was compiled without subprocess support"))
   (apply #'make-process
-         (append (list :name name :buffer buffer :stderr (get-buffer-create "*stderr*"))
+         (nconc (list :name name :buffer buffer :stderr (get-buffer-create "*stderr*"))
                  (if program
                      (list :command (cons program program-args))))))
 
 (defun start-file-process-stderr (name buffer program &rest program-args)
+  "Start a program in a subprocess.  Return the process object for it.
+
+NAME, BUFFER, PROGRAM, PROGRAM-ARGS same as `start-file-process'.
+
+Only stdout sent to BUFFER, stderr sent to *stderr* buffer."
   (let ((fh (find-file-name-handler default-directory 'start-file-process-stderr)))
     (if fh (apply fh 'start-file-process-stderr name buffer program program-args)
       (apply 'start-process-stderr name buffer program program-args))))
 
 (defun eshell-gather-process-output-stderr (command args)
-  "Gather the output from COMMAND + ARGS."
+  "Gather the output from COMMAND + ARGS.
+
+Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
+  (require 'esh-var)
+  (declare-function eshell-environment-variables "esh-var" ())
   (unless (and (file-executable-p command)
                (file-regular-p (file-truename command)))
     (error "%s: not an executable file" command))
@@ -77,20 +89,20 @@
          (process-environment (eshell-environment-variables))
          proc decoding encoding changed)
     (cond
-     ((fboundp 'start-file-process)
+     ((fboundp 'start-file-process-stderr)
       (setq proc
             (let ((process-connection-type
                    (unless (eshell-needs-pipe-p command)
                      process-connection-type))
                   (command (file-local-name (expand-file-name command))))
-              (apply 'start-file-process-stderr
+              (apply #'start-file-process-stderr
                      (file-name-nondirectory command) nil command args)))
       (eshell-record-process-object proc)
       (set-process-buffer proc (current-buffer))
-      (if (eshell-interactive-output-p)
-          (set-process-filter proc 'eshell-output-filter)
-        (set-process-filter proc 'eshell-insertion-filter))
-      (set-process-sentinel proc 'eshell-sentinel)
+      (set-process-filter proc (if (eshell-interactive-output-p)
+                                   #'eshell-output-filter
+                                 #'eshell-insertion-filter))
+      (set-process-sentinel proc #'eshell-sentinel)
       (run-hook-with-args 'eshell-exec-hook proc)
       (when (fboundp 'process-coding-system)
         (let ((coding-systems (process-coding-system proc)))
@@ -125,14 +137,14 @@
         (set-buffer oldbuf)
         (run-hook-with-args 'eshell-exec-hook command)
         (setq exit-status
-              (apply 'call-process-region
+              (apply #'call-process-region
                      (append (list eshell-last-sync-output-start (point)
                                    command t
-                                   (list eshell-scratch-buffer nil) nil)
+                                   eshell-scratch-buffer nil)
                              args)))
         ;; When in a pipeline, record the place where the output of
         ;; this process will begin.
-        (and eshell-in-pipeline-p
+        (and (bound-and-true-p eshell-in-pipeline-p)
              (set-marker eshell-last-sync-output-start (point)))
         ;; Simulate the effect of the process filter.
         (when (numberp exit-status)
@@ -149,11 +161,14 @@
             (setq lbeg lend)
             (set-buffer proc-buf))
           (set-buffer oldbuf))
+        (require 'esh-mode)
+        (declare-function eshell-update-markers "esh-mode" (pmark))
+        (defvar eshell-last-output-end)         ;Defined in esh-mode.el.
         (eshell-update-markers eshell-last-output-end)
         ;; Simulate the effect of eshell-sentinel.
         (eshell-close-handles (if (numberp exit-status) exit-status -1))
         (eshell-kill-process-function command exit-status)
-        (or eshell-in-pipeline-p
+        (or (bound-and-true-p eshell-in-pipeline-p)
             (setq eshell-last-sync-output-start nil))
         (if (not (numberp exit-status))
             (error "%s: external command failed: %s" command exit-status))
@@ -173,8 +188,10 @@
                              (process-name proc-running)) t))))
 
 (defun eshell-send-input-rename-stderr ()
+  "`eshell-send-input' but sending stderr to *stderr* buffer."
   (interactive)
-  (cl-letf (((symbol-function 'eshell-gather-process-output) 'eshell-gather-process-output-stderr))
+  (cl-letf (((symbol-function 'eshell-gather-process-output)
+             'eshell-gather-process-output-stderr))
     (call-interactively 'eshell-send-input))
   (let ((proc-running (eshell-interactive-process)))
     (when proc-running
