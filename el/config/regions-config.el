@@ -7,6 +7,7 @@
 
 ;;; Code:
 
+(require 'subword)
 (setcar (cdr (assq 'subword-mode minor-mode-alist)) "")
 
 (require 'expand-region)
