@@ -42,14 +42,14 @@
 (require 'helm-mode)
 (helm-mode 1)
 (helm-autoresize-mode 1)
-(define-key global-map (kbd "C-x C-f") 'helm-find-files)
+(define-key global-map [remap find-file] 'helm-find-files)
 (define-key global-map [remap occur] 'helm-occur)
 (define-key global-map [remap list-buffers] 'helm-buffers-list)
 (define-key global-map (kbd "C-x C-r") 'helm-recentf)
 (define-key global-map (kbd "M-g a") 'helm-ag)
-(define-key global-map (kbd "M-y") 'helm-show-kill-ring)
-(define-key global-map (kbd "C-x e") 'helm-execute-kmacro)
-(define-key global-map (kbd "C-x b") 'helm-mini)
+(define-key global-map [remap yank-pop] 'helm-show-kill-ring)
+(define-key global-map [remap kmacro-end-and-call-macro] 'helm-execute-kmacro)
+(define-key global-map [remap switch-to-buffer] 'helm-mini)
 (define-key global-map (kbd "C-h SPC") 'helm-all-mark-rings)
 (define-key global-map [remap insert-register] 'helm-register)
 (define-key global-map [remap bookmark-jump] 'helm-filtered-bookmarks)
@@ -109,13 +109,26 @@
 (setq helm-swoop-move-to-line-cycle t)
 
 ;; [ postframe
-(when (and (display-graphic-p) (load "helm-posframe" t))
+(when (and (display-graphic-p)
+           (load "helm-posframe" t))
   (add-hook 'helm-org-rifle-after-command-hook 'helm-posframe-cleanup)
   (remove-hook 'delete-frame-functions 'helm--delete-frame-function)
-  (define-key helm-map (kbd "C-i") 'undefined)
-  (setq helm-posframe-poshandler 'posframe-poshandler-frame-center
-        helm-posframe-parameters '((internal-border-width . 5)
-                                   (z-group . above)))
+  ;; (define-key helm-map (kbd "C-i") 'undefined)
+  (setq helm-show-action-window-other-window 'right
+        helm-posframe-poshandler 'posframe-poshandler-frame-center
+        helm-posframe-parameters '((internal-border-width .     5)
+                                   (z-group               . above)))
+
+  (defun helm-show-action-buffer-advice (orig-fun &rest args)
+    (let ((helm--buffer-in-new-frame-p t)
+          (helm-split-window-state 'vertical))
+      (apply orig-fun args)))
+  (advice-add 'helm-show-action-buffer :around 'helm-show-action-buffer-advice)
+
+  (defun helm-execute-persistent-action-advice (orig-fun &rest args)
+    (let ((helm--buffer-in-new-frame-p t))
+      (apply orig-fun args)))
+  (advice-add 'helm-execute-persistent-action :around 'helm-execute-persistent-action-advice)
   (helm-posframe-enable))
 ;; ]
 
