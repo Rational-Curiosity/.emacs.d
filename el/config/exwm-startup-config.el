@@ -294,22 +294,24 @@
        (exwm-buffer-p (current-buffer))))
 
 (defun exwm-display-buffer-function (buffer &optional alist)
-  (let ((visible-window-list
-         (delete
-          (selected-window)
-          (apply #'append (mapcar #'window-list (visible-frame-list))))))
-    (if visible-window-list
-        (if (< 1 (length visible-window-list))
+  (let ((avaible-window-list
+         (cl-remove-if
+          #'window-dedicated-p
+          (delete
+           (selected-window)
+           (apply #'append (mapcar #'window-list (visible-frame-list)))))))
+    (if avaible-window-list
+        (if (< 1 (length avaible-window-list))
             (let* ((window-width-list (mapcar (lambda (w)
-                                                (+ (* (window-width w) 1000) (window-height w)))
-                                              visible-window-list))
+                                                (+ (* (window-width w) 10) (window-height w)))
+                                              avaible-window-list))
                    (window (nth (cl-position
                                  (seq-max window-width-list)
-                                 window-width-list) visible-window-list)))
+                                 window-width-list) avaible-window-list)))
               (select-frame (window-frame window))
               (set-window-buffer window buffer))
-          (select-frame (window-frame (car visible-window-list)))
-          (set-window-buffer (car visible-window-list) buffer))
+          (select-frame (window-frame (car avaible-window-list)))
+          (set-window-buffer (car avaible-window-list) buffer))
       (display-buffer-pop-up-window buffer alist))))
 
 (defun exwm-windows-processes ()
@@ -637,6 +639,25 @@
         helm-mini-default-sources `(helm-exwm-emacs-buffers-source
                                     helm-exwm-source
                                     helm-source-recentf)))
+
+(when (featurep 'helm-posframe)
+  (defvar exwm-helm-posframe-display-buffer nil)
+  (defun helm-posframe-display-advice (&rest args)
+    (let ((buffer (current-buffer)))
+      (when (exwm-buffer-p buffer)
+        (exwm-set-window-transparency buffer 0.2)
+        (setq exwm-helm-posframe-display-buffer buffer))))
+  (advice-add 'helm-posframe-display :before 'helm-posframe-display-advice)
+
+  (defun helm-posframe-cleanup-advice (&rest args)
+    (when exwm-helm-posframe-display-buffer
+      (with-current-buffer exwm-helm-posframe-display-buffer
+        (exwm-set-window-transparency
+         exwm-helm-posframe-display-buffer
+         (if (member exwm-instance-name exwm-exclude-transparency)
+             1 exwm-default-transparency)))
+      (setq exwm-helm-posframe-display-buffer nil)))
+  (advice-add 'helm-posframe-cleanup :after 'helm-posframe-cleanup-advice))
 
 (when (featurep 'winum)
   (defun exwm-winum-bindings ()
