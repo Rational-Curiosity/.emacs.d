@@ -55,7 +55,10 @@
                       :bold t
                       :inverse-video 'unspecified
                       :inherit 'unspecified
-                      :foreground "#78e56d"))
+                      :foreground "#78e56d")
+      (when (require 'which-key-posframe nil t)
+        (setq which-key-posframe-poshandler 'posframe-poshandler-frame-center)
+        (which-key-posframe-mode)))
   ;; Set the special keys. These are automatically truncated to one character and
   ;; have which-key-special-key-face applied. Disabled by default. An example
   ;; setting is
