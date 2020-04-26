@@ -71,6 +71,13 @@
         ;; science
         ("http://rss.sciam.com/ScientificAmerican-Global" SA science en txt)
         ("https://www.sciencenews.org/feed" sciencenews science en txt)
+        ;; arxiv papers
+        ,@(mapcar (lambda (category)
+                    (list (concat "http://arxiv.org/rss/" (symbol-name category))
+                          'arxiv category 'en 'txt))
+                  '(astro-ph cond-mat cs econ eess gr-qc hep-ex hep-lat
+                             hep-ph hep-th math math-ph nlin nucl-ex nucl-th
+                             physics q-bio q-fin quant-ph stat))
         ;; health
         ("https://www.who.int/rss-feeds/news-english.xml" oms health es txt)
         ;; podcast
@@ -99,12 +106,20 @@
 
 (defun elfeed-search-filter-tags-selection (arg)
   (interactive "P")
-  (let ((pre (if arg "-" "+"))
-        (tag (completing-read "Select tag: " elfeed-search--tags nil t)))
+  (let ((tag (completing-read "Select tag: " elfeed-search--tags nil t)))
     (elfeed-search-set-filter
-     (if (string-match (concat " ?[-+]" tag) elfeed-search-filter)
-         (replace-match "" t t elfeed-search-filter)
-       (concat elfeed-search-filter " " pre tag)))))
+     (if (string-match (concat "\\( ?\\)\\([-+]\\)" tag) elfeed-search-filter)
+         (replace-match (if arg
+                            (concat
+                             (match-string 1 elfeed-search-filter)
+                             (if (string-equal "+" (match-string
+                                                    2 elfeed-search-filter))
+                                 "-"
+                               "+")
+                             tag)
+                          "")
+                        t t elfeed-search-filter)
+       (concat elfeed-search-filter " " (if arg "-" "+") tag)))))
 
 (define-key elfeed-show-mode-map "h" nil)
 (define-key elfeed-show-mode-map "?" #'describe-mode)
