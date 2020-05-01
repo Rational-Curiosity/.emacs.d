@@ -46,6 +46,7 @@
  "file"
  :face (lambda (path) (if (file-exists-p path) 'org-link 'org-warning)))
 
+(require 'org-table)
 (setq org-hide-emphasis-markers nil
       org-priority-faces
       '((?A . "#C39BD3")
@@ -122,7 +123,8 @@
         (:startgrouptag) ("language")      (:grouptags) ("@language")      (:endgrouptag)
         (:startgrouptag) ("sport")         (:grouptags) ("@sport")         (:endgrouptag)
         (:startgrouptag) ("entertainment") (:grouptags) ("@entertainment") (:endgrouptag)
-        (:startgrouptag) ("others")        (:grouptags) ("@others")        (:endgrouptag)))
+        (:startgrouptag) ("others")        (:grouptags) ("@others")        (:endgrouptag))
+      org-table-convert-region-max-lines 9999)
 ;;(:box t :foreground "#AAF")
 
 (require 'language-tools)
@@ -1144,8 +1146,6 @@ SUFFIX - default .png"
         ;; set property
         (org-set-property prop val))))
 
-
-(require 'org-table)
 (defun org-table-sort-column ()
   "Sort table column at point."
   (interactive)
