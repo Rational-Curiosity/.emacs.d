@@ -2,10 +2,13 @@
 
 ;;; Commentary:
 
-;; Compile with
-;; `emacs -batch -f batch-byte-compile emacs.el'
+;; Emacs buind from source
+;; `./configure --with-cairo --with-x-toolkit=no CFLAGS='-O3'`
+
+;; Compile .el files with
+;; `emacs -batch -f batch-byte-compile emacs.el`
 ;; and rename
-;; `mv emacs.elc init.elc'
+;; `mv emacs.elc init.elc``
 
 ;;; Code:
 
@@ -37,7 +40,7 @@
  '(custom-safe-themes
    '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   '(ace-window ag async auctex avy bash-completion bookmark+ bui cmake-font-lock cmake-mode company company-lsp company-posframe cyphejor dap-mode dash dash-functional deferred docker docker-tramp edit-server elfeed emms epl expand-region exwm f figlet flycheck flycheck-posframe flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode guess-language haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-flyspell helm-lsp helm-org helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ hl-todo ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-java lsp-mode lsp-treemacs lsp-ui lua-mode lv magit magit-todos map markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors ob-async org org-agenda-property org-brain org-plus-contrib org-ql org-super-agenda org-superstar ov ox-gfm ox-mediawiki ox-rst ox-twbs pcre2el peg pfuture php-mode pkg-info plantuml-mode popup posframe projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist thingatpt+ transient transpose-frame treemacs ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets))
+   '(ace-window ag anaphora async auctex avy bash-completion bookmark+ bui cmake-font-lock cmake-mode company company-lsp company-posframe cyphejor dap-mode dash dash-functional deferred docker docker-tramp edit-server ein elfeed emms epl expand-region exwm f figlet flycheck flycheck-posframe flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode goto-chg graphviz-dot-mode guess-language haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-flycheck helm-flyspell helm-lsp helm-org helm-org-rifle helm-projectile helm-swoop helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ hl-todo ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-java lsp-mode lsp-treemacs lsp-ui lua-mode lv magit magit-todos map markdown-mode markdown-mode+ memoize mini-modeline multiple-cursors ob-async org org-agenda-property org-brain org-noter org-plus-contrib org-ql org-super-agenda org-superstar ov ox-gfm ox-mediawiki ox-rst ox-twbs pcre2el peg pfuture php-mode pkg-info plantuml-mode polymode popup posframe projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist thingatpt+ transient transpose-frame treemacs ts undo-tree vdiff vimish-fold virtualenvwrapper vlf web-mode websocket which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets))
  '(safe-local-variable-values
    '((eval set 'org-agenda-files
            (list
@@ -225,6 +228,7 @@
 
 (with-eval-after-load 'transient
   (require 'transient-config))
+
 ;;;;;;;;;;;;;;;;;
 ;; Programming ;;
 ;;;;;;;;;;;;;;;;;
@@ -259,10 +263,10 @@
 ;; ]
 ;; cmake-mode
 (setq auto-mode-alist
-      (append '(;;("CMakeLists\\.txt\\'" . cmake-mode) ; por defecto
-                ;;("\\.cmake\\'" . cmake-mode) ; por defecto
-                ("[Mm]akefile\\." . makefile-mode))
-              auto-mode-alist))
+      (nconc '(;;("CMakeLists\\.txt\\'" . cmake-mode) ; por defecto
+               ;;("\\.cmake\\'" . cmake-mode) ; por defecto
+               ("[Mm]akefile\\." . makefile-mode))
+             auto-mode-alist))
 ;; cmake highlight
 (autoload 'cmake-font-lock-activate "cmake-font-lock" nil t)
 (add-hook 'cmake-mode-hook #'cmake-font-lock-activate)
@@ -337,7 +341,10 @@
 ;; ]
 
 ;; [ javascript
-(add-hook 'js-mode-hook #'lsp-deferred)
+(defun lsp-deferred-cond ()
+  (unless (derived-mode-p 'ein:ipynb-mode)
+    (lsp-deferred)))
+(add-hook 'js-mode-hook #'lsp-deferred-cond)
 (with-eval-after-load 'js
   (with-eval-after-load 'dap-mode
     (require 'dap-firefox)
@@ -389,6 +396,10 @@
 ;; (add-to-list 'auto-mode-alist '("\\.plantuml\\'" . plantuml-mode))
 (with-eval-after-load 'plantuml-mode
   (require 'plantuml-config))
+
+;; ein
+(with-eval-after-load 'ein-core
+  (require 'ein-config))
 
 ;; [ org
 (defvar org-replace-disputed-keys t)
