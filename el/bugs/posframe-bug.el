@@ -1,7 +1,7 @@
 (with-eval-after-load 'posframe
   (when (bug-check-function-bytecode
          'posframe-show
-         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQAgGGsYGGSOGrgBgCAYbxwYZIwgGHMgGGSMIBh3JBhkjCAYeygYZI4bOAN0IBh/LBhkjhtkA3QgGIMwGGSOG5ADeCAYhzQYZI4bvAN4IBiLOBhkjCAYjzwYZIwgGJNAGGSMIBiXRBhkjCAYm0gYZIwgGJ9MGGSMIBijUBhkjCAYp1QYZIwgGKtYGGSMIBivXBhkjCAYs2AYZIwgGLdkGGSMIBi7aBhkjCAYv2wYZIwgGMNwGGSPfBjEh4CDhASHiAiHjAyHkBCEGHKiDeQHlBh0GBiKCewEGHOYGBiHnASHoAiHpIHLqBgohcYjrBiIhKewg5O0gIe4GDSHv8CGDqAHwIIKpAd7xGfJyBhBxiAqEwwEGFu8BIYPCAYkgiPESiPMGCiGI9AYR0gYe9QYOzgYmzwYn0AYo0QYp0wYp1AYq2QYn1QYt1gYu2gYsJhmyAfYGQAYXIoj3AQYmBiUGKQYoJYj4AfnGBiv6BhDHBi77Bg/8BhL9Bg7+5wYRIf/oBhMhgUAABiT1Bh+BQQAGIIFCAAYhgUMABiuBRAAGLIFFAAYtgUYABi6BRwAGL4FIAAYqgUkABiuBSgAGLIFLAAYtzAZPzQZQry4hBgsGCySIgUwAAQYUIoiBTQABBhMGJwYmBioGKSYGiIFOAIFPAAsh3iKIgVAACyGIKranhw==")
+         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUAIBhvGBhojhrUAYAgGHMcGGiMIBh3IBhojCAYeyQYaIwgGH8oGGiOG1QDeCAYgywYaI4bgAN4IBiHMBhojhusA3wgGIs0GGiOG9gDfCAYjzgYaIwgGJM8GGiMIBiXQBhojCAYm0QYaIwgGJ9IGGiMIBijTBhojCAYp1AYaIwgGKtUGGiMIBivWBhojCAYs1wYaIwgGLdgGGiMIBi7ZBhojCAYv2gYaIwgGMNsGGiMIBjHcBhojCAYy3QYaI+AGMyHhIOIBIeMCIeQDIeUEIQYdqIOHAeYGHgYGIoKJAQYd5wYGIegBIekCIeogcusGCiFxiOwGIyEp7SDl7iAh7wYNIfDxIYO2AfEggrcB3/IZ83IGEHGICoTRAQYW8AEhg9ABiSCI8hKI9AYKIYj1BhHSBh/2Bg7OBifPBijQBinRBirTBirUBivaBifVBi7WBi/XBjDbBi4mG7IB9wZCBhciiPgBBicGJgYqBikliPkB+sYGLPsGEMcGL/wGD/0GEv4GDv/oBhEhgUAA6QYTIYFBAAYk9gYfgUIABiCBQwAGIYFEAAYrgUUABiyBRgAGLYFHAAYugUgABi+BSQAGKoFKAAYrgUsABiyBTAAGLcwGUM0GUa8uIQYLBgskiIFNAAEGFCKIgU4AAQYTBigGJwYrBiomBoiBTwCBUAALId8iiIFRAAshiCq2qIc=")
     (cl-defun posframe-show (buffer-or-name
                              &key
                              string
@@ -22,6 +22,7 @@
                              background-color
                              respect-header-line
                              respect-mode-line
+                             respect-tab-line
                              initialize
                              no-properties
                              keep-ratio
@@ -110,9 +111,10 @@ derived from the current frame by default, but can be overridden
 using the FONT, FOREGROUND-COLOR and BACKGROUND-COLOR arguments,
 respectively.
 
-By default, posframe will display no header-line or mode-line.
-In case a header-line or mode-line is desired, users can set
-RESPECT-HEADER-LINE or RESPECT-MODE-LINE to t.
+By default, posframe will display no header-line, mode-line and
+tab-line.  In case a header-line, mode-line or tab-line is
+desired, users can set RESPECT-HEADER-LINE, RESPECT-MODE-LINE or
+RESPECT-TAB-LINE to t.
 
 INITIALIZE is a function with no argument.  It will run when
 posframe buffer is first selected with `with-current-buffer'
@@ -148,6 +150,7 @@ You can use `posframe-delete-all' to delete all posframes."
              (background-color (funcall posframe-arghandler buffer-or-name :background-color background-color))
              (respect-header-line (funcall posframe-arghandler buffer-or-name :respect-header-line respect-header-line))
              (respect-mode-line (funcall posframe-arghandler buffer-or-name :respect-mode-line respect-mode-line))
+             (respect-tab-line (funcall posframe-arghandler buffer-or-name :respect-tab-line respect-tab-line))
              (initialize (funcall posframe-arghandler buffer-or-name :initialize initialize))
              (no-properties (funcall posframe-arghandler buffer-or-name :no-properties no-properties))
              (keep-ratio (funcall posframe-arghandler buffer-or-name :keep-ratio keep-ratio))
@@ -207,6 +210,7 @@ You can use `posframe-delete-all' to delete all posframes."
                  :keep-ratio keep-ratio
                  :respect-header-line respect-header-line
                  :respect-mode-line respect-mode-line
+                 :respect-tab-line respect-tab-line
                  :override-parameters override-parameters))
 
           ;; Insert string into the posframe buffer
