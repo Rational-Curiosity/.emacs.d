@@ -460,10 +460,17 @@ ARG non-nil resize window to ARG height."
   (cond
    ((or (derived-mode-p 'org-mode)
         (derived-mode-p 'python-mode))
-    (window-autoresize-set-size
-     82 nil
-     (if (<= unselected-width 1) 19 (+ 2 unselected-width))
-     nil))))
+    (let ((numbers-margin (if display-line-numbers
+                              (if (numberp display-line-numbers-width)
+                                  display-line-numbers-width
+                                3)
+                            0)))
+      (window-autoresize-set-size
+       (+ 82 numbers-margin) nil
+       (if (<= unselected-width 1)
+           (+ 19 numbers-margin)
+         (+ 2 unselected-width numbers-margin))
+       nil)))))
 
 (defun window-autoresize-unset ()
   (interactive)
