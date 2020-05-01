@@ -21,6 +21,12 @@
   "Face used in search mode for titles."
   :group 'elfeed)
 
+(defface elfeed-search-arxiv-title-face
+  '((((class color) (background light)) (:foreground "#ad3" :underline t))  ;; yellow green
+    (((class color) (background dark))  (:foreground "#ad3" :underline t)))
+  "Face used in search mode for titles."
+  :group 'elfeed)
+
 (defface elfeed-search-health-title-face
   '((((class color) (background light)) (:foreground "#fcd"))  ;; pink
     (((class color) (background dark))  (:foreground "#fcd")))
@@ -46,6 +52,7 @@
 (push '(img elfeed-search-image-title-face) elfeed-search-face-alist)
 (push '(vid elfeed-search-video-title-face) elfeed-search-face-alist)
 (push '(science elfeed-search-science-title-face) elfeed-search-face-alist)
+(push '(arxiv elfeed-search-arxiv-title-face) elfeed-search-face-alist)
 (push '(health elfeed-search-health-title-face) elfeed-search-face-alist)
 
 (defun elfeed-youtube-expand (id)
