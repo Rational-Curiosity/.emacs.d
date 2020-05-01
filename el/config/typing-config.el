@@ -43,6 +43,8 @@
 
 (setq echo-keystrokes 0.5
       column-number-mode t
+      isearch-lazy-count t
+      isearch-allow-scroll 'unlimited
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
       mode-require-final-newline nil)
@@ -716,9 +718,11 @@ there's a region, all lines that region covers will be duplicated."
 (defun window-width-without-margin (&optional window pixelwise)
   (- (window-width window pixelwise)
      hscroll-margin
-     (if (numberp display-line-numbers)
-         display-line-numbers-width
-       3)))
+     (if display-line-numbers
+         (if (numberp display-line-numbers-width)
+             display-line-numbers-width
+           3)
+       0)))
 
 (defvar recenter-horizontal-last-op nil)
 (defvar recenter-horizontal-positions '(middle left right))
