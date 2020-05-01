@@ -17,9 +17,13 @@
       helm-autoresize-max-height 60
       helm-autoresize-min-height 6
       helm-candidate-number-limit 150
-      helm-echo-input-in-header-line t
+      ;; [ <input line on top>
+      ;; helm-echo-input-in-header-line t
+      ;; ]
       helm-default-display-buffer-functions '(display-buffer-in-side-window))
-(add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe)
+;; [ <input line on top>
+;; (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe)
+;; ]
 ;; (push '("\\`\\*helm.*\\*\\'" (display-buffer-in-side-window)) display-buffer-alist)
 ;; (push '("\\`\\*helm help\\*\\'" (display-buffer-pop-up-window)) display-buffer-alist)
 
@@ -75,6 +79,7 @@
 
 (with-eval-after-load 'projectile
   (require 'helm-projectile)
+  (define-key projectile-mode-map (kbd "M-g M-a") 'helm-projectile-ag)
   (helm-projectile-on))
 
 (require 'helm-elisp)
