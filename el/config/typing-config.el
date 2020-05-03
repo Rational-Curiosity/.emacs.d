@@ -83,16 +83,16 @@
   (interactive)
   (if (or (equal buffer-file-coding-system 'utf-8-unix)
           (equal buffer-file-coding-system 'utf-8))
-      (progn
+      (let ((process (get-buffer-process (current-buffer))))
         (set-buffer-file-coding-system 'iso-8859-1-unix)
         (set-keyboard-coding-system 'iso-8859-1-unix)
-        (when (get-buffer-process (current-buffer))
-          (set-buffer-process-coding-system 'iso-8859-1-unix 'iso-8859-1-unix)))
-    (progn
+        (when process
+          (set-process-coding-system process 'iso-8859-1-unix 'iso-8859-1-unix)))
+    (let ((process (get-buffer-process (current-buffer))))
       (set-buffer-file-coding-system 'utf-8-unix)
       (set-keyboard-coding-system 'utf-8)
-      (when (get-buffer-process (current-buffer))
-        (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix)))))
+      (when process
+        (set-process-coding-system process 'utf-8-unix 'utf-8-unix)))))
 ;; Acentos
 (require 'iso-transl)
 
@@ -366,15 +366,15 @@ prompt the user for a coding system."
 ;; ·  183   MIDDLE DOT
 ;; ¶  182   PILCROW SIGN
 ;; ↵  8629  DOWNWARDS ARROW WITH CORNER LEFTWARDS
-;; ↩  8617 LEFTWARDS ARROW WITH HOOK
-;; ⏎  9166 RETURN SYMBOL
+;; ↩  8617  LEFTWARDS ARROW WITH HOOK
+;; ⏎  9166  RETURN SYMBOL
 ;; ▷  9655  WHITE RIGHT POINTING TRIANGLE
 ;; ▶  9654  BLACK RIGHT-POINTING TRIANGLE
-;; → 8594  RIGHTWARDS ARROW
-;; ↦ 8614  RIGHTWARDS ARROW FROM BAR
-;; ⇤ 8676  LEFTWARDS ARROW TO BAR
-;; ⇥ 8677  RIGHTWARDS ARROW TO BAR
-;; ⇨ 8680  RIGHTWARDS WHITE ARROW
+;; →  8594  RIGHTWARDS ARROW
+;; ↦  8614  RIGHTWARDS ARROW FROM BAR
+;; ⇤  8676  LEFTWARDS ARROW TO BAR
+;; ⇥  8677  RIGHTWARDS ARROW TO BAR
+;; ⇨  8680  RIGHTWARDS WHITE ARROW
 (eval-and-when-daemon frame
   (setq whitespace-display-mappings
         '(;; (space-mark   ?\     [? ]) ;; use space not dot
@@ -444,6 +444,24 @@ prompt the user for a coding system."
   (when (display-graphic-p frame)
     (with-selected-frame frame
       (cond
+       ((member "Hack" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "Hack"
+                            :height 100
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: Hack Family"))
+       ((member "DejaVu Sans Mono" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "DejaVu Sans Mono"
+                            :height 100
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: DejaVu Sans Mono Family"))
        ((member "Iosevka Term" (font-family-list)) ;; Iosevka case
         (set-face-attribute 'default nil
                             :family "Iosevka Term"
@@ -451,47 +469,56 @@ prompt the user for a coding system."
                             :foundry "unknown"
                             :weight 'light
                             :slant 'normal
-                            :width 'normal))
-       ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+                            :width 'normal)
+        (message "Monospace font: Iosevka Term Family"))
+       ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
+                (x-list-fonts "*" nil (selected-frame)))
         (set-face-attribute 'default nil
                             :font "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                            :height 100))
-       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1" (x-list-fonts "*" nil (selected-frame)))
+                            :height 100)
+        (message "Monospace font: Iosevka Term Light"))
+       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
+                (x-list-fonts "*" nil (selected-frame)))
         (set-face-attribute 'default nil
                             :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                            :height 100))
+                            :height 100)
+        (message "Monospace font: Unifont"))
        (t ;; default case
+        (message "Monospace font not found")
         (set-face-attribute 'default nil
                             :height 100
                             :weight 'light
                             :slant 'normal
                             :width 'normal)))
-      (let ((font-spec-args
-             (cond
-              ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-                       (font-family-list))
-               '(:family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-              ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                       (x-list-fonts "*" nil (selected-frame)))
-               '(:name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
-              ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                       (x-list-fonts "*" nil (selected-frame)))
-               '(:name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1")))))
-        (if font-spec-args
-            (dolist (range '((#x2100 . #x230F)
-                             (#x2380 . #x23F3)
-                             (#x2420 . #x2424)
-                             (#x25A0 . #x25FF)
-                             (#x2610 . #x2613)
-                             (#x2692 . #x26A0)
-                             (#x26D2 . #x26D4)
-                             (#x2709 . #x270C)))
-              (set-fontset-font "fontset-default" range
-                                (apply 'font-spec font-spec-args)))))
-      ;; (unless (or (equal "unspecified-bg" (face-background 'default nil 'default))
-      ;;             (equal "unspecified-fg" (face-foreground 'default nil 'default)))
-      ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
+      ;; [ Iosevka 3.0.0 supports unicode
+      ;; (let ((font-spec-args
+      ;;        (cond
+      ;;         ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
+      ;;                  (font-family-list))
+      ;;          '(:family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
+      ;;         ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
+      ;;                  (x-list-fonts "*" nil (selected-frame)))
+      ;;          '(:name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
+      ;;         ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
+      ;;                  (x-list-fonts "*" nil (selected-frame)))
+      ;;          '(:name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1")))))
+      ;;   (if (null font-spec-args)
+      ;;       (message "Monospace utf-8 font not found.")
+      ;;     (dolist (range '((#x2100 . #x230F)
+      ;;                        (#x2380 . #x23F3)
+      ;;                        (#x2420 . #x2424)
+      ;;                        (#x25A0 . #x25FF)
+      ;;                        (#x2610 . #x2613)
+      ;;                        (#x2692 . #x26A0)
+      ;;                        (#x26D2 . #x26D4)
+      ;;                        (#x2709 . #x270C)))
+      ;;         (set-fontset-font "fontset-default" range
+      ;;                           (apply 'font-spec font-spec-args)))
+      ;;     (message "Monospace utf-8 font: %s" (or (plist-get font-spec-args :family)
+      ;;                                             (plist-get font-spec-args :name)))))
+      ;; ]
       )))
+
 ;;;;;;;;;;;;
 ;; Moving ;;
 ;;;;;;;;;;;;
