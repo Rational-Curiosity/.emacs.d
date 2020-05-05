@@ -10,6 +10,10 @@
 (require 'subword)
 (setcar (cdr (assq 'subword-mode minor-mode-alist)) "")
 
+(set-face-attribute 'region nil
+                    :foreground 'unspecified
+                    :background "DarkSlateGray")
+
 (require 'expand-region)
 
 (setq expand-region-autocopy-register "º"
