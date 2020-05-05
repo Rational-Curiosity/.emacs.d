@@ -204,7 +204,8 @@
 ;;; Code:
 
 (message "Importing plantuml-mode")
-(setq plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar"))
+(setq plantuml-default-exec-mode 'jar
+      plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar"))
 
 
 (provide 'plantuml-config)
