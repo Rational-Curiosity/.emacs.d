@@ -13,6 +13,12 @@
                     :foreground "red")
 
 (setq aw-scope 'global
+      aw-keys
+      (let ((keys
+             '(?a ?b ?c ?d ?e ?f ?g ?h ?i ?j ?k ?l ?m ?n ?o ?p ?q ?r ?s ?t ?u ?v ?w ?x ?y ?z)))
+        (dolist (dispatch aw-dispatch-alist)
+          (setq keys (delete (car dispatch) keys)))
+        keys)
       aw-minibuffer-flag t
       aw-background t)
 
