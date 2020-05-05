@@ -48,6 +48,7 @@
 
 (require 'org-table)
 (setq org-hide-emphasis-markers nil
+      org-hide-leading-stars t
       org-priority-faces
       '((?A . "#C39BD3")
         (?B . "#AF7AC5")
@@ -132,28 +133,28 @@
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Heading markers ;;
 ;;;;;;;;;;;;;;;;;;;;;
-(require 'org-superstar)
-(setq org-superstar-todo-bullet-alist
-      '(("TODO" . ?☐)
-        ("NEXT" . ?⇒)
-        ("DONE" . ?✓)
-        ("PLAN" . ?☶)
-        ("STAR" . ?☆)
-        ("REOP" . ?◯)
-        ("FINI" . ?☑)
-        ("ENOU" . ?~)
-        ("DELE" . ?↓)
-        ("LINK" . ?⛓)
-        ("WAIT" . ?⏳)
-        ("HOLD" . ?✋)
-        ("CANC" . ?✗)
-        ("FIXM" . ?!)
-        ("VERI" . ??)
-        ("UNDO" . ?←))
-      org-superstar-special-todo-items t
-      org-superstar-headline-bullets-list
-      '("α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "λ" "μ"))
-(add-hook 'org-mode-hook #'org-superstar-mode)
+;; (require 'org-superstar)
+;; (setq org-superstar-todo-bullet-alist
+;;       '(("TODO" . ?☐)
+;;         ("NEXT" . ?⇒)
+;;         ("DONE" . ?✓)
+;;         ("PLAN" . ?☶)
+;;         ("STAR" . ?☆)
+;;         ("REOP" . ?◯)
+;;         ("FINI" . ?☑)
+;;         ("ENOU" . ?~)
+;;         ("DELE" . ?↓)
+;;         ("LINK" . ?⛓)
+;;         ("WAIT" . ?⏳)
+;;         ("HOLD" . ?✋)
+;;         ("CANC" . ?✗)
+;;         ("FIXM" . ?!)
+;;         ("VERI" . ??)
+;;         ("UNDO" . ?←))
+;;       org-superstar-special-todo-items t
+;;       org-superstar-headline-bullets-list
+;;       '("α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "λ" "μ"))
+;; (add-hook 'org-mode-hook #'org-superstar-mode)
 
 ;;;;;;;;;;;;;
 ;; Modules ;;
@@ -1225,7 +1226,9 @@ SUFFIX - default .png"
   (interactive)
   (let* ((path-name (abbreviate-file-name buffer-file-name))
          (name (file-name-nondirectory path-name)))
-    (kill-new (concat "[[" path-name "::" (line-number-at-pos) "][" name "]]"))))
+    (kill-new (concat "[[" path-name "::"
+                      (number-to-string (line-number-at-pos))
+                      "][" name "]]"))))
 
 (defun org-todo-prompt-date (&optional arg)
   (interactive "P")
