@@ -17,7 +17,8 @@
     (setq buffer-read-only t)
     (buffer-disable-undo)
     (fundamental-mode)
-    (message "Big file: Read-only, fundamental mode & undo disabled.")))
+    (message "Big file: %s. Read-only, fundamental mode & undo disabled."
+             (buffer-file-name))))
 (add-hook 'find-file-hook 'find-file-check-make-large-file-read-only-hook)
 
 

@@ -62,7 +62,9 @@
       lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                    lsp-file-watch-ignored)
       lsp-signature-auto-activate nil ;; <xor signature>
-      lsp-ui-flycheck-live-reporting nil
+      ;; flycheck reporting
+      ;; flycheck-display-errors-function nil ;; lsp do this
+      lsp-ui-flycheck-live-reporting nil   ;; report on save
       ;; lsp-ui-doc
       lsp-ui-doc-enable nil
       lsp-ui-doc-include-signature t  ;; <xor signature>

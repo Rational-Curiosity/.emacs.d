@@ -1,14 +1,14 @@
 # .emacs.d
 
-I hope this may help you. All .el files are ready to byte-compile.
+I hope this may help you. All _.el_ files are ready to byte-compile.
 
-`modal-mode` (uppercase equals ctrl, e.i., press N -> C-n) enabled by default.
-`M-x modal-global-mode-toggle` disable it.
+`modal-mode` (uppercase equals ctrl, e.i., press N -> C-n).
+`M-x modal-global-mode-toggle`.
 
 
 ## Requirements
 
-- [Emacs 26](https://www.gnu.org/software/emacs/)
+- [Emacs 27](https://github.com/emacs-mirror/emacs/releases)
 
 - A huge of time.
 

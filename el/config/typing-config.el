@@ -447,7 +447,7 @@ prompt the user for a coding system."
        ((member "Hack" (font-family-list))
         (set-face-attribute 'default nil
                             :family "Hack"
-                            :height 100
+                            :height 90
                             :foundry "unknown"
                             :weight 'regular
                             :slant 'normal

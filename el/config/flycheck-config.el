@@ -121,11 +121,11 @@ nil."
                                               face flycheck-error-list-warning)
                                             accumulate))
                          (if .error (push `(:propertize
-                                            ,(format "⚐%d" .error)
+                                            ,(format "🚫%d" .error)
                                             face flycheck-error-list-error)
                                           accumulate))
                          (or accumulate '((:propertize
-                                           "✓ "
+                                           "✓"
                                            face flycheck-error-list-info)))))
                    (:propertize "}")))
       ('interrupted '(:propertize "{.}" face mode-line-error))

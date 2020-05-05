@@ -1,7 +1,7 @@
 (with-eval-after-load 'virtualenvwrapper
   (when (bug-check-function-bytecode
          'venv-mkvirtualenv-using
-         "xiCICIMNAMfIIYIOAAkaCzuDHADJygshIYIdAAwdCoUlAMsKUB4hDiKDMQAOIoI1AMzNIUOJHiLOHiOJHiSDpgAOJEAeJc/QIA4lIoNTANHSIYjT1CGI1Q4m1g4h1g0OJbAGIYgLPINyANfDDQ4lUCKIDA4nHigeKdgOJSGI2Q4qIYjajtPbIYgr3N0hg5cA3t8OJVAhiCkOI1QWIw4kQYkWJIRBACrY4A4iIUAhLIc=")
+         "xiCICIMNAMfIIYIOAAkaCzuDHADJygshIYIdAAwdCoUlAMsKUB4gDiGDMQAOIYI1AMzNIUOJHiHOHiKJHiODtQAOI0AeJM/QIA4kIoNTANHSIYjT1CGI1Q4l1g4g1g0OJLAGIYgLPIOBAA0OJFCJHiYLnYN7AAuIgoAADiYLQhMpDA4nHigeKdcOJCGI2A4qIYjZjtPaIYgr29whg6YA3d4OJFAhiCkOIlQWIg4jQYkWI4RBACrX3w4hIUAhLIc=")
     (defun venv-mkvirtualenv-using (interpreter &rest names)
       "Create new virtualenvs NAMES using INTERPRETER. If venv-location
 is a single directory, the new virtualenvs are made there; if it

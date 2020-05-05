@@ -557,7 +557,7 @@
 
 (define-symon-monitor symon-current-datetime-monitor
   :interval 10
-  :display (format-time-string " %e %b %H:%M"))
+  :display (format-time-string "%e %b %H:%M"))
 
 (define-symon-monitor symon-org-clock-in-monitor
   :interval 10
