@@ -33,6 +33,9 @@
 ;; [ disable slow 'company-semantic'. comment with ede-project
 ;;(delete 'company-semantic company-backends)
 ;; ]
+(setq company-tooltip-minimum-width 20
+      company-tooltip-minimum 2)
+
 (defun toggle-company-semantic ()
   "Toggle semantic backend."
   (interactive)
@@ -46,6 +49,8 @@
 (define-key company-active-map [tab] #'company-complete-selection)
 (define-key company-active-map (kbd "TAB") #'company-complete-selection)
 (define-key company-active-map (kbd "<backtab>") #'company-complete-common-or-cycle)
+(define-key company-active-map [?\C-o] #'company-other-backend)
+(define-key company-active-map [?\C-t] #'company-begin-backend)
 ;;(define-key company-mode-map [(control tab)] 'company-complete)
 ;; `company-complete` conflicts with `company-template-forward-field` with TAB #515
 (define-key company-template-nav-map [(shift tab)] (lookup-key company-template-nav-map [tab]))
@@ -113,7 +118,9 @@
   (company-auctex-init))
 
 (global-set-key (kbd "<f7> ,") 'toggle-company-semantic)
-(global-set-key (kbd "C-c y") 'company-yasnippet)
+(global-set-key (kbd "C-c y") #'company-yasnippet)
+(global-set-key (kbd "C-c c c") #'company-complete)
+(global-set-key (kbd "C-c c b") #'company-begin-backend)
 
 
 (provide 'company-extensions-config)
