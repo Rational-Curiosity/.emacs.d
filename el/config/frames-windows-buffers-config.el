@@ -113,7 +113,8 @@ For more information, see the function `buffer-menu'."
     (split-window-sensibly window))))
 
 (defvar hscroll-aggressive nil)
-(setq split-window-preferred-function 'split-window-mode-sensibly
+(setq register-preview-delay nil
+      split-window-preferred-function 'split-window-mode-sensibly
       message-truncate-lines nil
       ;; Vertical Scroll
       ;;scroll-preserve-screen-position 'allways
@@ -455,7 +456,7 @@ ARG non-nil resize window to ARG height."
         (list (cons 'selected (cons selected-width selected-height))
               (cons 'unselected (cons unselected-width unselected-height)))))
 
-(defun window-autoresize-set-default-width (unselected-width)
+(defun window-autoresize-set-default (unselected-width)
   (interactive "p")
   (cond
    ((or (derived-mode-p 'org-mode)
@@ -466,11 +467,12 @@ ARG non-nil resize window to ARG height."
                                 3)
                             0)))
       (window-autoresize-set-size
-       (+ 82 numbers-margin) nil
+       (+ 82 numbers-margin)
+       30
        (if (<= unselected-width 1)
            (+ 19 numbers-margin)
          (+ 2 unselected-width numbers-margin))
-       nil)))))
+       4)))))
 
 (defun window-autoresize-unset ()
   (interactive)
@@ -712,7 +714,13 @@ others."
 (define-key winner-mode-map [(control c) left] nil)
 (define-key winner-mode-map [(control c) right] nil)
 (define-key winner-mode-map (kbd "C-c w -") #'winner-undo)
+(define-key winner-mode-map (kbd "<s-f11>") #'winner-undo)
 (define-key winner-mode-map (kbd "C-c w _") #'winner-redo)
+(define-key winner-mode-map (kbd "<s-f12>") #'winner-redo)
+(global-set-key (kbd "<s-f10>") #'window-configuration-to-register)
+(global-set-key (kbd "<s-f9>") (if (featurep 'helm)
+                                   #'helm-register
+                                 #'jump-to-register))
 (global-set-key (kbd "C-c w =") 'window-resize-equal)
 (global-set-key (kbd "C-c w +") 'window-resize-delta)
 (global-set-key (kbd "C-c w *") 'window-resize-factor)
@@ -729,7 +737,7 @@ others."
 (global-set-key (kbd "C-c w u a") 'window-undedicate-all)
 (global-set-key (kbd "C-c w d t") 'window-dedicate-this)
 (global-set-key (kbd "C-c w u t") 'window-undedicate-this)
-(global-set-key (kbd "C-c w A d") 'window-autoresize-set-default-width)
+(global-set-key (kbd "C-c w A d") 'window-autoresize-set-default)
 (global-set-key (kbd "C-c w A s") 'window-autoresize-set-size)
 (global-set-key (kbd "C-c w A u") 'window-autoresize-unset)
 (global-set-key (kbd "C-c w P w") 'window-preserve-width)
