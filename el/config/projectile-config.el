@@ -93,6 +93,17 @@
       projectile-completion-system 'helm
       projectile-mode-line-function (lambda () (concat "[" (projectile-project-name) "]")))
 
+(defun projectile-enable-which-key-integration ()
+  (which-key-add-major-mode-key-based-replacements
+    major-mode
+    "C-c p 4" "other window"
+    "C-c p 5" "other frame"
+    "C-c p s" "search"
+    "C-c p x" "run"))
+(add-hook 'projectile-mode-hook #'projectile-enable-which-key-integration)
+
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+
 
 (provide 'projectile-config)
 ;;; projectile-config.el ends here
