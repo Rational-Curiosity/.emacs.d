@@ -81,7 +81,6 @@
 (global-undo-tree-mode)
 
 (require 'psession)
-(defun psession-restore-last-winconf())
 (assq-delete-all 'psession--save-buffers-alist psession-object-to-save-alist)
 (assq-delete-all 'psession--winconf-alist psession-object-to-save-alist)
 (psession-mode)
