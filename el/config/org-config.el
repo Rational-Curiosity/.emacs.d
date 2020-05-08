@@ -171,7 +171,6 @@
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Startup options ;;
 ;;;;;;;;;;;;;;;;;;;;;
-
 (setq org-hide-block-startup t
       org-link-descriptive nil ;; nil display the full links
       org-replace-disputed-keys t
@@ -195,7 +194,9 @@
 ;; Babel block options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (setenv "GRAPHVIZ_DOT" (executable-find "dot"))
+
 (setq org-edit-src-content-indentation 0
+      org-babel-min-lines-for-block-output 2
       org-babel-sh-command "bash"
       org-babel-python-command "python3"
       ;; No pregunta al usuario antes de evaluar un bloque de código
@@ -208,6 +209,7 @@
         (:exports . "results")
         (:java . "-Dfile.encoding=UTF-8"))
       org-ditaa-jar-path (expand-file-name "~/.emacs.d/cache/java/ditaa.jar"))
+
 ;; active Babel languages
 (org-babel-do-load-languages
   'org-babel-load-languages
@@ -357,6 +359,7 @@
                         key)
                  (push (read (format "%s" val)) alist))))))
      alist)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to Markdown ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -412,6 +415,7 @@
                                ((executable-find "unoconv") "unoconv")
                                (t nil))
       org-odt-preferred-output-format (and org-odt-convert-process "doc"))
+
 (defun org-odt-export-update-convert-processes ()
   (interactive)
   (setq org-odt-convert-processes
@@ -425,11 +429,13 @@
            "soffice --headless --convert-to %f%x --outdir %d %i")
           ("unoconv"
            "unoconv -f %f -o %d %i"))))
+
 (defun org-export-update (backend)
   (cond
    ((eq 'odt backend)
     (org-odt-export-update-convert-processes))))
 (add-hook 'org-export-before-processing-hook 'org-export-update)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert pytex environments ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -525,11 +531,11 @@
       )
 ;; ]
 
-
 (when (and (eq org-latex-listings 'minted)
            (not (executable-find "pygmentize")))
   (message-color #("WARN pygmentize not found, add to path or run 'apt install python-pygments'."
                        0 4 (face warning))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Convert to beamer presentation ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -798,6 +804,7 @@ blockquote {
        ;; org-html-style-default
        ;; "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\" />"
        )
+
 (defcustom org-html-mathjax-options
   '((path  "js/MathJax.js")
     (scale "100")
@@ -830,6 +837,7 @@ You can also customize this for each buffer, using something like
                      (const :format "       " indent) (string))
                (list :tag "mathml (should MathML display be used is possible)"
                      (const :format "       " mathml) (boolean))))
+
 ;; Definen =verbatim= y ~code~ en html
 (eval-after-load 'ox-html
   '(progn
@@ -856,7 +864,9 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;
 (setq org-html-validation-link nil
       org-return-follows-link t)
+
 (delete '("\\.pdf\\'" . default) org-file-apps)
+
 (add-to-list 'org-file-apps '("\\.pdf::\\([0-9]+\\)\\'" . "evince \"%s\" -p %1"))
 (add-to-list 'org-file-apps '("\\.png\\'" . "eog \"%s\""))
 
@@ -981,7 +991,6 @@ You can also customize this for each buffer, using something like
         (cl-loop while (re-search-backward org-heading-regexp nil t)
                  when (org-entry-is-todo-p)
                  collect (org-entry-get (point) property))))))
-
 
 (defun org-entry-to-key (&optional pos)
   (let ((entry-pos (or pos (point)))
@@ -1417,7 +1426,7 @@ Throw an error when trying to set a property with an invalid name."
 ;; (define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all) 
 ;; (define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all) 
 (define-key org-mode-map (kbd "C-c M-s") #'org-sort-entries-user-defined)
-(define-key org-mode-map (kbd "C-c c") #'org-capture)
+(define-key org-mode-map (kbd "C-c C") #'org-capture)
 (define-key org-mode-map (kbd "C-c a") #'org-agenda)
 (define-key org-mode-map (kbd "C-c C-l") #'org-store-link)
 (define-key org-mode-map (kbd "C-c L") #'org-insert-link-global)
