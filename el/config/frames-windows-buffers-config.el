@@ -718,9 +718,7 @@ others."
 (define-key winner-mode-map (kbd "C-c w _") #'winner-redo)
 (define-key winner-mode-map (kbd "<s-f12>") #'winner-redo)
 (global-set-key (kbd "<s-f10>") #'window-configuration-to-register)
-(global-set-key (kbd "<s-f9>") (if (featurep 'helm)
-                                   #'helm-register
-                                 #'jump-to-register))
+(global-set-key (kbd "<s-f9>") #'jump-to-register)
 (global-set-key (kbd "C-c w =") 'window-resize-equal)
 (global-set-key (kbd "C-c w +") 'window-resize-delta)
 (global-set-key (kbd "C-c w *") 'window-resize-factor)

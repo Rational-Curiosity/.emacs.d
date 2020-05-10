@@ -46,23 +46,10 @@
 (require 'helm-mode)
 (helm-mode 1)
 (helm-autoresize-mode 1)
-(define-key global-map [remap find-file] 'helm-find-files)
-(define-key global-map [remap occur] 'helm-occur)
-(define-key global-map [remap list-buffers] 'helm-buffers-list)
-(define-key global-map (kbd "C-x C-r") 'helm-recentf)
-(define-key global-map (kbd "M-g a") 'helm-ag)
-(define-key global-map [remap yank-pop] 'helm-show-kill-ring)
-(define-key global-map [remap kmacro-end-and-call-macro] 'helm-execute-kmacro)
-(define-key global-map [remap switch-to-buffer] 'helm-mini)
-(define-key global-map (kbd "C-h SPC") 'helm-all-mark-rings)
-(define-key global-map [remap insert-register] 'helm-register)
-(define-key global-map [remap bookmark-jump] 'helm-filtered-bookmarks)
-(define-key global-map [remap dabbrev-expand] 'helm-dabbrev)
 (define-key global-map [remap execute-extended-command] 'helm-M-x)
-(define-key global-map [remap apropos-command] 'helm-apropos)
-(unless (boundp 'completion-in-region-function)
-  (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
-  (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point))
+(define-key global-map (kbd "C-x C-r") 'helm-recentf)
+(define-key global-map (kbd "M-g a") (if (fboundp 'helm-rg) 'helm-rg 'helm-ag))
+(define-key global-map (kbd "C-h SPC") 'helm-all-mark-rings)
 
 (with-eval-after-load 'company
   (define-key company-mode-map (kbd "C-:") 'helm-company)
@@ -79,7 +66,10 @@
 
 (with-eval-after-load 'projectile
   (require 'helm-projectile)
-  (define-key projectile-mode-map (kbd "M-g M-a") 'helm-projectile-ag)
+  (define-key projectile-mode-map (kbd "M-g M-a") (if (fboundp 'helm-rg)
+                                                      'helm-projectile-rg
+                                                    'helm-projectile-ag))
+  (define-key projectile-mode-map (kbd "M-g M-f") 'helm-projectile-find-file)
   (helm-projectile-on))
 
 (require 'helm-elisp)
@@ -138,6 +128,23 @@
 ;; ]
 
 (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers)
+
+(with-eval-after-load 'machine-config
+  (define-key global-map [remap find-file] 'helm-find-files)
+  (define-key global-map [remap occur] 'helm-occur)
+  (define-key global-map [remap list-buffers] 'helm-buffers-list)
+  (define-key global-map [remap yank-pop] 'helm-show-kill-ring)
+  (define-key global-map [remap kmacro-end-and-call-macro] 'helm-execute-kmacro)
+  (define-key global-map [remap switch-to-buffer] 'helm-mini)
+  (define-key global-map [remap insert-register] 'helm-register)
+  (define-key global-map [remap bookmark-jump] 'helm-filtered-bookmarks)
+  (define-key global-map [remap dabbrev-expand] 'helm-dabbrev)
+  (define-key global-map [remap apropos-command] 'helm-apropos)
+  (define-key global-map [remap jump-to-register] 'helm-register)
+  (define-key global-map [remap find-dired] (if (fboundp 'helm-fd) 'helm-fd 'helm-find))
+  (unless (boundp 'completion-in-region-function)
+    (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
+    (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point)))
 
 
 (provide 'helm-extensions-config)
