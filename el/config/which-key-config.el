@@ -17,7 +17,7 @@
 
       ;; Set the maximum length (in characters) for key descriptions (commands or
       ;; prefixes). Descriptions that are longer are truncated and have ".." added.
-      which-key-max-description-length 25
+      which-key-max-description-length 30
 
       ;; Use additonal padding between columns of keys. This variable specifies the
       ;; number of spaces to add to the left of each column.
@@ -36,7 +36,7 @@
       which-key-prefix-prefix "+"
 
       ;; Set to t to show the count of keys shown vs. total keys in the mode line.
-      which-key-show-remaining-keys t
+      which-key-show-remaining-keys nil
       ;; which-key-special-keys nil
       ;; Location
       which-key-popup-type 'side-window
