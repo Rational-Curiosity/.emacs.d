@@ -51,7 +51,7 @@
 
 (require 'config-lib)
 ;;;;;;;;;;;;;;;;;;;
-;; Coding system ;; 
+;; Coding system ;;
 ;;;;;;;;;;;;;;;;;;;
 
 (set-default-coding-systems 'utf-8)
@@ -325,31 +325,29 @@ prompt the user for a coding system."
 (define-key indent-rigidly-map (kbd "C-f") #'indent-rigidly-right)
 (define-key indent-rigidly-map (kbd "C-b") #'indent-rigidly-left)
 
-(add-hook 'prog-mode-hook #'(lambda ()
-                              (interactive)
-                              ;; use make-local-variable with all variables
-                              (setq-default tab-width 4)
-                              (setq tab-width 4)
-                              (cond
-                               ;; ‘mode-name’
-                               ;; Usually a string, but can use any of the constructs for
-                               ;; ‘mode-line-format’, which see.
-                               ;; Format with ‘format-mode-line’ to produce a string value.
-                               ;; Don't use ‘string-equal’ to compare
-                               ((or (equal mode-name "C++/l")
-                                    (equal mode-name "C++//l"))
-                                (set (make-local-variable 'whitespace-line-column) 100))
-                               ((or
-                                 (equal mode-name "Py")
-                                 (equal mode-name "Python"))
-                                (set (make-local-variable 'whitespace-line-column) 79))
-                               ((equal mode-name "Emacs-Lisp")
-                                (set (make-local-variable 'whitespace-line-column) 100))
-                               ;;(t (set (make-local-variable 'whitespace-line-column) 80))
-                               )
-                              (set (make-local-variable 'whitespace-style)
-                                   '(face tab newline tab-mark newline-mark))
-                              (whitespace-mode)))
+(defun whitespace-case-mode-configuration ()
+  (interactive)
+  (cond
+   ;; ‘mode-name’
+   ;; Usually a string, but can use any of the constructs for
+   ;; ‘mode-line-format’, which see.
+   ;; Format with ‘format-mode-line’ to produce a string value.
+   ;; Don't use ‘string-equal’ to compare
+   ((derived-mode-p 'c-mode)
+    (set (make-local-variable 'whitespace-line-column) 100))
+   ((derived-mode-p 'python-mode)
+    (set (make-local-variable 'whitespace-line-column) 79))
+   ((derived-mode-p 'emacs-lisp-mode)
+    (set (make-local-variable 'whitespace-line-column) 100)
+    (set (make-local-variable 'whitespace-display-mappings)
+         '((newline-mark 10   [8629 10] [36 10])
+           (tab-mark     9    [8676 32 32 32 32 32 8677 32] [92 9])))
+    (setq tab-width 8))
+   (t
+    (setq tab-width 4)))
+  (whitespace-mode))
+(add-hook 'prog-mode-hook #'whitespace-case-mode-configuration)
+
 (add-hook 'csv-mode-hook #'whitespace-mode)
 (setq whitespace-style '(face tab newline tab-mark newline-mark))
 
