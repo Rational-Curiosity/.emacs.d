@@ -296,6 +296,7 @@ prompt the user for a coding system."
               sh-indent-for-case-label 0
               sh-indent-for-case-alt '+)
 ;; Line numbers
+(require 'display-line-numbers)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 (setq display-line-numbers-width-start t
       display-line-numbers-grow-only t
@@ -307,6 +308,19 @@ prompt the user for a coding system."
       c-basic-offset 4
       python-indent-offset 4
       js-indent-level 4)
+
+(defvar display-line-type-selected-last-buffer nil)
+(defun display-line-type-by-selected (window)
+  (when (buffer-live-p display-line-type-selected-last-buffer)
+    (with-current-buffer display-line-type-selected-last-buffer
+      (setq display-line-numbers t))
+    (setq display-line-type-selected-last-buffer nil))
+  (when display-line-numbers-mode
+    (unless (eq display-line-numbers 'visual)
+          (setq display-line-numbers 'visual))
+    (setq display-line-type-selected-last-buffer (current-buffer))))
+(add-hook 'window-selection-change-functions #'display-line-type-by-selected)
+
 (c-set-offset 'innamespace '0)
 (c-set-offset 'inextern-lang '0)
 (c-set-offset 'inline-open '0)
