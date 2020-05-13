@@ -48,7 +48,10 @@
 (helm-autoresize-mode 1)
 (define-key global-map [remap execute-extended-command] 'helm-M-x)
 (define-key global-map (kbd "C-x C-r") 'helm-recentf)
-(define-key global-map (kbd "M-g a") (if (fboundp 'helm-rg) 'helm-rg 'helm-ag))
+(cond ((fboundp 'helm-rg)
+       (define-key global-map (kbd "M-g a") 'helm-rg))
+      ((fboundp 'helm-ag)
+       (define-key global-map (kbd "M-g a") 'helm-ag)))
 (define-key global-map (kbd "C-h SPC") 'helm-all-mark-rings)
 
 (with-eval-after-load 'company
@@ -66,9 +69,10 @@
 
 (with-eval-after-load 'projectile
   (require 'helm-projectile)
-  (define-key projectile-mode-map (kbd "M-g M-a") (if (fboundp 'helm-rg)
-                                                      'helm-projectile-rg
-                                                    'helm-projectile-ag))
+  (cond ((fboundp 'helm-rg)
+         (define-key projectile-mode-map (kbd "M-g M-a") 'helm-projectile-rg))
+        ((fboundp 'helm-ag)
+         (define-key projectile-mode-map (kbd "M-g M-a") 'helm-projectile-ag)))
   (define-key projectile-mode-map (kbd "M-g M-f") 'helm-projectile-find-file)
   (helm-projectile-on))
 
