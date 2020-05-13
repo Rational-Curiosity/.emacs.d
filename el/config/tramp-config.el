@@ -7,12 +7,11 @@
 
 ;;; Code:
 
-(require 'tramp)
-
-(setq password-cache t
-      password-cache-expiry 3600
-      auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
-      tramp-default-method "ssh")
+(with-eval-after-load 'tramp
+  (setq password-cache t
+        password-cache-expiry 3600
+        auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
+        tramp-default-method "ssh"))
 
 
 (provide 'tramp-config)

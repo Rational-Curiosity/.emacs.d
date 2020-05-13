@@ -238,7 +238,9 @@
 (require 'ob-screen)
 (require 'ob-async)
 
-(setq org-babel-default-header-args:python
+(setq ob-async-no-async-languages-alist
+      '("ipython")
+      org-babel-default-header-args:python
       '((:results . "output")
         (:exports . "results"))
       org-babel-default-header-args:sh
