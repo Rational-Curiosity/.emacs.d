@@ -80,7 +80,7 @@
 (define-key eww-mode-map (kbd ":") 'eww)
 (define-key eww-mode-map (kbd "h") 'eww-list-histories)
 (define-key eww-mode-map (kbd "w") 'modi/eww-copy-url-dwim)
-(define-key eww-mode-map (kbd "/") 'highlight-regexp)
+(define-key eww-mode-map (kbd "/") 'hlt-highlight-symbol)
 (define-key eww-mode-map (kbd "k") 'modi/eww-keep-lines)
 (define-key eww-mode-map [remap revert-buffer] 'eww-reload)
 (define-key eww-checkbox-map (kbd "<down-mouse-1>") 'eww-toggle-checkbox)

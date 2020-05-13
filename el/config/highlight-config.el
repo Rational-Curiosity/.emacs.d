@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
-
+(require 'highlight)
 (require 'hi-lock)
 (setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) "")
 
