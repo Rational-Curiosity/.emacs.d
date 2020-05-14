@@ -8,6 +8,7 @@
 ;;; Code:
 
 (require 'recentf)
+(require 'tramp)
 
 (add-hook 'after-init-hook 'recentf-cleanup)
 
