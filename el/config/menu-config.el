@@ -25,7 +25,8 @@
       (let ((tx (tramp-dissect-file-name path)))
         (pcase (tramp-file-name-method tx)
           ("sudo" (tramp-file-name-localname tx))
-          ("docker" (if (featurep 'docker) path (tramp-file-name-localname)))
+          ("docker" (if (featurep 'docker) path
+                      (tramp-file-name-localname path)))
           (_ path)))
     path))
 
