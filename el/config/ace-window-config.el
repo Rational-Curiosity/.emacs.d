@@ -19,6 +19,7 @@
         (dolist (dispatch aw-dispatch-alist)
           (setq keys (delete (car dispatch) keys)))
         keys)
+      aw-dispatch-always t
       aw-minibuffer-flag t
       aw-background t)
 

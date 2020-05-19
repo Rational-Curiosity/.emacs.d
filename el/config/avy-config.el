@@ -11,9 +11,16 @@
 (require 'avy)
 (require 'link-hint)
 
-(setq avy-keys '(?q ?w ?e ?r ?t ?y ?u ?i ?o ?p
-                    ?a ?s ?d ?f ?g ?h ?j ?k ?l
-                    ?z ?x ?c ?v ?b ?n ?m))
+(setq avy-keys
+      (let ((keys
+             '(?q ?w ?e ?r ?t ?y ?u ?i ?o ?p
+                  ?a ?s ?d ?f ?g ?h ?j ?k ?l
+                  ?z ?x ?c ?v ?b ?n ?m)))
+        (dolist (dispatch avy-dispatch-alist)
+          (setq keys (delete (car dispatch) keys)))
+        keys)
+      avy-single-candidate-jump nil)
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
