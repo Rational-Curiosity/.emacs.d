@@ -183,7 +183,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (call-interactively 'eshell-send-input)
   (let ((proc-running (eshell-interactive-process)))
     (when proc-running
-      (rename-buffer (format "*esh:%s·%s*"
+      (rename-buffer (format "*esh:%s>%s*"
                              (file-name-nondirectory (eshell/pwd))
                              (process-name proc-running)) t))))
 
@@ -195,7 +195,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
     (call-interactively 'eshell-send-input))
   (let ((proc-running (eshell-interactive-process)))
     (when proc-running
-      (rename-buffer (format "*esh:%s·%s*"
+      (rename-buffer (format "*esh:%s>%s*"
                              (file-name-nondirectory (eshell/pwd))
                              (process-name proc-running)) t))))
 ;;;;;;;;
@@ -246,27 +246,29 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                     (concat esh-section-delim ,FORM)
                     (with-face ,@PROPS))))))
 
-(defun esh-acc (acc x)
-  "Accumulator for evaluating and concatenating esh-sections."
-  (--if-let (funcall x)
-      (if (s-blank? acc)
-          it
-        (concat acc esh-sep it))
-    acc))
-
+(defvar eshell-current-command-start-time nil)
 ;; Below I implement a "prompt number" section
-(setq esh-prompt-num 0)
+(defvar esh-prompt-num 0)
 (add-hook 'eshell-mode-hook (lambda ()
-                              (make-local-variable 'esh-prompt-num)
-                              (setq-default esh-prompt-num 0)))
+                              (set-default (make-local-variable 'esh-prompt-num) 0)
+                              (make-local-variable 'eshell-current-command-start-time)))
 
 (defun esh-prompt-func ()
-  "Build `eshell-prompt-function'"
+  "Build `eshell-prompt-function'."
   (setq esh-prompt-num (cl-incf esh-prompt-num))
-  (concat esh-header
-          (-reduce-from 'esh-acc "" eshell-funcs)
-          "\n"
-          eshell-prompt-string))
+  (let ((prev-string? t))
+    (-reduce-from (lambda (acc x)
+                    (if (functionp x)
+                        (--if-let (funcall x)
+                            (if (null prev-string?)
+                                (concat acc esh-sep it)
+                              (setq prev-string? nil)
+                              (concat acc it))
+                          acc)
+                      (if (null prev-string?)
+                          (setq prev-string? t))
+                      (concat acc x)))
+                  esh-header eshell-funcs)))
 
 (esh-section esh-dir
              (if (display-graphic-p) "📂" "δ")  ;  (faicon folder)
@@ -293,12 +295,12 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (esh-section esh-user
              (if (display-graphic-p) "👤" "υ")
              (eshell-user-name)
-             '(:foreground "blue"))
+             '(:foreground "deep sky blue"))
 
 (esh-section esh-sysname
              (if (display-graphic-p) "💻" "σ")
              (system-name)
-             '(:foreground "red"))
+             '(:foreground "firebrick"))
 
 (esh-section esh-num
              "☰"  ;  (list icon)
@@ -313,29 +315,29 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
       esh-section-delim " "
 
       ;; Eshell prompt header
-      esh-header "\n┌─"  ; or "\n┌─"
+      esh-header "\n"  ; or "\n┌─"
 
       ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
       ;; your login, these can be the same.
-      eshell-prompt-string "└─» "  ; or "└─> "
+      eshell-prompt-string "» "  ; or "└─> " or "└─» "
       eshell-prompt-regexp
       (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|^[^#$
 ]* [#$] ")  ; or "└─> "
       ;; Choose which eshell-funcs to enable
-      eshell-funcs (list esh-dir esh-python esh-git esh-user esh-sysname esh-clock esh-num)
+      eshell-funcs (list esh-python esh-git esh-user esh-sysname esh-clock esh-num
+                         "\n" esh-dir
+                         "\n" eshell-prompt-string)
       ;; Enable the new eshell prompt
       eshell-prompt-function 'esh-prompt-func
       eshell-banner-message (format
-                             "Emacs version %s on %s. Compilation %s  %s  %s
-"
-                             emacs-version system-type system-configuration system-configuration-options
-                             system-configuration-features))
+                             "%s\nEmacs version %s on %s. Compilation %s  %s\n"
+                             system-configuration-features
+                             emacs-version system-type system-configuration
+                             system-configuration-options))
 
 ;;;;;;;;;;;;;;;;;
 ;; Post prompt ;;
 ;;;;;;;;;;;;;;;;;
-(defvar-local eshell-current-command-start-time nil)
-
 (defun eshell-current-command-start ()
   (setq eshell-current-command-start-time (current-time)))
 
@@ -354,8 +356,8 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (defun eshell-current-command-time-track ()
   (add-hook 'eshell-pre-command-hook #'eshell-current-command-start nil t)
   (add-hook 'eshell-post-command-hook #'eshell-current-command-stop nil t))
-
 (add-hook 'eshell-mode-hook #'eshell-current-command-time-track)
+
 ;; To uninstall
 ;; (remove-hook 'eshell-mode-hook #'eshell-current-command-time-track)
 
