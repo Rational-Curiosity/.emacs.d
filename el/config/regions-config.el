@@ -12,7 +12,8 @@
 
 (set-face-attribute 'region nil
                     :foreground 'unspecified
-                    :background "DarkSlateGray")
+                    :background "DarkSlateGray"
+                    :box '(:line-width -1 :color "CadetBlue" :style nil))
 
 (require 'expand-region)
 

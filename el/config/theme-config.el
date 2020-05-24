@@ -48,10 +48,10 @@
                      ;; Also handle undocumented (<active> <inactive>) form.
                      ((numberp (cadr alpha)) (cadr alpha)))
                100)
-          '(85 . 65) '(100 . 100)))))
+          '(90 . 75) '(100 . 100)))))
 
-(set-frame-parameter (selected-frame) 'alpha '(85 . 65))
-(add-to-list 'default-frame-alist '(alpha . (85 . 65)))
+(set-frame-parameter (selected-frame) 'alpha '(90 . 75))
+(add-to-list 'default-frame-alist '(alpha . (90 . 75)))
 ;; ]
 
 (global-set-key (kbd "<f6> t") #'cycle-themes)
