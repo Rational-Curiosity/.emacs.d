@@ -19,6 +19,12 @@
 ;;;;;;;;;;;;
 ;; Colors ;;
 ;;;;;;;;;;;;
+(require 'em-prompt)
+(set-face-attribute 'eshell-prompt nil
+                    :foreground "SeaGreen"
+                    :background 'unspecified
+                    :weight 'bold)
+
 (add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
 (setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
 (setenv "TERM" "xterm-256color")
@@ -319,7 +325,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
       ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
       ;; your login, these can be the same.
-      eshell-prompt-string "» "  ; or "└─> " or "└─» "
+      eshell-prompt-string "⊳ "  ; or "└─> " or "└─» "
       eshell-prompt-regexp
       (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|^[^#$
 ]* [#$] ")  ; or "└─> "
