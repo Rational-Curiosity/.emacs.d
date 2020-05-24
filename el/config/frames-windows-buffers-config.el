@@ -515,6 +515,10 @@ ARG non-nil resize window to ARG height."
 ;;;;;;;;;;;;
 ;; Frames ;;
 ;;;;;;;;;;;;
+;; (setq initial-frame-alist (nconc '((minibuffer . only)) initial-frame-alist)
+;;       default-frame-alist (nconc '((minibuffer . nil)) default-frame-alist)
+;;       minibuffer-auto-raise t)
+;; (add-hook 'minibuffer-exit-hook 'lower-frame)
 ;; [ Marcas laterales
 ;; (require 'fringe)
 (with-eval-after-load 'fringe

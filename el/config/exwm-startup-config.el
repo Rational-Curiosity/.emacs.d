@@ -31,6 +31,10 @@
 (defvar exwm-default-transparency 0.85
   "EXWM default transparency.")
 
+(defvar exwm-hide-mode-line '("code")
+  "EXWM instances without mode line")
+
+;; example: export EXWM_MONITOR_ORDER="eDP-1 HDMI-1 DP-1"
 (defvar exwm-default-monitor-order
   (let ((monitor-order (getenv "EXWM_MONITOR_ORDER")))
     (if monitor-order
@@ -404,7 +408,9 @@
               (string-equal "gimp" exwm-instance-name))
     (exwm-workspace-rename-buffer exwm-class-name))
   (unless (member exwm-instance-name exwm-exclude-transparency)
-    (exwm-set-window-transparency (current-buffer) exwm-default-transparency)))
+    (exwm-set-window-transparency (current-buffer) exwm-default-transparency))
+  (when (member exwm-instance-name exwm-hide-mode-line)
+    (setq mode-line-format nil)))
 (add-hook 'exwm-update-class-hook 'exwm-update-class-defaults)
 
 (defun exwm-update-title-defaults ()
@@ -506,9 +512,19 @@
         ([?\C-v] . [next])
         ([?\C-d] . [delete])
         ([?\C-k] . [S-end delete])
+        ;; jumps
+        (,(kbd "M-g M-g") . [?\C-g])
+        (,(kbd "M-g M-n") . ,(kbd "<f8>"))
+        (,(kbd "M-g M-p") . ,(kbd "<S-f8>"))
+        (,(kbd "M-.") . ,(kbd "<C-f12>"))
+        (,(kbd "C-,") . ,(kbd "C-S--"))
+        (,(kbd "C-.") . ,(kbd "C-M--"))
+        (,(kbd "C-x C-SPC") . ,(kbd "C-M--"))
+        ;; comments
+        (,(kbd "M-;") . ,(kbd "M-S-a"))
         ;; select
         ([?\C-x ?h] . [?\C-a])
-        ;; cut/paste.
+        ;; cut/paste
         ([?\C-w] . [?\C-x])
         ([?\M-w] . [?\C-c])
         ([?\C-y] . [?\C-v])
@@ -518,7 +534,9 @@
         ([?\C-x ?\C-s] . [?\C-s])
         ;; undo redo
         (,(kbd "C-_") . [?\C-z])
-        (,(kbd "M-_") . [?\C-y])))
+        (,(kbd "M-_") . [?\C-y])
+        ;; format
+        (,(kbd "M-SPC") . ,(kbd "C-S-i"))))
 
 ;; You can hide the minibuffer and echo area when they're not used, by
 ;; uncommenting the following line.
@@ -666,6 +684,108 @@
       (winum--undefine-keys exwm-mode-map)))
   (exwm-winum-bindings)
   (add-hook 'winum-mode-hook 'exwm-winum-bindings))
+
+;; minibuffer
+(setq mini-frame-show-parameters
+      '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
+        (background-color . "black"))
+      mini-frame-ignore-commands '("edebug-eval-expression" debugger-eval-expression))
+(mini-frame-mode)
+
+(defun common-minibuffer-all-frames ()
+  (let ((frame (car (minibuffer-frame-list))))
+    (setf (alist-get 'minibuffer default-frame-alist)
+          (if frame nil t))))
+(add-hook 'before-make-frame-hook 'common-minibuffer-all-frames)
+
+(when (featurep 'helm)
+  (when (bug-check-function-bytecode
+         'helm-resolve-display-function
+         "csYgcYgIKYY5AIkJPoQ0AAqDHADHyAshIYQ0AAyDLAANhCwAySBHylaENAAODssgnYQ2AMyHzcAhhw==")
+    (defun helm-resolve-display-function (com)
+      (or (with-helm-buffer helm-display-function)
+          (default-value 'helm-display-function))))
+
+  (when (bug-check-function-bytecode
+         'helm-display-mode-line
+         "xsAhiMcCPIMRAMjJBCKGFADKwCEDIhDLAiGEKgAJhSsAyMwDIgqdhSsAzQuFXQDIzAQiC86JiQM6g1kAA0CyA8jMBEAisgIBBZiDUgACAUKyAQNBsgSCNwCJn7aFCIOhAM/Q0dDSBgbQ0wYIhXkA1NXWBgtHItfYI0TT2QzaQkJE20JCQkJCQkJC3EJCFd0IPIOaAAhBQIKbAAghFiaCpQDKxSEVDieDswDesgPfIIiC1gAOKIPWAMcEPIXDAMjgBgYiBSLh4iDjItTQAwNR1+QjFim2ArYCiYXeAOUghw==")
+    (defun helm-display-mode-line (source &optional force)
+      "Set up mode line and header line for `helm-buffer'.
+
+SOURCE is a Helm source object.
+
+Optional argument FORCE forces redisplay of the Helm buffer's
+mode and header lines."
+      (set (make-local-variable 'helm-mode-line-string)
+           (helm-interpret-value (or (and (listp source) ; Check if source is empty.
+                                          (assoc-default 'mode-line source))
+                                     (default-value 'helm-mode-line-string))
+                                 source))
+      (let ((follow (and (or (helm-follow-mode-p source)
+                             (and helm-follow-mode-persistent
+                                  (member (assoc-default 'name source)
+                                          helm-source-names-using-follow)))
+                         " (HF)"))
+            (marked (and helm-marked-candidates
+                         (cl-loop with cur-name = (assoc-default 'name source)
+                                  for c in helm-marked-candidates
+                                  for name = (assoc-default 'name (car c))
+                                  when (string= name cur-name)
+                                  collect c))))
+        ;; Setup mode-line.
+        (if helm-mode-line-string
+            (setq mode-line-format
+                  `(:propertize
+                    ;; (" " mode-line-buffer-identification " "  ;; -
+                    (                                            ;; +
+                     (:eval (format "L%-3d" (helm-candidate-number-at-point)))
+                     ,follow
+                     " "
+                     (:eval ,(and marked
+                                  (propertize
+                                   (format "M%d" (length marked))
+                                   'face 'helm-visible-mark)))
+                     (:eval (when ,helm--mode-line-display-prefarg
+                              (let ((arg (prefix-numeric-value
+                                          (or prefix-arg current-prefix-arg))))
+                                (unless (= arg 1)
+                                  (propertize (format " [prefarg:%s]" arg)
+                                              'face 'helm-prefarg)))))
+                     " "
+                     (:eval (with-helm-buffer
+                              (helm-show-candidate-number
+                               (car-safe helm-mode-line-string))))
+                     " " helm--mode-line-string-real " "
+                     (:eval (make-string (window-width) ? )))
+                    keymap (keymap (mode-line keymap
+                                              (mouse-1 . ignore)
+                                              (down-mouse-1 . ignore)
+                                              (drag-mouse-1 . ignore)
+                                              (mouse-2 . ignore)
+                                              (down-mouse-2 . ignore)
+                                              (drag-mouse-2 . ignore)
+                                              (mouse-3 . ignore)
+                                              (down-mouse-3 . ignore)
+                                              (drag-mouse-3 . ignore))))
+                  helm--mode-line-string-real
+                  (substitute-command-keys (if (listp helm-mode-line-string)
+                                               (cadr helm-mode-line-string)
+                                             helm-mode-line-string)))
+          (setq mode-line-format (default-value 'mode-line-format)))
+        ;; Setup header-line.
+        (cond (helm-echo-input-in-header-line
+               (setq force t)
+               (helm--set-header-line))
+              (helm-display-header-line
+               (let ((hlstr (helm-interpret-value
+                             (and (listp source)
+                                  (assoc-default 'header-line source))
+                             source))
+                     (endstr (make-string (window-width) ? )))
+                 (setq header-line-format
+                       (propertize (concat " " hlstr endstr)
+                                   'face 'helm-header))))))
+      (when force (force-mode-line-update)))))
 
 ;;;;;;;;;;
 ;; Keys ;;

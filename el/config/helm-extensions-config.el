@@ -17,9 +17,8 @@
       helm-autoresize-max-height 60
       helm-autoresize-min-height 6
       helm-candidate-number-limit 150
-      ;; [ <input line on top>
-      ;; helm-echo-input-in-header-line t
-      ;; ]
+      helm-echo-input-in-header-line nil
+      helm-display-header-line nil
       helm-default-display-buffer-functions '(display-buffer-in-side-window))
 ;; [ <input line on top>
 ;; (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe)
@@ -107,28 +106,38 @@
 ;; Go to the opposite side of line from the end or beginning of line
 (setq helm-swoop-move-to-line-cycle t)
 
-;; [ postframe
-(when (and (display-graphic-p)
-           (load "helm-posframe" t))
-  (add-hook 'helm-org-rifle-after-command-hook 'helm-posframe-cleanup)
-  (remove-hook 'delete-frame-functions 'helm--delete-frame-function)
-  ;; (define-key helm-map (kbd "C-i") 'undefined)
-  (setq helm-show-action-window-other-window 'right
-        helm-posframe-poshandler 'posframe-poshandler-frame-center
-        helm-posframe-parameters '((internal-border-width .     5)
-                                   (z-group               . above)))
+;; [ child frame
+(when (display-graphic-p)
+  ;; child frame compatibility
+  (defun helm-initial-and-internal-advice (orig-fun &rest args)
+    (let ((parent-frame (cdr (assoc 'parent-frame (frame-parameters (selected-frame)) 'eq))))
+      (if parent-frame
+          (with-selected-frame parent-frame
+            (apply orig-fun args))
+        (apply orig-fun args))))
+  (advice-add 'helm-initial-setup :around 'helm-initial-and-internal-advice)
+  (advice-add 'helm-internal :around 'helm-initial-and-internal-advice)
+  ;; postframe integration
+  (when (load "helm-posframe" t)
+    (add-hook 'helm-org-rifle-after-command-hook 'helm-posframe-cleanup)
+    (remove-hook 'delete-frame-functions 'helm--delete-frame-function)
+    ;; (define-key helm-map (kbd "C-i") 'undefined)
+    (setq helm-show-action-window-other-window 'right
+          helm-posframe-poshandler 'posframe-poshandler-frame-center
+          helm-posframe-parameters '((internal-border-width .     5)
+                                     (z-group               . above)))
 
-  (defun helm-show-action-buffer-advice (orig-fun &rest args)
-    (let ((helm--buffer-in-new-frame-p t)
-          (helm-split-window-state 'vertical))
-      (apply orig-fun args)))
-  (advice-add 'helm-show-action-buffer :around 'helm-show-action-buffer-advice)
+    (defun helm-show-action-buffer-advice (orig-fun &rest args)
+      (let ((helm--buffer-in-new-frame-p t)
+            (helm-split-window-state 'vertical))
+        (apply orig-fun args)))
+    (advice-add 'helm-show-action-buffer :around 'helm-show-action-buffer-advice)
 
-  (defun helm-execute-persistent-action-advice (orig-fun &rest args)
-    (let ((helm--buffer-in-new-frame-p t))
-      (apply orig-fun args)))
-  (advice-add 'helm-execute-persistent-action :around 'helm-execute-persistent-action-advice)
-  (helm-posframe-enable))
+    (defun helm-execute-persistent-action-advice (orig-fun &rest args)
+      (let ((helm--buffer-in-new-frame-p t))
+        (apply orig-fun args)))
+    (advice-add 'helm-execute-persistent-action :around 'helm-execute-persistent-action-advice)
+    (helm-posframe-enable)))
 ;; ]
 
 (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers)
