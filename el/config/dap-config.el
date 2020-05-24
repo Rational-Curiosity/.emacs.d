@@ -15,8 +15,12 @@
 
 (message "Importing dap-config")
 
+(setq dap-python-terminal "xterm -e "
+      dap-auto-configure-features nil
+      ;; or '(sessions locals breakpoints expressions)
+      )
+
 (dap-ui-mode)
-(dap-tooltip-mode)
 
 
 (provide 'dap-config)
