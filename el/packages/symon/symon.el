@@ -724,8 +724,11 @@ while(1)                                                            \
      symon-total-spark-width
      (* 2 (length (bound-and-true-p exwm-systemtray--list)))))
 
+(defun symon--minibuffer-width ()
+  (window-body-width (minibuffer-window)))
+
 (defun symon-compose-message (msg)
-  (let* ((cur-frame-width (frame-width))
+  (let* ((cur-frame-width (symon--minibuffer-width))
          (available-space (symon--available-space cur-frame-width)))
     (if (not (string-empty-p msg))
         (let* ((last-newline-pos (cl-position ?\n msg :from-end t))
@@ -784,7 +787,7 @@ while(1)                                                            \
     (let ((message-log-max nil))
       (funcall orig-fun
                (concat
-                (make-string (symon--available-space (frame-width)) ? )
+                (make-string (symon--available-space (symon--minibuffer-width)) ? )
                 "%s")
                symon--symon-message))
     ;; return value
