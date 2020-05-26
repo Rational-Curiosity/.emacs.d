@@ -14,7 +14,8 @@
 (require 'docker-utils)
 (message "Importing docker-config")
 
-(docker-utils-define-transient-command docker-container-logs ()
+
+(docker-utils-transient-define-prefix docker-container-logs ()
   "Transient for showing containers logs."
   :man-page "docker-container-logs"
   :value '("--tail=150" "-f" "--timestamps")
@@ -23,7 +24,7 @@
    ("-f" "Follow" "-f")
    ("-t" "Timestamps" "--timestamps")]
   [:description docker-utils-generic-actions-heading
-                ("L" "Logs" docker-utils-generic-action-with-command)])
+                ("L" "Logs" docker-utils-generic-action-async)])
 
 ;; (setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
 ;;       docker-container-logs-popup
