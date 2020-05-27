@@ -688,7 +688,7 @@
 ;; minibuffer
 (setq mini-frame-show-parameters
       '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
-        (background-color . "black"))
+        (border-width . 0) (internal-border-width . 0) (background-color . "black"))
       mini-frame-ignore-commands '("edebug-eval-expression" debugger-eval-expression))
 (mini-frame-mode)
 
