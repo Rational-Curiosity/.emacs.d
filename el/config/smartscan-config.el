@@ -9,6 +9,7 @@
 ;;; Code:
 (require 'config-lib)
 (advice-add 'smartscan-symbol-goto :around #'message-silent-advice)
+(setq smartscan-symbol-selector "symbol")
 
 (defun smartscan-symbol-go-forward (arg)
   "Jumps forward to the next symbol at point"
