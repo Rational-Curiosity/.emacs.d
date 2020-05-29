@@ -189,11 +189,12 @@
          (names (hash-table-keys monitors)))
     (if (called-interactively-p 'interactive)
         (setq exwm-default-monitor-order
-              (completing-read-multiple
-               (concat
-                "External monitor order (" crm-separator "): ")
-               names
-               nil t)))
+              (or (completing-read-multiple
+                   (concat
+                    "External monitor order (" crm-separator "): ")
+                   names
+                   nil t)
+                  exwm-default-monitor-order)))
     (if (null exwm-default-monitor-order)
         (setq exwm-default-monitor-order
               (list
