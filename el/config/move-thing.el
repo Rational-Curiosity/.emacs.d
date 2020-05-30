@@ -104,69 +104,79 @@
 ;; #     # #    # #    # #    # #    # #   ## #    #    #     # #    # #    # #   #
 ;;  #####   ####  #    # #    # #    # #    # #####     #     #  ####   ####  #    #
 (defvar mt-movement-commands
-  '(
-    previous-line
-    next-line
-    right-char
-    right-word
-    forward-char
-    forward-word
-    left-char
-    left-word
-    backward-char
-    backward-word
-    forward-paragraph
-    backward-paragraph
-    forward-list
-    backward-list
-    end-of-buffer
-    end-of-defun
-    end-of-line
-    end-of-sexp
-    exchange-point-and-mark
-    move-end-of-line
-    beginning-of-buffer
-    beginning-of-defun
-    beginning-of-line
-    beginning-of-sexp
-    move-beginning-of-line
-    back-to-indentation
-    subword-forward
-    subword-backward
-    subword-mark
-    subword-kill
-    subword-backward-kill
-    subword-transpose
-    subword-capitalize
-    subword-upcase
-    subword-downcase
-    smart-forward
-    smart-backward
-    smart-up
-    smart-down
-    avy-goto-char
-    avy-goto-char-2
-    avy-goto-char-2-above
-    avy-goto-char-2-below
-    avy-goto-char-in-line
-    avy-goto-char-timer
-    avy-goto-end-of-line
-    avy-goto-line
-    avy-goto-line-above
-    avy-goto-line-below
-    avy-goto-subword-0
-    avy-goto-subword-1
-    avy-goto-symbol-1
-    avy-goto-symbol-1-above
-    avy-goto-symbol-1-below
-    avy-goto-word-0
-    avy-goto-word-0-above
-    avy-goto-word-0-below
-    avy-goto-word-0-regexp
-    avy-goto-word-1
-    avy-goto-word-1-above
-    avy-goto-word-1-below
-    avy-goto-word-or-subword-1)
+  #s(hash-table
+     size 68
+     test eq
+     data (
+           previous-line t
+           next-line t
+           right-char t
+           right-word t
+           forward-char t
+           forward-word t
+           left-char t
+           left-word t
+           backward-char t
+           backward-word t
+           forward-paragraph t
+           backward-paragraph t
+           forward-list t
+           backward-list t
+           end-of-buffer t
+           end-of-defun t
+           end-of-line t
+           end-of-sexp t
+           exchange-point-and-mark t
+           move-end-of-line t
+           beginning-of-buffer t
+           beginning-of-defun t
+           beginning-of-line t
+           beginning-of-sexp t
+           move-beginning-of-line t
+           back-to-indentation t
+           subword-forward t
+           subword-backward t
+           subword-mark t
+           subword-kill t
+           subword-backward-kill t
+           subword-transpose t
+           subword-capitalize t
+           subword-upcase t
+           subword-downcase t
+           smart-forward t
+           smart-backward t
+           smart-up t
+           smart-down t
+           avy-goto-char t
+           avy-goto-char-2 t
+           avy-goto-char-2-above t
+           avy-goto-char-2-below t
+           avy-goto-char-in-line t
+           avy-goto-char-timer t
+           avy-goto-end-of-line t
+           avy-goto-line t
+           avy-goto-line-above t
+           avy-goto-line-below t
+           avy-goto-subword-0 t
+           avy-goto-subword-1 t
+           avy-goto-symbol-1 t
+           avy-goto-symbol-1-above t
+           avy-goto-symbol-1-below t
+           avy-goto-word-0 t
+           avy-goto-word-0-above t
+           avy-goto-word-0-below t
+           avy-goto-word-0-regexp t
+           avy-goto-word-1 t
+           avy-goto-word-1-above t
+           avy-goto-word-1-below t
+           avy-goto-word-or-subword-1 t
+           magit-previous-line t
+           magit-next-line t
+           magit-section-backward t
+           magit-section-forward t
+           magit-section-backward-sibling t
+           magit-section-forward-sibling t
+           ))
   "Default set of movement commands.")
 
 (defvar mt-interchange-things nil)
@@ -175,7 +185,7 @@
   "Beginning of from region marker.")
 
 (defun mt--post-command ()
-  (when (and (memq this-original-command mt-movement-commands)
+  (when (and (gethash this-original-command mt-movement-commands)
              (marker-position mt--marker))
     (condition-case raised-error
         (let ((from-bounds (save-excursion
