@@ -6,6 +6,7 @@
 ;; (require 'typing-config)
 
 ;;; Code:
+(require 'config-lib)
 
 (set-face-attribute 'line-number-current-line nil
                     :foreground "#ebdb34"
@@ -45,11 +46,24 @@
       column-number-mode t
       isearch-lazy-count t
       isearch-allow-scroll 'unlimited
+      ;; mark-ring
+      set-mark-command-repeat-pop t
+      mark-ring-max 32
+      global-mark-ring-max 128
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
       mode-require-final-newline nil)
+;;;;;;;;;;;;;;;
+;; Mark ring ;;
+;;;;;;;;;;;;;;;
+(require 'move-thing)
 
-(require 'config-lib)
+(defun push-mark--pre-command ()
+  (when (and (gethash this-original-command mt-movement-commands)
+             (not (gethash last-command mt-movement-commands)))
+    (push-mark nil t)))
+(add-hook 'pre-command-hook 'push-mark--pre-command)
+
 ;;;;;;;;;;;;;;;;;;;
 ;; Coding system ;;
 ;;;;;;;;;;;;;;;;;;;
@@ -531,11 +545,6 @@ prompt the user for a coding system."
       ;; ]
       )))
 
-;;;;;;;;;;;;
-;; Moving ;;
-;;;;;;;;;;;;
-(require 'move-thing)
-
 ;;;;;;;;;;;
 ;; Copia ;;
 ;;;;;;;;;;;
@@ -847,21 +856,13 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;
 (defun kill-ring-insert ()
   (interactive)
-  (let ((to_insert (completing-read "Yank : "
+  (let ((to_insert (completing-read "Yank: "
                                     (cl-delete-duplicates kill-ring :test #'equal)
                                     nil t)))
     (when (and to_insert (region-active-p))
       ;; the currently highlighted section is to be replaced by the yank
       (delete-region (region-beginning) (region-end)))
     (insert to_insert)))
-
-;;;;;;;;;;;;;;;;;;;;;;
-;; Goto last change ;;
-;;;;;;;;;;;;;;;;;;;;;;
-(require 'goto-chg)
-
-(global-set-key [(control ?/)] 'goto-last-change)
-(global-set-key [(control ??)] 'goto-last-change-reverse)
 
 ;;;;;;;;;;;;
 ;; Cycles ;;
@@ -926,14 +927,8 @@ there's a region, all lines that region covers will be duplicated."
 ;; (global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
 (define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
 (global-set-key (kbd "½") #'query-replace-regexp)                   ;; AltGr-5
-(global-set-key (kbd "↓") #'undo-tree-undo)                         ;; AltGr-u
-(global-set-key (kbd "¶") #'undo-tree-redo)                         ;; AltGr-r
 (global-set-key (kbd "ð") #'kill-sexp)                              ;; AltGr-d
 (global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-k
-(global-set-key (kbd "«") #'goto-last-change)                       ;; AltGr-z
-(global-set-key [(control ?.)] #'goto-last-change)
-(global-set-key (kbd "»") #'goto-last-change-reverse)               ;; AltGr-x
-(global-set-key [(control ?,)] #'goto-last-change-reverse)
 (global-set-key (kbd "“") #'scroll-other-window)                    ;; AltGr-v
 (global-set-key (kbd "”") 'sp-or-backward-sexp)                     ;; AltGr-b
 (global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
@@ -956,6 +951,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<C-M-backspace>") #'backward-kill-sexp)
 ;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
 ;; (global-set-key (kbd "S-<delete>") #'kill-sexp)
+(global-set-key [?\C-x ?u] #'undo-propose)
 (global-set-key (kbd "M-s <deletechar>") #'kill-sexp)
 (global-set-key (kbd "C-*") #'duplicate-current-line-or-region)
 (global-set-key (kbd "M-s *") #'duplicate-current-line-or-region)

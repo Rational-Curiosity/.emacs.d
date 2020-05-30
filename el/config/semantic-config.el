@@ -73,7 +73,7 @@ Improve default ia jump at point."
         (semantic-error-if-unparsed)
         (let* ((tag (semantic-complete-read-tag-project "Jump to symbol: " first-tag first-tag)))
           (when (semantic-tag-p tag)
-            (push-mark)
+            (push-mark nil t)
             (semantic-go-to-tag tag)
             (switch-to-buffer (current-buffer))
             (semantic-momentary-highlight-tag tag)
