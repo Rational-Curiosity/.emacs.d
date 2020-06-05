@@ -18,10 +18,12 @@
 (docker-utils-transient-define-prefix docker-container-logs ()
   "Transient for showing containers logs."
   :man-page "docker-container-logs"
-  :value '("--tail=150" "-f" "--timestamps")
+  :value '("--tail 150" "-f" "--timestamps")
   ["Arguments"
-   ("-T" "Tail" "--tail=" read-string)
    ("-f" "Follow" "-f")
+   ("-s" "Since" "--since " read-string)
+   ("-t" "Tail" "--tail " read-string)
+   ("-u" "Until" "--until " read-string)
    ("-t" "Timestamps" "--timestamps")]
   [:description docker-utils-generic-actions-heading
                 ("L" "Logs" docker-utils-generic-action-async)])
