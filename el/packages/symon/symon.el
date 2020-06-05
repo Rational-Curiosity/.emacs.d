@@ -838,7 +838,10 @@ while(1)                                                            \
 
 (defun symon--redisplay ()
   "Update symon display."
-  (when (eq symon--display-active 'redisplay)
+  (when (and symon--display-active
+             (or (eq symon--display-active 'redisplay)
+                 ;; exwm-mode avoids symon-display idle timer
+                 (derived-mode-p 'exwm-mode)))
     (setq symon--active-page (% (1+ symon--active-page) symon--total-page-num))
     (symon--display-update)))
 
