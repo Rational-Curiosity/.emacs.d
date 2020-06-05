@@ -59,7 +59,8 @@
 (require 'move-thing)
 
 (defun push-mark--pre-command ()
-  (when (and (gethash this-original-command mt-movement-commands)
+  (when (and (null mark-active)
+             (gethash this-original-command mt-movement-commands)
              (not (gethash last-command mt-movement-commands)))
     (push-mark nil t)))
 (add-hook 'pre-command-hook 'push-mark--pre-command)
@@ -362,9 +363,11 @@ prompt the user for a coding system."
    ;; Format with ‘format-mode-line’ to produce a string value.
    ;; Don't use ‘string-equal’ to compare
    ((derived-mode-p 'c-mode)
-    (set (make-local-variable 'whitespace-line-column) 100))
+    (set (make-local-variable 'whitespace-line-column) 100)
+    (setq tab-width 4))
    ((derived-mode-p 'python-mode)
-    (set (make-local-variable 'whitespace-line-column) 79))
+    (set (make-local-variable 'whitespace-line-column) 79)
+    (setq tab-width 4))
    ((derived-mode-p 'emacs-lisp-mode)
     (set (make-local-variable 'whitespace-line-column) 100)
     (set (make-local-variable 'whitespace-display-mappings)
