@@ -108,6 +108,7 @@
           ("org"         "Ω")
           ("eshell"      "ε∫" :postfix)
           ("shell"       "∫" :postfix)
+          ("sh"          "$")
           ("text"        "ξ")
           ("web"         "ω")
           ("wdired"      "↯δ")

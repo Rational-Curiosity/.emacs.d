@@ -106,7 +106,8 @@ For more information, see the function `buffer-menu'."
           (split-width-threshold 140))
       (split-window-sensibly window)))
    ((with-selected-window window
-      (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode)))
+      (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode
+                                            docker-container-mode)))
     (let ((split-height-threshold 20))
       (split-window-sensibly window)))
    (t
