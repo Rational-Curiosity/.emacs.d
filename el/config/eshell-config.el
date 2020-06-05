@@ -207,10 +207,10 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;;;;;;;;
 ;; ag ;;
 ;;;;;;;;
-(require 'ag)
-(defun eshell/ag (&rest args)
-  "Use Emacs grep facility instead of calling external grep."
-  (ag/search (mapconcat #'shell-quote-argument args " ") default-directory))
+(when (require 'ag nil 'noerror)
+  (defun eshell/ag (&rest args)
+    "Use Emacs grep facility instead of calling external grep."
+    (ag/search (mapconcat #'shell-quote-argument args " ") default-directory)))
 ;;;;;;;;;;;;;
 ;; Filters ;;
 ;;;;;;;;;;;;;
@@ -284,7 +284,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
              '(:foreground "gold" :weight ultra-bold :underline t))
 
 (esh-section esh-git
-             "⎇"  ;  (git icon)
+             (if (display-graphic-p) "⎇" "β")  ;  (git icon)
              ;; (magit-get-current-branch)
              (car (vc-git-branches))
              '(:foreground "pink"))
@@ -309,7 +309,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
              '(:foreground "firebrick"))
 
 (esh-section esh-num
-             "☰"  ;  (list icon)
+             (if (display-graphic-p) "☰" "n")  ;  (list icon)
              (number-to-string esh-prompt-num)
              '(:foreground "brown"))
 
