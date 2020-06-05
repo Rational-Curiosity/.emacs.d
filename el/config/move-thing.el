@@ -105,7 +105,7 @@
 ;;  #####   ####  #    # #    # #    # #    # #####     #     #  ####   ####  #    #
 (defvar mt-movement-commands
   #s(hash-table
-     size 68
+     size 83
      test eq
      data (
            previous-line t
@@ -143,10 +143,25 @@
            subword-capitalize t
            subword-upcase t
            subword-downcase t
+           sp-forward-sexp t
+           sp-backward-sexp t
            smart-forward t
            smart-backward t
            smart-up t
            smart-down t
+           org-shifttab t
+           org-shiftleft t
+           org-shiftright t
+           org-shiftup t
+           org-shiftdown t
+           org-shiftcontrolleft t
+           org-shiftcontrolright t
+           org-shiftcontrolup t
+           org-shiftcontroldown t
+           org-shiftmetaleft t
+           org-shiftmetaright t
+           org-shiftmetaup t
+           org-shiftmetadown t
            avy-goto-char t
            avy-goto-char-2 t
            avy-goto-char-2-above t
