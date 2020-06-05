@@ -12,15 +12,21 @@
 ;; (add-to-list 'semantic-default-submodes 'global-semantic-idle-scheduler-mode)
 ;; (add-to-list 'semantic-default-submodes 'global-semanticdb-minor-mode)
 ;; ]
+(require 'semantic)
+(setq semantic-default-submodes '(semantic-tag-folding-mode
+                                  semantic-mru-bookmark-mode
+                                  semantic-stickyfunc-mode
+                                  semantic-idle-scheduler-mode
+                                  semanticdb-minor-mode))
 ;; Disabled, completions by company
-;;(add-to-list 'semantic-default-submodes 'global-semantic-idle-completions-mode)
+;; (add-to-list 'semantic-default-submodes 'global-semantic-idle-completions-mode)
 ;; First line show current function
-(add-to-list 'semantic-default-submodes 'global-semantic-stickyfunc-mode)
+;;(add-to-list 'semantic-default-submodes 'global-semantic-stickyfunc-mode)
 ;; Most Recently Used tags
-(add-to-list 'semantic-default-submodes 'global-semantic-mru-bookmark-mode)
+;;(add-to-list 'semantic-default-submodes 'global-semantic-mru-bookmark-mode)
 ;; Highlight symbol under cursor in page
 ;; (add-to-list 'semantic-default-submodes 'global-semantic-idle-local-symbol-highlight-mode)
-(add-to-list 'semantic-default-submodes 'global-semantic-tag-folding-mode)
+;;(add-to-list 'semantic-default-submodes 'global-semantic-tag-folding-mode)
 ;; (add-to-list 'semantic-default-submodes 'global-semantic-decoration-mode)
 ;; Smart autocomplete
 (require 'semantic/ia)
