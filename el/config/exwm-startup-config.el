@@ -574,9 +574,13 @@
 ;;       (delete-region (minibuffer-prompt-end) (point-max))
 ;;       (insert (apply #'format-message format-string args)))))
 
+(defvar symon--datetime-monitor-pulse nil)
 (define-symon-monitor symon-current-datetime-monitor
   :interval 10
-  :display (format-time-string "%e %b %H:%M"))
+  :display (if (setq symon--datetime-monitor-pulse
+                     (null symon--datetime-monitor-pulse))
+               (format-time-string "%e %b %H:%M.")
+             (format-time-string "%e %b %H:%M ")))
 
 (define-symon-monitor symon-org-clock-in-monitor
   :interval 10
@@ -614,7 +618,7 @@
       symon-sparkline-thickness 1
       symon-history-size 24
       symon-sparkline-width 24
-      symon-total-spark-width 13)
+      symon-total-spark-width 12)
 
 (symon-mode)
 
@@ -689,8 +693,11 @@
 ;; minibuffer
 (setq mini-frame-show-parameters
       '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
-        (border-width . 0) (internal-border-width . 0) (background-color . "black"))
-      mini-frame-ignore-commands '("edebug-eval-expression" debugger-eval-expression))
+        (border-width . 0) (internal-border-width . 0)
+        (background-color . "black"))
+      mini-frame-ignore-commands '("edebug-eval-expression"
+                                   debugger-eval-expression
+                                   "exwm-workspace-"))
 (mini-frame-mode)
 
 (defun common-minibuffer-all-frames ()
@@ -699,6 +706,13 @@
           (if frame nil t))))
 (add-hook 'before-make-frame-hook 'common-minibuffer-all-frames)
 
+;; systemtray hold
+(defun exwm-systemtray--on-workspace-switch-advice (orig-fun &rest args)
+  (if (eq exwm-workspace--current (window-frame (minibuffer-window)))
+      (apply orig-fun args)))
+(advice-add #'exwm-systemtray--on-workspace-switch :around 'exwm-systemtray--on-workspace-switch-advice)
+
+;; helm integration
 (when (featurep 'helm)
   (when (bug-check-function-bytecode
          'helm-resolve-display-function
