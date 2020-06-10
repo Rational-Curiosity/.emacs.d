@@ -58,13 +58,11 @@
       lsp-log-max 1000  ;; Max lines in the log buffer
       ;; lsp
       lsp-keymap-prefix "s-l"
-      lsp-diagnostic-package :flycheck
+      ;; flycheck option bug https://github.com/emacs-lsp/lsp-ui/issues/347
+      lsp-diagnostic-package :flymake
       lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                    lsp-file-watch-ignored)
       lsp-signature-auto-activate nil ;; <xor signature>
-      ;; flycheck reporting
-      ;; flycheck-display-errors-function nil ;; lsp do this
-      lsp-ui-flycheck-live-reporting nil   ;; report on save
       ;; lsp-ui-doc
       lsp-ui-doc-enable nil
       lsp-ui-doc-include-signature t  ;; <xor signature>
@@ -75,6 +73,8 @@
       ;; lsp-ui-sideline
       lsp-ui-sideline-delay 0.5
       lsp-ui-sideline-show-hover t
+      ;; not working with flymake
+      lsp-ui-sideline-show-diagnostics nil
       ;; lsp-pyls
       ;; Fix https://github.com/palantir/python-language-server/issues/771
       ;; changing autopep8 for yapf
