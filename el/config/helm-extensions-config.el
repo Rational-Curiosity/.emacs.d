@@ -7,6 +7,8 @@
 ;; (when (load "helm" t)
 ;;   (require 'helm-extensions-config))
 
+;; sudo apt install fd-find
+;; sudo apt install ripgrep
 ;;; Code:
 (setq helm-completion-mode-string ""
       helm-split-window-inside-p t
@@ -68,6 +70,10 @@
   (add-to-list 'helm-completing-read-handlers-alist '(org-capture . helm-org-completing-read-tags))
   (add-to-list 'helm-completing-read-handlers-alist '(org-set-tags . helm-org-completing-read-tags)))
 
+(with-eval-after-load 'helm-fd
+  (unless helm-fd-bin
+    (setq helm-fd-bin (executable-find "fdfind"))))
+
 (with-eval-after-load 'projectile
   (require 'helm-projectile)
   (cond ((fboundp 'helm-rg)
@@ -76,8 +82,12 @@
          (define-key projectile-mode-map (kbd "M-g M-a") 'helm-projectile-ag))
         (t
          (define-key projectile-mode-map (kbd "M-g M-a") 'helm-projectile-grep)))
-  (define-key projectile-mode-map (kbd "M-g M-f") 'helm-projectile-find-file)
+  (define-key projectile-mode-map (kbd "M-g M-f") (if (fboundp 'helm-fd-project)
+                                                      'helm-fd-project
+                                                    'helm-projectile-find-file))
   (helm-projectile-on))
+
+(require 'helm-xref nil 'noerror)
 
 (require 'helm-elisp)
 (setq helm-show-completion-display-function #'helm-show-completion-default-display-function)
