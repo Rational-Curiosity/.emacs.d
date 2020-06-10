@@ -24,6 +24,9 @@
 ;;     ;; Do nothing, don't want to run checks until I save.
 ;;   )
 
+(when (require 'flymake-diagnostic-at-point nil 'noerror)
+  (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode))
+
 ;; custom modeline
 (when (bug-check-function-bytecode
        'flymake--mode-line-format
