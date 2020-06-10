@@ -1,7 +1,7 @@
 (with-eval-after-load 'posframe
   (when (bug-check-function-bytecode
          'posframe-show
-         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUAIBhvGBhojhrUAYAgGHMcGGiMIBh3IBhojCAYeyQYaIwgGH8oGGiOG1QDeCAYgywYaI4bgAN4IBiHMBhojhusA3wgGIs0GGiOG9gDfCAYjzgYaIwgGJM8GGiMIBiXQBhojCAYm0QYaIwgGJ9IGGiMIBijTBhojCAYp1AYaIwgGKtUGGiMIBivWBhojCAYs1wYaIwgGLdgGGiMIBi7ZBhojCAYv2gYaIwgGMNsGGiMIBjHcBhojCAYy3QYaI+AGMyHhIOIBIeMCIeQDIeUEIQYdqIOHAeYGHgYGIoKJAQYd5wYGIegBIekCIeogcusGCiFxiOwGIyEp7SDl7iAh7wYNIfDxIYO2AfEggrcB3/IZ83IGEHGICoTRAQYW8AEhg9ABiSCI8hKI9AYKIYj1BhHSBh/2Bg7OBifPBijQBinRBirTBirUBivaBifVBi7WBi/XBjDbBi4mG7IB9wZCBhciiPgBBicGJgYqBikliPkB+sYGLPsGEMcGL/wGD/0GEv4GDv/oBhEhgUAA6QYTIYFBAAYk9gYfgUIABiCBQwAGIYFEAAYrgUUABiyBRgAGLYFHAAYugUgABi+BSQAGKoFKAAYrgUsABiyBTAAGLcwGUM0GUa8uIQYLBgskiIFNAAEGFCKIgU4AAQYTBigGJwYrBiomBoiBTwCBUAALId8iiIFRAAshiCq2qIc=")
+         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUDEBhreIkFACAYcxgYbI4a8AGAIBh3HBhsjCAYeyAYbIwgGH8kGGyMIBiDKBhsjhtwA3wgGIcsGGyOG5wDfCAYizAYbI4byAOAIBiPNBhsjhv0A4AgGJM4GGyMIBiXPBhsjCAYm0AYbIwgGJ9EGGyMIBijSBhsjCAYp0wYbIwgGKtQGGyMIBivVBhsjCAYs1gYbIwgGLdcGGyMIBi7YBhsjCAYv2QYbIwgGMNoGGyMIBjHbBhsjCAYy3AYbIwgGM90GGyMIBjTeBhsj4QY1IeIg4wEh5AIh5QMh5gQhBh6og5UB5wYfBgYigpcBBh7oBgYh6QEh6gIh6yBy7AYKIXGI7QYkISnuIObvICHwBg0h8fIhg8QB8iCCxQHg8xn0cgYQcYgKhN8BBhfxASGD3gGJIIjzEoj1BgohiPYGEdIGIPcGDs4GKM8GKdAGKtEGK9MGK9QGLNoGKNsGKdUGMdYGMtcGM9wGMCYdsgH4BkQGGCKI+QEGKAYnBisGKiWI+gH7xgYt/AYQxwYw/QYP/gYS/wYOgUAA6QYRIYFBAOoGEyGBQgAGJPcGH4FDAAYggUQABiGBRQAGK4FGAAYsgUcABi2BSAAGLoFJAAYvgUoABiqBSwAGK4FMAAYsgU0ABi3MBlHNBlKvLiEGCwYLJIiBTgABBhQiiIFPAAEGEwYpBigGLAYrJgaIgVAAgVEACyHgIoiBUgALIYgqtqmH")
     (cl-defun posframe-show (buffer-or-name
                              &key
                              string
@@ -26,6 +26,7 @@
                              initialize
                              no-properties
                              keep-ratio
+                             lines-truncate
                              override-parameters
                              timeout
                              refresh
@@ -123,6 +124,9 @@ If INITIALIZE is nil, `posframe-default-initialize-function' will
 be used as fallback; this variable can be used to set posframe
 buffer gobally.
 
+If LINES-TRUNCATE is non-nil, then lines will truncate in the
+posframe instead of wrap.
+
 OVERRIDE-PARAMETERS is very powful, *all* the frame parameters
 used by posframe's frame can be overridden by it.
 
@@ -154,6 +158,7 @@ You can use `posframe-delete-all' to delete all posframes."
              (initialize (funcall posframe-arghandler buffer-or-name :initialize initialize))
              (no-properties (funcall posframe-arghandler buffer-or-name :no-properties no-properties))
              (keep-ratio (funcall posframe-arghandler buffer-or-name :keep-ratio keep-ratio))
+             (lines-truncate (funcall posframe-arghandler buffer-or-name :lines-truncate lines-truncate))
              (override-parameters (funcall posframe-arghandler buffer-or-name :override-parameters override-parameters))
              (timeout (funcall posframe-arghandler buffer-or-name :timeout timeout))
              (refresh (funcall posframe-arghandler buffer-or-name :refresh refresh))
@@ -208,6 +213,7 @@ You can use `posframe-delete-all' to delete all posframes."
                  :foreground-color foreground-color
                  :background-color background-color
                  :keep-ratio keep-ratio
+                 :lines-truncate lines-truncate
                  :respect-header-line respect-header-line
                  :respect-mode-line respect-mode-line
                  :respect-tab-line respect-tab-line
@@ -224,30 +230,30 @@ You can use `posframe-delete-all' to delete all posframes."
           (posframe--set-frame-position
            posframe
            (posframe-run-poshandler
-            `(;All poshandlers will get info from this plist.
-              :position ,position
-              :position-info ,position-info
-              :poshandler ,poshandler
-              :font-height ,font-height
-              :font-width ,font-width
-              :posframe ,posframe
-              :posframe-width ,(frame-pixel-width posframe)
-              :posframe-height ,(frame-pixel-height posframe)
-              :posframe-buffer ,buffer
-              :parent-frame ,parent-frame
-              :parent-frame-width ,parent-frame-width
-              :parent-frame-height ,parent-frame-height
-              :parent-window ,parent-window
-              :parent-window-top ,parent-window-top
-              :parent-window-left ,parent-window-left
-              :parent-window-width ,parent-window-width
-              :parent-window-height ,parent-window-height
-              :mode-line-height ,mode-line-height
-              :minibuffer-height ,minibuffer-height
-              :header-line-height ,header-line-height
-              :tab-line-height ,tab-line-height
-              :x-pixel-offset ,x-pixel-offset
-              :y-pixel-offset ,y-pixel-offset))
+            ;; All poshandlers will get info from this plist.
+            (list :position position
+                  :position-info position-info
+                  :poshandler poshandler
+                  :font-height font-height
+                  :font-width font-width
+                  :posframe posframe
+                  :posframe-width (frame-pixel-width posframe)
+                  :posframe-height (frame-pixel-height posframe)
+                  :posframe-buffer buffer
+                  :parent-frame parent-frame
+                  :parent-frame-width parent-frame-width
+                  :parent-frame-height parent-frame-height
+                  :parent-window parent-window
+                  :parent-window-top parent-window-top
+                  :parent-window-left parent-window-left
+                  :parent-window-width parent-window-width
+                  :parent-window-height parent-window-height
+                  :mode-line-height mode-line-height
+                  :minibuffer-height minibuffer-height
+                  :header-line-height header-line-height
+                  :tab-line-height tab-line-height
+                  :x-pixel-offset x-pixel-offset
+                  :y-pixel-offset y-pixel-offset))
            parent-frame-width parent-frame-height)
 
           ;; Delay hide posframe when timeout is a number.
