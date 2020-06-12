@@ -98,9 +98,8 @@
         "rg --color=always --colors 'match:bg:yellow' --colors 'match:fg:black' --smart-case --no-heading --line-number %s %s %s"
         helm-grep-ag-pipe-cmd-switches
         '("--colors 'match:fg:black'" "--colors 'match:bg:yellow'"))
-  (when (fboundp 'helm-ag)
-    (require 'helm-ag)
-    (setq helm-ag-base-command "rg --smart-case --no-heading"
+  (with-eval-after-load 'helm-ag
+    (setq helm-ag-base-command "rg --smart-case --no-heading --line-number"
           helm-ag-success-exit-status '(0 2))))
 
 (if (null (fboundp 'helm-swoop))
