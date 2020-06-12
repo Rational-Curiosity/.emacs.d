@@ -15,7 +15,8 @@
 
 (message "Importing flymake-config")
 
-(setq flymake-no-changes-timeout nil)
+(setq flymake-no-changes-timeout ;; If nil, never start checking buffer automatically like this.
+      2.0)
 
 ;; thanks to: stackoverflow.com/questions/6110691/is-there-a-way-to-make-flymake-to-compile-only-when-i-save
 ;; (defun flymake-after-change-function (start stop len)
@@ -25,7 +26,8 @@
 ;;   )
 
 (when (require 'flymake-diagnostic-at-point nil 'noerror)
-  (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode))
+  (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode)
+  (setq flymake-diagnostic-at-point-timer-delay 2.0))
 
 ;; custom modeline
 (when (bug-check-function-bytecode
@@ -148,6 +150,7 @@
 (define-key flymake-mode-map (kbd "M-g M-n") #'flymake-goto-next-error)
 (define-key flymake-mode-map (kbd "M-g p") #'flymake-goto-prev-error)
 (define-key flymake-mode-map (kbd "M-g M-p") #'flymake-goto-prev-error)
+(define-key flymake-mode-map (kbd "C-c ! c") #'flymake-start)
 
 
 (provide 'flymake-config)
