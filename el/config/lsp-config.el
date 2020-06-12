@@ -14,8 +14,11 @@
 ;;; Code:
 
 (message "Importing lsp-config")
-(add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
 
+(add-hook 'lsp-after-open-hook #'lsp-enable-imenu)
+(add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
+(when (fboundp 'lsp-origami-try-enable)
+  (add-hook 'lsp-after-open-hook #'lsp-origami-try-enable))
 
 (set-face-attribute 'lsp-face-highlight-read nil
                     :inherit 'unspecified
@@ -39,18 +42,13 @@
                             workspaces))
       (propertize "[Disconnected]" 'face 'warning))))
 
-(require 'lsp-ui)
-(when (and (featurep 'company)
-           (load "company-lsp" t))
-  (push 'company-lsp company-backends))
-
 (require 'lsp-pyls)
 (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
       ;; performance
       gc-cons-threshold 100000000
       read-process-output-max (* 3 1024 1024)
       lsp-prefer-capf t
-      lsp-idle-delay 0.5
+      lsp-idle-delay 2.0
       lsp-enable-file-watchers nil
       lsp-file-watch-threshold 500
       ;; lsp log
@@ -62,24 +60,54 @@
       lsp-diagnostic-package :flymake
       lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                    lsp-file-watch-ignored)
+      ;; signature
+      lsp-signature-render-documentation nil
       lsp-signature-auto-activate nil ;; <xor signature>
-      ;; lsp-ui-doc
-      lsp-ui-doc-enable nil
-      lsp-ui-doc-include-signature t  ;; <xor signature>
-      lsp-ui-doc-position 'top
-      lsp-ui-doc-alignment 'frame
-      lsp-ui-doc-max-height 10
-      lsp-ui-doc-max-width 80
-      ;; lsp-ui-sideline
-      lsp-ui-sideline-delay 0.5
-      lsp-ui-sideline-show-hover t
-      ;; not working with flymake
-      lsp-ui-sideline-show-diagnostics nil
       ;; lsp-pyls
       ;; Fix https://github.com/palantir/python-language-server/issues/771
       ;; changing autopep8 for yapf
       lsp-pyls-plugins-autopep8-enabled nil
       lsp-pyls-plugins-yapf-enabled t)
+
+
+;; [ lsp-ui
+(when (require 'lsp-ui nil 'noerror)
+  (add-hook 'lsp-mode-hook #'lsp-ui-mode)
+
+  (setq lsp-ui-doc-enable nil
+        lsp-ui-doc-include-signature t  ;; <xor signature>
+        lsp-ui-doc-position 'top
+        lsp-ui-doc-alignment 'frame
+        lsp-ui-doc-max-height 10
+        lsp-ui-doc-max-width 80
+        ;; lsp-ui-sideline
+        lsp-ui-sideline-delay 0.5
+        lsp-ui-sideline-show-hover t
+        ;; not working with flymake
+        lsp-ui-sideline-show-diagnostics nil)
+
+  (defun lsp-ui-or-xref-find-definitions ()
+    (interactive)
+    (condition-case nil
+        (call-interactively 'lsp-ui-peek-find-definitions)
+      (error (call-interactively 'xref-find-definitions))))
+
+  (defun lsp-ui-or-xref-find-references ()
+    (interactive)
+    (condition-case nil
+        (call-interactively 'lsp-ui-peek-find-references)
+      (error (call-interactively 'xref-find-references))))
+
+  (define-key lsp-ui-mode-map [remap xref-find-definitions] 'lsp-ui-or-xref-find-definitions)
+  (define-key lsp-ui-mode-map [remap xref-find-references] 'lsp-ui-or-xref-find-references))
+;; ]
+
+;; [ company-lsp
+(when (and (featurep 'company)
+           (load "company-lsp" t))
+  (push 'company-lsp company-backends)
+  (setq company-lsp-cache-candidates 'auto))
+;; ]
 
 ;; [ dap-mode
 (when (locate-library "dap-mode")
@@ -97,21 +125,6 @@
   (define-key lsp-command-map (kbd "d d") #'dap-debug)
   (define-key lsp-command-map (kbd "d t") #'dap-tooltip-mode))
 ;; ]
-
-(defun lsp-ui-or-xref-find-definitions ()
-  (interactive)
-  (condition-case nil
-      (call-interactively 'lsp-ui-peek-find-definitions)
-    (error (call-interactively 'xref-find-definitions))))
-
-(defun lsp-ui-or-xref-find-references ()
-  (interactive)
-  (condition-case nil
-      (call-interactively 'lsp-ui-peek-find-references)
-    (error (call-interactively 'xref-find-references))))
-
-(define-key lsp-ui-mode-map [remap xref-find-definitions] 'lsp-ui-or-xref-find-definitions)
-(define-key lsp-ui-mode-map [remap xref-find-references] 'lsp-ui-or-xref-find-references)
 
 
 (provide 'lsp-config)
