@@ -43,6 +43,13 @@
           (error nil))))
   "EXWM default monitor order.")
 
+(defvar exwm-default-minibuffer-number
+  (let ((number (getenv "EXWM_MINIBUFFER_NUMBER")))
+    (if number
+        (string-to-number number)
+      0))
+  "EXWM default minibuffer workspace number.")
+
 (defvar exwm-default-wallpaper-folder "~/Pictures/backgrounds/"
   "EXWM default wallpaper folder.")
 
@@ -246,6 +253,15 @@
                              (list (cl-incf monitor-number) name))))
               names)
         (setq exwm-workspace-number (1+ monitor-number))))))
+
+(defun exwm-update-minibuffer-monitor ()
+  (interactive)
+  (if (and (< 0 exwm-default-minibuffer-number)
+           (> exwm-workspace-number exwm-default-minibuffer-number))
+      (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
+                           (exwm-workspace--workspace-from-frame-or-index
+                            exwm-default-minibuffer-number))))
+(advice-add #'exwm-randr--init :after 'exwm-update-minibuffer-monitor)
 
 (defun exwm-screen-count ()
   (let ((monitor-number 0))
