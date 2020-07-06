@@ -42,7 +42,9 @@
                       nil t)
                      utf8-hash-table))))
 
-(setq echo-keystrokes 0.5
+(setq jit-lock-defer-time 0.0
+      jit-lock-stealth-time 2.0
+      echo-keystrokes 0.5
       column-number-mode t
       isearch-lazy-count t
       isearch-allow-scroll 'unlimited
@@ -310,10 +312,13 @@ prompt the user for a coding system."
               tab-width 4
               sh-indent-for-case-label 0
               sh-indent-for-case-alt '+)
+;; long lines
+(global-so-long-mode 1)
 ;; Line numbers
 (require 'display-line-numbers)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
-(setq display-line-numbers-width-start t
+(setq line-number-display-limit-width 500
+      display-line-numbers-width-start t
       display-line-numbers-grow-only t
       display-line-numbers-type 'visual
       ;; styles
@@ -330,7 +335,8 @@ prompt the user for a coding system."
     (with-current-buffer display-line-type-selected-last-buffer
       (setq display-line-numbers t))
     (setq display-line-type-selected-last-buffer nil))
-  (when display-line-numbers-mode
+  (when (and display-line-numbers-mode
+             (derived-mode-p 'prog-mode))
     (unless (eq display-line-numbers 'visual)
           (setq display-line-numbers 'visual))
     (setq display-line-type-selected-last-buffer (current-buffer))))
@@ -344,10 +350,10 @@ prompt the user for a coding system."
 (c-set-offset 'access-label '/)
 ;; Show new line and tab characters
 (with-eval-after-load 'whitespace
-  (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) "")
-  (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) "")
-  (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) "")
-  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) ""))
+  (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) nil)
+  (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) nil)
+  (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) nil)
+  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) nil))
 
 (define-key indent-rigidly-map (kbd "M-f") #'indent-rigidly-right-to-tab-stop)
 (define-key indent-rigidly-map (kbd "M-b") #'indent-rigidly-left-to-tab-stop)
@@ -374,6 +380,8 @@ prompt the user for a coding system."
          '((newline-mark 10   [8629 10] [36 10])
            (tab-mark     9    [8676 32 32 32 32 32 8677 32] [92 9])))
     (setq tab-width 8))
+   ((derived-mode-p 'json-mode)
+    (setq tab-width 2))
    (t
     (setq tab-width 4)))
   (whitespace-mode))
