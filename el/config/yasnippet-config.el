@@ -63,5 +63,6 @@ MAKE-FIELDS - t or nil"
 (yasnippet-snippets-initialize)
 (yas-reload-all)
 
+
 (provide 'yasnippet-config)
 ;;; yasnippet-config.el ends here

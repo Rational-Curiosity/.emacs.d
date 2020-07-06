@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;; Emacs buind from source
-;; `./configure --with-cairo --with-x-toolkit=no CFLAGS='-O3'`
+;; `./configure --with-json --with-cairo --with-x-toolkit=no CFLAGS='-O3'`
 
 ;; Compile .el files with
 ;; `emacs -batch -f batch-byte-compile emacs.el`
@@ -40,7 +40,152 @@
  '(custom-safe-themes
    '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   '(ace-window anaphora async auctex avy bash-completion bookmark+ bui cmake-font-lock cmake-mode company company-lsp company-posframe cyphejor dap-mode dash dash-functional deferred docker docker-tramp edit-server ein elfeed ellocate emms epl exec-path-from-shell expand-region exwm f figlet flycheck flyspell-correct flyspell-correct-helm free-keys git-commit gnuplot gnuplot-mode go-mode graphviz-dot-mode guess-language haskell-mode helm helm-ag helm-company helm-core helm-etags-plus helm-exwm helm-fd helm-flycheck helm-flyspell helm-org helm-org-rifle helm-projectile helm-tramp helm-unicode helm-xref hide-comnt highlight hl-line+ hl-todo ht htmlize hydra imenu-anywhere json-mode json-reformat json-snatcher let-alist link-hint lsp-java lsp-mode lsp-origami lsp-treemacs lua-mode lv magit magit-todos map markdown-mode markdown-mode+ memoize mini-frame minimap multiple-cursors ob-async org org-agenda-property org-brain org-noter org-plus-contrib org-ql org-super-agenda org-superstar origami ov ox-gfm ox-mediawiki ox-rst ox-twbs pcre2el peg pfuture php-mode pkg-info plantuml-mode poly-org polymode popup posframe projectile protobuf-mode psession rainbow-delimiters rebox2 request request-deferred rust-mode s smartparens smartscan spinner stickyfunc-enhance string-inflection swap-regions tablist thingatpt+ transient transpose-frame treemacs ts undo-propose vdiff vimish-fold virtualenvwrapper vlf web-mode websocket which-key with-editor xahk-mode xelb xterm-color yasnippet yasnippet-snippets))
+   '(ace-window
+     anaphora
+     async
+     auctex
+     avy
+     bash-completion
+     bookmark+
+     bui
+     cmake-font-lock
+     cmake-mode
+     company
+     company-lsp
+     company-posframe
+     cyphejor
+     dap-mode
+     dash
+     dash-functional
+     deferred
+     docker
+     docker-tramp
+     edit-server
+     ein
+     elfeed
+     ellocate
+     emms
+     epl
+     exec-path-from-shell
+     expand-region
+     exwm
+     f
+     figlet
+     flycheck
+     flyspell-correct
+     flyspell-correct-helm
+     free-keys
+     git-commit
+     gnuplot
+     gnuplot-mode
+     go-mode
+     graphviz-dot-mode
+     guess-language
+     haskell-mode
+     helm
+     helm-ag
+     helm-company
+     helm-core
+     helm-etags-plus
+     helm-exwm
+     helm-fd
+     helm-flycheck
+     helm-flyspell
+     helm-org
+     helm-org-rifle
+     helm-projectile
+     helm-tramp
+     helm-unicode
+     helm-xref
+     hide-comnt
+     highlight
+     hl-line+
+     hl-todo
+     ht
+     htmlize
+     hydra
+     imenu-anywhere
+     json-mode
+     json-reformat
+     json-snatcher
+     let-alist
+     link-hint
+     lsp-java
+     lsp-mode
+     lsp-origami
+     lsp-treemacs
+     lua-mode
+     lv
+     magit
+     magit-todos
+     map
+     markdown-mode
+     markdown-mode+
+     memoize
+     mini-frame
+     minimap
+     multiple-cursors
+     ob-async
+     org
+     org-agenda-property
+     org-brain
+     org-noter
+     org-plus-contrib
+     org-ql
+     org-super-agenda
+     org-superstar
+     origami
+     ov
+     ox-gfm
+     ox-mediawiki
+     ox-rst
+     ox-twbs
+     pcre2el
+     peg
+     pfuture
+     php-mode
+     pkg-info
+     plantuml-mode
+     poly-org
+     polymode
+     popup
+     posframe
+     projectile
+     protobuf-mode
+     psession
+     rainbow-delimiters
+     rebox2
+     request
+     request-deferred
+     rustic
+     s
+     smartparens
+     smartscan
+     spinner
+     stickyfunc-enhance
+     string-inflection
+     swap-regions
+     tablist
+     thingatpt+
+     transient
+     transpose-frame
+     treemacs
+     ts
+     undo-propose
+     vdiff
+     vimish-fold
+     virtualenvwrapper
+     vlf
+     web-mode
+     websocket
+     which-key
+     with-editor
+     xahk-mode
+     xelb
+     xterm-color
+     yaml-mode
+     yasnippet
+     yasnippet-snippets))
  '(safe-local-variable-values
    '((eval set 'org-agenda-files
            (list
@@ -309,7 +454,8 @@
 ;; ]
 
 ;; [ rust
-(add-hook 'rust-mode-hook #'lsp-deferred)
+;; rustic has automatic configuration
+;; (add-hook 'rust-mode-hook #'lsp-deferred)
 ;; ]
 
 ;; [ lua-mode
@@ -376,6 +522,11 @@
 (with-eval-after-load 'web-mode
   (require 'web-config))
 ;; ]
+
+;; yaml
+(add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
+(with-eval-after-load 'yaml-mode
+  (define-key yaml-mode-map "\C-m" 'newline-and-indent))
 
 ;; loads only when necessary
 (with-eval-after-load 'rst
