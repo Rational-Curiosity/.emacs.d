@@ -52,8 +52,9 @@
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Bash Completion ;;
 ;;;;;;;;;;;;;;;;;;;;;
-(require 'bash-completion)
-(bash-completion-setup)
+;; Conflict with helm
+;; (require 'bash-completion)
+;; (bash-completion-setup)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Variables de entorno ;;
