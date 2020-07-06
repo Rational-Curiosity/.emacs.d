@@ -15,7 +15,7 @@
 ;;; Code:
 
 ;; (require 'mini-modeline)                                       ;; + with mini-modeline
-;; (setcar (cdr (assq 'mini-modeline-mode minor-mode-alist)) "")  ;; + with mini-modeline
+;; (setcar (cdr (assq 'mini-modeline-mode minor-mode-alist)) nil)  ;; + with mini-modeline
 
 ;;;;;;;;;;;
 ;; Faces ;;
@@ -118,7 +118,8 @@
           ("elfeed"      "📰")
           ("search"      "🔍")
           ("show"        "✓")
-          ("nim"         "ℵ")))
+          ("nim"         "ℵ")
+          ("yaml"        "Ⲩ")))
   (cyphejor-mode))
 (with-eval-after-load 'abbrev
   (setcar (cdr (assq 'abbrev-mode minor-mode-alist)) (propertize "A"

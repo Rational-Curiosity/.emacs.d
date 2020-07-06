@@ -17,7 +17,7 @@
 ;;; Code:
 
 (message "Importing smartparens-custom-config")
-(setcar (cdr (assq 'smartparens-mode minor-mode-alist)) "")
+(setcar (cdr (assq 'smartparens-mode minor-mode-alist)) nil)
 
 (require 'smartparens-org)
 (setq ;;sp-autoinsert-pair nil

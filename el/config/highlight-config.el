@@ -5,7 +5,7 @@
 ;;; Code:
 (require 'highlight)
 (require 'hi-lock)
-(setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) "")
+(setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) nil)
 
 (setq hi-lock-highlight-range 2000000)
 ;;;;;;;;;;;
