@@ -57,7 +57,7 @@
       ;; lsp
       lsp-keymap-prefix "s-l"
       ;; flycheck option bug https://github.com/emacs-lsp/lsp-ui/issues/347
-      lsp-diagnostic-package :flymake
+      lsp-diagnostic-package :flycheck
       lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                    lsp-file-watch-ignored)
       ;; signature
@@ -71,35 +71,52 @@
 
 
 ;; [ lsp-ui
-(when (require 'lsp-ui nil 'noerror)
-  (add-hook 'lsp-mode-hook #'lsp-ui-mode)
+(if (require 'lsp-ui nil 'noerror)
+    (progn (add-hook 'lsp-mode-hook #'lsp-ui-mode)
 
-  (setq lsp-ui-doc-enable nil
-        lsp-ui-doc-include-signature t  ;; <xor signature>
-        lsp-ui-doc-position 'top
-        lsp-ui-doc-alignment 'frame
-        lsp-ui-doc-max-height 10
-        lsp-ui-doc-max-width 80
-        ;; lsp-ui-sideline
-        lsp-ui-sideline-delay 0.5
-        lsp-ui-sideline-show-hover t
-        ;; not working with flymake
-        lsp-ui-sideline-show-diagnostics nil)
+           (setq lsp-ui-doc-enable nil
+                 lsp-ui-doc-include-signature t  ;; <xor signature>
+                 lsp-ui-doc-position 'top
+                 lsp-ui-doc-alignment 'frame
+                 lsp-ui-doc-max-height 10
+                 lsp-ui-doc-max-width 80
+                 ;; lsp-ui-sideline
+                 lsp-ui-sideline-delay 0.5
+                 lsp-ui-sideline-show-hover t)
+           (when (or (eq lsp-diagnostic-package :flymake)
+                     (and (eq lsp-diagnostic-package :auto)
+                          (not (locate-library "flycheck"))))
+             ;; not working with flymake
+             (setq lsp-ui-sideline-show-diagnostics nil))
 
-  (defun lsp-ui-or-xref-find-definitions ()
+           (defun lsp-ui-or-xref-find-definitions ()
+             (interactive)
+             (condition-case nil
+                 (call-interactively 'lsp-ui-peek-find-definitions)
+               (error (call-interactively 'xref-find-definitions))))
+
+           (defun lsp-ui-or-xref-find-references ()
+             (interactive)
+             (condition-case nil
+                 (call-interactively 'lsp-ui-peek-find-references)
+               (error (call-interactively 'xref-find-references))))
+
+           (define-key lsp-ui-mode-map [remap xref-find-definitions] 'lsp-ui-or-xref-find-definitions)
+           (define-key lsp-ui-mode-map [remap xref-find-references] 'lsp-ui-or-xref-find-references))
+  (defun lsp-or-xref-find-definition ()
     (interactive)
     (condition-case nil
-        (call-interactively 'lsp-ui-peek-find-definitions)
+        (call-interactively 'lsp-find-definition)
       (error (call-interactively 'xref-find-definitions))))
 
-  (defun lsp-ui-or-xref-find-references ()
+  (defun lsp-or-xref-find-references ()
     (interactive)
     (condition-case nil
-        (call-interactively 'lsp-ui-peek-find-references)
+        (call-interactively 'lsp-find-references)
       (error (call-interactively 'xref-find-references))))
 
-  (define-key lsp-ui-mode-map [remap xref-find-definitions] 'lsp-ui-or-xref-find-definitions)
-  (define-key lsp-ui-mode-map [remap xref-find-references] 'lsp-ui-or-xref-find-references))
+  (define-key lsp-mode-map [remap xref-find-definitions] 'lsp-or-xref-find-definition)
+  (define-key lsp-mode-map [remap xref-find-references] 'lsp-or-xref-find-references))
 ;; ]
 
 ;; [ company-lsp
