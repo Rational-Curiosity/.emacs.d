@@ -98,11 +98,24 @@
         "rg --color=always --colors 'match:bg:yellow' --colors 'match:fg:black' --smart-case --no-heading --line-number %s %s %s"
         helm-grep-ag-pipe-cmd-switches
         '("--colors 'match:fg:black'" "--colors 'match:bg:yellow'"))
-  (with-eval-after-load 'helm-ag
-    (setq helm-ag-base-command "rg --smart-case --no-heading --line-number"
-          helm-ag-success-exit-status '(0 2))))
+  (when (fboundp 'helm-ag)
+    (require 'helm-ag)
+    (setq helm-ag-base-command "rg --color=never --smart-case --no-heading --line-number"
+          helm-ag-success-exit-status '(0 2))
+    (with-eval-after-load 'helm-projectile
+      (when (bug-check-function-bytecode
+             'helm-projectile-ag
+             "xMXGxyODPADIIIM4AMnKIAgiGMnLIAkiGczNzggJzyBBQCPQIwrQAtAFsAUaxhvR0iDPIEAiLIfT1CGH1dYhhVMA1zFPANjFIYjZASEwh4jT2iGH")
+        (defun helm-projectile-ag (&optional options)
+          "Helm version of `projectile-ag'."
+          (interactive (if current-prefix-arg (list (helm-read-string "option: " "" 'helm-ag--extra-options-history))))
+          (if (projectile-project-p)
+              (let ((helm-ag-base-command (concat helm-ag-base-command " " options))
+                    (current-prefix-arg nil))
+                (helm-do-ag (projectile-project-root) (car (projectile-parse-dirconfig-file))))
+            (error "You're not in a project")))))))
 
-(if (null (fboundp 'helm-swoop))
+ (if (null (fboundp 'helm-swoop))
     (progn
       (global-set-key (kbd "M-i") 'helm-occur)
       (global-set-key (kbd "C-x M-i") 'helm-occur-from-isearch)
