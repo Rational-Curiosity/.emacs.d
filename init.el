@@ -146,7 +146,6 @@
      php-mode
      pkg-info
      plantuml-mode
-     poly-org
      polymode
      popup
      posframe

@@ -10,6 +10,7 @@
 ;; sudo apt install fd-find
 ;; sudo apt install ripgrep
 ;;; Code:
+(customize-set-variable 'helm-ff-keep-cached-candidates nil)
 (setq helm-completion-mode-string ""
       helm-split-window-inside-p t
       helm-always-two-windows nil
