@@ -43,6 +43,16 @@
           (error nil))))
   "EXWM default monitor order.")
 
+;; example: export EXWM_MONITOR_RESOLUTION="HDMI-1 1280x720 DP-1 800x600"
+(defvar exwm-default-monitor-resolution
+  (let ((monitor-resolution (getenv "EXWM_MONITOR_RESOLUTION")))
+    (if monitor-resolution
+        (condition-case nil
+            (split-string monitor-resolution  " ")
+          (error nil))))
+  "EXWM default monitor resolution.")
+
+;; example: export EXWM_MINIBUFFER_NUMBER="1"
 (defvar exwm-default-minibuffer-number
   (let ((number (getenv "EXWM_MINIBUFFER_NUMBER")))
     (if number
@@ -189,6 +199,11 @@
           (puthash monitor-name monitor monitors))))
     monitors))
 
+(defun exwm-get-default-monitor-resolution (monitor)
+  (let ((pos (cl-position monitor exwm-default-monitor-resolution :test 'string-equal)))
+    (if pos
+        (nth (1+ pos) exwm-default-monitor-resolution))))
+
 (require 'crm)
 (defun exwm-update-screens ()
   (interactive)
@@ -217,7 +232,9 @@
             (lambda (name)
               (string-to-number
                (nth 1 (split-string
-                       (gethash 'max (gethash name monitors)) "x")))))
+                       (or
+                        (exwm-get-default-monitor-resolution name)
+                        (gethash 'max (gethash name monitors))) "x")))))
            (ymax
             (apply 'max
                    (mapcar
@@ -229,18 +246,24 @@
              (mapcar
               (lambda (name)
                 (let* ((monitor (gethash name monitors))
-                       (max-resolution (gethash 'max monitor)))
+                       (resolution
+                        (or
+                         (exwm-get-default-monitor-resolution name)
+                         (gethash 'max monitor))))
                   (prog1
                       (list "--output" name
-                            "--mode" max-resolution
+                            "--mode" resolution
                             "--pos" (concat (number-to-string posx)
                                             "x"
                                             (number-to-string
                                              (- ymax (funcall gety-lambda name))))
                             "--rotate" "normal")
-                    (setq posx (+ posx (string-to-number
-                                        (nth 0 (split-string
-                                                (gethash 'max monitor) "x"))))))))
+                    (setq posx (+ posx
+                                  (string-to-number
+                                   (nth 0 (split-string
+                                           (or
+                                            (exwm-get-default-monitor-resolution name)
+                                            (gethash 'max monitor)) "x"))))))))
               names))))
       (apply 'call-process "xrandr" nil nil nil args)
       (if exwm-randr-workspace-monitor-plist
