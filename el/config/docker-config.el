@@ -24,7 +24,7 @@
    ("-s" "Since" "--since " read-string)
    ("-t" "Tail" "--tail " read-string)
    ("-u" "Until" "--until " read-string)
-   ("-t" "Timestamps" "--timestamps")]
+   ("-T" "Timestamps" "--timestamps")]
   [:description docker-utils-generic-actions-heading
                 ("L" "Logs" docker-utils-generic-action-async)])
 
