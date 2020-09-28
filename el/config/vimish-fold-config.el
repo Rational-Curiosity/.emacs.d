@@ -224,6 +224,16 @@
           (setq docstring-delimiter "[^\n]*\"\"\"")))
   (not (looking-at-p docstring-delimiter))
   nil t)
+
+(deffold fold-python-pytest (times threshold)
+  (interactive (list (read-number "Times: " -1)
+                     (read-number "Threshold: " fold-threshold)))
+  nil
+  (looking-at-p "\\(-\\{10,\\}\\|_\\{10,\\}\\) [_A-Z][_a-zA-Z0-9\\., ]* \\(-\\{10,\\}\\|_\\{10,\\}\\)")
+  (not
+   (looking-at-p
+    "\\(=\\{10,\\}\\|-\\{10,\\}\\|_\\{10,\\}\\) [_A-Z0-9][_a-zA-Z0-9\\., ]* \\(=\\{10,\\}\\|-\\{10,\\}\\|_\\{10,\\}\\)"))
+  t)
 ;; ]
 
 ;; [ php

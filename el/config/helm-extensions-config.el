@@ -73,7 +73,9 @@
 
 (with-eval-after-load 'helm-fd
   (unless helm-fd-bin
-    (setq helm-fd-bin (executable-find "fdfind"))))
+    (setq helm-fd-bin (or (executable-find "fdfind")
+                          (executable-find "fd-find")
+                          (executable-find "fd")))))
 
 (with-eval-after-load 'projectile
   (require 'helm-projectile)

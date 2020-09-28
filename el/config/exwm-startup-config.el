@@ -53,10 +53,14 @@
   "EXWM default monitor resolution.")
 
 ;; example: export EXWM_MINIBUFFER_NUMBER="1"
-(defvar exwm-default-minibuffer-number
-  (let ((number (getenv "EXWM_MINIBUFFER_NUMBER")))
-    (if number
-        (string-to-number number)
+;; example: export EXWM_MINIBUFFER_NUMBER="eDP-1"
+(defvar exwm-default-minibuffer-workspace-or-screen
+  (let ((workspace-or-screen
+         (getenv "EXWM_MINIBUFFER_WORKSPACE_OR_SCREEN")))
+    (if workspace-or-screen
+        (or (cl-parse-integer
+             workspace-or-screen :junk-allowed t)
+            workspace-or-screen)
       0))
   "EXWM default minibuffer workspace number.")
 
@@ -279,11 +283,24 @@
 
 (defun exwm-update-minibuffer-monitor ()
   (interactive)
-  (if (and (< 0 exwm-default-minibuffer-number)
-           (> exwm-workspace-number exwm-default-minibuffer-number))
-      (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
-                           (exwm-workspace--workspace-from-frame-or-index
-                            exwm-default-minibuffer-number))))
+  (cond
+   ((and (numberp exwm-default-minibuffer-workspace-or-screen)
+         (< 0 exwm-default-minibuffer-workspace-or-screen)
+         (> exwm-workspace-number exwm-default-minibuffer-workspace-or-screen))
+    (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
+                         (exwm-workspace--workspace-from-frame-or-index
+                          exwm-default-minibuffer-workspace-or-screen)))
+   ((and
+     (stringp exwm-default-minibuffer-workspace-or-screen)
+     (let ((pos (cl-position exwm-default-minibuffer-workspace-or-screen
+                             exwm-randr-workspace-monitor-plist
+                             :test 'equal)))
+       (if (and pos (/= pos 0))
+           (progn
+             (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
+                                  (exwm-workspace--workspace-from-frame-or-index
+                                   (nth (1- pos) exwm-randr-workspace-monitor-plist)))
+             t)))))))
 (advice-add #'exwm-randr--init :after 'exwm-update-minibuffer-monitor)
 
 (defun exwm-screen-count ()
@@ -463,6 +480,9 @@
 (with-eval-after-load 'exwm-input
   ;; line-mode prefix keys
   (push ?\M-o exwm-input-prefix-keys)
+  (cl-pushnew 'XF86PowerOff exwm-input-prefix-keys)
+
+  (global-set-key (kbd "<XF86PowerOff>") 'exwm-shutdown)
   ;; Global keybindings can be defined with `exwm-input-global-keys'.
   ;; Here are a few examples:
   (setq exwm-input-global-keys
@@ -509,6 +529,8 @@
           ([?\s-m] . exwm-randr-workspace-move-current)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
+          ;; switch buffer
+          ([?\s-b] . switch-to-buffer)
           ;; Bind lock screen
           (,(kbd "<s-escape>") . exwm-screensaver-lock)
           ;; Screenshot
@@ -659,7 +681,7 @@
       symon-sparkline-width 24
       symon-total-spark-width 12)
 
-(symon-mode)
+(add-hook 'exwm-init-hook 'symon-mode)
 
 ;; Background
 (defvar exwm-timer-random-wallpaper nil
@@ -695,7 +717,7 @@
              program-and-args-list)
     (message "Unable to find `%s' executable." executable))))
 
-(when (load "helm-exwm" nil t)
+(when (load "helm-exwm" t t)
   (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source)
         helm-exwm-source (helm-exwm-build-source)
         helm-mini-default-sources `(helm-exwm-emacs-buffers-source
@@ -730,14 +752,15 @@
   (add-hook 'winum-mode-hook 'exwm-winum-bindings))
 
 ;; minibuffer
-(setq mini-frame-show-parameters
-      '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
-        (border-width . 0) (internal-border-width . 0)
-        (background-color . "black"))
-      mini-frame-ignore-commands '("edebug-eval-expression"
-                                   debugger-eval-expression
-                                   "exwm-workspace-"))
-(mini-frame-mode)
+(when (load "mini-frame" t t)
+  (setq mini-frame-show-parameters
+        '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
+          (border-width . 0) (internal-border-width . 0)
+          (background-color . "black"))
+        mini-frame-ignore-commands '("edebug-eval-expression"
+                                     debugger-eval-expression
+                                     "exwm-workspace-"))
+  (add-hook 'exwm-init-hook 'mini-frame-mode))
 
 (defun common-minibuffer-all-frames ()
   (let ((frame (car (minibuffer-frame-list))))

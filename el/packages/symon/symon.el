@@ -673,6 +673,8 @@ while(1)                                                            \
 (defvar symon--last-frame-width 0)
 
 (defun symon--initialize ()
+  (advice-add #'current-message :around #'symon--current-message-advice)
+  (advice-add #'message :around #'symon--message-advice)
   (unless symon-monitors
     (message "Warning: `symon-monitors' is empty."))
   (let* ((symon-monitors                ; for backward-compatibility
@@ -699,9 +701,7 @@ while(1)                                                            \
     (if (boundp 'after-focus-change-function)
         (add-function :before after-focus-change-function 'symon-clean-echo-area)
       (add-hook 'focus-in-hook 'symon-clean-echo-area)
-      (add-hook 'focus-out-hook 'symon-clean-echo-area))
-    (advice-add #'current-message :around #'symon--current-message-advice)
-    (advice-add #'message :around #'symon--message-advice)))
+      (add-hook 'focus-out-hook 'symon-clean-echo-area))))
 
 (defun symon--cleanup ()
   (remove-hook 'kill-emacs-hook 'symon--cleanup)

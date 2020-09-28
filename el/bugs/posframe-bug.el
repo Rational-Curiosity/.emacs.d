@@ -1,7 +1,7 @@
 (with-eval-after-load 'posframe
   (when (bug-check-function-bytecode
          'posframe-show
-         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUDEBhreIkFACAYcxgYbI4a8AGAIBh3HBhsjCAYeyAYbIwgGH8kGGyMIBiDKBhsjhtwA3wgGIcsGGyOG5wDfCAYizAYbI4byAOAIBiPNBhsjhv0A4AgGJM4GGyMIBiXPBhsjCAYm0AYbIwgGJ9EGGyMIBijSBhsjCAYp0wYbIwgGKtQGGyMIBivVBhsjCAYs1gYbIwgGLdcGGyMIBi7YBhsjCAYv2QYbIwgGMNoGGyMIBjHbBhsjCAYy3AYbIwgGM90GGyMIBjTeBhsj4QY1IeIg4wEh5AIh5QMh5gQhBh6og5UB5wYfBgYigpcBBh7oBgYh6QEh6gIh6yBy7AYKIXGI7QYkISnuIObvICHwBg0h8fIhg8QB8iCCxQHg8xn0cgYQcYgKhN8BBhfxASGD3gGJIIjzEoj1BgohiPYGEdIGIPcGDs4GKM8GKdAGKtEGK9MGK9QGLNoGKNsGKdUGMdYGMtcGM9wGMCYdsgH4BkQGGCKI+QEGKAYnBisGKiWI+gH7xgYt/AYQxwYw/QYP/gYS/wYOgUAA6QYRIYFBAOoGEyGBQgAGJPcGH4FDAAYggUQABiGBRQAGK4FGAAYsgUcABi2BSAAGLoFJAAYvgUoABiqBSwAGK4FMAAYsgU0ABi3MBlHNBlKvLiEGCwYLJIiBTgABBhQiiIFPAAEGEwYpBigGLAYrJgaIgVAAgVEACyHgIoiBUgALIYgqtqmH")
+         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUDEBhreIkFAxAYb3yJBQMQGHOAiQUAIBh7GBh0jhsoAYAgGH8cGHSMIBiDIBh0jCAYhyQYdIwgGIsoGHSOG6gDhCAYjywYdI4b1AOEIBiTMBh0jhgAB4ggGJc0GHSOGCwHiCAYmzgYdIwgGJ88GHSMIBijQBh0jCAYp0QYdIwgGKtIGHSMIBivTBh0jCAYs1AYdIwgGLdUGHSMIBi7WBh0jCAYv1wYdIwgGMNgGHSMIBjHZBh0jCAYy2gYdIwgGM9sGHSMIBjTcBh0jCAY13QYdIwgGNt4GHSMIBjffBh0jCAY44AYdI+MGOSHkIOUBIeYCIecDIegEIQYgqIOxAekGIQYGIoKzAQYg6gYGIesBIewCIe0gcu4GCiFxiO8GJiEp8CDo8SAh8gYNIfP0IYPgAfQgguEB4vUZ9nIGEHGICoT7AQYZ8wEhg/oBiSCI9RKI9wYR0gYi+AYOzgYqzwYr0AYs0QYt0wYt1AYu2gYq2wYr1QYz1gY01wY13AYy3wYxJh+yAfkGCgIiiPoGSAYaIoj7AQYqBikGLQYsJYj8Af3GBi/+BhDHBjL/Bg+BQAAGEoFBAAYOgUIA6wYRIYFDAOwGEyGBRAAGJPgGH4FFAAYggUYABiGBRwAGK4FIAAYsgUkABi2BSgAGLoFLAAYvgUwABiqBTQAGK4FOAAYsgU8ABi3MBlPNBlSvLiEGCwYLJIiBUAABBhYiiIFRAAEGFQYrBioGLgYtJgaIgVIAgVMACyHiIoiBVAALIYjuBhAhgVUAASGBVgALgVcABhYjiIFWAAuBWAADBUIjtgMqtquH")
     (cl-defun posframe-show (buffer-or-name
                              &key
                              string
@@ -30,6 +30,8 @@
                              override-parameters
                              timeout
                              refresh
+                             accept-focus
+                             hidehandler
                              &allow-other-keys)
       "Pop up a posframe and show STRING at POSITION.
 
@@ -86,6 +88,7 @@ The builtin poshandler functions are listed below:
 14. `posframe-poshandler-window-bottom-right-corner'
 15. `posframe-poshandler-point-top-left-corner'
 16. `posframe-poshandler-point-bottom-left-corner'
+17. `posframe-poshandler-point-bottom-left-corner-upward'
 
 This posframe's buffer is BUFFER-OR-NAME, which can be a buffer
 or a name of a (possibly nonexistent) buffer.
@@ -136,6 +139,21 @@ will auto-hide.
 If REFRESH is a number, posframe's frame-size will be re-adjusted
 every REFRESH seconds.
 
+When ACCEPT-FOCUS is non-nil, posframe will accept focus.
+be careful, you may face some bugs when set it to non-nil.
+
+HIDEHANDLER is a function, when it return t, posframe will be
+hide when `post-command-hook' is executed, this function has a
+plist argument:
+
+  (:posframe-buffer xxx
+   :posframe-parent-buffer xxx)
+
+The builtin hidehandler functions are listed below:
+
+1. `posframe-hidehandler-when-buffer-switch'
+
+
 You can use `posframe-delete-all' to delete all posframes."
       (let* ((position (or (funcall posframe-arghandler buffer-or-name :position position) (point)))
              (poshandler (funcall posframe-arghandler buffer-or-name :poshandler poshandler))
@@ -162,6 +180,8 @@ You can use `posframe-delete-all' to delete all posframes."
              (override-parameters (funcall posframe-arghandler buffer-or-name :override-parameters override-parameters))
              (timeout (funcall posframe-arghandler buffer-or-name :timeout timeout))
              (refresh (funcall posframe-arghandler buffer-or-name :refresh refresh))
+             (accept-focus (funcall posframe-arghandler buffer-or-name :accept-focus accept-focus))
+             (hidehandler (funcall posframe-arghandler buffer-or-name :hidehandler hidehandler))
              ;;-----------------------------------------------------
              (buffer (get-buffer-create buffer-or-name))
              (parent-window (selected-window))
@@ -197,9 +217,6 @@ You can use `posframe-delete-all' to delete all posframes."
                 (funcall func)
                 (setq posframe--initialized-p t))))
 
-          ;; Move mouse to (0 . 0)
-          (posframe--mouse-banish parent-frame)
-
           ;; Create posframe
           (setq posframe
                 (posframe--create-posframe
@@ -217,7 +234,11 @@ You can use `posframe-delete-all' to delete all posframes."
                  :respect-header-line respect-header-line
                  :respect-mode-line respect-mode-line
                  :respect-tab-line respect-tab-line
-                 :override-parameters override-parameters))
+                 :override-parameters override-parameters
+                 :accept-focus accept-focus))
+
+          ;; Move mouse to (0 . 0)
+          (posframe--mouse-banish parent-frame posframe)
 
           ;; Insert string into the posframe buffer
           (posframe--insert-string string no-properties)
@@ -270,6 +291,13 @@ You can use `posframe-delete-all' to delete all posframes."
 
           ;; Force raise the current posframe.
           (raise-frame posframe--frame)
+
+          ;; Hide posframe when switch buffer
+          (let* ((parent-buffer (window-buffer parent-window))
+                 (parent-buffer-name (buffer-name parent-buffer)))
+            (set-frame-parameter posframe--frame 'posframe-hidehandler hidehandler)
+            (set-frame-parameter posframe--frame 'posframe-parent-buffer
+                                 (cons parent-buffer-name parent-buffer)))
 
           ;; Return posframe
           posframe)))))

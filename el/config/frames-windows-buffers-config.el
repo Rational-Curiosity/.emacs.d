@@ -479,6 +479,33 @@ ARG non-nil resize window to ARG height."
   (interactive)
   (setq window-autoresize-size nil))
 
+;; [ Marcas laterales
+(defun toggle-continuation-lines ()
+  (interactive)
+  (if (or visual-line-mode
+          (null truncate-lines))
+      (progn
+        (visual-line-mode -1)
+        (toggle-truncate-lines 1))
+    (unless (default-value 'truncate-lines)
+      (toggle-truncate-lines -1))
+    (when global-visual-line-mode
+      (visual-line-mode 1))))
+
+(with-eval-after-load 'fringe
+  (setq-default indicate-buffer-boundaries 'right))
+;; (fringe-mode '(4 . 4))
+(with-eval-after-load 'simple
+  (setcar (cdr (assq 'visual-line-mode minor-mode-alist)) nil)
+  (defface visual-line-fringe-face
+    '((t :foreground "gold1"))
+    "Visual line fringe face" :group 'visual-line)
+  (set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
+  (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
+  (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+  (global-visual-line-mode 1))
+;; ]
+
 ;; winner
 (require 'winner)
 (defhydra hydra-win (:foreign-keys warn)
@@ -512,6 +539,8 @@ ARG non-nil resize window to ARG height."
   ("M-q" nil "quit"))
 (global-set-key (kbd "C-c w m") 'hydra-win/body)
 (global-set-key (kbd "<f9>") 'switch-to-minibuffer-window)
+(global-set-key (kbd "<f7> w") #'toggle-continuation-lines)
+
 
 ;;;;;;;;;;;;
 ;; Frames ;;
@@ -520,12 +549,6 @@ ARG non-nil resize window to ARG height."
 ;;       default-frame-alist (nconc '((minibuffer . nil)) default-frame-alist)
 ;;       minibuffer-auto-raise t)
 ;; (add-hook 'minibuffer-exit-hook 'lower-frame)
-;; [ Marcas laterales
-;; (require 'fringe)
-(with-eval-after-load 'fringe
-  (setq-default indicate-buffer-boundaries 'right))
-;; (fringe-mode '(4 . 4))
-;; ]
 ;; Deshabilita la barra de scroll
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 ;; Deshabilita la barra de iconos

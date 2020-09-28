@@ -188,7 +188,8 @@
       org-ellipsis "▼"
       org-use-speed-commands
       (lambda () (and (looking-at org-outline-regexp)
-                 (looking-back "^\**" (line-beginning-position)))))
+                    (looking-back "^\**" (line-beginning-position))))
+      org-adapt-indentation nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Babel block options ;;
@@ -1438,7 +1439,7 @@ Throw an error when trying to set a property with an invalid name."
 (define-key org-mode-map (kbd "C-c C-v k") #'org-babel-remove-result)
 (define-key org-mode-map (kbd "C-c C-v C-k") #'org-babel-remove-result)
 (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
-(define-key org-mode-map (kbd "C-c C-x C-k") #'org-toggle-link-display)
+(define-key org-mode-map (kbd "<f7> k") #'org-toggle-link-display)
 
 
 (provide 'org-config)

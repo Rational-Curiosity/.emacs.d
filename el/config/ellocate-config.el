@@ -19,11 +19,11 @@
                      (progn
                        (setcdr dir-file
                                (list
-                                (concat ellocate-dir (cdr dir-file))))
+                                (concat ellocate-dir (car (cdr dir-file)))))
                        dir-file)))
-               `((,user-emacs-directory . "home--emacs-db")
-                 ("~/Prog/"             . "home-prog-db")
-                 ("~/var/"              . "home-var-db"))))))
+               `((,user-emacs-directory "home--emacs-db")
+                 ("~/Prog/"             "home-prog-db")
+                 ("~/var/"              "home-var-db"))))))
 
 (global-set-key (kbd "C-x F") #'ellocate)
 

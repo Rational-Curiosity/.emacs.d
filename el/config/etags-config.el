@@ -38,22 +38,28 @@
   (apply orig-fun args))
 (advice-add 'visit-tags-table-buffer :around 'visit-tags-table-buffer-advice)
 
-(defun tags-update-etags-file ()
-  (interactive)
-  (let ((tags-directory (locate-dominating-file default-directory tags-default-file-name)))
-    (if tags-directory
-        (let ((default-directory tags-directory)
-              (extension (file-name-extension (buffer-file-name))))
-          (if (= 0
-                 (shell-command (concat "rm TAGS && find . ! -readable -prune -o -type f -name \"*."
-                                        extension
-                                        "\" -print -exec etags --append {} \\;")))
-              (message "%s file created with .%s files."
-                       (expand-file-name tags-default-file-name tags-directory)
-                       extension)
-            (message "%s file creation failed."
-                     (expand-file-name tags-default-file-name tags-directory))))
-      (message "%s file not found." tags-default-file-name))))
+(defun tags-update-etags-file (extension)
+  (interactive (list (read-string "File extension ."
+                                  nil nil
+                                  (file-name-extension (buffer-file-name)))))
+  (if (stringp extension)
+      (let ((tags-directory (locate-dominating-file default-directory
+                                                    tags-default-file-name)))
+        (if tags-directory
+            (let ((default-directory tags-directory))
+              (if (= 0
+                     (shell-command
+                      (concat
+                       "rm TAGS && find . ! -readable -prune -o -type f -name \"*."
+                       extension
+                       "\" -print -exec etags --append {} \\;")))
+                  (message "%s file created with .%s files."
+                           (expand-file-name tags-default-file-name tags-directory)
+                           extension)
+                (message "%s file creation failed."
+                         (expand-file-name tags-default-file-name tags-directory))))
+          (message "%s file not found." tags-default-file-name)))
+    (message "%s is not a valid extension." extension)))
 
 (defun tags-create-etags-file (directory)
   (interactive "DCreate etags file in path: ")
@@ -69,25 +75,37 @@
             (message "%s file created with .%s files." tags-path extension)
           (message "%s file creation failed." tags-path))))))
 
+(defun etags-xref-find-advice (orig-fun &rest args)
+  (condition-case nil
+      (apply orig-fun args)
+    (error
+     (let ((xref-backend-functions '(etags--xref-backend)))
+       (call-interactively orig-fun)))))
+
+(advice-add 'xref-find-apropos :around 'etags-xref-find-advice)
+(advice-add 'xref-find-references :around 'etags-xref-find-advice)
+
+(advice-add 'xref-find-definitions :around 'etags-xref-find-advice)
+(advice-add 'xref-find-definitions-other-frame :around 'etags-xref-find-advice)
+(advice-add 'xref-find-definitions-other-window :around 'etags-xref-find-advice)
+
+
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
 (defhydra hydra-xref (:foreign-keys run :hint nil)
   ("M-," #'xref-pop-marker-stack "pop")
   ("M-'" #'xref-find-references "ref")
-  ("M-ç" #'xref-find-apropos "apropos")
+  ("M-a" #'xref-find-apropos "apropos")
   ("M-." #'xref-find-definitions "def")
-  ("M--" #'xref-find-definitions-other-window "def win")
-  ("M-+" #'xref-find-definitions-other-frame "def frame")
+  ("M-W" #'xref-find-definitions-other-window "def win")
+  ("M-F" #'xref-find-definitions-other-frame "def frame")
   ("M-s" #'tags-search "search")
   ("M-t" #'xref-query-replace-in-results "repl results")
   ("M-r" #'tags-query-replace "repl")
-  ("M-c" #'tags-loop-continue "cont")
-  ("M-f" #'find-tag "find")
-  ("M-w" #'find-tag-other-window "find win")
-  ("M-F" #'find-tag-other-frame "find frame")
+  ("M-c" #'fileloop-continue "cont")
   ("M-p" #'pop-tag-mark "pop tag")
-  ("M-a" #'tags-apropos "apropos tag")
   ("M-l" #'list-tags "list")
   ("M-q" nil "quit"))
 

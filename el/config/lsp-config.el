@@ -47,27 +47,32 @@
       ;; performance
       gc-cons-threshold 100000000
       read-process-output-max (* 3 1024 1024)
-      lsp-prefer-capf t
+      lsp-completion-provider :capf
       lsp-idle-delay 2.0
       lsp-enable-file-watchers nil
       lsp-file-watch-threshold 500
+      ;; snippet is slow
+      lsp-enable-snippet nil
       ;; lsp log
       lsp-log-io nil    ;; `(lsp-workspace-show-log)' Display the log buffer
       lsp-log-max 1000  ;; Max lines in the log buffer
       ;; lsp
       lsp-keymap-prefix "s-l"
       ;; flycheck option bug https://github.com/emacs-lsp/lsp-ui/issues/347
-      lsp-diagnostic-package :flycheck
+      lsp-diagnostics-provider :flymake
+      lsp-modeline-code-actions-enable nil
+      lsp-modeline-diagnostics-enable nil
       lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                    lsp-file-watch-ignored)
       ;; signature
       lsp-signature-render-documentation nil
-      lsp-signature-auto-activate nil ;; <xor signature>
       ;; lsp-pyls
-      ;; Fix https://github.com/palantir/python-language-server/issues/771
-      ;; changing autopep8 for yapf
+      ;; [ Fix https://github.com/palantir/python-language-server/issues/771
+      ;;   changing autopep8 for yapf
       lsp-pyls-plugins-autopep8-enabled nil
-      lsp-pyls-plugins-yapf-enabled t)
+      lsp-pyls-plugins-yapf-enabled t
+      ;; ]
+      )
 
 
 ;; [ lsp-ui
@@ -75,6 +80,7 @@
     (progn (add-hook 'lsp-mode-hook #'lsp-ui-mode)
 
            (setq lsp-ui-doc-enable nil
+                 lsp-signature-auto-activate nil ;; <xor signature>
                  lsp-ui-doc-include-signature t  ;; <xor signature>
                  lsp-ui-doc-position 'top
                  lsp-ui-doc-alignment 'frame
@@ -83,47 +89,64 @@
                  ;; lsp-ui-sideline
                  lsp-ui-sideline-delay 0.5
                  lsp-ui-sideline-show-hover t)
-           (when (or (eq lsp-diagnostic-package :flymake)
-                     (and (eq lsp-diagnostic-package :auto)
+           (when (or (eq lsp-diagnostics-provider :flymake)
+                     (and (eq lsp-diagnostics-provider :auto)
                           (not (locate-library "flycheck"))))
              ;; not working with flymake
              (setq lsp-ui-sideline-show-diagnostics nil))
 
            (defun lsp-ui-or-xref-find-definitions ()
              (interactive)
-             (condition-case nil
-                 (call-interactively 'lsp-ui-peek-find-definitions)
-               (error (call-interactively 'xref-find-definitions))))
+             (let (result)
+               (condition-case nil
+                   (setq result (call-interactively 'lsp-ui-peek-find-definitions))
+                 (error (call-interactively 'xref-find-definitions)))
+               (if (and (stringp result)
+                        (string-equal "Not found" (substring result 0 9)))
+                   (call-interactively 'xref-find-definitions))))
 
            (defun lsp-ui-or-xref-find-references ()
              (interactive)
-             (condition-case nil
-                 (call-interactively 'lsp-ui-peek-find-references)
-               (error (call-interactively 'xref-find-references))))
+             (let (result)
+               (condition-case nil
+                   (setq result (call-interactively 'lsp-ui-peek-find-references))
+                 (error (call-interactively 'xref-find-references)))
+               (if (and (stringp result)
+                        (string-equal "Not found" (substring result 0 9)))
+                   (call-interactively 'xref-find-references))))
 
            (define-key lsp-ui-mode-map [remap xref-find-definitions] 'lsp-ui-or-xref-find-definitions)
            (define-key lsp-ui-mode-map [remap xref-find-references] 'lsp-ui-or-xref-find-references))
+
   (defun lsp-or-xref-find-definition ()
     (interactive)
-    (condition-case nil
-        (call-interactively 'lsp-find-definition)
-      (error (call-interactively 'xref-find-definitions))))
+    (let (result)
+      (condition-case nil
+          (setq result (call-interactively 'lsp-find-definition))
+        (error (call-interactively 'xref-find-definitions)))
+      (if (and (stringp result)
+               (string-equal "Not found" (substring result 0 9)))
+          (call-interactively 'xref-find-definitions))))
 
   (defun lsp-or-xref-find-references ()
     (interactive)
-    (condition-case nil
-        (call-interactively 'lsp-find-references)
-      (error (call-interactively 'xref-find-references))))
+    (let (result)
+      (condition-case nil
+          (setq result (call-interactively 'lsp-find-references))
+        (error (call-interactively 'xref-find-references)))
+      (if (and (stringp result)
+               (string-equal "Not found" (substring result 0 9)))
+          (call-interactively 'xref-find-references))))
 
   (define-key lsp-mode-map [remap xref-find-definitions] 'lsp-or-xref-find-definition)
   (define-key lsp-mode-map [remap xref-find-references] 'lsp-or-xref-find-references))
 ;; ]
 
-;; [ company-lsp
-(when (and (featurep 'company)
-           (load "company-lsp" t))
-  (push 'company-lsp company-backends)
-  (setq company-lsp-cache-candidates 'auto))
+;; [ company-lsp -- not supported by lsp-mode
+;; (when (and (featurep 'company)
+;;            (load "company-lsp" t))
+;;   (push 'company-lsp company-backends)
+;;   (setq company-lsp-cache-candidates 'auto))
 ;; ]
 
 ;; [ dap-mode

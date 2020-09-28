@@ -22,9 +22,10 @@
 ;; emacs 27 avoids (package-initialize)
 
 (require 'cl-lib)
-;; Package cl is deprecated
-(eval-when-compile
-  (require 'cl))
+;; [ Package cl is deprecated
+;; (eval-when-compile
+;;   (require 'cl))
+;; ]
 
 (eval-and-compile
   (let ((default-directory "~/.emacs.d/el"))
@@ -39,6 +40,7 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
+ '(helm-ff-keep-cached-candidates nil)
  '(package-selected-packages
    '(ace-window
      anaphora
@@ -51,7 +53,6 @@
      cmake-font-lock
      cmake-mode
      company
-     company-lsp
      company-posframe
      cyphejor
      dap-mode
@@ -62,7 +63,9 @@
      docker-tramp
      dockerfile-mode
      edit-server
+     eglot
      ein
+     eldoc
      elfeed
      ellocate
      emms
@@ -73,6 +76,7 @@
      f
      figlet
      flycheck
+     flymake
      flyspell-correct
      flyspell-correct-helm
      free-keys
@@ -150,6 +154,7 @@
      polymode
      popup
      posframe
+     project
      projectile
      protobuf-mode
      psession
@@ -182,15 +187,11 @@
      with-editor
      xahk-mode
      xelb
+     xref
      xterm-color
      yaml-mode
      yasnippet
-     yasnippet-snippets))
- '(safe-local-variable-values
-   '((eval set 'org-agenda-files
-           (list
-            (file-name-directory
-             (buffer-file-name)))))))
+     yasnippet-snippets)))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -430,17 +431,25 @@
 (with-eval-after-load 'flycheck
   (require 'flycheck-config))
 
-;; lsp
-(with-eval-after-load 'lsp-mode
-  (require 'lsp-config))
+(defvar language-server-protocol-startup-function 'eglot-ensure
+  "'eglot-ensure or 'lsp-deferred")
 
-;; dap
-(with-eval-after-load 'dap-mode
-  (require 'dap-config))
+(cl-case language-server-protocol-startup-function
+  ('eglot-ensure
+   ;; eglot
+   (with-eval-after-load 'eglot
+     (require 'eglot-config)))
+  ('lsp-deferred
+   ;; lsp
+   (with-eval-after-load 'lsp-mode
+     (require 'lsp-config))
+   ;; dap
+   (with-eval-after-load 'dap-mode
+     (require 'dap-config))))
 
 ;; [ cc-mode
-(add-hook 'c-mode-hook   #'lsp-deferred)
-(add-hook 'c++-mode-hook #'lsp-deferred)
+(add-hook 'c-mode-hook   language-server-protocol-startup-function)
+(add-hook 'c++-mode-hook language-server-protocol-startup-function)
 (defun c-c++-config ()
   ;; run only once
   (remove-hook 'c-mode-hook 'c-c++-config)
@@ -455,7 +464,7 @@
 
 ;; [ rust
 ;; rustic has automatic configuration
-;; (add-hook 'rust-mode-hook #'lsp-deferred)
+;; (add-hook 'rust-mode-hook language-server-protocol-startup-function)
 ;; ]
 
 ;; [ lua-mode
@@ -464,8 +473,11 @@
 ;; ]
 
 ;; [ python
-(add-hook 'python-mode-hook #'lsp-deferred)
-(setq python-shell-interpreter "python3")
+(add-hook 'python-mode-hook language-server-protocol-startup-function)
+(setq python-shell-interpreter (or (executable-find "~/bin/python-emacs")
+                                   (executable-find "~/bin/pypy3")
+                                   (executable-find "/usr/local/bin/python3")
+                                   (executable-find "/usr/bin/python3")))
 (with-eval-after-load 'python
   ;;  (require 'semantic/wisent/python)
   (require 'python-config)
@@ -480,8 +492,10 @@
 
 ;; [ java
 (add-hook 'java-mode-hook (lambda ()
-                            (when (require 'lsp-java nil t)
-                              (lsp-deferred))))
+                            (if (eq language-server-protocol-startup-function 'lsp-deferred)
+                                (when (require 'lsp-java nil t)
+                                  (lsp-deferred))
+                              (eglot-ensure))))
 (defun load-once-java-stuff ()
   (with-eval-after-load 'dap-mode
     (require 'dap-java))
@@ -490,10 +504,10 @@
 ;; ]
 
 ;; [ javascript
-(defun lsp-deferred-cond ()
+(defun language-server-protocol-js-cond ()
   (unless (derived-mode-p 'ein:ipynb-mode)
-    (lsp-deferred)))
-(add-hook 'js-mode-hook #'lsp-deferred-cond)
+    (funcall language-server-protocol-startup-function)))
+(add-hook 'js-mode-hook #'language-server-protocol-js-cond)
 (with-eval-after-load 'js
   (with-eval-after-load 'dap-mode
     (require 'dap-firefox)
@@ -501,7 +515,7 @@
 ;; ]
 
 ;; [ php
-(add-hook 'php-mode-hook #'lsp-deferred)
+(add-hook 'php-mode-hook language-server-protocol-startup-function)
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
     (require 'dap-php))

@@ -70,7 +70,7 @@
                        (cond ((null known)
                               '("?" mode-line "No known backends"))
                              (some-waiting
-                              `("Wait" compilation-mode-line-run
+                              `("…" compilation-mode-line-run
                                 ,(format "Waiting for %s running backend(s)"
                                          (length some-waiting))))
                              (all-disabled
@@ -79,8 +79,7 @@
                              (t
                               '(nil nil nil)))))
             (when ind
-              `((":"
-                 (:propertize ,ind
+              `(((:propertize ,ind
                               face ,face
                               help-echo ,explain
                               keymap

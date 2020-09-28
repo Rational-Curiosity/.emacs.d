@@ -12,9 +12,12 @@
                     :foreground "#ebdb34"
                     :bold t)
 
-(setq-default truncate-lines t
-              ;; ignore case searching
-              case-fold-search t)
+(setq-default
+ ;; t -   long lines go away from window width, ei, continuation lines
+ ;; nil - soft wrap lines
+ truncate-lines t
+ ;; ignore case searching
+ case-fold-search t)
 ;; [ Demasiado agresivo, mejor con ido
 ;; Cambia todas las preguntas yes-or-no-p por y-or-n-p
 ;; (fset 'yes-or-no-p 'y-or-n-p)
@@ -348,12 +351,6 @@ prompt the user for a coding system."
 (c-set-offset 'label '*)
 (c-set-offset 'case-label '0)
 (c-set-offset 'access-label '/)
-;; Show new line and tab characters
-(with-eval-after-load 'whitespace
-  (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) nil)
-  (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) nil)
-  (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) nil)
-  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) nil))
 
 (define-key indent-rigidly-map (kbd "M-f") #'indent-rigidly-right-to-tab-stop)
 (define-key indent-rigidly-map (kbd "M-b") #'indent-rigidly-left-to-tab-stop)
@@ -386,9 +383,7 @@ prompt the user for a coding system."
     (setq tab-width 4)))
   (whitespace-mode))
 (add-hook 'prog-mode-hook #'whitespace-case-mode-configuration)
-
 (add-hook 'csv-mode-hook #'whitespace-mode)
-(setq whitespace-style '(face tab newline tab-mark newline-mark))
 
 (defun whitespace-toggle-lines-tail ()
   (interactive)
@@ -413,10 +408,32 @@ prompt the user for a coding system."
 ;; ⇥  8677  RIGHTWARDS ARROW TO BAR
 ;; ⇨  8680  RIGHTWARDS WHITE ARROW
 (eval-and-when-daemon frame
-  (setq whitespace-display-mappings
-        '(;; (space-mark   ?\     [? ]) ;; use space not dot
-          (newline-mark 10   [8629 10] [36 10])
-          (tab-mark     9    [8676 32 8677 32] [92 9]))))
+  (setq whitespace-style '(face
+                           tab
+                           newline
+                           tab-mark
+                           newline-mark
+                           ;; spaces
+                           )
+        ;; whitespace-space-regexp "\\( \\{2,\\}\\)"
+        ;; whitespace-hspace-regexp "\\(\xA0\\{2,\\}\\)"
+        whitespace-display-mappings
+        '(;; (space-mark   ?\    [?.])
+          ;; (space-mark   ?\xA0 [?_])
+          (newline-mark 10    [8629 10] [36 10])
+          (tab-mark     9     [8676 32 8677 32] [92 9]))))
+(with-eval-after-load 'whitespace
+  (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) nil)
+  (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) nil)
+  (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) nil)
+  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) nil)
+  (set-face-attribute 'whitespace-space nil
+                      :foreground 'unspecified
+                      :background "grey40")
+  (set-face-attribute 'whitespace-hspace nil
+                      :foreground 'unspecified
+                      :background "grey50"))
+
 (defun whitespace-toggle-marks ()
   (interactive)
   (if (bound-and-true-p whitespace-mode)
@@ -904,6 +921,14 @@ there's a region, all lines that region covers will be duplicated."
       (sp-backward-sexp arg)
     (backward-sexp arg)))
 
+(defun sp-or-backward-kill-sexp (&optional arg)
+  (interactive "^p")
+  (if (fboundp 'sp-backward-sexp)
+      (let ((opoint (point)))
+        (sp-backward-sexp arg)
+        (kill-region opoint (point)))
+    (backward-kill-sexp arg)))
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard macros ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -949,7 +974,6 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
 (global-set-key (kbd "<f7> i") #'toggle-case-fold-search)
-(global-set-key (kbd "<f7> w") #'toggle-truncate-lines)
 (global-set-key (kbd "<f7> l") #'whitespace-toggle-lines-tail)
 (global-set-key (kbd "<f7> RET") #'whitespace-toggle-marks)
 (global-set-key (kbd "M-s k w") #'backward-kill-word)
@@ -959,7 +983,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "<S-delete>") #'kill-sexp)
 (global-set-key (kbd "M-s s") #'swap-regions)
-(global-set-key (kbd "<C-M-backspace>") #'backward-kill-sexp)
+(global-set-key (kbd "<C-M-backspace>") #'sp-or-backward-kill-sexp)
 ;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
 ;; (global-set-key (kbd "S-<delete>") #'kill-sexp)
 (global-set-key [?\C-x ?u] #'undo-propose)
