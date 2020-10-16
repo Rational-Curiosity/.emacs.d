@@ -67,6 +67,9 @@
 (defvar exwm-default-wallpaper-folder "~/Pictures/backgrounds/"
   "EXWM default wallpaper folder.")
 
+(defvar exwm-screensaver-process nil
+  "EXWM screensaver process.")
+
 (defvar exwm-record-process nil
   "EXWM record process when recording.")
 
@@ -130,13 +133,21 @@
 
 (defun exwm-screensaver-lock ()
   (interactive)
-  (when (not (member "xscreensaver"
-                     (mapcar
-                      (lambda (item) (cdr (assoc 'comm item)))
-                      (mapcar 'process-attributes (list-system-processes)))))
-    (start-process " *xscreensaver" nil "xscreensaver" "-no-splash")
+  (when (not (setq exwm-screensaver-process
+                   (car
+                    (member "xscreensaver"
+                            (mapcar
+                             (lambda (item) (cdr (assoc 'comm item)))
+                             (mapcar 'process-attributes (list-system-processes)))))))
+    (setq exwm-screensaver-process
+          (start-process " *xscreensaver" nil "xscreensaver" "-no-splash"))
     (sit-for 1))
   (start-process " *xscreensaver-command" nil "xscreensaver-command" "-lock"))
+
+(defun exwm-screensaver-interrupt ()
+  (interactive)
+  (when exwm-screensaver-process
+    (interrupt-process exwm-screensaver-process)))
 
 (defun exwm-screenshot ()
   (interactive)
@@ -533,6 +544,7 @@
           ([?\s-b] . switch-to-buffer)
           ;; Bind lock screen
           (,(kbd "<s-escape>") . exwm-screensaver-lock)
+          (,(kbd "<C-s-escape>") . exwm-screensaver-interrupt)
           ;; Screenshot
           (,(kbd "<s-print>") . exwm-screenshot)
           ;; Record audio and video
@@ -706,16 +718,18 @@
     (setq exwm-timer-random-wallpaper nil)))
 
 ;; Applications
-(dolist (program-and-args-list '(("compton")
-                                 ("volumeicon")
-                                 ("nm-applet")))
-  (let ((executable (car program-and-args-list)))
-   (if (executable-find executable)
-      (apply 'start-process
-             (concat " *" executable)
-             (concat " *" executable " outputs*")
-             program-and-args-list)
-    (message "Unable to find `%s' executable." executable))))
+(add-hook 'exwm-init-hook
+          (lambda ()
+            (dolist (program-and-args-list '(("compton")
+                                             ("volumeicon")
+                                             ("nm-applet")))
+              (let ((executable (car program-and-args-list)))
+                (if (executable-find executable)
+                    (apply 'start-process
+                           (concat " *" executable)
+                           (concat " *" executable " outputs*")
+                           program-and-args-list)
+                  (message "Unable to find `%s' executable." executable))))))
 
 (when (load "helm-exwm" t t)
   (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source)
@@ -754,19 +768,93 @@
 ;; minibuffer
 (when (load "mini-frame" t t)
   (setq mini-frame-show-parameters
-        '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
-          (border-width . 0) (internal-border-width . 0)
-          (background-color . "black"))
+        (if (featurep 'helm)
+            '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
+              (border-width . 0) (internal-border-width . 0)
+              (background-color . "black"))
+          (setq mini-frame-completions-show-parameters
+                (defun mini-frame-completions-show-parameters-dwim ()
+                  (let ((workarea (nth exwm-workspace-current-index
+                                       exwm-workspace--workareas)))
+                    `((parent-frame . nil)
+                      (z-group . above)
+                      (height . ,(cons 'text-pixels (round (* (aref workarea 3) 0.3))))
+                      (width . ,(cons 'text-pixels (- (aref workarea 2) 20)))
+                      (left . ,(aref workarea 0))
+                      (background-color . "black")))))
+          (defun mini-frame-show-parameters-dwim ()
+            (let* ((workarea (nth exwm-workspace-current-index
+                                  exwm-workspace--workareas))
+                   (workarea-width (aref workarea 2)))
+              `((parent-frame . nil)
+                (z-group . above)
+                (top . ,(+ (aref workarea 1) 10))
+                (height . 1)
+                (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
+                (left . ,(round (+ (aref workarea 0) (* workarea-width 0.05))))
+                (background-color . "black")))))
+        mini-frame-resize nil
         mini-frame-ignore-commands '("edebug-eval-expression"
                                      debugger-eval-expression
                                      "exwm-workspace-"))
-  (add-hook 'exwm-init-hook 'mini-frame-mode))
+  (add-hook 'exwm-init-hook 'mini-frame-mode)
 
-(defun common-minibuffer-all-frames ()
-  (let ((frame (car (minibuffer-frame-list))))
-    (setf (alist-get 'minibuffer default-frame-alist)
-          (if frame nil t))))
-(add-hook 'before-make-frame-hook 'common-minibuffer-all-frames)
+  (defun mini-frame-icomplete-completions-advice (orig-fun &rest args)
+    (let ((text (apply orig-fun args)))
+      (when (and (bound-and-true-p mini-frame-frame)
+                 (frame-live-p mini-frame-frame)
+                 (frame-visible-p mini-frame-frame))
+        ;; (with-current-buffer (window-buffer (frame-root-window mini-frame-frame))
+        ;;   (save-excursion
+        ;;     (save-restriction
+        ;;       (widen)
+        ;;       (goto-char (point-min))
+        ;;       (let ((lines 1))
+        ;;         (while (line-move-visual 1 t)
+        ;;           (cl-incf lines))
+        ;;         (message "lines: %s" lines)))))
+        (modify-frame-parameters
+         mini-frame-frame
+         `((height . ,(let ((text-width (+ (point-max) (string-width text)))
+                            (max-width (frame-width mini-frame-frame)))
+                        (if (< max-width text-width)
+                            (if (< (* max-width icomplete-prospects-height)
+                                   (+ text-width
+                                      (*
+                                       (1- icomplete-prospects-height)
+                                       (/ (apply 'max
+                                                 (mapcar 'string-width
+                                                         (split-string
+                                                          text
+                                                          icomplete-separator t)))
+                                          2))))
+                                (1+ icomplete-prospects-height)
+                             icomplete-prospects-height)
+                          1))))))
+      text))
+  (advice-add 'icomplete-completions :around 'mini-frame-icomplete-completions-advice)
+
+  ;; (defun mini-frame-icomplete-exhibit-advice ()
+  ;;   (when (and (bound-and-true-p mini-frame-frame)
+  ;;              (frame-live-p mini-frame-frame)
+  ;;              (frame-visible-p mini-frame-frame))
+  ;;     (modify-frame-parameters
+  ;;      mini-frame-frame
+  ;;      `((height . ,(1+ (/ (+
+  ;;                           (with-current-buffer
+  ;;                                 (window-buffer (frame-root-window mini-frame-frame))
+  ;;                               (length (buffer-string)))
+  ;;                             (length (overlay-get icomplete-overlay 'after-string)))
+  ;;                          (frame-width mini-frame-frame))))))))
+  ;; (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
+
+  ;; only one minibuffer
+  (defun common-minibuffer-all-frames ()
+    (let ((frame (car (minibuffer-frame-list))))
+      (setf (alist-get 'minibuffer default-frame-alist)
+            (if frame nil t))))
+  (add-hook 'before-make-frame-hook 'common-minibuffer-all-frames))
+
 
 ;; systemtray hold
 (defun exwm-systemtray--on-workspace-switch-advice (orig-fun &rest args)

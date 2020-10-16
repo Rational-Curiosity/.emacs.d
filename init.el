@@ -49,6 +49,7 @@
      avy
      bash-completion
      bookmark+
+     browse-kill-ring
      bui
      cmake-font-lock
      cmake-mode
@@ -74,11 +75,11 @@
      expand-region
      exwm
      f
+     fd-dired
      figlet
      flycheck
      flymake
      flyspell-correct
-     flyspell-correct-helm
      free-keys
      git-commit
      gnuplot
@@ -87,21 +88,6 @@
      graphviz-dot-mode
      guess-language
      haskell-mode
-     helm
-     helm-ag
-     helm-company
-     helm-core
-     helm-etags-plus
-     helm-exwm
-     helm-fd
-     helm-flycheck
-     helm-flyspell
-     helm-org
-     helm-org-rifle
-     helm-projectile
-     helm-tramp
-     helm-unicode
-     helm-xref
      hide-comnt
      highlight
      hl-line+
@@ -157,11 +143,11 @@
      project
      projectile
      protobuf-mode
-     psession
      rainbow-delimiters
      rebox2
      request
      request-deferred
+     rg
      rustic
      s
      smartparens
@@ -183,6 +169,7 @@
      vlf
      web-mode
      websocket
+     wgrep
      which-key
      with-editor
      xahk-mode
@@ -218,11 +205,6 @@
 
 (require 'mode-line-config)
 
-(require 'psession)
-(assq-delete-all 'psession--save-buffers-alist psession-object-to-save-alist)
-(assq-delete-all 'psession--winconf-alist psession-object-to-save-alist)
-(psession-mode)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                               ;;
 ;;   Configuration files         ;;
@@ -237,8 +219,7 @@
 
 ;; (require 'modal-config)
 
-(when (load "helm" t)
-  (require 'helm-extensions-config))
+(require 'fido-config)
 
 (when (load "company" t)
   (require 'company-extensions-config))
@@ -314,6 +295,9 @@
 
 
 ;; [ <Not always required>
+;; shell
+(define-key minibuffer-local-shell-command-map (kbd "M-v") 'switch-to-completions)
+
 (with-eval-after-load 'shell
   (require 'shell-config))
 
@@ -412,6 +396,7 @@
   (require 'gud-config)
   (require 'speedbar-config))
 ;; ]
+
 ;; cmake-mode
 (setq auto-mode-alist
       (nconc '(;;("CMakeLists\\.txt\\'" . cmake-mode) ; por defecto
@@ -431,10 +416,10 @@
 (with-eval-after-load 'flycheck
   (require 'flycheck-config))
 
-(defvar language-server-protocol-startup-function 'eglot-ensure
+(defvar custom-lsp-startup-function 'eglot-ensure
   "'eglot-ensure or 'lsp-deferred")
 
-(cl-case language-server-protocol-startup-function
+(cl-case custom-lsp-startup-function
   ('eglot-ensure
    ;; eglot
    (with-eval-after-load 'eglot
@@ -448,8 +433,8 @@
      (require 'dap-config))))
 
 ;; [ cc-mode
-(add-hook 'c-mode-hook   language-server-protocol-startup-function)
-(add-hook 'c++-mode-hook language-server-protocol-startup-function)
+(add-hook 'c-mode-hook   custom-lsp-startup-function)
+(add-hook 'c++-mode-hook custom-lsp-startup-function)
 (defun c-c++-config ()
   ;; run only once
   (remove-hook 'c-mode-hook 'c-c++-config)
@@ -464,7 +449,7 @@
 
 ;; [ rust
 ;; rustic has automatic configuration
-;; (add-hook 'rust-mode-hook language-server-protocol-startup-function)
+;; (add-hook 'rust-mode-hook custom-lsp-startup-function)
 ;; ]
 
 ;; [ lua-mode
@@ -473,11 +458,14 @@
 ;; ]
 
 ;; [ python
-(add-hook 'python-mode-hook language-server-protocol-startup-function)
+(add-hook 'python-mode-hook custom-lsp-startup-function)
 (setq python-shell-interpreter (or (executable-find "~/bin/python-emacs")
                                    (executable-find "~/bin/pypy3")
+                                   (executable-find "~/bin/pypy")
                                    (executable-find "/usr/local/bin/python3")
-                                   (executable-find "/usr/bin/python3")))
+                                   (executable-find "/usr/bin/python3")
+                                   (executable-find "/usr/local/bin/python")
+                                   (executable-find "/usr/bin/python")))
 (with-eval-after-load 'python
   ;;  (require 'semantic/wisent/python)
   (require 'python-config)
@@ -492,7 +480,7 @@
 
 ;; [ java
 (add-hook 'java-mode-hook (lambda ()
-                            (if (eq language-server-protocol-startup-function 'lsp-deferred)
+                            (if (eq custom-lsp-startup-function 'lsp-deferred)
                                 (when (require 'lsp-java nil t)
                                   (lsp-deferred))
                               (eglot-ensure))))
@@ -506,7 +494,7 @@
 ;; [ javascript
 (defun language-server-protocol-js-cond ()
   (unless (derived-mode-p 'ein:ipynb-mode)
-    (funcall language-server-protocol-startup-function)))
+    (funcall custom-lsp-startup-function)))
 (add-hook 'js-mode-hook #'language-server-protocol-js-cond)
 (with-eval-after-load 'js
   (with-eval-after-load 'dap-mode
@@ -515,7 +503,7 @@
 ;; ]
 
 ;; [ php
-(add-hook 'php-mode-hook language-server-protocol-startup-function)
+(add-hook 'php-mode-hook custom-lsp-startup-function)
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
     (require 'dap-php))

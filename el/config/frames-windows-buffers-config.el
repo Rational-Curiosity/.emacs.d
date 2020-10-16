@@ -257,9 +257,15 @@ Don't show on windows buffers currently showed."
 (defun switch-to-minibuffer-window ()
   "switch to minibuffer window (if active)"
   (interactive)
-  (when (active-minibuffer-window)
-    (select-frame-set-input-focus (window-frame (active-minibuffer-window)))
-    (select-window (active-minibuffer-window))))
+  (if (and (bound-and-true-p mini-frame-frame)
+           (frame-live-p mini-frame-frame)
+           (frame-visible-p mini-frame-frame))
+      (select-frame mini-frame-frame)
+    (when-let (minibuffer-window (active-minibuffer-window))
+      (if (window-minibuffer-p)
+          (switch-to-completions)
+        (select-frame-set-input-focus (window-frame minibuffer-window))
+        (select-window minibuffer-window)))))
 
 ;; undo and redo window distributions
 (setq winner-dont-bind-my-keys t)
@@ -415,6 +421,8 @@ ARG non-nil resize window to ARG height."
                    horizontal)))
 
 ;; autoresize
+(setq resize-mini-windows t
+      max-mini-window-height 7)
 (defvar-local window-autoresize-size nil)
 
 (defun window-autoresize (window)
@@ -771,6 +779,7 @@ others."
 (global-set-key (kbd "C-c w C-w") 'window-resize-width)
 
 (define-key global-map [remap list-buffers] 'ibuffer)
+(define-key global-map (kbd "C-x B") 'ibuffer-list-buffers)
 
 
 (provide 'frames-windows-buffers-config)

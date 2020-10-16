@@ -371,11 +371,17 @@ mouse-3: Toggle minor modes"
   string)
 
 (defvar mode-line-filename-replacements
-  '(("config"   . "c^")
-    ("test"     . "t*")
-    ("invoice"  . "i*")
-    ("class"    . "c*")
-    ("resource" . "r*"))
+  `(("test"     . ,(propertize "T" 'face 'hi-red-b))
+    ("config"   . ,(propertize "C" 'face 'hi-red-b))
+    ("class"    . ,(propertize "C" 'face 'hi-green-b))
+    ("object"   . ,(propertize "O" 'face 'hi-green-b))
+    ("api"      . ,(propertize "A" 'face 'hi-green-b))
+    ("util"     . ,(propertize "U" 'face 'hi-green-b))
+    ("bug"      . ,(propertize "B" 'face 'hi-green-b))
+    ("library"  . ,(propertize "L" 'face 'hi-green-b))
+    ("librarie" . ,(propertize "L" 'face 'hi-green-b))
+    ("invoice"  . ,(propertize "I" 'face 'hi-red-b))
+    ("resource" . ,(propertize "R" 'face 'hi-red-b)))
   "Mode line file name replacements")
 
 (defun abbrev-strings-try (len string &rest strings)
@@ -390,16 +396,29 @@ mouse-3: Toggle minor modes"
         (while (and (< len-i (string-width (nth i strings)))
                     (not (string-equal (nth i strings) old)))
           (setq old (nth i strings))
-          (setcar (nthcdr i strings)
-                  (replace-regexp-in-string
-                   "\\(\\([A-Za-z]\\{2\\}\\)[A-Za-z]+\\).*\\'"
-                   "\\2"
-                   (nth i strings) t nil 1)))))
+          (let ((istring (nth i strings)))
+            (if (string-match "\\(\\([A-Za-z]\\{2\\}\\)[A-Za-z]+\\).*\\'"
+                              istring)
+                (setcar (nthcdr i strings)
+                        (concat
+                         (substring istring 0 (match-beginning 1))
+                         (let ((isubtext (substring istring
+                                                    (match-beginning 2)
+                                                    (match-end 2))))
+                         (propertize
+                          isubtext
+                          'face
+                          `(:weight bold :slant italic
+                                    :inherit ,(get-text-property 0 'face isubtext))
+                          'help-echo (substring istring
+                                                (match-beginning 1)
+                                                (match-end 1))))
+                         (substring istring (match-end 1)))))))))
     (if (< 0 (setq len-strings (- len (apply '+ (mapcar 'string-width strings)))))
         (let ((len-list (length mode-line-filename-replacements))
               (i -1))
           (while (and (< len-strings (string-width string))
-                      (< (cl-incf i) len-list))
+                      (< i len-list))
             (let ((replacement (nth i mode-line-filename-replacements)))
               (let ((pos (string-match-p (car replacement) string)))
                 (if pos
@@ -407,34 +426,18 @@ mouse-3: Toggle minor modes"
                           (concat
                            (substring string 0 pos)
                            (cdr replacement)
-                           (substring string (+ pos (length (car replacement)))))))))))))
+                           (substring string (+ pos (length (car replacement))))))
+                  (cl-incf i))))))))
   `(,string ,@strings))
-
-(defun shorten-path (path len abbrev-len)
-  (let ((path-old "")
-        (filename (file-name-nondirectory path))
-        (regexp (concat "\\(\\([A-Za-z]\\{"
-                        (int-to-string abbrev-len)
-                        "\\}\\)[A-Za-z]+\\).*\\'")))
-    (while (and (< len (length path))
-                (not (string-equal path path-old))
-                (string-equal filename (file-name-nondirectory path)))
-      (setq path-old path
-            path (replace-regexp-in-string regexp "\\2" path t nil 1))))
-  (if (< len (length path))
-      (let ((len/2 (max 1 (/ len 2))))
-        (concat
-         (substring path 0 (- len/2 1))
-         "…"
-         (substring path (- len/2))))
-    path))
 
 (defun abbrev-string (len string)
   (if (< len (string-width string))
       (let ((len/2 (max 1 (/ len 2))))
         (concat
          (substring string 0 (- len/2 1))
-         "…"
+         (propertize "…"
+                     'face 'error
+                     'help-echo string)
          (substring string (- len/2))))
     string))
 

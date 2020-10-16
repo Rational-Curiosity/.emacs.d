@@ -33,6 +33,7 @@
 (global-set-key (kbd "M-z")   #'avy-goto-char-timer)
 (global-set-key (kbd "M-g k") #'link-hint-open-link)
 (global-set-key (kbd "M-g K") #'link-hint-copy-link)
+(global-set-key (kbd "M-g SPC") #'avy-pop-mark)
 
 
 (provide 'avy-config)

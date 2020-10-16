@@ -9,6 +9,7 @@
 
 (require 'multiple-cursors)
 
+(setq mc/list-file (expand-file-name "cache/mc-lists.el" user-emacs-directory))
 ;; Add a cursor to each line in active region
 (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
 
@@ -27,6 +28,7 @@
 ;; (global-unset-key (kbd "M-<down-mouse-1>"))
 ;; (global-set-key (kbd "M-<mouse-1>") 'mc/add-cursor-on-click)
 ;; ]
+
 
 (provide 'multiple-cursors-config)
 ;;; multiple-cursors-config.el ends here

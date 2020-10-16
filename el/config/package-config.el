@@ -19,7 +19,8 @@
        (repos '(("org"          . "://orgmode.org/elpa/")
                 ("melpa"        . "://melpa.org/packages/")
                 ("melpa-stable" . "://stable.melpa.org/packages/")
-                ("marmalade"    . "://marmalade-repo.org/packages/")
+                ;; package name conflict: `project'
+                ;; ("marmalade"    . "://marmalade-repo.org/packages/")
                 ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
   (mapc (lambda (p)
           (add-to-list

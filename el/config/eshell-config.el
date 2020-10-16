@@ -660,6 +660,20 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (eshell-key-alt-previous (- arg)))
 
 (with-eval-after-load 'em-hist
+  (when (bug-check-function-bytecode
+         'eshell-put-history
+         "AYQHAAiyAomDEADBAgQih8ICBCKH")
+    (defun eshell-put-history (input &optional ring at-beginning)
+      "Put a new input line into the history ring."
+      (unless ring (setq ring eshell-history-ring))
+      (if at-beginning
+          (if (or (ring-empty-p ring)
+                  (not (string-equal input (ring-ref eshell-history-ring -1))))
+              (ring-insert-at-beginning ring input))
+        (if (or (ring-empty-p ring)
+                (not (string-equal input (ring-ref eshell-history-ring 0))))
+            (ring-insert ring input)))))
+  
   ;; eshell-next-input call this
   (defun eshell-previous-input (arg)
     "Cycle backwards through input history."

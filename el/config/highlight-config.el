@@ -6,6 +6,7 @@
 (require 'highlight)
 (require 'hi-lock)
 (setcar (cdr (assq 'hi-lock-mode minor-mode-alist)) nil)
+(setcdr hi-lock-map nil)
 
 (setq hi-lock-highlight-range 2000000)
 ;;;;;;;;;;;

@@ -19,7 +19,8 @@
       (delq (assoc 'eglot--managed-mode
                    mode-line-misc-info)
             mode-line-misc-info)
-      eglot-sync-connect nil)
+      eglot-sync-connect nil
+      eglot-ignored-server-capabilites '(:documentHighlightProvider))
 
 
 

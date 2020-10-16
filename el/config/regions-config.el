@@ -23,7 +23,10 @@
 
 (global-subword-mode)
 
-(global-set-key (kbd "M-º") #'er/expand-region)
+(global-set-key (kbd "M-s r") #'er/expand-region)
+(global-set-key (kbd "M-s s") #'er/mark-symbol)
+(global-set-key (kbd "M-s d") #'mark-defun)
+(global-set-key (kbd "M-s S") #'swap-regions)
 
 
 (provide 'regions-config)

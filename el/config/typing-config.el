@@ -982,7 +982,6 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-<left>") #'left-word)
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "<S-delete>") #'kill-sexp)
-(global-set-key (kbd "M-s s") #'swap-regions)
 (global-set-key (kbd "<C-M-backspace>") #'sp-or-backward-kill-sexp)
 ;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
 ;; (global-set-key (kbd "S-<delete>") #'kill-sexp)
