@@ -117,6 +117,7 @@
      minimap
      multiple-cursors
      ob-async
+     objed
      org
      org-agenda-property
      org-brain
@@ -220,6 +221,8 @@
 ;; (require 'modal-config)
 
 (require 'fido-config)
+
+(require 'objed-config)
 
 (when (load "company" t)
   (require 'company-extensions-config))
@@ -449,7 +452,8 @@
 
 ;; [ rust
 ;; rustic has automatic configuration
-;; (add-hook 'rust-mode-hook custom-lsp-startup-function)
+(with-eval-after-load 'rustic
+  (require 'rustic-config))
 ;; ]
 
 ;; [ lua-mode
