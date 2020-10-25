@@ -779,9 +779,13 @@
                                        exwm-workspace--workareas)))
                     `((parent-frame . nil)
                       (z-group . above)
-                      (height . ,(cons 'text-pixels (round (* (aref workarea 3) 0.3))))
-                      (width . ,(cons 'text-pixels (- (aref workarea 2) 20)))
-                      (left . ,(aref workarea 0))
+                      (left . ,(+ (aref workarea 0) 20))
+                      ;; (height . ,(cons 'text-pixels (round (* (aref workarea 3) 0.3))))
+                      (height . ,(round (* (aref workarea 3) 0.023)))
+                      ;; [ in this fuction 'text-pixels then white mini frame
+                      (width . ,(round (* (aref workarea 2) 0.13635)))
+                      ;; (width . ,(cons 'text-pixels (- (aref workarea 2) 60)))
+                      ;; ]
                       (background-color . "black")))))
           (defun mini-frame-show-parameters-dwim ()
             (let* ((workarea (nth exwm-workspace-current-index
@@ -790,9 +794,10 @@
               `((parent-frame . nil)
                 (z-group . above)
                 (top . ,(+ (aref workarea 1) 10))
-                (height . 1)
-                (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
                 (left . ,(round (+ (aref workarea 0) (* workarea-width 0.05))))
+                (height . 1)
+                (width . ,(round (* workarea-width 0.1278)))
+                ;; (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
                 (background-color . "black")))))
         mini-frame-resize nil
         mini-frame-ignore-commands '("edebug-eval-expression"
@@ -818,20 +823,20 @@
          mini-frame-frame
          `((height . ,(let ((text-width (+ (point-max) (string-width text)))
                             (max-width (frame-width mini-frame-frame)))
-                        (if (< max-width text-width)
-                            (if (< (* max-width icomplete-prospects-height)
-                                   (+ text-width
-                                      (*
-                                       (1- icomplete-prospects-height)
-                                       (/ (apply 'max
-                                                 (mapcar 'string-width
-                                                         (split-string
-                                                          text
-                                                          icomplete-separator t)))
-                                          2))))
-                                (1+ icomplete-prospects-height)
-                             icomplete-prospects-height)
-                          1))))))
+                        (if (>= max-width text-width)
+                            1
+                          (if (< (* max-width icomplete-prospects-height)
+                                 (+ text-width
+                                    (*
+                                     (1- icomplete-prospects-height)
+                                     (/ (apply 'max
+                                               (mapcar 'string-width
+                                                       (split-string
+                                                        text
+                                                        icomplete-separator t)))
+                                        2))))
+                              (1+ icomplete-prospects-height)
+                            icomplete-prospects-height)))))))
       text))
   (advice-add 'icomplete-completions :around 'mini-frame-icomplete-completions-advice)
 
