@@ -126,7 +126,6 @@
      org-ql
      org-super-agenda
      org-superstar
-     origami
      ov
      ox-gfm
      ox-mediawiki
@@ -149,10 +148,9 @@
      request
      request-deferred
      rg
-     rustic
+     ripgrep
+     rust-mode
      s
-     smartparens
-     smartscan
      spinner
      stickyfunc-enhance
      string-inflection
@@ -322,9 +320,11 @@
   (require 'hideshow-config))
 
 ;; Smartscan
-(add-hook 'prog-mode-hook #'smartscan-mode)
-(with-eval-after-load 'smartscan
-  (require 'smartscan-config))
+
+(when (locate-library "smartscan")
+  (add-hook 'prog-mode-hook #'smartscan-mode)
+  (with-eval-after-load 'smartscan
+    (require 'smartscan-config)))
 
 ;; rainbow-delimiters-mode (before smartparens-mode)
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
@@ -334,12 +334,13 @@
   (require 'rainbow-delimiters-config))
 
 ;; smartparens-mode
-(add-hook 'prog-mode-hook #'smartparens-mode)
-(add-hook 'prog-mode-hook #'show-smartparens-mode)
-(add-hook 'org-mode-hook #'smartparens-mode)
-(add-hook 'org-mode-hook #'show-smartparens-mode)
-(with-eval-after-load 'smartparens
-  (require 'smartparens-custom-config))
+(when (locate-library "smartparens")
+  (add-hook 'prog-mode-hook #'smartparens-mode)
+  (add-hook 'prog-mode-hook #'show-smartparens-mode)
+  (add-hook 'org-mode-hook #'smartparens-mode)
+  (add-hook 'org-mode-hook #'show-smartparens-mode)
+  (with-eval-after-load 'smartparens
+    (require 'smartparens-custom-config)))
 
 ;; polymode
 (with-eval-after-load 'polymode
@@ -383,9 +384,10 @@
   (require 'projectile-config))
 
 ;; origami
-(add-hook 'emacs-lisp-mode-hook #'origami-mode)
-(with-eval-after-load 'origami
-  (require 'origami-config))
+(when (locate-library "origami")
+  (add-hook 'emacs-lisp-mode-hook #'origami-mode)
+  (with-eval-after-load 'origami
+    (require 'origami-config)))
 
 ;; [ elisp-mode
 (setq eldoc-minor-mode-string "")
@@ -454,6 +456,9 @@
 ;; rustic has automatic configuration
 (with-eval-after-load 'rustic
   (require 'rustic-config))
+(with-eval-after-load 'rust-mode
+  (add-hook 'rust-mode-hook custom-lsp-startup-function)
+  (require 'rust-config))
 ;; ]
 
 ;; [ lua-mode
