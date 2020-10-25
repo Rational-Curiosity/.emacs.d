@@ -45,7 +45,7 @@
                       nil t)
                      utf8-hash-table))))
 
-(setq jit-lock-defer-time 0.0
+(setq jit-lock-defer-time nil
       jit-lock-stealth-time 2.0
       echo-keystrokes 0.5
       column-number-mode t
@@ -482,7 +482,7 @@ prompt the user for a coding system."
       (call-interactively #'newline))))
 
 ;; Mostrar parentesis (ya lo hace show-smartparents-mode)
-;;(show-paren-mode)
+(show-paren-mode)
 ;; Narrow enabled
 (put 'narrow-to-region 'disabled nil)
 
@@ -956,20 +956,20 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
-;; (global-set-key (kbd "ŧ") #'rotate-text)                            ;; AltGr-t
 (define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
 (define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
-(global-set-key (kbd "ħ") #'pulse-momentary-highlight-current-line) ;; AltGr-h
-;; (global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
 (define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
-(global-set-key (kbd "½") #'query-replace-regexp)                   ;; AltGr-5
-(global-set-key (kbd "ð") #'kill-sexp)                              ;; AltGr-d
-(global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-k
-(global-set-key (kbd "“") #'scroll-other-window)                    ;; AltGr-v
-(global-set-key (kbd "”") 'sp-or-backward-sexp)                     ;; AltGr-b
-(global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
-(global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
-(global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
+;; (global-set-key (kbd "ŧ") #'rotate-text)                            ;; AltGr-t
+;; (global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
+;; (global-set-key (kbd "ħ") #'pulse-momentary-highlight-current-line) ;; AltGr-h
+;; (global-set-key (kbd "½") #'query-replace-regexp)                   ;; AltGr-5
+;; (global-set-key (kbd "ð") #'kill-sexp)                              ;; AltGr-d
+;; (global-set-key (kbd "ĸ") #'kill-whole-line)                        ;; AltGr-k
+;; (global-set-key (kbd "“") #'scroll-other-window)                    ;; AltGr-v
+;; (global-set-key (kbd "”") 'sp-or-backward-sexp)                     ;; AltGr-b
+;; (global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
+;; (global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
+;; (global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
 (global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
 (global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
 (global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
