@@ -24,7 +24,7 @@
 
 (browse-kill-ring-default-keybindings)
 
-(rg-enable-default-bindings "\M-ga")
+(rg-enable-default-bindings (kbd "M-g a"))
 
 (global-set-key (kbd "M-g f") 'fd-find)
 (global-set-key (kbd "M-s O") 'multi-occur)
