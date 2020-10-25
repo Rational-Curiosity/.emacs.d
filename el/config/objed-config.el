@@ -13,7 +13,16 @@
 
 (setq objed-disabled-modes
       '(exwm-mode
-        browse-kill-ring-mode))
+        browse-kill-ring-mode
+        completion-list-mode)
+      objed-mode-line-format
+      '(:eval (propertize
+               (format "%s(%s)"
+                       (symbol-name objed--object)
+                       (char-to-string (aref (symbol-name objed--obj-state) 0)))
+               'face 'objed-mode-line))
+      objed-cursor-color "#ff8c00"
+      objed-use-hl nil)
 
 (objed-mode)
 
