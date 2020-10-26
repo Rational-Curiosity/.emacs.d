@@ -11,22 +11,33 @@
 ;; sudo apt install ripgrep
 ;;; Code:
 
-(require 'browse-kill-ring)
 (require 'icomplete)
+(require 'icomplete-vertical)
 
 (set-face-attribute 'icomplete-first-match nil :foreground "YellowGreen")
 
-(setq browse-kill-ring-display-duplicates nil
-      browse-kill-ring-display-leftmost-duplicate nil
-      browse-kill-ring-highlight-current-entry t
-      browse-kill-ring-resize-window t
-      icomplete-prospects-height 4)
+(setq icomplete-prospects-height 4)
+(cond ((executable-find "fdfind")
+       (setq fd-dired-program "fdfind"
+             projectile-generic-command "fdfind . -0 --type f --color=never"))
+      ((executable-find "fd-find")
+       (setq fd-dired-program "fd-find"
+             projectile-generic-command "fd-find . -0 --type f --color=never"))
+      ((executable-find "fd")
+       (setq fd-dired-program "fd")))
 
-(browse-kill-ring-default-keybindings)
+(rg-enable-default-bindings (kbd "M-g A"))
 
-(rg-enable-default-bindings (kbd "M-g a"))
+(defun insert-kill-ring-item ()
+  "Insert item from kill-ring, selected with completion."
+  (interactive)
+  (icomplete-vertical-do
+   (:separator 'dotted-line :height 20)
+   (insert (completing-read "Yank: " kill-ring nil t))))
 
-(global-set-key (kbd "M-g f") 'fd-find)
+(global-set-key (kbd "M-y") 'insert-kill-ring-item)
+(global-set-key (kbd "M-g f") 'fd-dired)
+(global-set-key (kbd "M-g a") 'ripgrep-regexp)
 (global-set-key (kbd "M-s O") 'multi-occur)
 
 (fido-mode)

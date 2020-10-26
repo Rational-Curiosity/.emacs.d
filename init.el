@@ -49,7 +49,6 @@
      avy
      bash-completion
      bookmark+
-     browse-kill-ring
      bui
      cmake-font-lock
      cmake-mode
@@ -95,6 +94,7 @@
      ht
      htmlize
      hydra
+     icomplete-vertical
      imenu-anywhere
      json-mode
      json-reformat
@@ -103,7 +103,6 @@
      link-hint
      lsp-java
      lsp-mode
-     lsp-origami
      lsp-treemacs
      lua-mode
      lv
