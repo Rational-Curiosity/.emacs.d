@@ -624,6 +624,23 @@
 (add-hook 'exwm-randr-screen-change-hook 'exwm-update-screens)
 (exwm-randr-enable)
 
+;; objed compatibility
+(with-eval-after-load 'objed
+  ;; Fix inconsistent behaviour when click on exwm window
+  (defun objed-window-selection-change (window)
+    (when (not (eq (selected-window) window))
+      (with-selected-window window
+        (when objed--buffer
+          (objed--reset)))))
+
+  (defun objed-window-selection-change-hook ()
+    (add-hook 'window-selection-change-functions 'objed-window-selection-change nil t))
+  (add-hook 'objed-init-hook 'objed-window-selection-change-hook)
+
+  (defun objed-window-selection-change-unhook ()
+    (remove-hook 'window-selection-change-functions 'objed-window-selection-change t))
+  (add-hook 'objed-exit-hook 'objed-window-selection-change-unhook))
+
 ;; System tray
 (require 'exwm-systemtray)
 (exwm-systemtray-enable)
@@ -805,40 +822,44 @@
                                      "exwm-workspace-"))
   (add-hook 'exwm-init-hook 'mini-frame-mode)
 
-  (defun mini-frame-icomplete-completions-advice (orig-fun &rest args)
-    (let ((text (apply orig-fun args)))
-      (when (and (bound-and-true-p mini-frame-frame)
-                 (frame-live-p mini-frame-frame)
-                 (frame-visible-p mini-frame-frame))
-        ;; (with-current-buffer (window-buffer (frame-root-window mini-frame-frame))
-        ;;   (save-excursion
-        ;;     (save-restriction
-        ;;       (widen)
-        ;;       (goto-char (point-min))
-        ;;       (let ((lines 1))
-        ;;         (while (line-move-visual 1 t)
-        ;;           (cl-incf lines))
-        ;;         (message "lines: %s" lines)))))
-        (modify-frame-parameters
-         mini-frame-frame
-         `((height . ,(let ((text-width (+ (point-max) (string-width text)))
-                            (max-width (frame-width mini-frame-frame)))
-                        (if (>= max-width text-width)
-                            1
-                          (if (< (* max-width icomplete-prospects-height)
-                                 (+ text-width
-                                    (*
-                                     (1- icomplete-prospects-height)
-                                     (/ (apply 'max
-                                               (mapcar 'string-width
-                                                       (split-string
-                                                        text
-                                                        icomplete-separator t)))
-                                        2))))
-                              (1+ icomplete-prospects-height)
-                            icomplete-prospects-height)))))))
-      text))
-  (advice-add 'icomplete-completions :around 'mini-frame-icomplete-completions-advice)
+  (defun mini-frame-icomplete-exhibit-advice ()
+    (when (and (bound-and-true-p mini-frame-frame)
+               (frame-live-p mini-frame-frame)
+               (frame-visible-p mini-frame-frame))
+      ;; (with-current-buffer (window-buffer (frame-root-window mini-frame-frame))
+      ;;   (save-excursion
+      ;;     (save-restriction
+      ;;       (widen)
+      ;;       (goto-char (point-min))
+      ;;       (let ((lines 1))
+      ;;         (while (line-move-visual 1 t)
+      ;;           (cl-incf lines))
+      ;;         (message "lines: %s" lines)))))
+      (modify-frame-parameters
+       mini-frame-frame
+       `((height . ,(let* ((text (overlay-get icomplete-overlay 'after-string))
+                           (newlines (s-count-matches "\n" text)))
+                      (if (< 0 newlines)
+                          (1+ newlines)
+                        (let ((text-width (+ (point-max)
+                                             (string-width
+                                              text)))
+                              (max-width (frame-width mini-frame-frame)))
+                          (if (>= max-width text-width)
+                              1
+                            (if (< (* max-width icomplete-prospects-height)
+                                   (+ text-width
+                                      (*
+                                       (1- icomplete-prospects-height)
+                                       (/ (apply 'max
+                                                 (mapcar 'string-width
+                                                         (split-string
+                                                          text
+                                                          icomplete-separator t)))
+                                          2))))
+                                (1+ icomplete-prospects-height)
+                              icomplete-prospects-height))))))))))
+  (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
 
   ;; (defun mini-frame-icomplete-exhibit-advice ()
   ;;   (when (and (bound-and-true-p mini-frame-frame)
