@@ -90,7 +90,7 @@
         projectile-root-bottom-up
         projectile-root-top-down)
       ;; projectile-switch-project-action 'counsel-projectile
-      projectile-completion-system 'helm
+      projectile-completion-system 'default
       projectile-mode-line-function (lambda () (concat "[" (projectile-project-name) "]")))
 
 (defun projectile-enable-which-key-integration ()
@@ -104,6 +104,7 @@
 
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 (define-key projectile-mode-map (kbd "M-g M-a") 'projectile-ripgrep)
+(define-key projectile-mode-map (kbd "M-g M-f") 'projectile-find-file)
 
 
 (provide 'projectile-config)
