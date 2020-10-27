@@ -28,12 +28,17 @@
 
 (rg-enable-default-bindings (kbd "M-g A"))
 
-(defun insert-kill-ring-item ()
+(defun insert-kill-ring-item (&optional arg)
   "Insert item from kill-ring, selected with completion."
-  (interactive)
-  (icomplete-vertical-do
-   (:separator 'dotted-line :height 20)
-   (insert (completing-read "Yank: " kill-ring nil t))))
+  (interactive "*p")
+  (if (or (eq last-command 'yank)
+          (if (active-minibuffer-window)
+              (setq last-command 'yank)))
+      (yank-pop arg)
+    (message "last: %s" last-command)
+    (icomplete-vertical-do
+        (:separator 'dotted-line :height 20)
+      (insert (completing-read "Yank: " kill-ring nil t)))))
 
 (global-set-key (kbd "M-y") 'insert-kill-ring-item)
 (global-set-key (kbd "M-g f") 'fd-dired)
