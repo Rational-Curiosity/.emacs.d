@@ -18,13 +18,17 @@
     (interactive)
     (message "Command `suspend-frame' is dangerous in EXWM.")))
 
-;; Faces
+;;;;;;;;;;;
+;; Faces ;;
+;;;;;;;;;;;
 (defface exwm-record-face
   '((t :foreground "red2"))
   "Basic face used to highlight errors and to denote failure."
   :group 'exwm)
 
-;; Variables
+;;;;;;;;;;;;;;;
+;; Variables ;;
+;;;;;;;;;;;;;;;
 (defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces" "doom" "gzdoom")
   "EXWM instances without transparency.")
 
@@ -76,7 +80,9 @@
 (defvar exwm-record-recording (propertize "⏺" 'face 'exwm-record-face)
   "EXWM recording text displayed while recording")
 
-;; Functions
+;;;;;;;;;;;;;;;
+;; Functions ;;
+;;;;;;;;;;;;;;;
 (defun exwm-record-stop ()
   (interactive)
   (when exwm-record-process
@@ -431,6 +437,15 @@
               (call-process "systemctl" nil nil nil "poweroff")) t)
   (save-buffers-kill-terminal-with-choice arg))
 
+;;;;;;;;;;;;;
+;; layouts ;;
+;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;
+;; Customizations ;;
+;;;;;;;;;;;;;;;;;;;;
 ;; display buffer rules
 (push '(exwm-display-buffer-condition exwm-display-buffer-function) display-buffer-alist)
 
@@ -639,7 +654,12 @@
 
   (defun objed-window-selection-change-unhook ()
     (remove-hook 'window-selection-change-functions 'objed-window-selection-change t))
-  (add-hook 'objed-exit-hook 'objed-window-selection-change-unhook))
+  (add-hook 'objed-exit-hook 'objed-window-selection-change-unhook)
+
+  (defun objed-eval-expression-advice (&rest args)
+    (when objed--buffer
+      (objed--reset)))
+  (advice-add 'objed-eval-expression :before 'objed-eval-expression-advice))
 
 ;; System tray
 (require 'exwm-systemtray)
@@ -837,28 +857,32 @@
       ;;         (message "lines: %s" lines)))))
       (modify-frame-parameters
        mini-frame-frame
-       `((height . ,(let* ((text (overlay-get icomplete-overlay 'after-string))
-                           (newlines (s-count-matches "\n" text)))
-                      (if (< 0 newlines)
-                          (1+ newlines)
-                        (let ((text-width (+ (point-max)
-                                             (string-width
-                                              text)))
-                              (max-width (frame-width mini-frame-frame)))
-                          (if (>= max-width text-width)
-                              1
-                            (if (< (* max-width icomplete-prospects-height)
-                                   (+ text-width
-                                      (*
-                                       (1- icomplete-prospects-height)
-                                       (/ (apply 'max
-                                                 (mapcar 'string-width
-                                                         (split-string
-                                                          text
-                                                          icomplete-separator t)))
-                                          2))))
-                                (1+ icomplete-prospects-height)
-                              icomplete-prospects-height))))))))))
+       `((height
+          .
+          ,(let ((text (overlay-get icomplete-overlay 'after-string))
+                 (max-width (frame-width mini-frame-frame)))
+             (if (stringp text)
+                 (let ((newlines (s-count-matches "\n" text)))
+                   (if (< 0 newlines)
+                       (1+ newlines)
+                     (let ((text-width (+ (point-max)
+                                          (string-width text))))
+                       (if (>= max-width text-width)
+                           1
+                         (if (< (* max-width icomplete-prospects-height)
+                                (+ text-width
+                                   (*
+                                    (1- icomplete-prospects-height)
+                                    (/ (apply 'max
+                                              (mapcar 'string-width
+                                                      (split-string
+                                                       text
+                                                       icomplete-separator
+                                                       t)))
+                                       2))))
+                             (1+ icomplete-prospects-height)
+                           icomplete-prospects-height)))))
+               (/ (point-max) max-width))))))))
   (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
 
   ;; (defun mini-frame-icomplete-exhibit-advice ()
