@@ -25,38 +25,9 @@
 (defface mode-line-company-mode
   '((t :inherit (mode-line) :foreground "slate blue" :weight bold))
   "Project name" :group 'mode-line)
-
-(setcar (cdr (assq 'company-mode minor-mode-alist)) (propertize "C"
-                                                                'face
-                                                                'mode-line-company-mode))
+(setcar (cdr (assq 'company-mode minor-mode-alist))
+        (propertize "C" 'face 'mode-line-company-mode))
 (add-hook 'after-init-hook 'global-company-mode)
-;; [ disable slow 'company-semantic'. comment with ede-project
-;;(delete 'company-semantic company-backends)
-;; ]
-(setq company-tooltip-minimum-width 20
-      company-tooltip-minimum 2)
-
-(defun toggle-company-semantic ()
-  "Toggle semantic backend."
-  (interactive)
-  (if (memq 'company-semantic company-backends)
-      (delete 'company-semantic company-backends)
-    (push 'company-semantic company-backends)))
-;; (define-key c-mode-map  [(tab)] 'company-complete)
-;; (define-key c++-mode-map  [(tab)] 'company-complete)
-(define-key company-active-map [return] nil)
-(define-key company-active-map (kbd "RET") nil)
-(define-key company-active-map [tab] #'company-complete-selection)
-(define-key company-active-map (kbd "TAB") #'company-complete-selection)
-(define-key company-active-map (kbd "<backtab>") #'company-complete-common-or-cycle)
-(define-key company-active-map [?\C-o] #'company-other-backend)
-(define-key company-active-map [?\C-t] #'company-begin-backend)
-;;(define-key company-mode-map [(control tab)] 'company-complete)
-;; `company-complete` conflicts with `company-template-forward-field` with TAB #515
-(define-key company-template-nav-map [(shift tab)] (lookup-key company-template-nav-map [tab]))
-(define-key company-template-nav-map (kbd "<backtab>") (lookup-key company-template-nav-map (kbd "TAB")))
-(define-key company-template-nav-map [tab] nil)
-(define-key company-template-nav-map (kbd "TAB") nil)
 
 ;; Colors
 (face-spec-set 'company-preview '((t (:foreground "darkgray" :underline t))))
@@ -68,6 +39,27 @@
 (face-spec-set 'company-tooltip-common-selection
                '((((type x)) (:inherit company-tooltip-selection :weight bold))
                  (t (:inherit company-tooltip-selection))))
+
+
+;; [ disable slow 'company-semantic'. comment with ede-project
+;;(delete 'company-semantic company-backends)
+;; ]
+(setq company-tooltip-minimum-width 20
+      company-tooltip-minimum 2
+      company-selection-wrap-around t
+      company-minimum-prefix-length 1
+      company-idle-delay .2
+      company-tooltip-idle-delay .2)
+
+(defun toggle-company-semantic ()
+  "Toggle semantic backend."
+  (interactive)
+  (if (memq 'company-semantic company-backends)
+      (progn
+        (delete 'company-semantic company-backends)
+        (message "`company-semantic' removed from company backends"))
+    (push 'company-semantic company-backends)
+    (message "`company-semantic' added to company backends")))
 
 ;; company-c-headers
 ;; (add-to-list 'company-backends 'company-c-headers)
@@ -116,6 +108,25 @@
 (with-eval-after-load 'auctex
   (require 'company-auctex)
   (company-auctex-init))
+
+;;;;;;;;;;
+;; Keys ;;
+;;;;;;;;;;
+;; (define-key c-mode-map  [(tab)] 'company-complete)
+;; (define-key c++-mode-map  [(tab)] 'company-complete)
+(define-key company-active-map [return] nil)
+(define-key company-active-map (kbd "RET") nil)
+(define-key company-active-map [tab] #'company-complete-selection)
+(define-key company-active-map (kbd "TAB") #'company-complete-selection)
+(define-key company-active-map (kbd "<backtab>") #'company-complete-common-or-cycle)
+(define-key company-active-map [?\C-o] #'company-other-backend)
+(define-key company-active-map [?\C-t] #'company-begin-backend)
+;;(define-key company-mode-map [(control tab)] 'company-complete)
+;; `company-complete` conflicts with `company-template-forward-field` with TAB #515
+(define-key company-template-nav-map [(shift tab)] (lookup-key company-template-nav-map [tab]))
+(define-key company-template-nav-map (kbd "<backtab>") (lookup-key company-template-nav-map (kbd "TAB")))
+(define-key company-template-nav-map [tab] nil)
+(define-key company-template-nav-map (kbd "TAB") nil)
 
 (global-set-key (kbd "<f7> ,") 'toggle-company-semantic)
 (global-set-key (kbd "C-c y") #'company-yasnippet)
