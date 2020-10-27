@@ -482,7 +482,8 @@ prompt the user for a coding system."
       (call-interactively #'newline))))
 
 ;; Mostrar parentesis (ya lo hace show-smartparents-mode)
-(show-paren-mode)
+(show-paren-mode 1)
+(electric-pair-mode 1)
 ;; Narrow enabled
 (put 'narrow-to-region 'disabled nil)
 
