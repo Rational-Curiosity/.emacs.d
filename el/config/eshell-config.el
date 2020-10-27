@@ -499,7 +499,41 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
       (pcomplete-here* (append (pcmpl-git-get-refs "heads")
                                (pcmpl-git-get-refs "tags"))))
      (t
-      (while (pcomplete-here (pcomplete-entries)))))))
+      (while (pcomplete-here (pcomplete-entries))))))
+
+  (when (executable-find "ggit")
+
+    (defun pcmpl-ggit-commands ()
+      "Return the most common git commands by parsing the git output."
+      (with-temp-buffer
+        (call-process-shell-command "LC_ALL=C ggit --help" nil (current-buffer))
+        (goto-char 0)
+        (let (commands)
+          (while (re-search-forward
+                  "^[[:blank:]]+\\(--[[:word:]-]+\\)"
+                  nil t)
+            (push (match-string 1) commands))
+          (sort commands #'string<))))
+
+    (defconst pcmpl-ggit-commands (append (pcmpl-ggit-commands)
+                                          pcmpl-git-commands)
+      "List of `ggit' commands.")
+
+    (defun pcomplete/ggit ()
+      "Completion for `git'."
+      ;; Completion for the command argument.
+      (pcomplete-here* pcmpl-ggit-commands)
+      (cond
+       ((pcomplete-match "help" -1)
+        (pcomplete-here* pcmpl-git-commands))
+       ((pcomplete-match (regexp-opt '("pull" "push")) -1)
+        (pcomplete-here (pcmpl-git-remotes)))
+       ;; provide branch completion for the command `checkout'.
+       ((pcomplete-match "checkout" -1)
+        (pcomplete-here* (append (pcmpl-git-get-refs "heads")
+                                 (pcmpl-git-get-refs "tags"))))
+       (t
+        (while (pcomplete-here (pcomplete-entries))))))))
 ;; ] <Git Completion>
 ;; [ <Bzr Completion>
 (when (executable-find "bzr")
