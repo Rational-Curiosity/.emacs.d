@@ -1,7 +1,7 @@
 (with-eval-after-load 'posframe
   (when (bug-check-function-bytecode
          'posframe-show
-         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUDEBhreIkFAxAYb3yJBQMQGHOAiQUAIBh7GBh0jhsoAYAgGH8cGHSMIBiDIBh0jCAYhyQYdIwgGIsoGHSOG6gDhCAYjywYdI4b1AOEIBiTMBh0jhgAB4ggGJc0GHSOGCwHiCAYmzgYdIwgGJ88GHSMIBijQBh0jCAYp0QYdIwgGKtIGHSMIBivTBh0jCAYs1AYdIwgGLdUGHSMIBi7WBh0jCAYv1wYdIwgGMNgGHSMIBjHZBh0jCAYy2gYdIwgGM9sGHSMIBjTcBh0jCAY13QYdIwgGNt4GHSMIBjffBh0jCAY44AYdI+MGOSHkIOUBIeYCIecDIegEIQYgqIOxAekGIQYGIoKzAQYg6gYGIesBIewCIe0gcu4GCiFxiO8GJiEp8CDo8SAh8gYNIfP0IYPgAfQgguEB4vUZ9nIGEHGICoT7AQYZ8wEhg/oBiSCI9RKI9wYR0gYi+AYOzgYqzwYr0AYs0QYt0wYt1AYu2gYq2wYr1QYz1gY01wY13AYy3wYxJh+yAfkGCgIiiPoGSAYaIoj7AQYqBikGLQYsJYj8Af3GBi/+BhDHBjL/Bg+BQAAGEoFBAAYOgUIA6wYRIYFDAOwGEyGBRAAGJPgGH4FFAAYggUYABiGBRwAGK4FIAAYsgUkABi2BSgAGLoFLAAYvgUwABiqBTQAGK4FOAAYsgU8ABi3MBlPNBlSvLiEGCwYLJIiBUAABBhYiiIFRAAEGFQYrBioGLgYtJgaIgVIAgVMACyHiIoiBVAALIYjuBhAhgVUAASGBVgALgVcABhYjiIFWAAuBWAADBUIjtgMqtquH")
+         "xAHFIkFAxALGIkFAxAPHIkFAxATIIkFAxAXJIkFAxAYGyiJBQMQGB8siQUDEBgjMIkFAxAYJzSJBQMQGCs4iQUDEBgvPIkFAxAYM0CJBQMQGDdEiQUDEBg7SIkFAxAYP0yJBQMQGENQiQUDEBhHVIkFAxAYS1iJBQMQGE9ciQUDEBhTYIkFAxAYV2SJBQMQGFtoiQUDEBhfbIkFAxAYY3CJBQMQGGd0iQUDEBhreIkFAxAYb3yJBQAgGHcYGHCOGwwBgCAYexwYcIwgGH8gGHCMIBiDJBhwjCAYhygYcI4bjAOAIBiLLBhwjhu4A4AgGI8wGHCOG+QDhCAYkzQYcI4YEAeEIBiXOBhwjCAYmzwYcIwgGJ9AGHCMIBijRBhwjCAYp0gYcIwgGKtMGHCMIBivUBhwjCAYs1QYcIwgGLdYGHCMIBi7XBhwjCAYv2AYcIwgGMNkGHCMIBjHaBhwjCAYy2wYcIwgGM9wGHCMIBjTdBhwjCAY13gYcIwgGNt8GHCPiBjch4yDkASHlAiHmAyHnBCEGH6iDowHoBiAGBiKCpQEGH+kGBiHqASHrAiHsIHLtBgohcYjuBiUhKe8g5/AgIfEGDSHy8yGD0gHzIILTAeH0GfVyBhBxiAqE7QEGGfIBIYPsAYkgiPQSiPYGEdIGIfcGDs4GKc8GKtAGK9EGLNMGLNQGLdkGKtoGK9UGMtYGM9sGMN4GLyYdsgH4AfnhI4j6BgoCIoj7BkYGGiKI/AEGKQYoBiwGKyWI/QH+xgYu/wYQxwYxgUAABg+BQQAGEoFCAAYOgUMA6gYRIYFEAOsGEyGBRQAGJPcGH4FGAAYggUcABiGBSAAGK4FJAAYsgUoABi2BSwAGLoFMAAYvgU0ABiqBTgAGK4FPAAYsgVAABi3MBlLNBlOvLiEGCwYLJIiBUQABBhYiiIFSAAEGFQYqBikGLQYsJgaIgVMAgVQACyHhIoiBVQALIYjtBhAhgVYAASH4C4FXAAYWI4j4C4FYAAMFQiO2Ayq2qoc=")
     (cl-defun posframe-show (buffer-or-name
                              &key
                              string
@@ -22,7 +22,6 @@
                              background-color
                              respect-header-line
                              respect-mode-line
-                             respect-tab-line
                              initialize
                              no-properties
                              keep-ratio
@@ -117,15 +116,12 @@ respectively.
 
 By default, posframe will display no header-line, mode-line and
 tab-line.  In case a header-line, mode-line or tab-line is
-desired, users can set RESPECT-HEADER-LINE, RESPECT-MODE-LINE or
-RESPECT-TAB-LINE to t.
+desired, users can set RESPECT-HEADER-LINE and RESPECT-MODE-LINE
+to t.
 
 INITIALIZE is a function with no argument.  It will run when
 posframe buffer is first selected with `with-current-buffer'
 in `posframe-show', and only run once (for performance reasons).
-If INITIALIZE is nil, `posframe-default-initialize-function' will
-be used as fallback; this variable can be used to set posframe
-buffer gobally.
 
 If LINES-TRUNCATE is non-nil, then lines will truncate in the
 posframe instead of wrap.
@@ -172,7 +168,6 @@ You can use `posframe-delete-all' to delete all posframes."
              (background-color (funcall posframe-arghandler buffer-or-name :background-color background-color))
              (respect-header-line (funcall posframe-arghandler buffer-or-name :respect-header-line respect-header-line))
              (respect-mode-line (funcall posframe-arghandler buffer-or-name :respect-mode-line respect-mode-line))
-             (respect-tab-line (funcall posframe-arghandler buffer-or-name :respect-tab-line respect-tab-line))
              (initialize (funcall posframe-arghandler buffer-or-name :initialize initialize))
              (no-properties (funcall posframe-arghandler buffer-or-name :no-properties no-properties))
              (keep-ratio (funcall posframe-arghandler buffer-or-name :keep-ratio keep-ratio))
@@ -233,9 +228,11 @@ You can use `posframe-delete-all' to delete all posframes."
                  :lines-truncate lines-truncate
                  :respect-header-line respect-header-line
                  :respect-mode-line respect-mode-line
-                 :respect-tab-line respect-tab-line
                  :override-parameters override-parameters
                  :accept-focus accept-focus))
+
+          ;; Remove tab-bar always.
+          (set-frame-parameter posframe 'tab-bar-lines 0)
 
           ;; Move mouse to (0 . 0)
           (posframe--mouse-banish parent-frame posframe)
