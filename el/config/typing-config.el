@@ -51,6 +51,8 @@
       column-number-mode t
       isearch-lazy-count t
       isearch-allow-scroll 'unlimited
+      completion-cycle-threshold 3
+      completion-show-help nil
       ;; mark-ring
       set-mark-command-repeat-pop t
       mark-ring-max 32
@@ -58,6 +60,8 @@
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
       mode-require-final-newline nil)
+;; (push 'substring completion-styles)
+
 ;;;;;;;;;;;;;;;
 ;; Mark ring ;;
 ;;;;;;;;;;;;;;;
@@ -320,7 +324,8 @@ prompt the user for a coding system."
 ;; Line numbers
 (require 'display-line-numbers)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
-(setq line-number-display-limit-width 500
+(setq tab-always-indent 'complete
+      line-number-display-limit-width 500
       display-line-numbers-width-start t
       display-line-numbers-grow-only t
       display-line-numbers-type 'visual
@@ -907,6 +912,11 @@ there's a region, all lines that region covers will be duplicated."
       (rotate-text arg)
     (error (string-inflection-all-cycle))))
 
+(defun scroll-down-or-completions (&optional arg)
+  (interactive "^P")
+  (if (get-buffer-window "*Completions*")
+      (switch-to-completions)
+    (scroll-down-command arg)))
 ;;;;;;;;;;
 ;; Sexp ;;
 ;;;;;;;;;;
@@ -980,6 +990,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-s k w") #'backward-kill-word)
 (global-set-key (kbd "M-n") #'forward-paragraph)
 (global-set-key (kbd "M-p") #'backward-paragraph)
+(global-set-key (kbd "M-v") 'scroll-down-or-completions)
 (global-set-key (kbd "C-<left>") #'left-word)
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "<S-delete>") #'kill-sexp)
@@ -990,9 +1001,8 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-s <deletechar>") #'kill-sexp)
 (global-set-key (kbd "C-*") #'duplicate-current-line-or-region)
 (global-set-key (kbd "M-s *") #'duplicate-current-line-or-region)
-(global-set-key (kbd "M-s SPC") #'set-mark-command)
-(global-set-key (kbd "M-SPC") #'fixup-whitespace)
-(global-set-key (kbd "M-s a SPC") #'fixup-whitespace)
+;; (global-set-key (kbd "M-s SPC") #'set-mark-command)
+(global-set-key (kbd "M-s SPC") #'fixup-whitespace)
 (global-set-key (kbd "C-S-<backspace>") #'kill-whole-line)
 (global-set-key (kbd "M-s k l") #'kill-whole-line)
 (global-set-key (kbd "M-s <insertchar>") #'kill-whole-line)
