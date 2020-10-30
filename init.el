@@ -12,12 +12,12 @@
 
 ;;; Code:
 
-(add-hook 'after-init-hook
-          `(lambda ()
-             (setq gc-cons-percentage ,gc-cons-percentage
-                   gc-cons-threshold ,gc-cons-threshold)) t)
+;; (add-hook 'after-init-hook
+;;           `(lambda ()
+;;              (setq gc-cons-percentage ,gc-cons-percentage
+;;                    gc-cons-threshold ,gc-cons-threshold)) t)
 (setq gc-cons-percentage 0.6
-      gc-cons-threshold 100000000)
+      gc-cons-threshold (* 100 1024 1024))
 
 ;; emacs 27 avoids (package-initialize)
 
@@ -49,13 +49,9 @@
      avy
      bash-completion
      bookmark+
-     bui
      cmake-font-lock
      cmake-mode
-     company
-     company-posframe
      cyphejor
-     dap-mode
      dash
      dash-functional
      deferred
@@ -76,10 +72,8 @@
      f
      fd-dired
      figlet
-     flycheck
      flymake
      flyspell-correct
-     free-keys
      git-commit
      gnuplot
      gnuplot-mode
@@ -87,9 +81,7 @@
      graphviz-dot-mode
      guess-language
      haskell-mode
-     hide-comnt
      highlight
-     hl-line+
      hl-todo
      ht
      htmlize
@@ -101,9 +93,6 @@
      json-snatcher
      let-alist
      link-hint
-     lsp-java
-     lsp-mode
-     lsp-treemacs
      lua-mode
      lv
      magit
@@ -124,7 +113,6 @@
      org-plus-contrib
      org-ql
      org-super-agenda
-     org-superstar
      ov
      ox-gfm
      ox-mediawiki
@@ -132,13 +120,10 @@
      ox-twbs
      pcre2el
      peg
-     pfuture
      php-mode
      pkg-info
      plantuml-mode
      polymode
-     popup
-     posframe
      project
      projectile
      protobuf-mode
@@ -150,7 +135,6 @@
      ripgrep
      rust-mode
      s
-     spinner
      stickyfunc-enhance
      string-inflection
      swap-regions
@@ -158,7 +142,6 @@
      thingatpt+
      transient
      transpose-frame
-     treemacs
      ts
      undo-propose
      vdiff
