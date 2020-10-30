@@ -13,6 +13,7 @@
 
 (require 'icomplete)
 (require 'icomplete-vertical)
+(require 'fido-at-point)
 
 (set-face-attribute 'icomplete-first-match nil :foreground "YellowGreen")
 
@@ -46,6 +47,7 @@
 (global-set-key (kbd "M-s O") 'multi-occur)
 
 (fido-mode)
+(fido-at-point-mode)
 
 
 (provide 'fido-config)
