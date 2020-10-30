@@ -12,6 +12,8 @@
                     :bold t
                     :foreground "red")
 
+(push " *which-key*" aw-ignored-buffers)
+(push '(?O aw-refresh "Refresh mode-line") aw-dispatch-alist)
 (setq aw-scope 'global
       aw-keys
       (let ((keys
@@ -28,7 +30,8 @@
 
 (defun aw-refresh ()
   (interactive)
-  (aw-update))
+  (aw-update)
+  (force-mode-line-update t))
 
 (ace-window-display-mode)
 
