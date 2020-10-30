@@ -18,6 +18,7 @@
 (set-face-attribute 'icomplete-first-match nil :foreground "YellowGreen")
 
 (setq icomplete-prospects-height 4)
+
 (cond ((executable-find "fdfind")
        (setq fd-dired-program "fdfind"
              projectile-generic-command "fdfind . -0 --type f --color=never"))
