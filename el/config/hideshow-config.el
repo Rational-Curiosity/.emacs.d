@@ -25,7 +25,7 @@
 (with-eval-after-load 'tex
   (add-hook 'TeX-mode-hook #'hs-minor-mode))
 
-(define-key hs-minor-mode-map (kbd "<C-tab>") #'hs-toggle-hiding)
+;; (define-key hs-minor-mode-map (kbd "<C-tab>") #'hs-toggle-hiding)
 
 (provide 'hideshow-config)
 ;;; hideshow-config.el ends here

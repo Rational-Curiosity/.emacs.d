@@ -121,7 +121,7 @@
     (looking-at-p "[[:space:]]*/[/*]"))
    ((derived-mode-p 'python-mode 'elpy-mode)
     (looking-at-p "[[:space:]]*#")))
-  (or (sp-point-in-comment)
+  (or (objed--bounds-of-comment-at-point)
       (cond
        ((derived-mode-p 'lisp-interaction-mode 'emacs-lisp)
         (looking-at-p "[[:space:]]*;"))
@@ -138,7 +138,7 @@
   (if (looking-at "[[:space:]]*class [\0-\377[:nonascii:]]*?{")
       (setq pos-bracket (1- (match-end 0))))
   (and (goto-char pos-bracket)
-       (sp-forward-sexp)
+       (forward-sexp)
        nil)
   t t)
 
@@ -244,7 +244,7 @@
   (if (looking-at "[[:space:]]*class [\0-\377[:nonascii:]]*?{")
       (setq pos-bracket (save-excursion
                           (goto-char (1- (match-end 0)))
-                          (sp-forward-sexp)
+                          (forward-sexp)
                           (point))))
   (or (looking-at-p "[[:space:]]*$")
       (char-equal ?\\ (char-before (1- (point))))
@@ -260,7 +260,7 @@
   (if (looking-at "[[:space:]]*\\(public +\\|protected +\\|private +\\)?\\(static +\\)?function [\0-\377[:nonascii:]]*?{")
       (setq pos-bracket (1- (match-end 0))))
   (and (goto-char pos-bracket)
-       (sp-forward-sexp)
+       (forward-sexp)
        nil)
   t t)
 
@@ -380,6 +380,17 @@
 
 (vimish-fold-global-mode 1)
 
+(defun hs-or-vimish-toggle (&optional e)
+  (interactive)
+  (if (and hs-minor-mode
+           (not (cl-block nested-dolist
+                  (dolist (overlay (overlays-at (point)))
+                    (when (vimish-fold--vimish-overlay-p overlay)
+                      (cl-return-from nested-dolist t)))
+                  nil)))
+      (hs-toggle-hiding e)
+    (vimish-fold-toggle)))
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
@@ -390,6 +401,7 @@
 (define-key vimish-fold-folded-keymap "d" #'vimish-fold-delete)
 (define-key vimish-fold-folded-keymap "D" #'vimish-fold-delete-all)
 
+(global-set-key (kbd "C-c @ M-g") #'vimish-fold-avy)
 (global-set-key (kbd "C-c @ +") #'vimish-fold-unfold)
 (global-set-key (kbd "C-c @ *") #'vimish-fold-unfold-all)
 (global-set-key (kbd "C-c @ -") #'vimish-fold-refold)
@@ -399,11 +411,10 @@
 (global-set-key (kbd "C-c @ d") #'vimish-fold-delete)
 (global-set-key (kbd "C-c @ D") #'vimish-fold-delete-all)
 (global-set-key (kbd "C-c @ f") #'vimish-fold)
-(global-set-key (kbd "C-c @ M-g") #'vimish-fold-avy)
 (global-set-key (kbd "C-c @ p") #'vimish-fold-previous-fold)
 (global-set-key (kbd "C-c @ n") #'vimish-fold-next-fold)
-(global-set-key (kbd "C-c @ w") #'fold-dwim)
-(define-key prog-mode-map (kbd "M-+") #'fold-dwim)
+(global-set-key (kbd "C-c @ w") 'fold-dwim)
+(global-set-key (kbd "<C-tab>") 'hs-or-vimish-toggle)
 
 
 (provide 'vimish-fold-config)
