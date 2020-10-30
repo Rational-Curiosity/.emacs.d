@@ -837,6 +837,7 @@
                 ;; (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
                 (background-color . "black")))))
         mini-frame-resize nil
+        ;; resize-mini-frames t
         mini-frame-ignore-commands '("edebug-eval-expression"
                                      debugger-eval-expression
                                      "exwm-workspace-"))
@@ -846,15 +847,6 @@
     (when (and (bound-and-true-p mini-frame-frame)
                (frame-live-p mini-frame-frame)
                (frame-visible-p mini-frame-frame))
-      ;; (with-current-buffer (window-buffer (frame-root-window mini-frame-frame))
-      ;;   (save-excursion
-      ;;     (save-restriction
-      ;;       (widen)
-      ;;       (goto-char (point-min))
-      ;;       (let ((lines 1))
-      ;;         (while (line-move-visual 1 t)
-      ;;           (cl-incf lines))
-      ;;         (message "lines: %s" lines)))))
       (modify-frame-parameters
        mini-frame-frame
        `((height
@@ -885,19 +877,14 @@
                (/ (point-max) max-width))))))))
   (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
 
-  ;; (defun mini-frame-icomplete-exhibit-advice ()
-  ;;   (when (and (bound-and-true-p mini-frame-frame)
-  ;;              (frame-live-p mini-frame-frame)
-  ;;              (frame-visible-p mini-frame-frame))
-  ;;     (modify-frame-parameters
-  ;;      mini-frame-frame
-  ;;      `((height . ,(1+ (/ (+
-  ;;                           (with-current-buffer
-  ;;                                 (window-buffer (frame-root-window mini-frame-frame))
-  ;;                               (length (buffer-string)))
-  ;;                             (length (overlay-get icomplete-overlay 'after-string)))
-  ;;                          (frame-width mini-frame-frame))))))))
-  ;; (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
+  (defun mini-frame-toggle-resize ()
+    (interactive)
+    (if (setq mini-frame-resize (null mini-frame-resize))
+        (advice-remove 'icomplete-exhibit 'mini-frame-icomplete-exhibit-advice)
+      (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice))
+    (message "Custom mini frame resize: %s" (nu mini-frame-resize)))
+  (global-set-key (kbd "<f7> 0") 'mini-frame-toggle-resize)
+
 
   ;; only one minibuffer
   (defun common-minibuffer-all-frames ()
