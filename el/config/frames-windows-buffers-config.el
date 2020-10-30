@@ -422,7 +422,7 @@ ARG non-nil resize window to ARG height."
 
 ;; autoresize
 (setq resize-mini-windows t
-      max-mini-window-height 7)
+      max-mini-window-height 0.7)
 (defvar-local window-autoresize-size nil)
 
 (defun window-autoresize (window)

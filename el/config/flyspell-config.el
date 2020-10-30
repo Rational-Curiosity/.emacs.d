@@ -12,6 +12,7 @@
 ;; Flyspell configuration ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'ispell)
+(setq flyspell-use-meta-tab nil)
 (require 'flyspell)
 (setq flyspell-mode-line-string "")
 ;;;;;;;;;;;

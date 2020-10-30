@@ -10,6 +10,8 @@
 ;; (set 'custom-enabled-themes 'wheatgrass)
 (load-theme 'wombat t)
 (set-face-attribute 'mode-line nil :background "#003445")
+(with-eval-after-load 'which-func
+  (set-face-attribute 'which-func nil :foreground "#a040bb"))
 
 ;; (require 'cursor-chg)  ; Load this library
 ;; (change-cursor-mode 1) ; On for overwrite/read-only/input mode

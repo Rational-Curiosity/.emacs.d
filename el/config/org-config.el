@@ -17,7 +17,7 @@
 ;;; Code:
 
 (message "Importing org-config")
-;; Corrector ortográfico
+;; Spell checker
 (add-hook 'org-mode-hook 'flyspell-mode)
 ;; (plist-put org-format-latex-options :scale 1.) ;; default
 
@@ -274,6 +274,31 @@
 ;;;;;;;;;;;;;;;;;;
 ;; TODO options ;;
 ;;;;;;;;;;;;;;;;;;
+(defun org-abbrev-es-heading ()
+         (replace-regexp-in-string
+          " +\\'" ""
+          (replace-regexp-in-string
+           "  +" " "
+           (replace-regexp-in-string
+            "\\([^[:space:]]\\{3\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
+            (let ((case-fold-search t))
+              (replace-regexp-in-string
+               ,(concat "\\("
+                        (mapconcat 'identity
+                                   '("al" "un" "uno" "una" "unos" "unas"
+                                     "del"
+                                     ;; conjunciones
+                                     "y" "e" "o" "u"
+                                     ;; prepositions
+                                     "el" "la" "lo" "las" "los"
+                                     "a" "ante" "bajo" "cabe" "con"
+                                     "contra" "de" "desde" "durante"
+                                     "en" "entre" "hacia" "hasta"
+                                     "mediante" "para" "por" "según"
+                                     "sin" "so" "sobre" "tras")
+                                   "\\|")
+                        "\\)\\( \\|\\'\\)") " "
+               (org-entry-get nil "ITEM") nil t)) t) t t) t t))
 (require 'org-clock)
 (setq org-duration-units '(("min" . 1)
                            ("h" . 60)
@@ -315,32 +340,7 @@
       (if (featurep 'symon)
           t ;; org don't document this value, it's a trick
         'frame-title)
-      org-clock-heading-function
-      `(lambda ()
-         (replace-regexp-in-string
-          " +\\'" ""
-          (replace-regexp-in-string
-           "  +" " "
-           (replace-regexp-in-string
-            "\\([^[:space:]]\\{3\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
-            (let ((case-fold-search t))
-              (replace-regexp-in-string
-               ,(concat "\\("
-                        (mapconcat 'identity
-                                   '("al" "un" "uno" "una" "unos" "unas"
-                                     "del"
-                                     ;; conjunciones
-                                     "y" "e" "o" "u"
-                                     ;; prepositions
-                                     "el" "la" "lo" "las" "los"
-                                     "a" "ante" "bajo" "cabe" "con"
-                                     "contra" "de" "desde" "durante"
-                                     "en" "entre" "hacia" "hasta"
-                                     "mediante" "para" "por" "según"
-                                     "sin" "so" "sobre" "tras")
-                                   "\\|")
-                        "\\)\\( \\|\\'\\)") " "
-               (org-entry-get nil "ITEM") nil t)) t) t t) t t)))
+      org-clock-heading-function 'org-abbrev-es-heading)
 
 (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
 
