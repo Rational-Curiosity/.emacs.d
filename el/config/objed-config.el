@@ -40,8 +40,20 @@
   (which-key-add-key-based-replacements "´" "backward boundary")
   (which-key-add-key-based-replacements "'" "user map")
   (which-key-add-key-based-replacements "-" "other user map"))
+
+(defun objed-toggle-mode-activate ()
+  (interactive)
+  (if objed-mode
+      (progn
+        (objed-quit)
+        (objed-mode -1)
+        (message "objed-mode disabled"))
+    (objed-mode 1)
+    (objed-activate)
+    (message "objed-mode enabled and activated")))
+
 (global-set-key (kbd "M-SPC") 'objed-activate)
-(objed-mode)
+(global-set-key (kbd "<f7> o") 'objed-toggle-mode-activate)
 
 
 (provide 'objed-config)
