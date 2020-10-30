@@ -48,8 +48,8 @@
       company-tooltip-minimum 2
       company-selection-wrap-around t
       company-minimum-prefix-length 1
-      company-idle-delay .2
-      company-tooltip-idle-delay .2)
+      company-idle-delay 0.2
+      company-tooltip-idle-delay 0.2)
 
 (defun toggle-company-semantic ()
   "Toggle semantic backend."

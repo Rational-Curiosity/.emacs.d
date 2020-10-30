@@ -19,6 +19,9 @@
       (delq (assoc 'eglot--managed-mode
                    mode-line-misc-info)
             mode-line-misc-info)
+      ;; performance
+      read-process-output-max (* 3 1024 1024)
+      ;; eglot
       eglot-sync-connect nil
       eglot-ignored-server-capabilites '(:documentHighlightProvider))
 

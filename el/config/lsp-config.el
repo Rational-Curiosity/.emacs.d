@@ -45,7 +45,6 @@
 (require 'lsp-pyls)
 (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
       ;; performance
-      gc-cons-threshold 100000000
       read-process-output-max (* 3 1024 1024)
       lsp-completion-provider :capf
       lsp-idle-delay 2.0
