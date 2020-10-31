@@ -308,7 +308,7 @@ These types are excluded: `thing', `buffer', `point'.
 (defvar thgcmd-thing-region-point nil
   "Position of point before invoking `cycle-select-something'.")
 
-(defvar thgcmd-last-thing-type 'sexp "Last thing type (a symbol) used by various commands.")
+(defvar thgcmd-last-thing-type 'symbol "Last thing type (a symbol) used by various commands.")
 
 (defun thgcmd-things-alist (&optional require-fwd-p)
   "List of most thing types currently defined.

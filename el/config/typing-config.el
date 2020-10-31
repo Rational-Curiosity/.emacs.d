@@ -1025,8 +1025,9 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "M-l") #'downcase-dwim)
 (global-set-key (kbd "M-u") #'upcase-dwim)
 ;; thingatpt+
-(global-set-key (kbd "M-s m") #'mark-things)
-(global-set-key (kbd "M-s c") #'cycle-thing-region)
+(global-set-key (kbd "C-M-SPC") #'select-thing)
+(global-set-key (kbd "M-s m") #'select-things)
+(global-set-key (kbd "M-s c") #'cycle-select-something)
 (global-set-key (kbd "M-s l") #'mark-enclosing-list)
 (global-set-key (kbd "M-s f") #'mark-enclosing-list-forward)
 (global-set-key (kbd "M-s b") #'mark-enclosing-list-backward)
