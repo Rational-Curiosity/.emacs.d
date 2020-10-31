@@ -81,6 +81,7 @@
      graphviz-dot-mode
      guess-language
      haskell-mode
+     hide-comnt
      highlight
      hl-todo
      ht
