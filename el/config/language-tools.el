@@ -172,7 +172,17 @@ By default insert it, with prefix display a message with it."
 (defvar language-text-to-speak-process nil)
 
 (require 'guess-language)
-(setq guess-language-languages '(en es))
+(add-hook 'text-mode-hook 'guess-language-mode)
+(defface guess-language-mode-line
+  '((t  (:foreground "#822")))
+  "Face used in search mode for titles."
+  :group 'guess-language)
+(setcar (cdr (assq 'guess-language-mode minor-mode-alist))
+        '(:eval
+          (propertize (format "%s" (or guess-language-current-language "∅"))
+                      'face 'guess-language-mode-line)))
+(setq guess-language-languages '(en es)
+      guess-language-min-paragraph-length 35)
 
 (defun language-text-to-speak-region (start end)
   (interactive (if (use-region-p)
