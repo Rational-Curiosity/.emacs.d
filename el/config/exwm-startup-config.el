@@ -802,6 +802,27 @@
   (exwm-winum-bindings)
   (add-hook 'winum-mode-hook 'exwm-winum-bindings))
 
+
+;; count visual mode lines
+(defun count-visual-lines-in-string (line max-cols &optional indent-cols)
+  (setq indent-cols (or indent-cols 0))
+  (let ((line-len (length line))
+        (pos (- max-cols indent-cols)))
+    (if (<= line-len pos)
+        1
+      (let ((visual-lines 2))
+        (setq pos (1+ (or (cl-position
+                             ?  line :end pos :from-end t)
+                            pos))
+              line-len (- line-len pos))
+        (while (< max-cols line-len)
+          (cl-incf visual-lines)
+          (setq line (substring line pos)
+                pos (1+ (or (cl-position
+                               ?  line :end max-cols :from-end t)
+                              max-cols))
+                line-len (- line-len pos)))
+        visual-lines))))
 ;; minibuffer
 (when (load "mini-frame" t t)
   (setq mini-frame-create-lazy nil
@@ -851,30 +872,10 @@
        mini-frame-frame
        `((height
           .
-          ,(let ((text (overlay-get icomplete-overlay 'after-string))
-                 (max-width (frame-width mini-frame-frame)))
-             (if (stringp text)
-                 (let ((newlines (s-count-matches "\n" text)))
-                   (if (< 0 newlines)
-                       (1+ newlines)
-                     (let ((text-width (+ (point-max)
-                                          (string-width text))))
-                       (if (>= max-width text-width)
-                           1
-                         (if (< (* max-width icomplete-prospects-height)
-                                (+ text-width
-                                   (*
-                                    (1- icomplete-prospects-height)
-                                    (/ (apply 'max
-                                              (mapcar 'string-width
-                                                      (split-string
-                                                       text
-                                                       icomplete-separator
-                                                       t)))
-                                       2))))
-                             (1+ icomplete-prospects-height)
-                           icomplete-prospects-height)))))
-               (/ (point-max) max-width))))))))
+          ,(count-visual-lines-in-string
+            (overlay-get icomplete-overlay 'after-string)
+            (frame-width mini-frame-frame)
+            (point-max)))))))
   (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
 
   (defun mini-frame-toggle-resize ()
