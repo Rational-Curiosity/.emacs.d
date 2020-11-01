@@ -19,24 +19,25 @@
     ;; No candidates
     (if (null comps)
         (message "No matches")
-      (let* ((first (car comps))
-             (common-len (fido-at-point-common-length first)))
+      (let* ((first (car comps)))
         ;; Remove the last non-nil element of a possibly improper list
         (nconc comps nil)
         (if (null (cdr comps))
             ;; Single candidate
-            (fido-at-point-insert start end common-len first)
+            (fido-at-point-insert start end first)
           ;; Many candidates
-          (let ((common (substring-no-properties first 0 common-len)))
-            (fido-at-point-do-complete start end common-len comps common)))))))
+          (let ((common (substring-no-properties
+                         first 0
+                         (fido-at-point-common-length first))))
+            (fido-at-point-do-complete start end comps common)))))))
 
-(defun fido-at-point-do-complete (start end common-len comps common)
+(defun fido-at-point-do-complete (start end comps common)
   (run-with-idle-timer
    0 nil
    `(lambda ()
       (let ((choice (completing-read "" (quote ,comps) nil nil ,common)))
         (when (stringp choice)
-          (fido-at-point-insert ,start ,end ,common-len choice))))))
+          (fido-at-point-insert ,start ,end choice))))))
 
 (defun fido-at-point-common-length (candidate)
   ;; Completion text should have a property of
@@ -54,13 +55,12 @@
         (or (next-single-property-change pos 'face candidate) len)
       0)))
 
-(defun fido-at-point-insert (start end common-part-length completion)
+(defun fido-at-point-insert (start end completion)
   "Replaces text in buffer from END back to COMMON-PART-LENGTH
 with COMPLETION."
-  (let ((reg-start (- end common-part-length)))
-    (goto-char end)
-    (delete-region (max start reg-start) end)
-    (insert (substring-no-properties completion))))
+  (goto-char end)
+  (delete-region start end)
+  (insert (substring-no-properties completion)))
 
 (defun fido-at-point-completion-in-region (&rest args)
   (if (boundp 'completion-in-region-function)
