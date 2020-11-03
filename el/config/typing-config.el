@@ -53,6 +53,8 @@
       isearch-allow-scroll 'unlimited
       completion-cycle-threshold 3
       completion-show-help nil
+      ;; kill-ring
+      kill-do-not-save-duplicates t
       ;; mark-ring
       set-mark-command-repeat-pop t
       mark-ring-max 32

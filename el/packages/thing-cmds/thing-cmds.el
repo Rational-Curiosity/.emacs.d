@@ -308,7 +308,8 @@ These types are excluded: `thing', `buffer', `point'.
 (defvar thgcmd-thing-region-point nil
   "Position of point before invoking `cycle-select-something'.")
 
-(defvar thgcmd-last-thing-type 'symbol "Last thing type (a symbol) used by various commands.")
+(defvar thgcmd-last-thing-type 'symbol
+  "Last thing type (a symbol) used by various commands.")
 
 (defun thgcmd-things-alist (&optional require-fwd-p)
   "List of most thing types currently defined.
@@ -540,7 +541,7 @@ comment."
            (point)
            ;; (if mark-active  (min (region-beginning) (region-end))  (point-min)))) ;; -
            (point-max)))                                                             ;; +
-    (if (interactive-p)
+    (if (called-interactively-p 'interactive)
         (with-comments-hidden start end (next-visible-thing thing start end 'BACKWARD))
       (next-visible-thing thing start end 'BACKWARD))))
 
@@ -599,7 +600,7 @@ the bounds of THING.  Return nil if no such THING is found."
     (unless end   (setq end  (if backward (point-min) (point-max))))
     (cond ((< start end) (when   backward (setq start  (prog1 end (setq end  start)))))
           ((> start end) (unless backward (setq start  (prog1 end (setq end  start))))))
-    (if (interactive-p)
+    (if (called-interactively-p 'interactive)
         (with-comments-hidden start end (thgcmd-next-visible-thing-1 thing start end backward))
       (thgcmd-next-visible-thing-1 thing start end backward)))
 

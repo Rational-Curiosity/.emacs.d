@@ -107,6 +107,7 @@
      multiple-cursors
      ob-async
      objed
+     orderless
      org
      org-agenda-property
      org-brain
