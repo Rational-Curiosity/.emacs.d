@@ -824,8 +824,7 @@
 
 ;; minibuffer
 (when (load "mini-frame" t t)
-  (setq mini-frame-create-lazy nil
-        mini-frame-show-parameters
+  (setq mini-frame-show-parameters
         (if (featurep 'helm)
             '((left . -1) (top . -1) (width . 0.75) (height . 1) (alpha . 75)
               (border-width . 0) (internal-border-width . 0)
@@ -857,7 +856,7 @@
                 ;; (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
                 (background-color . "black")))))
         mini-frame-resize nil
-        ;; resize-mini-frames t
+        resize-mini-frames t
         mini-frame-ignore-commands '("edebug-eval-expression"
                                      debugger-eval-expression
                                      "exwm-workspace-"))

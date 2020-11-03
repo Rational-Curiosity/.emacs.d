@@ -511,7 +511,8 @@ ARG non-nil resize window to ARG height."
   (set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
   (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
   (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
-  (global-visual-line-mode 1))
+  (global-visual-line-mode 1)
+  (add-hook 'minibuffer-setup-hook 'visual-line-mode))
 ;; ]
 
 ;; winner

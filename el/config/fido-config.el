@@ -20,7 +20,7 @@
 
 (setq icomplete-prospects-height 4
       icomplete-separator " · "
-      ;; fido options
+      ;; fido
       icomplete-tidy-shadowed-file-names t
       icomplete-show-matches-on-no-input t
       icomplete-hide-common-prefix nil
@@ -31,7 +31,7 @@
       read-buffer-completion-ignore-case t
       read-file-name-completion-ignore-case t
       ;; orderless
-      orderless-matching-styles '(orderless-regexp))
+      orderless-matching-styles '(orderless-regexp orderless-flex))
 
 (cond ((executable-find "fdfind")
        (setq fd-dired-program "fdfind"
@@ -44,6 +44,7 @@
 
 (rg-enable-default-bindings (kbd "M-g A"))
 
+;; Functions
 (defun icomplete-vertical-kill-ring-insert (&optional arg)
   "Insert item from kill-ring, selected with completion."
   (interactive "*p")
@@ -59,6 +60,7 @@
           (delete-region (region-beginning) (region-end)))
         (insert candidate)))))
 
+;; Keys
 (define-key icomplete-minibuffer-map (kbd "C-k") 'icomplete-fido-kill)
 (define-key icomplete-minibuffer-map (kbd "C-d") 'icomplete-fido-delete-char)
 (define-key icomplete-minibuffer-map (kbd "RET") 'icomplete-fido-ret)
@@ -68,6 +70,7 @@
 (define-key icomplete-minibuffer-map (kbd "C-s") 'icomplete-forward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
+(define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-toggle)
 (global-set-key (kbd "M-y") 'icomplete-vertical-kill-ring-insert)
 (global-set-key (kbd "M-g f") 'fd-dired)
 (global-set-key (kbd "M-g a") 'ripgrep-regexp)
