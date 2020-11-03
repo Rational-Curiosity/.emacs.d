@@ -804,25 +804,24 @@
 
 
 ;; count visual mode lines
-(defun count-visual-lines-in-string (line max-cols &optional indent-cols)
-  (setq indent-cols (or indent-cols 0))
+(defun count-visual-lines-in-line (line max-cols)
   (let ((line-len (length line))
-        (pos (- max-cols indent-cols)))
-    (if (<= line-len pos)
-        1
-      (let ((visual-lines 2))
-        (setq pos (1+ (or (cl-position
-                             ?  line :end pos :from-end t)
-                            pos))
-              line-len (- line-len pos))
-        (while (< max-cols line-len)
-          (cl-incf visual-lines)
-          (setq line (substring line pos)
-                pos (1+ (or (cl-position
-                               ?  line :end max-cols :from-end t)
-                              max-cols))
-                line-len (- line-len pos)))
-        visual-lines))))
+        pos
+        (visual-lines 1))
+    (while (< max-cols line-len)
+      (cl-incf visual-lines)
+      (setq pos (1+ (or (cl-position
+                         ?  line :end max-cols :from-end t)
+                        max-cols))
+            line (substring line pos)
+            line-len (- line-len pos)))
+    visual-lines))
+
+(defun count-visual-lines-in-string (string max-cols)
+  (apply '+ (mapcar (lambda (line)
+                      (count-visual-lines-in-line line max-cols))
+                    (split-string string "\n"))))
+
 ;; minibuffer
 (when (load "mini-frame" t t)
   (setq mini-frame-create-lazy nil
@@ -873,9 +872,10 @@
        `((height
           .
           ,(count-visual-lines-in-string
-            (overlay-get icomplete-overlay 'after-string)
-            (frame-width mini-frame-frame)
-            (point-max)))))))
+            (concat
+             (buffer-substring-no-properties (point-min) (point-max))
+             (overlay-get icomplete-overlay 'after-string))
+            (frame-width mini-frame-frame)))))))
   (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
 
   (defun mini-frame-toggle-resize ()
