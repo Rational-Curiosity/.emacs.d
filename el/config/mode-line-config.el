@@ -439,7 +439,7 @@ mouse-3: Toggle minor modes"
          (substring string 0 (- len/2 1))
          (propertize "…"
                      'face 'error
-                     'help-echo string)
+                     'help-echo (buffer-file-name))
          (substring string (- len/2))))
     string))
 
