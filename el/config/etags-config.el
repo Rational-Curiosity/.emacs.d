@@ -17,6 +17,7 @@
 ;; # cd <project root path>
 ;; # rm TAGS
 ;; # find <root code path> -type f -name "<source files pattern>" -print 2>/dev/null | xargs etags --append
+(require 'etags)
 
 (defvar tags-default-file-name "TAGS")
 

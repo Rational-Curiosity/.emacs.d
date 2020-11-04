@@ -281,8 +281,6 @@
 
 ;; [ <Not always required>
 ;; shell
-(define-key minibuffer-local-shell-command-map (kbd "M-v") 'switch-to-completions)
-
 (with-eval-after-load 'shell
   (require 'shell-config))
 
@@ -349,7 +347,7 @@
 ;;;;;;;;;;;;;;;;;
 (with-eval-after-load 'compile
   (require 'compile-config))
-(with-eval-after-load 'etags
+(with-eval-after-load 'prog-mode
   (require 'etags-config))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (with-eval-after-load 'ede
