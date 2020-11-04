@@ -15,8 +15,13 @@
 (require 'icomplete-vertical)
 (require 'completing-read-at-point)
 (require 'orderless)
+;; this file overides completion-category-defaults
+(require 'message)
 
 (set-face-attribute 'icomplete-first-match nil :foreground "#cafd32")
+
+(add-hook 'minibuffer-exit-hook
+          #'orderless-remove-transient-configuration)
 
 (setq icomplete-prospects-height 4
       icomplete-separator " · "
@@ -31,7 +36,8 @@
       read-buffer-completion-ignore-case t
       read-file-name-completion-ignore-case t
       ;; orderless
-      orderless-matching-styles '(orderless-regexp orderless-flex))
+      orderless-matching-styles '(orderless-regexp orderless-flex)
+      orderless-style-dispatchers nil)
 
 (cond ((executable-find "fdfind")
        (setq fd-dired-program "fdfind"
@@ -45,6 +51,20 @@
 (rg-enable-default-bindings (kbd "M-g A"))
 
 ;; Functions
+(defun orderless-first-regexp (pattern index _total)
+  (if (= index 0) 'orderless-regexp))
+
+(defun orderless-first-literal (pattern index _total)
+  (if (= index 0) 'orderless-literal))
+
+(defun orderless-match-components-literal ()
+  "Components match regexp for the rest of the session."
+  (interactive)
+  (if orderless-transient-matching-styles
+      (orderless-remove-transient-configuration)
+    (setq orderless-transient-matching-styles '(orderless-literal)
+          orderless-transient-style-dispatchers '(ignore))))
+
 (defun icomplete-vertical-kill-ring-insert (&optional arg)
   "Insert item from kill-ring, selected with completion."
   (interactive "*p")
@@ -54,13 +74,29 @@
       (yank-pop arg)
     (icomplete-vertical-do
         (:separator 'dotted-line :height 20)
-      (let ((candidate (completing-read "Yank: " kill-ring nil t)))
+      (let ((candidate
+             (completing-read
+              "Yank: "
+              (lambda (string pred action)
+                (if (eq action 'metadata)
+                    '(metadata (display-sort-function . identity)
+                               (cycle-sort-function . identity))
+                  (complete-with-action action kill-ring string pred)))
+              nil t)))
         (when (and candidate (region-active-p))
           ;; the currently highlighted section is to be replaced by the yank
           (delete-region (region-beginning) (region-end)))
         (insert candidate)))))
 
 ;; Keys
+(with-eval-after-load 'simple
+  (define-key minibuffer-local-shell-command-map (kbd "M-v")
+    'switch-to-completions)
+  (define-key read-expression-map (kbd "M-v") 'switch-to-completions))
+
+(define-key minibuffer-local-completion-map (kbd "C-v")
+  'orderless-match-components-literal)
+
 (define-key icomplete-minibuffer-map (kbd "C-k") 'icomplete-fido-kill)
 (define-key icomplete-minibuffer-map (kbd "C-d") 'icomplete-fido-delete-char)
 (define-key icomplete-minibuffer-map (kbd "RET") 'icomplete-fido-ret)
@@ -75,8 +111,13 @@
 (global-set-key (kbd "M-g f") 'fd-dired)
 (global-set-key (kbd "M-g a") 'ripgrep-regexp)
 (global-set-key (kbd "M-s O") 'multi-occur)
+(global-set-key (kbd "<f12>") (lambda ()
+                                (interactive)
+                                (message "icomplete overlay: %s"
+                                         (overlay-get icomplete-overlay 'after-string))))
 
 (icomplete-mode)
+(setq fido-mode t)
 (completing-read-at-point-mode)
 
 
