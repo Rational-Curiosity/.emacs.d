@@ -15,6 +15,27 @@
 (require 'icomplete-vertical)
 (require 'completing-read-at-point)
 (require 'orderless)
+(when (bug-check-function-bytecode
+       'orderless-try-completion
+       "wAUFBSOJhA0AwYIqAIlBhCcAwgYGBgYGBiNAAUBQiQFHQrIBgioABQNChw==")
+  (defun orderless-try-completion (string table pred point &optional _metadata)
+    "Complete STRING to unique matching entry in TABLE.
+This uses `orderless-all-completions' to find matches for STRING
+in TABLE among entries satisfying PRED.  If there is only one
+match, it completes to that match.  If there are no matches, it
+returns nil.  In any other case it \"completes\" STRING to
+itself, without moving POINT.
+This function is part of the `orderless' completion style."
+    (let ((all (orderless-filter string table pred)))
+      (cond
+       ((null all) nil)
+       ((null (cdr all))
+        (let ((full (concat
+                     (car (orderless--prefix+pattern string table pred))
+                     (car all))))
+          (cons full (length full))))
+       (t
+        (completion-flex-try-completion string table pred point))))))
 ;; this file overides completion-category-defaults
 (require 'message)
 
@@ -63,7 +84,9 @@
   (if orderless-transient-matching-styles
       (orderless-remove-transient-configuration)
     (setq orderless-transient-matching-styles '(orderless-literal)
-          orderless-transient-style-dispatchers '(ignore))))
+          orderless-transient-style-dispatchers '(ignore)))
+  (insert " ")
+  (delete-char -1))
 
 (defun icomplete-vertical-kill-ring-insert (&optional arg)
   "Insert item from kill-ring, selected with completion."
