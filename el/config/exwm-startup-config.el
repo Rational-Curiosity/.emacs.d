@@ -802,6 +802,13 @@
   (exwm-winum-bindings)
   (add-hook 'winum-mode-hook 'exwm-winum-bindings))
 
+;; gaps
+;; (let ((color (face-attribute 'default :background)))
+;;   (set-face-attribute 'window-divider nil :foreground color)
+;;   (set-face-attribute 'window-divider-first-pixel nil :foreground "#353024")
+;;   (set-face-attribute 'window-divider-last-pixel nil :foreground "#353024"))
+;; (window-divider-mode)
+
 
 ;; count visual mode lines
 (defun count-visual-lines-in-line (line max-cols)
