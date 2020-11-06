@@ -85,8 +85,9 @@ This function is part of the `orderless' completion style."
       (orderless-remove-transient-configuration)
     (setq orderless-transient-matching-styles '(orderless-literal)
           orderless-transient-style-dispatchers '(ignore)))
-  (insert " ")
-  (delete-char -1))
+  (setq completion-all-sorted-completions nil)
+  (icomplete-pre-command-hook)
+  (icomplete-post-command-hook))
 
 (defun icomplete-vertical-kill-ring-insert (&optional arg)
   "Insert item from kill-ring, selected with completion."
