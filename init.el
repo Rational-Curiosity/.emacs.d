@@ -12,12 +12,20 @@
 
 ;;; Code:
 
-;; (add-hook 'after-init-hook
-;;           `(lambda ()
-;;              (setq gc-cons-percentage ,gc-cons-percentage
-;;                    gc-cons-threshold ,gc-cons-threshold)) t)
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq gc-cons-percentage ,gc-cons-percentage
+                   gc-cons-threshold ,gc-cons-threshold)
+             (require 'gcmh)
+             (setq gcmh-idle-delay 20
+                   gcmh-low-cons-threshold ,gc-cons-threshold
+                   gcmh-high-cons-threshold (eval-when-compile
+                                              (* 100 1024 1024)))
+             (gcmh-mode 1))
+          t)
 (setq gc-cons-percentage 0.6
-      gc-cons-threshold (* 100 1024 1024))
+      gc-cons-threshold (eval-when-compile
+                          (* 100 1024 1024)))
 
 ;; emacs 27 avoids (package-initialize)
 
@@ -74,6 +82,7 @@
      figlet
      flymake
      flyspell-correct
+     gcmh
      git-commit
      gnuplot
      gnuplot-mode
