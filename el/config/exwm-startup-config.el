@@ -810,25 +810,6 @@
 ;; (window-divider-mode)
 
 
-;; count visual mode lines
-(defun count-visual-lines-in-line (line max-cols)
-  (let ((line-len (length line))
-        pos
-        (visual-lines 1))
-    (while (< max-cols line-len)
-      (cl-incf visual-lines)
-      (setq pos (1+ (or (cl-position
-                         ?  line :end max-cols :from-end t)
-                        max-cols))
-            line (substring line pos)
-            line-len (- line-len pos)))
-    visual-lines))
-
-(defun count-visual-lines-in-string (string max-cols)
-  (apply '+ (mapcar (lambda (line)
-                      (count-visual-lines-in-line line max-cols))
-                    (split-string string "\n"))))
-
 ;; minibuffer
 (when (load "mini-frame" t t)
   (setq mini-frame-show-parameters

@@ -6,15 +6,17 @@
 ;; (require 'config-lib)
 
 ;;; Code:
+(require 'cl-lib)
 
 (defun remove-nth-element (nth list)
+  "Efficient remove NTH element in LIST."
   (if (zerop nth) (cdr list)
     (let ((last (nthcdr (1- nth) list)))
       (setcdr last (cddr last))
       list)))
 
 (defun assoc-keys (keys alist &optional test-fun)
-  "Recursively find KEYS in ALIST."
+  "Recursively find KEYS in ALIST using TEST-FUN."
   (if keys
       (cond
        ((listp alist)
@@ -138,7 +140,26 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
                    (if (> dir-count 1)
                        (format " in %d directories" dir-count) "")))))))
 
-(require 'cl-lib)
+;; [ counting visual lines
+(defun count-visual-lines-in-line (line max-cols)
+  (let ((line-len (length line))
+        pos
+        (visual-lines 1))
+    (while (< max-cols line-len)
+      (cl-incf visual-lines)
+      (setq pos (1+ (or (cl-position
+                         ?  line :end max-cols :from-end t)
+                        max-cols))
+            line (substring line pos)
+            line-len (- line-len pos)))
+    visual-lines))
+
+(defun count-visual-lines-in-string (string max-cols)
+  (apply '+ (mapcar (lambda (line)
+                      (count-visual-lines-in-line line max-cols))
+                    (split-string string "\n"))))
+;; ]
+
 ;; [ get current function name
 ;; thanks to: https://emacs.stackexchange.com/a/2312
 (defun call-stack ()
@@ -296,7 +317,9 @@ Otherwise return a list of files which regex match."
         (car matched)
       matched)))
 
-;; bugs
+;;;;;;;;;;
+;; Bugs ;;
+;;;;;;;;;;
 (defun bug-check-function-bytecode (function bytecode-base64 &optional inhibit-log)
   "Check if FUNCTION has BYTECODE-BASE64.  If INHIBIT-LOG is non-nil inhibit log when differs."
   (let ((current-bytecode-base64
