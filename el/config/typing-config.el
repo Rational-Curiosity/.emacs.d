@@ -862,27 +862,23 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 ;(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
 
-(defvar minibuffer-try-this-command nil
-  "Store current this-command on minibuffer")
-
-(defun pre-minibuffer-try ()
-  (setq minibuffer-try-this-command this-command
-        this-command (lambda () (interactive)
-                       (condition-case _
-                           (call-interactively minibuffer-try-this-command)
-                         (text-read-only (goto-char (minibuffer-prompt-end)))
-                         (beginning-of-buffer (goto-char (minibuffer-prompt-end)))
-                         (end-of-buffer (goto-char (point-max)))))))
-(defun post-minibuffer-try ()
-  (setq this-command minibuffer-try-this-command
-        minibuffer-try-this-command nil))
+(defun minibuffer-try-pre ()
+  "By default typing out of input area raise an error.
+This function avoid error and insert character at the end."
+  (when (eq this-command 'self-insert-command)
+    (setq this-command (lambda () (interactive)
+                         (setq this-command 'self-insert-command)
+                         (condition-case _
+                             (call-interactively 'self-insert-command)
+                           (text-read-only (goto-char (point-max))
+                                           (self-insert-command 1 last-command-event))
+                           (beginning-of-buffer (goto-char (point-max)))
+                           (end-of-buffer (goto-char (point-max))))))))
 
 (defun minibuffer-try-add-hooks ()
-  (add-hook 'pre-command-hook 'pre-minibuffer-try)
-  (add-hook 'post-command-hook 'post-minibuffer-try))
+  (add-hook 'pre-command-hook 'minibuffer-try-pre))
 (defun minibuffer-try-remove-hooks ()
-  (remove-hook 'post-command-hook 'post-minibuffer-try)
-  (remove-hook 'pre-command-hook 'pre-minibuffer-try))
+  (remove-hook 'pre-command-hook 'minibuffer-try-pre))
 
 (add-hook 'minibuffer-setup-hook 'minibuffer-try-add-hooks)
 (add-hook 'minibuffer-exit-hook 'minibuffer-try-remove-hooks)
