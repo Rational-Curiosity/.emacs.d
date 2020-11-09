@@ -37,7 +37,7 @@
   "EXWM default transparency.")
 
 (defvar exwm-hide-mode-line '("code")
-  "EXWM instances without mode line")
+  "EXWM instances without mode line.")
 
 ;; example: export EXWM_MONITOR_ORDER="eDP-1 HDMI-1 DP-1"
 (defvar exwm-default-monitor-order

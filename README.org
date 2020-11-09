@@ -1,0 +1,91 @@
+* =.emacs.d= personal configuration
+
+I hope this may help you. All _.el_ files are ready to byte-compile.
+
+** Installation
+
+Remove ~emacs~ init files: =~/.emacs=, =~/.emacs.el= or =~/.emacs.d/=
+
+Download repository in =~/.emacs.d/=
+
+Start ~emacs~.
+
+** Byte-compile
+
+Compile all configuration files with ~byte-compile-emacs-config~
+interactive function. Without /lsp-mode/, /smartparents/ or /company/
+packages the compilation of =lsp-config.el=,
+=smartparents-custom-config.el= or =company-extension-config.el=
+fails, there is no problem because this files are not required without
+respective packages.
+
+** Moving the *Ctrl* key
+
+You can find web pages talking about swap Ctrl and Caps Lock keys, you
+can do this ~M-x xkb-swap-ctrl-caps~ or undo with ~C-u M-x
+xkb-swap-ctrl-caps~ (~setxkbmap~ is required in your system).
+
+But I prefer swap *Ctrl* and *AltGr* ~M-x xkb-swap-ralt-ctrl~ (program
+~xkbcomp~ required). Then *Alt* and *Ctrl* become symmetrical keys,
+and then press modification keys with thumbs. Restore normal keyboard
+with ~C-u M-x xkb-swap-ralt-ctrl~.
+
+Another option is swap Ctrl and Win keys with ~M-x xkb-swap-ctrl-win~
+(~setxkbmap~ required), restore with ~C-u M-x xkb-swap-ctrl-win~.
+
+** Modal mode
+
+Disabled by default, enable or toggle it with ~M-x
+modal-global-mode-toggle~.
+
+Translates uppercase key into ctrl+key. Examples:
+
+- Exit /emacs/ pressing ~X C~ (translated into ~C-x C-c~).
+- Open file pressing ~X F~ (translated into ~C-x C-f~).
+- Goto end of line pressing ~E~ (translated into ~C-e~).
+- Goto beginning of line pressing ~A~ (translated into ~C-a~).
+- ...
+
+** /EXWM/ configuration
+
+Copy [[file:cache/xinitrc.emacs]] to =~/.xinitrc= and see [[*/EXWM/
+requirements]].
+
+I recommend that you boot into console mode
+[[http://ubuntuhandbook.org/index.php/2020/05/boot-ubuntu-20-04-command-console/][How
+to boot ubuntu 20.04 into text / command console]].
+
+** Requirements
+
+- [[https://github.com/emacs-mirror/emacs/releases][Emacs 27]]
+- [[https://github.com/BurntSushi/ripgrep][ripgrep]] - High performance search in files
+  #+begin_src sh
+sudo apt install ripgrep
+  #+end_src
+- [[https://github.com/sharkdp/fd][fd]] - High performance find files
+  #+begin_src sh
+sudo apt install fd-find
+  #+end_src
+- [[https://gitlab.freedesktop.org/xorg/app/xkbcomp][xkbcomp]] - swap *Ctrl* and *AltGr*
+  #+begin_src sh
+sudo apt install x11-xkb-utils
+  #+end_src
+- [[https://github.com/hoytech/vmtouch][vmtouch]] - Emacs config folder =~/.emacs.d/= into memory (fast startup)
+  #+begin_src sh
+sudo apt install vmtouch
+  #+end_src
+
+*** /EXWM/ requirements
+
+- [[https://github.com/chjj/compton][compton]] - Transparency
+  #+begin_src sh
+sudo apt install compton
+  #+end_src
+- [[https://github.com/Maato/volumeicon][volumeicon]] - Tray volume indicator
+  #+begin_src sh
+sudo apt install volumeicon
+  #+end_src
+- [[https://gitlab.freedesktop.org/NetworkManager/NetworkManager/][NetworkManager]] - Network manager with indicator
+  #+begin_src sh
+sudo apt install network-manager
+  #+end_src
