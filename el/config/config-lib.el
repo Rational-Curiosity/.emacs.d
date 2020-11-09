@@ -408,14 +408,20 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 ;;;;;;;;;;;;;;;
 (defun process-get-attrs (pid attrs-process)
   (let ((process-attrs (process-attributes pid)))
-    (cons `(pid . ,pid) (mapcar (lambda (attr) (assoc attr process-attrs)) attrs-process))))
+    (cons `(pid . ,pid) (mapcar (lambda (attr)
+                                  (assoc attr process-attrs))
+                                attrs-process))))
 
 (defun processes-named (names attrs-processes)
-  (cl-remove-if-not (lambda (attrs-process) (member (cdr (assoc 'comm attrs-process)) names)) attrs-processes))
+  (cl-remove-if-not (lambda (attrs-process)
+                      (member (cdr (assoc 'comm attrs-process)) names))
+                    attrs-processes))
 
 (defun processes-children (pid attrs-processes)
-  (cl-remove-if-not (lambda (attrs-process) (let ((ppid (cdr (assoc 'ppid attrs-process))))
-                                         (and (integerp ppid) (= pid ppid)))) attrs-processes))
+  (cl-remove-if-not (lambda (attrs-process)
+                      (let ((ppid (cdr (assoc 'ppid attrs-process))))
+                        (and (integerp ppid) (= pid ppid))))
+                    attrs-processes))
 
 (defun processes-children-all (pid attrs-processes)
   (let ((pids (list pid))
@@ -442,12 +448,13 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
       ;;   (processes-named "python.exe" emacs-processes))
       ;; ]
       ;; Limit python's processes of every emacs
-      (let ((,processes-number-variable (length (processes-named
-                                                 ,process-names
-                                                 (processes-children-all
-                                                  (emacs-pid)
-                                                  (mapcar (lambda (x) (process-get-attrs x '(ppid comm)))
-                                                          (list-system-processes)))))))
+      (let ((,processes-number-variable
+             (length (processes-named
+                      ,process-names
+                      (processes-children-all
+                       (emacs-pid)
+                       (mapcar (lambda (x) (process-get-attrs x '(ppid comm)))
+                               (list-system-processes)))))))
         (when
             ,processes-number-condition
           ,@body)))))

@@ -229,75 +229,80 @@
 (require 'crm)
 (defun exwm-update-screens ()
   (interactive)
-  (let* ((monitors (exwm-xrandr-parse))
-         (names (hash-table-keys monitors)))
-    (if (called-interactively-p 'interactive)
-        (setq exwm-default-monitor-order
-              (or (completing-read-multiple
-                   (concat
-                    "External monitor order (" crm-separator "): ")
-                   names
-                   nil t)
-                  exwm-default-monitor-order)))
-    (if (null exwm-default-monitor-order)
-        (setq exwm-default-monitor-order
-              (list
-               (cl-some (lambda (name)
-                          (if (gethash 'primary (gethash name monitors))
-                              name))
-                        names))))
-    (let* ((names (cl-remove-if-not (lambda (name)
-                                      (member name names))
-                                    exwm-default-monitor-order))
-           (posx 0)
-           (gety-lambda
-            (lambda (name)
-              (string-to-number
-               (nth 1 (split-string
-                       (or
-                        (exwm-get-default-monitor-resolution name)
-                        (gethash 'max (gethash name monitors))) "x")))))
-           (ymax
-            (apply 'max
-                   (mapcar
-                    gety-lambda
-                    names)))
-           (args
-            (apply
-             'nconc
-             (mapcar
+  (when (null (member
+               "arandr"
+               (mapcar (lambda (pid)
+                         (cdr (assq 'comm (process-get-attrs pid '(comm)))))
+                       (list-system-processes))))
+    (let* ((monitors (exwm-xrandr-parse))
+           (names (hash-table-keys monitors)))
+      (if (called-interactively-p 'interactive)
+          (setq exwm-default-monitor-order
+                (or (completing-read-multiple
+                     (concat
+                      "External monitor order (" crm-separator "): ")
+                     names
+                     nil t)
+                    exwm-default-monitor-order)))
+      (if (null exwm-default-monitor-order)
+          (setq exwm-default-monitor-order
+                (list
+                 (cl-some (lambda (name)
+                            (if (gethash 'primary (gethash name monitors))
+                                name))
+                          names))))
+      (let* ((names (cl-remove-if-not (lambda (name)
+                                        (member name names))
+                                      exwm-default-monitor-order))
+             (posx 0)
+             (gety-lambda
               (lambda (name)
-                (let* ((monitor (gethash name monitors))
-                       (resolution
-                        (or
-                         (exwm-get-default-monitor-resolution name)
-                         (gethash 'max monitor))))
-                  (prog1
-                      (list "--output" name
-                            "--mode" resolution
-                            "--pos" (concat (number-to-string posx)
-                                            "x"
-                                            (number-to-string
-                                             (- ymax (funcall gety-lambda name))))
-                            "--rotate" "normal")
-                    (setq posx (+ posx
-                                  (string-to-number
-                                   (nth 0 (split-string
-                                           (or
-                                            (exwm-get-default-monitor-resolution name)
-                                            (gethash 'max monitor)) "x"))))))))
-              names))))
-      (apply 'call-process "xrandr" nil nil nil args)
-      (if exwm-randr-workspace-monitor-plist
-          (exwm-set-random-wallpaper exwm-default-wallpaper-folder "update"))
-      (setq exwm-randr-workspace-monitor-plist nil)
-      (let ((monitor-number -1))
-        (mapc (lambda (name)
-                (setq exwm-randr-workspace-monitor-plist
-                      (nconc exwm-randr-workspace-monitor-plist
-                             (list (cl-incf monitor-number) name))))
-              names)
-        (setq exwm-workspace-number (1+ monitor-number))))))
+                (string-to-number
+                 (nth 1 (split-string
+                         (or
+                          (exwm-get-default-monitor-resolution name)
+                          (gethash 'max (gethash name monitors))) "x")))))
+             (ymax
+              (apply 'max
+                     (mapcar
+                      gety-lambda
+                      names)))
+             (args
+              (apply
+               'nconc
+               (mapcar
+                (lambda (name)
+                  (let* ((monitor (gethash name monitors))
+                         (resolution
+                          (or
+                           (exwm-get-default-monitor-resolution name)
+                           (gethash 'max monitor))))
+                    (prog1
+                        (list "--output" name
+                              "--mode" resolution
+                              "--pos" (concat (number-to-string posx)
+                                              "x"
+                                              (number-to-string
+                                               (- ymax (funcall gety-lambda name))))
+                              "--rotate" "normal")
+                      (setq posx (+ posx
+                                    (string-to-number
+                                     (nth 0 (split-string
+                                             (or
+                                              (exwm-get-default-monitor-resolution name)
+                                              (gethash 'max monitor)) "x"))))))))
+                names))))
+        (apply 'call-process "xrandr" nil nil nil args)
+        (if exwm-randr-workspace-monitor-plist
+            (exwm-set-random-wallpaper exwm-default-wallpaper-folder "update"))
+        (setq exwm-randr-workspace-monitor-plist nil)
+        (let ((monitor-number -1))
+          (mapc (lambda (name)
+                  (setq exwm-randr-workspace-monitor-plist
+                        (nconc exwm-randr-workspace-monitor-plist
+                               (list (cl-incf monitor-number) name))))
+                names)
+          (setq exwm-workspace-number (1+ monitor-number)))))))
 
 (defun exwm-update-minibuffer-monitor ()
   (interactive)
