@@ -8,7 +8,7 @@
 ;; Code:
 
 (require 'minimap)
-(setcar (cdr (assq 'minimap-mode minor-mode-alist)) nil)
+(setq minor-mode-alist (assq-delete-all 'minimap-mode minor-mode-alist))
 
 ;; (add-hook 'minimap-sb-mode-hook
 ;;           (lambda ()

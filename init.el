@@ -17,6 +17,8 @@
              (setq gc-cons-percentage ,gc-cons-percentage
                    gc-cons-threshold ,gc-cons-threshold)
              (require 'gcmh)
+             (setq minor-mode-alist
+                   (cl-delete 'gcmh-mode minor-mode-alist :key 'car))
              (setq gcmh-idle-delay 20
                    gcmh-low-cons-threshold ,gc-cons-threshold
                    gcmh-high-cons-threshold (eval-when-compile
@@ -493,7 +495,8 @@
 
 ;; [ javascript
 (defun language-server-protocol-js-cond ()
-  (unless (derived-mode-p 'ein:ipynb-mode)
+  (unless (or (derived-mode-p 'ein:ipynb-mode)
+              (derived-mode-p 'json-mode))
     (funcall custom-lsp-startup-function)))
 (add-hook 'js-mode-hook #'language-server-protocol-js-cond)
 (with-eval-after-load 'js

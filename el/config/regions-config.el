@@ -8,7 +8,7 @@
 ;;; Code:
 
 (require 'subword)
-(setcar (cdr (assq 'subword-mode minor-mode-alist)) nil)
+(setq minor-mode-alist (assq-delete-all 'subword-mode minor-mode-alist))
 
 (set-face-attribute 'region nil
                     :foreground 'unspecified

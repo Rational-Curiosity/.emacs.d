@@ -430,10 +430,11 @@ prompt the user for a coding system."
           (newline-mark 10    [8629 10] [36 10])
           (tab-mark     9     [8676 32 8677 32] [92 9]))))
 (with-eval-after-load 'whitespace
-  (setcar (cdr (assq 'whitespace-mode minor-mode-alist)) nil)
-  (setcar (cdr (assq 'global-whitespace-mode minor-mode-alist)) nil)
-  (setcar (cdr (assq 'global-whitespace-newline-mode minor-mode-alist)) nil)
-  (setcar (cdr (assq 'whitespace-newline-mode minor-mode-alist)) nil)
+  (dolist (mode '(whitespace-mode
+                  global-whitespace-mode
+                  global-whitespace-newline-mode
+                  whitespace-newline-mode))
+    (setq minor-mode-alist (assq-delete-all mode minor-mode-alist)))
   (set-face-attribute 'whitespace-space nil
                       :foreground 'unspecified
                       :background "grey40")

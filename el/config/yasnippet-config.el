@@ -20,9 +20,8 @@
 (defface mode-line-yasnippet-mode
   '((t :inherit (mode-line) :foreground "medium slate blue" :weight bold))
   "Project name" :group 'mode-line)
-(setcar (cdr (assq 'yas-minor-mode minor-mode-alist)) (propertize "Y"
-                                                                  'face
-                                                                  'mode-line-yasnippet-mode))
+(setcar (cdr (assq 'yas-minor-mode minor-mode-alist))
+        (propertize "Y" 'face 'mode-line-yasnippet-mode))
 
 (require 'yasnippet-snippets)
 (setq yas-snippet-dirs
@@ -41,6 +40,7 @@
 TEXT - list of python args
 MAKE-FIELDS - t or nil"
   (let* ((indent (concat "\n" (make-string (current-column) 32)))
+         ;; `python-split-args' found at snippets/python-mode/.yas-setup.el
          (args (python-split-args text))
          (nr 0)
          (formatted-args

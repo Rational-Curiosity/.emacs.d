@@ -1,5 +1,6 @@
 ;;;; Below are configurations for EXWM.
 
+(message "Importing exwm-startup-config")
 ;; Add paths (not required if EXWM is installed from GNU ELPA).
 ;(add-to-list 'load-path "/path/to/xelb/")
 ;(add-to-list 'load-path "/path/to/exwm/")

@@ -15,7 +15,7 @@
 
 (message "Importing hideshow-config")
 
-(setcar (cdr (assq 'hs-minor-mode minor-mode-alist)) nil)
+(setq minor-mode-alist (assq-delete-all 'hs-minor-mode minor-mode-alist))
 
 (with-eval-after-load 'tex-mode
   (add-hook 'latex-mode-hook #'hs-minor-mode)

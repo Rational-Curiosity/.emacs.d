@@ -14,6 +14,13 @@
 
 ;;; Code:
 
+;; Remove minor mode from minor-mode-alist
+;; (setq minor-mode-alist
+;;       (cl-delete '<minor-mode> minor-mode-alist :key 'car))
+;; or
+;; (setq minor-mode-alist
+;;       (assq-delete-all '<minor-mode> minor-mode-alist))
+
 ;; (require 'mini-modeline)                                       ;; + with mini-modeline
 ;; (setcar (cdr (assq 'mini-modeline-mode minor-mode-alist)) nil)  ;; + with mini-modeline
 
