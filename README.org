@@ -2,6 +2,26 @@
 
 I hope this may help you. All _.el_ files are ready to byte-compile.
 
+** Features
+
+[[file:img/code_completion.png]]
+
++ Code completion with /icomplete/-/fido/ pressing =TAB=.
+
++ Minimal /mode-line/ info.
+
++ Complete IDE with /eglot/ (optional /lsp-mode/) and /icomplete/
+  without /company/, /ivy/, /helm/...
+
++ Avoid =Text is read-only= minibuffer error inserting typed character
+  at the end without narrowing.
+
+[[file:img/eshell_prompt.png]]
+
++ A lot of /eshell/ and /comint/ improvements.
+
++ Extensive /EXWM/ customization.
+
 ** Installation
 
 Remove ~emacs~ init files: =~/.emacs=, =~/.emacs.el= or =~/.emacs.d/=
