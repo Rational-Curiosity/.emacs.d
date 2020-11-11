@@ -317,6 +317,24 @@ Otherwise return a list of files which regex match."
         (car matched)
       matched)))
 
+(defun comint-truncate-buffers (regexp &optional verbose)
+  (dolist (buffer (buffer-list))
+    (let ((name (buffer-name buffer)))
+      (when (and name (not (string-equal name ""))
+                 (string-match-p regexp name))
+        (with-current-buffer buffer
+          (save-excursion
+            (goto-char (point-max))
+            (forward-line (- comint-buffer-maximum-size))
+            (beginning-of-line)
+            (let ((lines (1- (line-number-at-pos))))
+              (when (< 0 lines)
+                (when verbose
+                  (message "Truncating %s lines in buffer `%s'"
+                           lines name))
+                (let ((inhibit-read-only t))
+                  (delete-region (point-min) (point)))))))))))
+
 ;;;;;;;;;;
 ;; Bugs ;;
 ;;;;;;;;;;

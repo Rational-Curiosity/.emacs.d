@@ -22,6 +22,7 @@
       ;; performance
       read-process-output-max (* 3 1024 1024)
       ;; eglot
+      eglot-events-buffer-size 50000
       eglot-sync-connect nil
       eglot-ignored-server-capabilites '(:documentHighlightProvider))
 

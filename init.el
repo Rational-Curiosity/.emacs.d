@@ -20,6 +20,7 @@
              (setq minor-mode-alist
                    (cl-delete 'gcmh-mode minor-mode-alist :key 'car))
              (setq gcmh-idle-delay 20
+                   gcmh-verbose t
                    gcmh-low-cons-threshold ,gc-cons-threshold
                    gcmh-high-cons-threshold (eval-when-compile
                                               (* 100 1024 1024)))
@@ -41,6 +42,10 @@
   (let ((default-directory "~/.emacs.d/el"))
     (normal-top-level-add-subdirs-to-load-path))
   (require 'config-lib))
+
+(defun post-gc-truncate-buffers ()
+  (comint-truncate-buffers "^\\*EGLOT (.*) \\(stderr\\|output\\)\\*$" t))
+(add-hook 'post-gc-hook 'post-gc-truncate-buffers)
 
 
 (custom-set-variables
@@ -116,6 +121,7 @@
      mini-frame
      minimap
      multiple-cursors
+     noccur
      ob-async
      objed
      orderless
