@@ -867,14 +867,17 @@ there's a region, all lines that region covers will be duplicated."
   "By default typing out of input area raise an error.
 This function avoid error and insert character at the end."
   (when (eq this-command 'self-insert-command)
-    (setq this-command (lambda () (interactive)
-                         (setq this-command 'self-insert-command)
-                         (condition-case _
-                             (call-interactively 'self-insert-command)
-                           (text-read-only (goto-char (point-max))
-                                           (self-insert-command 1 last-command-event))
-                           (beginning-of-buffer (goto-char (point-max)))
-                           (end-of-buffer (goto-char (point-max))))))))
+    (setq this-command
+          (lambda () (interactive)
+            (setq this-command 'self-insert-command)
+            (condition-case _
+                (call-interactively 'self-insert-command)
+              (text-read-only (goto-char (point-max))
+                              (self-insert-command
+                               (prefix-numeric-value current-prefix-arg)
+                               last-command-event))
+              (beginning-of-buffer (goto-char (point-max)))
+              (end-of-buffer (goto-char (point-max))))))))
 
 (defun minibuffer-try-add-hooks ()
   (add-hook 'pre-command-hook 'minibuffer-try-pre))
@@ -958,6 +961,86 @@ This function avoid error and insert character at the end."
         (kmacro-push-ring)
         (setq last-kbd-macro kbd-macro)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Next-Previous thing like this ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'thing-cmds)
+(defvar thgcmd--last-like-this nil)
+
+(defun buffer-substring-no-properties-thing (thing)
+  (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag)
+                           thgcmd-use-nearest-thing-flag))
+         (bds         (if use-near-p
+                          (tap-bounds-of-thing-nearest-point
+                           (intern thing))
+                        (thgcmd-bounds-of-thing-at-point
+                         (intern thing))))
+         (start       (car bds))
+         (end         (cdr bds)))
+    (cond ((and start  end)
+           (buffer-substring-no-properties start end))
+          (t
+           (message "No `%s' %s point"
+                    thing (if use-near-p 'near 'at))
+           (setq deactivate-mark  nil)
+           nil))))
+
+(defun next-thing-like-this (this)
+  (interactive (list
+                (cond
+                 ((and current-prefix-arg
+                       thgcmd--last-like-this)
+                  thgcmd--last-like-this)
+                 ((memq last-command '(next-thing-like-this
+                                       previous-thing-like-this))
+                  (buffer-substring-no-properties-thing
+                   (symbol-name thgcmd-last-thing-type)))
+                 (t
+                  (buffer-substring-no-properties-thing
+                   (let* ((icicle-sort-function  nil)
+                          (thing
+                           (completing-read
+                            "Thing (type): "
+                            (thgcmd-things-alist) nil t nil nil
+                            (symbol-name thgcmd-last-thing-type))))
+                     (setq thgcmd-last-thing-type  (intern thing))
+                     thing))))))
+  (when this
+    (setq thgcmd--last-like-this this)
+    (if (re-search-forward "\\_>" nil t)
+        (goto-char (1- (match-end 0))))
+    (if (re-search-forward (format "\\_<%s\\_>"
+                                   (regexp-quote this)) nil t)
+        (goto-char (match-beginning 0))
+      (message "No next match"))))
+
+(defun previous-thing-like-this (this)
+  (interactive (list
+                (cond
+                 ((and current-prefix-arg
+                       thgcmd--last-like-this)
+                  thgcmd--last-like-this)
+                 ((memq last-command '(next-thing-like-this
+                                       previous-thing-like-this))
+                  (buffer-substring-no-properties-thing
+                   (symbol-name thgcmd-last-thing-type)))
+                 (t
+                  (buffer-substring-no-properties-thing
+                   (let* ((icicle-sort-function  nil)
+                          (thing
+                           (completing-read
+                            "Thing (type): "
+                            (thgcmd-things-alist) nil t nil nil
+                            (symbol-name thgcmd-last-thing-type))))
+                     (setq thgcmd-last-thing-type  (intern thing))
+                     thing))))))
+  (when this
+    (setq thgcmd--last-like-this this)
+    (if (re-search-backward (format "\\_<%s\\_>"
+                                    (regexp-quote this)) nil t)
+        (goto-char (match-beginning 0))
+      (message "No next match"))))
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
@@ -966,6 +1049,8 @@ This function avoid error and insert character at the end."
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
+(global-set-key (kbd "C-.") 'next-thing-like-this)
+(global-set-key (kbd "C-,") 'previous-thing-like-this)
 (define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
 (define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
 (define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
@@ -1027,9 +1112,9 @@ This function avoid error and insert character at the end."
 (global-set-key (kbd "C-M-SPC") #'select-thing)
 (global-set-key (kbd "M-s m") #'select-things)
 (global-set-key (kbd "M-s c") #'cycle-select-something)
-(global-set-key (kbd "M-s l") #'mark-enclosing-list)
-(global-set-key (kbd "M-s f") #'mark-enclosing-list-forward)
-(global-set-key (kbd "M-s b") #'mark-enclosing-list-backward)
+(global-set-key (kbd "M-s l") #'select-enclosing-list)
+(global-set-key (kbd "M-s f") #'select-enclosing-list-forward)
+(global-set-key (kbd "M-s b") #'select-enclosing-list-backward)
 (global-set-key (kbd "M-s n") #'next-visible-thing-repeat)
 (global-set-key (kbd "M-s p") #'previous-visible-thing-repeat)
 (global-set-key (kbd "C-c l") #'display-line-numbers-mode)
