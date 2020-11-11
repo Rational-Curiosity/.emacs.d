@@ -112,34 +112,23 @@ This function is part of the `orderless' completion style."
           (delete-region (region-beginning) (region-end)))
         (insert candidate)))))
 
-(defun icomplete-fido-return ()
-  "Exit minibuffer or enter directory, like `ido-mode'."
-  (interactive)
-  (let* ((dir (and (eq (icomplete--category) 'file)
-                   (file-name-directory (icomplete--field-string))))
-         (current (car completion-all-sorted-completions))
-         (probe (and dir current
-                     (expand-file-name (directory-file-name current) dir))))
-    (cond ((and probe (file-directory-p probe) (not (string= current "./")))
-           (icomplete-force-complete))
-          (t
-           (minibuffer-force-complete-and-exit)))))
-
 (defun completing-read-advice (orig-fun prompt collection &optional
                                predicate require-match initial-input
                                hist def inherit-input-method)
   (funcall orig-fun (replace-regexp-in-string
                      "\\(:? *\\)$"
                      (cl-case require-match
-                       (nil "[∅]\\1")
-                       (t "[✓]\\1")
-                       ('confirm "[☑]\\1")
-                       ('confirm-after-completion "[↻]\\1")
-                       (_ "[⚠]\\1"))
+                       (nil "[>]\\1")
+                       (t "[·]\\1")
+                       ('confirm "[!]\\1")
+                       ('confirm-after-completion "[`]\\1")
+                       (_ "[.]\\1"))
                      prompt t)
            collection predicate require-match initial-input
            hist def inherit-input-method))
 (advice-add 'completing-read :around 'completing-read-advice)
+(with-eval-after-load 'crm
+  (advice-add 'completing-read-multiple :around 'completing-read-advice))
 
 ;; Keys
 (with-eval-after-load 'simple
@@ -152,7 +141,7 @@ This function is part of the `orderless' completion style."
 
 (define-key icomplete-minibuffer-map (kbd "C-k") 'icomplete-fido-kill)
 (define-key icomplete-minibuffer-map (kbd "C-d") 'icomplete-fido-delete-char)
-(define-key icomplete-minibuffer-map (kbd "RET") 'icomplete-fido-return)
+(define-key icomplete-minibuffer-map (kbd "RET") 'icomplete-fido-ret)
 (define-key icomplete-minibuffer-map (kbd "DEL") 'icomplete-fido-backward-updir)
 (define-key icomplete-minibuffer-map (kbd "C-j") 'icomplete-fido-exit)
 (define-key icomplete-minibuffer-map (kbd "C-s") 'icomplete-forward-completions)
@@ -163,10 +152,15 @@ This function is part of the `orderless' completion style."
 (global-set-key (kbd "M-g f") 'fd-dired)
 (global-set-key (kbd "M-g a") 'ripgrep-regexp)
 (global-set-key (kbd "M-s O") 'multi-occur)
-(global-set-key (kbd "<f12>") (lambda ()
-                                (interactive)
-                                (message "icomplete overlay: %s"
-                                         (overlay-get icomplete-overlay 'after-string))))
+(global-set-key (kbd "M-s M-o") 'noccur-project)
+(global-set-key (kbd "M-s C-o") 'noccur-dired)
+(global-set-key
+ (kbd "<f12>")
+ (lambda ()
+   (interactive)
+   (message "minibuffer--require-match: %s; completion-cycling %s"
+            minibuffer--require-match
+            completion-cycling)))
 
 (icomplete-mode)
 (setq fido-mode t)
