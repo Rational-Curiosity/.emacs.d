@@ -161,6 +161,36 @@ if __name__ == \"__main__\":
           (replace-match "" t t))
         (goto-char end)
         (insert import-list)))))
+
+(defun python-find-test (text &optional arg)
+  (interactive
+   (list
+    (save-excursion
+      (re-search-backward "^_\\{10,\\} [_A-Z][_a-zA-Z0-9\\., ]* _\\{10,\\}$")
+      (re-search-forward "[A-Z]")
+      (let ((def (buffer-substring-no-properties-thing "symbol")))
+        (read-string
+         (if def
+             (concat "Test (" def "): ")
+           "Test <class>.<fun>: ") nil nil
+         def)))
+    (prefix-numeric-value current-prefix-arg)))
+  (let ((strings (split-string text "\\." t)))
+    (set-process-filter
+     (start-process "*python-find-test*" nil
+                    "rg" "--no-heading" "--color=never" "-lUH0"
+                    "--multiline-dotall"
+                    (mapconcat 'identity strings ".*?"))
+     `(lambda (proc line)
+        (,(cl-case arg
+            ((2 4) 'find-file-other-window)
+            ((3 5 16) 'find-file-other-frame)
+            (otherwise 'find-file))
+         line)
+        (goto-char (point-min))
+        (dolist (string (quote ,strings))
+          (search-forward string))))))
+
 ;;;;;;;;;;;;
 ;; Sphinx ;;
 ;;;;;;;;;;;;
@@ -181,7 +211,9 @@ if __name__ == \"__main__\":
 (define-key python-mode-map (kbd "C-c t d") #'python-doctest-to-message)
 (define-key python-mode-map (kbd "C-c t t") #'python-timeit-to-message)
 (define-key python-mode-map (kbd "C-c d h") #'sphinx-build-html)
-(define-key python-mode-map (kbd "<f7> v") #'toggle-python-version)
+(define-key python-mode-map (kbd "C-c a") #'python-nav-beginning-of-statement)
+(define-key python-mode-map (kbd "C-c e") #'python-nav-end-of-statement)
+(define-key python-mode-map (kbd "M-s M-t v") #'toggle-python-version)
 
 
 (provide 'python-config)
