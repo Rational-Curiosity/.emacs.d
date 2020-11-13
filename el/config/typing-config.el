@@ -46,7 +46,7 @@
                      utf8-hash-table))))
 
 (setq jit-lock-defer-time nil
-      jit-lock-stealth-time 2.0
+      jit-lock-stealth-time nil
       echo-keystrokes 0.5
       column-number-mode t
       isearch-lazy-count t
@@ -546,6 +546,16 @@ prompt the user for a coding system."
                             :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
                             :height 100)
         (message "Monospace font: Unifont"))
+       ;; sudo apt install fonts-mononoki
+       ((member "mononoki" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "Mononoki"
+                            :height 90
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: Mononoki Family"))
        (t ;; default case
         (message "Monospace font not found")
         (set-face-attribute 'default nil
@@ -729,73 +739,73 @@ there's a region, all lines that region covers will be duplicated."
 ;; (global-set-key (kbd "<C-f8>") '(lambda () (interactive) (progn (message "Bookmark f8 added") (bookmark-set "BookMark_f8"))))
 ;; (global-set-key (kbd "<f8>") '(lambda () (interactive) (bookmark-jump "BookMark_f8")))
 
-(define-key key-translation-map (kbd "<f8> u <down>") (kbd "↓"))
-(define-key key-translation-map (kbd "<f8> u <left>") (kbd "←"))
-(define-key key-translation-map (kbd "<f8> u <right>") (kbd "→"))
-(define-key key-translation-map (kbd "<f8> u <up>") (kbd "↑"))
-(define-key key-translation-map (kbd "<f8> u TAB") (kbd "↹"))
-(define-key key-translation-map (kbd "<f8> u RET") (kbd "↵"))
-(define-key key-translation-map (kbd "<f8> u a") (kbd "α"))
-(define-key key-translation-map (kbd "<f8> u A") (kbd "Α"))
-(define-key key-translation-map (kbd "<f8> u b") (kbd "β"))
-(define-key key-translation-map (kbd "<f8> u B") (kbd "Β"))
-(define-key key-translation-map (kbd "<f8> u g") (kbd "γ"))
-(define-key key-translation-map (kbd "<f8> u G") (kbd "Γ"))
-(define-key key-translation-map (kbd "<f8> u d") (kbd "δ"))
-(define-key key-translation-map (kbd "<f8> u D") (kbd "Δ"))
-(define-key key-translation-map (kbd "<f8> u e") (kbd "ε"))
-(define-key key-translation-map (kbd "<f8> u E") (kbd "Ε"))
-(define-key key-translation-map (kbd "<f8> u z") (kbd "ζ"))
-(define-key key-translation-map (kbd "<f8> u Z") (kbd "Ζ"))
-(define-key key-translation-map (kbd "<f8> u h") (kbd "η"))
-(define-key key-translation-map (kbd "<f8> u H") (kbd "Η"))
-(define-key key-translation-map (kbd "<f8> u q") (kbd "θ"))
-(define-key key-translation-map (kbd "<f8> u Q") (kbd "Θ"))
-(define-key key-translation-map (kbd "<f8> u i") (kbd "ι"))
-(define-key key-translation-map (kbd "<f8> u I") (kbd "Ι"))
-(define-key key-translation-map (kbd "<f8> u k") (kbd "κ"))
-(define-key key-translation-map (kbd "<f8> u K") (kbd "Κ"))
-(define-key key-translation-map (kbd "<f8> u l") (kbd "λ"))
-(define-key key-translation-map (kbd "<f8> u L") (kbd "Λ"))
-(define-key key-translation-map (kbd "<f8> u m") (kbd "μ"))
-(define-key key-translation-map (kbd "<f8> u M") (kbd "Μ"))
-(define-key key-translation-map (kbd "<f8> u n") (kbd "ν"))
-(define-key key-translation-map (kbd "<f8> u N") (kbd "Ν"))
-(define-key key-translation-map (kbd "<f8> u p") (kbd "π"))
-(define-key key-translation-map (kbd "<f8> u P") (kbd "Π"))
-(define-key key-translation-map (kbd "<f8> u r") (kbd "ρ"))
-(define-key key-translation-map (kbd "<f8> u R") (kbd "Ρ"))
-(define-key key-translation-map (kbd "<f8> u s") (kbd "σ"))
-(define-key key-translation-map (kbd "<f8> u S") (kbd "Σ"))
-(define-key key-translation-map (kbd "<f8> u t") (kbd "τ"))
-(define-key key-translation-map (kbd "<f8> u T") (kbd "Τ"))
-(define-key key-translation-map (kbd "<f8> u y") (kbd "υ"))
-(define-key key-translation-map (kbd "<f8> u Y") (kbd "Υ"))
-(define-key key-translation-map (kbd "<f8> u f") (kbd "φ"))
-(define-key key-translation-map (kbd "<f8> u F") (kbd "Φ"))
-(define-key key-translation-map (kbd "<f8> u x") (kbd "χ"))
-(define-key key-translation-map (kbd "<f8> u X") (kbd "Χ"))
-(define-key key-translation-map (kbd "<f8> u v") (kbd "Ψ"))
-(define-key key-translation-map (kbd "<f8> u V") (kbd "ψ"))
-(define-key key-translation-map (kbd "<f8> u w") (kbd "ω"))
-(define-key key-translation-map (kbd "<f8> u W") (kbd "Ω"))
-(define-key key-translation-map (kbd "<f8> u *") (kbd "×"))
-(define-key key-translation-map (kbd "<f8> u /") (kbd "÷"))
-(define-key key-translation-map (kbd "<f8> u .") (kbd "…"))
-(define-key key-translation-map (kbd "<f8> u +") (kbd "∞"))
-(define-key key-translation-map (kbd "<f8> u =") (kbd "≠"))
-(define-key key-translation-map (kbd "<f8> u -") (kbd "±"))
-(define-key key-translation-map (kbd "<f8> u 0") (kbd "ℵ"))
-(define-key key-translation-map (kbd "<f8> u \\") (kbd "∀"))
-(define-key key-translation-map (kbd "<f8> u !") (kbd "∃"))
-(define-key key-translation-map (kbd "<f8> u |") (kbd "∄"))
-(define-key key-translation-map (kbd "<f8> u º") (kbd "∅"))
-(define-key key-translation-map (kbd "<f8> u /") (kbd "∈"))
-(define-key key-translation-map (kbd "<f8> u %") (kbd "∝"))
-(define-key key-translation-map (kbd "<f8> u ç") (kbd "⊆"))
-(define-key key-translation-map (kbd "<f8> u Ç") (kbd "⊂"))
-(define-key key-translation-map (kbd "<f8> u ñ") (kbd "⊇"))
-(define-key key-translation-map (kbd "<f8> u Ñ") (kbd "⊃"))
+(define-key key-translation-map (kbd "M-s M-u <down>") (kbd "↓"))
+(define-key key-translation-map (kbd "M-s M-u <left>") (kbd "←"))
+(define-key key-translation-map (kbd "M-s M-u <right>") (kbd "→"))
+(define-key key-translation-map (kbd "M-s M-u <up>") (kbd "↑"))
+(define-key key-translation-map (kbd "M-s M-u TAB") (kbd "↹"))
+(define-key key-translation-map (kbd "M-s M-u RET") (kbd "↵"))
+(define-key key-translation-map (kbd "M-s M-u a") (kbd "α"))
+(define-key key-translation-map (kbd "M-s M-u A") (kbd "Α"))
+(define-key key-translation-map (kbd "M-s M-u b") (kbd "β"))
+(define-key key-translation-map (kbd "M-s M-u B") (kbd "Β"))
+(define-key key-translation-map (kbd "M-s M-u g") (kbd "γ"))
+(define-key key-translation-map (kbd "M-s M-u G") (kbd "Γ"))
+(define-key key-translation-map (kbd "M-s M-u d") (kbd "δ"))
+(define-key key-translation-map (kbd "M-s M-u D") (kbd "Δ"))
+(define-key key-translation-map (kbd "M-s M-u e") (kbd "ε"))
+(define-key key-translation-map (kbd "M-s M-u E") (kbd "Ε"))
+(define-key key-translation-map (kbd "M-s M-u z") (kbd "ζ"))
+(define-key key-translation-map (kbd "M-s M-u Z") (kbd "Ζ"))
+(define-key key-translation-map (kbd "M-s M-u h") (kbd "η"))
+(define-key key-translation-map (kbd "M-s M-u H") (kbd "Η"))
+(define-key key-translation-map (kbd "M-s M-u q") (kbd "θ"))
+(define-key key-translation-map (kbd "M-s M-u Q") (kbd "Θ"))
+(define-key key-translation-map (kbd "M-s M-u i") (kbd "ι"))
+(define-key key-translation-map (kbd "M-s M-u I") (kbd "Ι"))
+(define-key key-translation-map (kbd "M-s M-u k") (kbd "κ"))
+(define-key key-translation-map (kbd "M-s M-u K") (kbd "Κ"))
+(define-key key-translation-map (kbd "M-s M-u l") (kbd "λ"))
+(define-key key-translation-map (kbd "M-s M-u L") (kbd "Λ"))
+(define-key key-translation-map (kbd "M-s M-u m") (kbd "μ"))
+(define-key key-translation-map (kbd "M-s M-u M") (kbd "Μ"))
+(define-key key-translation-map (kbd "M-s M-u n") (kbd "ν"))
+(define-key key-translation-map (kbd "M-s M-u N") (kbd "Ν"))
+(define-key key-translation-map (kbd "M-s M-u p") (kbd "π"))
+(define-key key-translation-map (kbd "M-s M-u P") (kbd "Π"))
+(define-key key-translation-map (kbd "M-s M-u r") (kbd "ρ"))
+(define-key key-translation-map (kbd "M-s M-u R") (kbd "Ρ"))
+(define-key key-translation-map (kbd "M-s M-u s") (kbd "σ"))
+(define-key key-translation-map (kbd "M-s M-u S") (kbd "Σ"))
+(define-key key-translation-map (kbd "M-s M-u t") (kbd "τ"))
+(define-key key-translation-map (kbd "M-s M-u T") (kbd "Τ"))
+(define-key key-translation-map (kbd "M-s M-u y") (kbd "υ"))
+(define-key key-translation-map (kbd "M-s M-u Y") (kbd "Υ"))
+(define-key key-translation-map (kbd "M-s M-u f") (kbd "φ"))
+(define-key key-translation-map (kbd "M-s M-u F") (kbd "Φ"))
+(define-key key-translation-map (kbd "M-s M-u x") (kbd "χ"))
+(define-key key-translation-map (kbd "M-s M-u X") (kbd "Χ"))
+(define-key key-translation-map (kbd "M-s M-u v") (kbd "Ψ"))
+(define-key key-translation-map (kbd "M-s M-u V") (kbd "ψ"))
+(define-key key-translation-map (kbd "M-s M-u w") (kbd "ω"))
+(define-key key-translation-map (kbd "M-s M-u W") (kbd "Ω"))
+(define-key key-translation-map (kbd "M-s M-u *") (kbd "×"))
+(define-key key-translation-map (kbd "M-s M-u /") (kbd "÷"))
+(define-key key-translation-map (kbd "M-s M-u .") (kbd "…"))
+(define-key key-translation-map (kbd "M-s M-u +") (kbd "∞"))
+(define-key key-translation-map (kbd "M-s M-u =") (kbd "≠"))
+(define-key key-translation-map (kbd "M-s M-u -") (kbd "±"))
+(define-key key-translation-map (kbd "M-s M-u 0") (kbd "ℵ"))
+(define-key key-translation-map (kbd "M-s M-u \\") (kbd "∀"))
+(define-key key-translation-map (kbd "M-s M-u !") (kbd "∃"))
+(define-key key-translation-map (kbd "M-s M-u |") (kbd "∄"))
+(define-key key-translation-map (kbd "M-s M-u º") (kbd "∅"))
+(define-key key-translation-map (kbd "M-s M-u /") (kbd "∈"))
+(define-key key-translation-map (kbd "M-s M-u %") (kbd "∝"))
+(define-key key-translation-map (kbd "M-s M-u ç") (kbd "⊆"))
+(define-key key-translation-map (kbd "M-s M-u Ç") (kbd "⊂"))
+(define-key key-translation-map (kbd "M-s M-u ñ") (kbd "⊇"))
+(define-key key-translation-map (kbd "M-s M-u Ñ") (kbd "⊃"))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; Big movements  ;;
@@ -866,18 +876,24 @@ there's a region, all lines that region covers will be duplicated."
 (defun minibuffer-try-pre ()
   "By default typing out of input area raise an error.
 This function avoid error and insert character at the end."
-  (when (eq this-command 'self-insert-command)
+  (when (memq this-command '(self-insert-command
+                             y-or-n-p-insert-y
+                             y-or-n-p-insert-n))
     (setq this-command
-          (lambda () (interactive)
-            (setq this-command 'self-insert-command)
-            (condition-case _
-                (call-interactively 'self-insert-command)
-              (text-read-only (goto-char (point-max))
-                              (self-insert-command
-                               (prefix-numeric-value current-prefix-arg)
-                               last-command-event))
-              (beginning-of-buffer (goto-char (point-max)))
-              (end-of-buffer (goto-char (point-max))))))))
+          `(lambda () (interactive)
+             (setq this-command (quote ,this-command))
+             (condition-case _
+                 (call-interactively (quote ,this-command))
+               (text-read-only (goto-char (point-max))
+                               ,(cl-case this-command
+                                  (self-insert-command
+                                   '(self-insert-command
+                                     (prefix-numeric-value current-prefix-arg)
+                                     last-command-event))
+                                  (otherwise
+                                   (list this-command))))
+               (beginning-of-buffer (goto-char (point-max)))
+               (end-of-buffer (goto-char (point-max))))))))
 
 (defun minibuffer-try-add-hooks ()
   (add-hook 'pre-command-hook 'minibuffer-try-pre))
@@ -1039,18 +1055,18 @@ This function avoid error and insert character at the end."
     (if (re-search-backward (format "\\_<%s\\_>"
                                     (regexp-quote this)) nil t)
         (goto-char (match-beginning 0))
-      (message "No next match"))))
+      (message "No previous match"))))
 
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
 ;; (global-set-key (kbd "M-y") #'kill-ring-insert)
-(global-set-key (kbd "<f1> E") #'manual-entry)
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
 (global-set-key (kbd "C-.") 'next-thing-like-this)
 (global-set-key (kbd "C-,") 'previous-thing-like-this)
+(global-set-key (kbd "C-)") 'delete-pair)
 (define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
 (define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
 (define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
@@ -1065,12 +1081,12 @@ This function avoid error and insert character at the end."
 ;; (global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
 ;; (global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
 ;; (global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
-(global-set-key (kbd "<f7> d") #'toggle-debug-on-error)
-(global-set-key (kbd "<f7> b") #'toggle-enable-multibyte-characters)
-(global-set-key (kbd "<f7> c") #'toggle-buffer-coding-system)
-(global-set-key (kbd "<f7> i") #'toggle-case-fold-search)
-(global-set-key (kbd "<f7> l") #'whitespace-toggle-lines-tail)
-(global-set-key (kbd "<f7> RET") #'whitespace-toggle-marks)
+(global-set-key (kbd "M-s M-t d") #'toggle-debug-on-error)
+(global-set-key (kbd "M-s M-t b") #'toggle-enable-multibyte-characters)
+(global-set-key (kbd "M-s M-t c") #'toggle-buffer-coding-system)
+(global-set-key (kbd "M-s M-t i") #'toggle-case-fold-search)
+(global-set-key (kbd "M-s M-t l") #'whitespace-toggle-lines-tail)
+(global-set-key (kbd "M-s M-t RET") #'whitespace-toggle-marks)
 (global-set-key (kbd "M-s k w") #'backward-kill-word)
 (global-set-key (kbd "M-n") #'forward-paragraph)
 (global-set-key (kbd "M-p") #'backward-paragraph)

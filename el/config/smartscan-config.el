@@ -33,8 +33,6 @@
 (define-key smartscan-map (kbd "M-'") nil)
 (define-key smartscan-map (kbd "C-c C-r") 'smartscan-symbol-replace)
 
-(global-set-key (kbd "<f5>") 'smartscan-mode)
-
 
 (provide 'smartscan-config)
 ;;; smartscan-config.el ends here

@@ -1439,7 +1439,7 @@ Throw an error when trying to set a property with an invalid name."
 (define-key org-mode-map (kbd "C-c C-v k") #'org-babel-remove-result)
 (define-key org-mode-map (kbd "C-c C-v C-k") #'org-babel-remove-result)
 (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
-(define-key org-mode-map (kbd "<f7> k") #'org-toggle-link-display)
+(define-key org-mode-map (kbd "M-s M-t k") #'org-toggle-link-display)
 
 
 (provide 'org-config)

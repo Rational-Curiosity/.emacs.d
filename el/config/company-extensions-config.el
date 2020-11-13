@@ -128,7 +128,7 @@
 (define-key company-template-nav-map [tab] nil)
 (define-key company-template-nav-map (kbd "TAB") nil)
 
-(global-set-key (kbd "<f7> ,") 'toggle-company-semantic)
+(global-set-key (kbd "M-s M-t ,") 'toggle-company-semantic)
 (global-set-key (kbd "C-c y") #'company-yasnippet)
 (global-set-key (kbd "C-c c c") #'company-complete)
 (global-set-key (kbd "C-c c b") #'company-begin-backend)

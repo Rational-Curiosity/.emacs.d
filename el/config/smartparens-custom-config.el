@@ -281,12 +281,12 @@
 (define-key smartparens-mode-map (kbd "C-S-<return>") #'sp-split-sexp)
 (define-key smartparens-mode-map (kbd "C-c ( m") #'hydra-sp-change/body)
 (define-key smartparens-mode-map (kbd "C-c ( <") #'remove-c-<-as-paren-syntax-backward)
-(define-key smartparens-mode-map (kbd "<f7> <") #'toggle-sp-angle-pair)
+(define-key smartparens-mode-map (kbd "M-s M-t <") #'toggle-sp-angle-pair)
 
 ;; (define-key smartparens-mode-map (kbd "C-M-b") 'sp-backward-sexp)
 ;; (define-key smartparens-mode-map (kbd "C-M-f") 'sp-forward-sexp)
 
-(global-set-key (kbd "<f7> (") #'smartparens-mode)
+(global-set-key (kbd "M-s M-t (") #'smartparens-mode)
 
 
 (provide 'smartparens-custom-config)

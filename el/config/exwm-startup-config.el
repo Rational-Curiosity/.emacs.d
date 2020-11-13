@@ -592,7 +592,9 @@
 ;; and DEST is what EXWM actually sends to application.  Note that both SRC
 ;; and DEST should be key sequences (vector or string).
 (setq exwm-input-simulation-keys
-      `(;; movement
+      `(;; window
+        ([?\s-f] . ,(kbd "<f11>"))
+        ;; movement
         ([?\C-b] . [left])
         ([?\M-b] . [C-left])
         ([?\C-f] . [right])
@@ -877,7 +879,7 @@
         (advice-remove 'icomplete-exhibit 'mini-frame-icomplete-exhibit-advice)
       (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice))
     (message "Custom mini frame resize: %s" (nu mini-frame-resize)))
-  (global-set-key (kbd "<f7> 0") 'mini-frame-toggle-resize)
+  (global-set-key (kbd "M-s M-t 0") 'mini-frame-toggle-resize)
 
 
   ;; only one minibuffer
@@ -987,7 +989,7 @@ mode and header lines."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(global-set-key (kbd "<f7> T") 'exwm-toggle-transparency)
+(global-set-key (kbd "M-s M-t T") 'exwm-toggle-transparency)
 
 
 (provide 'exwm-startup-config)

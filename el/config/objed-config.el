@@ -53,7 +53,7 @@
     (message "objed-mode enabled and activated")))
 
 (global-set-key (kbd "M-SPC") 'objed-activate)
-(global-set-key (kbd "<f7> o") 'objed-toggle-mode-activate)
+(global-set-key (kbd "M-s M-t o") 'objed-toggle-mode-activate)
 
 
 (provide 'objed-config)

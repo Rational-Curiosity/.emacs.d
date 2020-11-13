@@ -328,7 +328,7 @@
   (unless (cdr arg)
     (error "%s not found, kill imposible" arg))
   (cl-case (car arg)
-    ('rectangle
+    (rectangle
      ;; (undo-boundary)  ; <undo>
      (delete-extract-rectangle (car (cdr arg)) (cdr (cdr arg))))
     ((region bounds)
@@ -462,24 +462,24 @@
 
 (defun mt-push-mark (type)
   (cl-case type
-    ('rectangle
+    (rectangle
      (rectangle-mark-mode)
      (push-mark)
      (setq deactivate-mark nil))
-    ('region
+    (region
      (push-mark)
      (setq deactivate-mark nil))))
 
 (defun mt-push-mark-all (type)
   (cl-case type
-    ('rectangle
+    (rectangle
      (rectangle-mark-mode)
      (push-mark)
      (setq deactivate-mark nil))
-    ('region
+    (region
      (push-mark)
      (setq deactivate-mark nil))
-    ('bounds
+    (bounds
      (set-mark (point))
      (setq deactivate-mark nil))))
 
