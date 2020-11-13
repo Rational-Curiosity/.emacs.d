@@ -12,6 +12,39 @@
 ;;; Code:
 
 (require 'icomplete)
+(when (bug-check-function-bytecode
+       'icomplete-force-complete-and-exit
+       "wyDEIFaEFAAIhBAACYQUAAqDFwDFIIfGIIc=")
+  (defun icomplete-force-complete-and-exit ()
+    "Complete the minibuffer with the longest possible match and exit.
+Use the first of the matches if there are any displayed, and use
+the default otherwise."
+    (interactive)
+    ;; This function is tricky.  The mandate is to "force", meaning we
+    ;; should take the first possible valid completion for the input.
+    ;; However, if there is no input and we can prove that that
+    ;; coincides with the default, it is much faster to just call
+    ;; `minibuffer-complete-and-exit'.  Otherwise, we have to call
+    ;; `minibuffer-force-complete-and-exit', which needs the full
+    ;; completion set and is potentially slow and blocking.  Do the
+    ;; latter if:
+    (if (and (null completion-cycling)
+             (or
+              ;; there's some input, meaning the default in off the table by
+              ;; definition; OR
+              (> (icomplete--field-end) (icomplete--field-beg))
+              ;; there's no input, but there's also no minibuffer default
+              ;; (and the user really wants to see completions on no input,
+              ;; meaning he expects a "force" to be at least attempted); OR
+              (and (not minibuffer-default)
+                   icomplete-show-matches-on-no-input)
+              ;; there's no input but the full completion set has been
+              ;; calculated, This causes the first cached completion to
+              ;; be taken (i.e. the one that the user sees highlighted)
+              completion-all-sorted-completions))
+        (minibuffer-force-complete-and-exit)
+      ;; Otherwise take the faster route...
+      (minibuffer-complete-and-exit))))
 (require 'icomplete-vertical)
 (require 'completing-read-at-point)
 (require 'orderless)
@@ -36,6 +69,7 @@ This function is part of the `orderless' completion style."
           (cons full (length full))))
        (t
         (completion-flex-try-completion string table pred point))))))
+
 ;; this file overides completion-category-defaults
 (require 'message)
 
@@ -85,7 +119,7 @@ This function is part of the `orderless' completion style."
       (orderless-remove-transient-configuration)
     (setq orderless-transient-matching-styles '(orderless-literal)
           orderless-transient-style-dispatchers '(ignore)))
-  (setq completion-all-sorted-completions nil)
+  (completion--flush-all-sorted-completions)
   (icomplete-pre-command-hook)
   (icomplete-post-command-hook))
 
@@ -120,8 +154,8 @@ This function is part of the `orderless' completion style."
                      (cl-case require-match
                        (nil "[>]\\1")
                        (t "[·]\\1")
-                       ('confirm "[!]\\1")
-                       ('confirm-after-completion "[`]\\1")
+                       (confirm "[!]\\1")
+                       (confirm-after-completion "[`]\\1")
                        (_ "[.]\\1"))
                      prompt t)
            collection predicate require-match initial-input
@@ -154,13 +188,6 @@ This function is part of the `orderless' completion style."
 (global-set-key (kbd "M-s O") 'multi-occur)
 (global-set-key (kbd "M-s M-o") 'noccur-project)
 (global-set-key (kbd "M-s C-o") 'noccur-dired)
-(global-set-key
- (kbd "<f12>")
- (lambda ()
-   (interactive)
-   (message "minibuffer--require-match: %s; completion-cycling %s"
-            minibuffer--require-match
-            completion-cycling)))
 
 (icomplete-mode)
 (setq fido-mode t)
