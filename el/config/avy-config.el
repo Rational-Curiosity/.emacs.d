@@ -11,7 +11,17 @@
 (require 'avy)
 (require 'link-hint)
 
-(setq avy-keys
+(setq avy-dispatch-alist
+      '((?M . avy-action-kill-move)
+        (?K . avy-action-kill-stay)
+        (?T . avy-action-teleport)
+        (?  . avy-action-mark)
+        (?C . avy-action-copy)
+        (?Y . avy-action-yank)
+        (?L . avy-action-yank-line)
+        (?I . avy-action-ispell)
+        (?Z . avy-action-zap-to-char))
+      avy-keys
       (let ((keys
              '(?q ?w ?e ?r ?t ?y ?u ?i ?o ?p
                   ?a ?s ?d ?f ?g ?h ?j ?k ?l
