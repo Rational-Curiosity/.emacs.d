@@ -31,13 +31,15 @@
 ;;   (condition-case nil
 ;;       (file-name-directory (oref (ede-current-project) file))
 ;;     (error (apply orig-fun args))))
-;; (advice-add 'projectile-project-root :around #'ede-add-to-projectile-project-root)
+;; (advice-add 'projectile-project-root :around
+;;             #'ede-add-to-projectile-project-root)
 
 ;; (defun ede-add-to-projectile-project-name (orig-fun &rest args)
 ;;   (condition-case nil
 ;;       (oref (ede-current-project) name)
 ;;     (error (apply orig-fun args))))
-;; (advice-add 'projectile-project-name :around #'ede-add-to-projectile-project-name)
+;; (advice-add 'projectile-project-name :around
+;;             #'ede-add-to-projectile-project-name)
 ;; ]
 
 ;;(global-ede-mode 1)

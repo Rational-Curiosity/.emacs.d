@@ -9,8 +9,8 @@
 ;;; Code:
 (require 'ace-window)
 (set-face-attribute 'aw-mode-line-face nil
-                    :bold t
-                    :foreground "red")
+                    :weight 'bold
+                    :foreground "mint cream")
 
 (push " *which-key*" aw-ignored-buffers)
 (setq   aw-scope 'global

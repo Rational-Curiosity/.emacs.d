@@ -42,7 +42,7 @@
    0 nil
    `(lambda ()
       (let ((choice (completing-read ,(if completing-read-at-point-backend
-                                          (format "%s " completing-read-at-point-backend)
+                                          (format "`%s' " completing-read-at-point-backend)
                                         "") (quote ,comps) nil t ,common)))
         (when (stringp choice)
           (completing-read-at-point-insert ,start ,end ,base-size choice))))))

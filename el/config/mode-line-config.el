@@ -64,10 +64,6 @@
   '((t  :foreground "DarkOliveGreen"))
   "End of line" :group 'mode-line)
 
-(defface mode-line-column
-  '((t :foreground "White" :weight bold))
-  "Column number" :group 'mode-line)
-
 (defface mode-line-percentage
   '((t :foreground "DodgerBlue"))
   "Percentage" :group 'mode-line)
@@ -278,7 +274,7 @@ mouse-3: Describe current input method"))
  `((:eval
     (if (memq display-line-numbers '(relative visual))
         ":%c "
-      ,(concat (propertize "%l" 'face 'mode-line-column)
+      ,(concat (propertize "%l" 'face 'line-number-current-line)
                ":%c "))
      'local-map mode-line-column-line-number-mode-map
      'mouse-face 'mode-line-highlight
