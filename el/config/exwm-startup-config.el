@@ -647,28 +647,6 @@
 (add-hook 'exwm-randr-screen-change-hook 'exwm-update-screens)
 (exwm-randr-enable)
 
-;; objed compatibility
-(with-eval-after-load 'objed
-  ;; Fix inconsistent behaviour when click on exwm window
-  (defun objed-window-selection-change (window)
-    (when (not (eq (selected-window) window))
-      (with-selected-window window
-        (when objed--buffer
-          (objed--reset)))))
-
-  (defun objed-window-selection-change-hook ()
-    (add-hook 'window-selection-change-functions 'objed-window-selection-change nil t))
-  (add-hook 'objed-init-hook 'objed-window-selection-change-hook)
-
-  (defun objed-window-selection-change-unhook ()
-    (remove-hook 'window-selection-change-functions 'objed-window-selection-change t))
-  (add-hook 'objed-exit-hook 'objed-window-selection-change-unhook)
-
-  (defun objed-eval-expression-advice (&rest args)
-    (when objed--buffer
-      (objed--reset)))
-  (advice-add 'objed-eval-expression :before 'objed-eval-expression-advice))
-
 ;; System tray
 (require 'exwm-systemtray)
 (exwm-systemtray-enable)
@@ -853,8 +831,9 @@
                 (background-color . "black")))))
         mini-frame-resize nil
         resize-mini-frames t
-        mini-frame-ignore-commands '("edebug-eval-expression"
-                                     debugger-eval-expression
+        mini-frame-ignore-commands '(debugger-eval-expression
+                                     objed-ipipe
+                                     "edebug-eval-expression"
                                      "exwm-workspace-"))
   (add-hook 'exwm-init-hook 'mini-frame-mode)
 
@@ -879,7 +858,7 @@
         (advice-remove 'icomplete-exhibit 'mini-frame-icomplete-exhibit-advice)
       (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice))
     (message "Custom mini frame resize: %s" (nu mini-frame-resize)))
-  (global-set-key (kbd "M-s M-t 0") 'mini-frame-toggle-resize)
+  (global-set-key (kbd "M-s 7 0") 'mini-frame-toggle-resize)
 
 
   ;; only one minibuffer
@@ -989,7 +968,7 @@ mode and header lines."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(global-set-key (kbd "M-s M-t T") 'exwm-toggle-transparency)
+(global-set-key (kbd "M-s 7 T") 'exwm-toggle-transparency)
 
 
 (provide 'exwm-startup-config)
