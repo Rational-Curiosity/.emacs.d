@@ -348,9 +348,11 @@ Non-interactively, THING is a string naming a thing type.
 
 If option `thgcmd-use-nearest-thing-flag' and non-nil then use a thing
 that is near, not necessarily at, point."
-  (interactive (list (let ((icicle-sort-function  nil))
-                       (completing-read "Thing (type): " (thgcmd-things-alist) nil t nil nil
-                                        (symbol-name thgcmd-last-thing-type)))))
+  (interactive (list (let ((icicle-sort-function  nil)
+                           (def (symbol-name thgcmd-last-thing-type)))
+                       (completing-read (concat "Thing (" def "): ")
+                                        (thgcmd-things-alist) nil t nil nil
+                                        def))))
   (setq thgcmd-last-thing-type  (intern thing))
   (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag) ; In `thingatpt+.el'.
                            thgcmd-use-nearest-thing-flag))
@@ -439,12 +441,13 @@ non-nil, then select a THING near point."
           (t
            (setq thgcmd-last-thing-type
                  (or thing
-                     (prog1 (let ((icicle-sort-function  nil))
+                     (prog1 (let ((icicle-sort-function  nil)
+                                  (def (symbol-name thgcmd-last-thing-type)))
                               (intern
                                (completing-read
-                                "Thing (type): "
+                                (concat "Thing (" def "): ")
                                 (thgcmd-things-alist 'REQUIRE-FWD) nil t nil nil
-                                (symbol-name thgcmd-last-thing-type))))
+                                def)))
                        (setq this-command  this-cmd))))
            (when (thgcmd-forward-op-p thgcmd-last-thing-type)
              (push-mark (save-excursion
@@ -533,10 +536,12 @@ comment."
                        (prog1 DO-NOT-USE-!@$%^&*+  (setq DO-NOT-USE-!@$%^&*+  nil)))
                    ;; Save state for `repeat'.
                    (let ((last-command-event       last-command-event)
-                         (last-repeatable-command  last-repeatable-command))
+                         (last-repeatable-command  last-repeatable-command)
+                         (def (symbol-name thgcmd-last-thing-type)))
                      (intern (completing-read
-                              "Thing (type): " (thgcmd-things-alist) nil t nil nil
-                              (symbol-name thgcmd-last-thing-type))))
+                              (concat "Thing (" def "): ")
+                              (thgcmd-things-alist) nil t nil nil
+                              def)))
                  thgcmd-last-thing-type))
            (point)
            ;; (if mark-active  (min (region-beginning) (region-end))  (point-min)))) ;; -
@@ -585,10 +590,12 @@ the bounds of THING.  Return nil if no such THING is found."
                        (prog1 DO-NOT-USE-!@$%^&*+ (setq DO-NOT-USE-!@$%^&*+  nil)))
                    ;; Save state for `repeat'.
                    (let ((last-command-event       last-command-event)
-                         (last-repeatable-command  last-repeatable-command))
+                         (last-repeatable-command  last-repeatable-command)
+                         (def (symbol-name thgcmd-last-thing-type)))
                      (intern (completing-read
-                              "Thing (type): " (thgcmd-things-alist) nil t nil nil
-                              (symbol-name thgcmd-last-thing-type))))
+                              (concat "Thing (" def "): ")
+                              (thgcmd-things-alist) nil t nil nil
+                              def)))
                  thgcmd-last-thing-type))
            (point)
            ;; (if (and mark-active  (not (eq (region-beginning) (region-end)))) ;; -
