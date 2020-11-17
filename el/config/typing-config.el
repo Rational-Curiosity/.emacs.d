@@ -9,8 +9,8 @@
 (require 'config-lib)
 
 (set-face-attribute 'line-number-current-line nil
-                    :foreground "#ebdb34"
-                    :bold t)
+                    :weight 'bold
+                    :foreground "#ebdb34")
 
 (setq-default
  ;; t -   long lines go away from window width, ei, continuation lines
@@ -278,9 +278,9 @@ prompt the user for a coding system."
                    ("ü" . "u")) string)
       (set 'string (replace-regexp-in-string (car map) (cdr map) string nil t)))))
 
-;;;;;;;;;;;;;
-;; Control ;;
-;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Keyboard translations ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (when (executable-find "setxkbmap")
   (defun xkb-swap-ctrl-caps (&optional arg)
     (interactive "P")
@@ -312,6 +312,16 @@ prompt the user for a coding system."
                       (getenv "DISPLAY")))))
   (when (display-graphic-p)
     (xkb-swap-ralt-ctrl)))
+
+(defun swap-for-programming-keys (&optional arg)
+  (interactive "P")
+  (if arg
+      (setq keyboard-translate-table nil)
+    (setq keyboard-translate-table
+          (make-char-table 'keyboard-translate-table))
+    ;; Swap º and \
+    (aset keyboard-translate-table ?º ?\\)
+    (aset keyboard-translate-table ?\\ ?º)))
 
 ;;;;;;;;;;;;;;;;;
 ;; Indentation ;;
@@ -1014,11 +1024,12 @@ This function avoid error and insert character at the end."
                  (t
                   (buffer-substring-no-properties-thing
                    (let* ((icicle-sort-function  nil)
+                          (def (symbol-name thgcmd-last-thing-type))
                           (thing
                            (completing-read
-                            "Thing (type): "
+                            (concat "Thing (" def "): ")
                             (thgcmd-things-alist) nil t nil nil
-                            (symbol-name thgcmd-last-thing-type))))
+                            def)))
                      (setq thgcmd-last-thing-type  (intern thing))
                      thing))))))
   (when this
@@ -1043,11 +1054,12 @@ This function avoid error and insert character at the end."
                  (t
                   (buffer-substring-no-properties-thing
                    (let* ((icicle-sort-function  nil)
+                          (def (symbol-name thgcmd-last-thing-type))
                           (thing
                            (completing-read
-                            "Thing (type): "
+                            (concat "Thing (" def "): ")
                             (thgcmd-things-alist) nil t nil nil
-                            (symbol-name thgcmd-last-thing-type))))
+                            def)))
                      (setq thgcmd-last-thing-type  (intern thing))
                      thing))))))
   (when this
@@ -1064,8 +1076,8 @@ This function avoid error and insert character at the end."
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
-(global-set-key (kbd "C-.") 'next-thing-like-this)
-(global-set-key (kbd "C-,") 'previous-thing-like-this)
+(global-set-key (kbd "C-:") 'next-thing-like-this)
+(global-set-key (kbd "C-;") 'previous-thing-like-this)
 (global-set-key (kbd "C-)") 'delete-pair)
 (define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
 (define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
@@ -1081,12 +1093,12 @@ This function avoid error and insert character at the end."
 ;; (global-set-key (kbd "đ") 'sp-or-forward-sexp)                      ;; AltGr-f
 ;; (global-set-key (kbd "€") 'end-of-defun)                            ;; AltGr-e
 ;; (global-set-key (kbd "æ") 'beginning-of-defun)                      ;; AltGr-a
-(global-set-key (kbd "M-s M-t d") #'toggle-debug-on-error)
-(global-set-key (kbd "M-s M-t b") #'toggle-enable-multibyte-characters)
-(global-set-key (kbd "M-s M-t c") #'toggle-buffer-coding-system)
-(global-set-key (kbd "M-s M-t i") #'toggle-case-fold-search)
-(global-set-key (kbd "M-s M-t l") #'whitespace-toggle-lines-tail)
-(global-set-key (kbd "M-s M-t RET") #'whitespace-toggle-marks)
+(global-set-key (kbd "M-s 7 d") #'toggle-debug-on-error)
+(global-set-key (kbd "M-s 7 b") #'toggle-enable-multibyte-characters)
+(global-set-key (kbd "M-s 7 c") #'toggle-buffer-coding-system)
+(global-set-key (kbd "M-s 7 i") #'toggle-case-fold-search)
+(global-set-key (kbd "M-s 7 l") #'whitespace-toggle-lines-tail)
+(global-set-key (kbd "M-s 7 SPC") #'whitespace-toggle-marks)
 (global-set-key (kbd "M-s k w") #'backward-kill-word)
 (global-set-key (kbd "M-n") #'forward-paragraph)
 (global-set-key (kbd "M-p") #'backward-paragraph)
@@ -1127,7 +1139,7 @@ This function avoid error and insert character at the end."
 ;; thingatpt+
 (global-set-key (kbd "C-M-SPC") #'select-thing)
 (global-set-key (kbd "M-s m") #'select-things)
-(global-set-key (kbd "M-s c") #'cycle-select-something)
+(global-set-key (kbd "M-s 6 s") #'cycle-select-something)
 (global-set-key (kbd "M-s l") #'select-enclosing-list)
 (global-set-key (kbd "M-s f") #'select-enclosing-list-forward)
 (global-set-key (kbd "M-s b") #'select-enclosing-list-backward)
