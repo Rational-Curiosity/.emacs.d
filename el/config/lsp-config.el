@@ -42,7 +42,6 @@
                             workspaces))
       (propertize "[Disconnected]" 'face 'warning))))
 
-(require 'lsp-pyls)
 (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
       ;; performance
       read-process-output-max (* 3 1024 1024)
@@ -64,15 +63,17 @@
       lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                    lsp-file-watch-ignored)
       ;; signature
-      lsp-signature-render-documentation nil
-      ;; lsp-pyls
-      ;; [ Fix https://github.com/palantir/python-language-server/issues/771
-      ;;   changing autopep8 for yapf
-      lsp-pyls-plugins-autopep8-enabled nil
-      lsp-pyls-plugins-yapf-enabled t
-      ;; ]
-      )
+      lsp-signature-render-documentation nil)
 
+(if (null (require 'lsp-pyls nil 'noerror))
+    (message-color #("ERROR missing package `lsp-pyls'" 0 5 (face error)))
+  ;; lsp-pyls
+  ;; [ Fix https://github.com/palantir/python-language-server/issues/771
+  ;;   changing autopep8 for yapf
+  (setq lsp-pyls-plugins-autopep8-enabled nil
+        lsp-pyls-plugins-yapf-enabled t)
+  ;; ]
+  )
 
 ;; [ lsp-ui
 (if (require 'lsp-ui nil 'noerror)

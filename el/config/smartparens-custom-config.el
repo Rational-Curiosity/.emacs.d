@@ -19,7 +19,10 @@
 (message "Importing smartparens-custom-config")
 (setcar (cdr (assq 'smartparens-mode minor-mode-alist)) nil)
 
-(require 'smartparens-org)
+
+(unless (require 'smartparens-org nil 'noerror)
+  (message-color #("ERROR missing package `smartparens-org'"
+                   0 5 (face error))))
 (setq ;;sp-autoinsert-pair nil
  sp-highlight-pair-overlay nil)
 
@@ -281,12 +284,12 @@
 (define-key smartparens-mode-map (kbd "C-S-<return>") #'sp-split-sexp)
 (define-key smartparens-mode-map (kbd "C-c ( m") #'hydra-sp-change/body)
 (define-key smartparens-mode-map (kbd "C-c ( <") #'remove-c-<-as-paren-syntax-backward)
-(define-key smartparens-mode-map (kbd "M-s M-t <") #'toggle-sp-angle-pair)
+(define-key smartparens-mode-map (kbd "M-s 7 <") #'toggle-sp-angle-pair)
 
 ;; (define-key smartparens-mode-map (kbd "C-M-b") 'sp-backward-sexp)
 ;; (define-key smartparens-mode-map (kbd "C-M-f") 'sp-forward-sexp)
 
-(global-set-key (kbd "M-s M-t (") #'smartparens-mode)
+(global-set-key (kbd "M-s 7 (") #'smartparens-mode)
 
 
 (provide 'smartparens-custom-config)

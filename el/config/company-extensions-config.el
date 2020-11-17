@@ -15,7 +15,15 @@
 ;; ]
 ;;(add-to-list 'load-path "~/.emacs.d/elpa/company-0.8.12")
 ;;(add-to-list 'load-path "~/.emacs.d/elpa/elpa/company-c-headers-20150801.901")
-(require 'company-template)
+(if (null (require 'company-template nil 'noerror))
+    (message-color #("ERROR missing package `company-template'"
+                     0 5 (face error)))
+  (define-key company-template-nav-map [(shift tab)]
+    (lookup-key company-template-nav-map [tab]))
+  (define-key company-template-nav-map (kbd "<backtab>")
+    (lookup-key company-template-nav-map (kbd "TAB")))
+  (define-key company-template-nav-map [tab] nil)
+  (define-key company-template-nav-map (kbd "TAB") nil))
 ;; [
 ;;(require 'company-capf)
 ;; ]
@@ -123,12 +131,8 @@
 (define-key company-active-map [?\C-t] #'company-begin-backend)
 ;;(define-key company-mode-map [(control tab)] 'company-complete)
 ;; `company-complete` conflicts with `company-template-forward-field` with TAB #515
-(define-key company-template-nav-map [(shift tab)] (lookup-key company-template-nav-map [tab]))
-(define-key company-template-nav-map (kbd "<backtab>") (lookup-key company-template-nav-map (kbd "TAB")))
-(define-key company-template-nav-map [tab] nil)
-(define-key company-template-nav-map (kbd "TAB") nil)
 
-(global-set-key (kbd "M-s M-t ,") 'toggle-company-semantic)
+(global-set-key (kbd "M-s 7 ,") 'toggle-company-semantic)
 (global-set-key (kbd "C-c y") #'company-yasnippet)
 (global-set-key (kbd "C-c c c") #'company-complete)
 (global-set-key (kbd "C-c c b") #'company-begin-backend)
