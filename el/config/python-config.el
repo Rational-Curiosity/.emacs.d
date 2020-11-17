@@ -213,7 +213,7 @@ if __name__ == \"__main__\":
 (define-key python-mode-map (kbd "C-c d h") #'sphinx-build-html)
 (define-key python-mode-map (kbd "C-c a") #'python-nav-beginning-of-statement)
 (define-key python-mode-map (kbd "C-c e") #'python-nav-end-of-statement)
-(define-key python-mode-map (kbd "M-s M-t v") #'toggle-python-version)
+(define-key python-mode-map (kbd "M-s 7 v") #'toggle-python-version)
 
 
 (provide 'python-config)

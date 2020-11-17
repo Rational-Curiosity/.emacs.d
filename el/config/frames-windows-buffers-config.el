@@ -548,7 +548,8 @@ ARG non-nil resize window to ARG height."
   ("M-q" nil "quit"))
 (global-set-key (kbd "C-c w m") 'hydra-win/body)
 (global-set-key (kbd "M-s 0") 'switch-to-minibuffer-window)
-(global-set-key (kbd "M-s M-t w") #'toggle-continuation-lines)
+(global-set-key (kbd "M-s 7 w") #'toggle-continuation-lines)
+(global-set-key (kbd "C-x `") 'shrink-window)
 
 
 ;;;;;;;;;;;;
@@ -741,7 +742,7 @@ others."
 
 (global-set-key (kbd "C-c b t") #'toggle-tool-bar-mode-from-frame)
 (global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
-(global-set-key (kbd "M-s M-t e") 'toggle-message-truncate-lines)
+(global-set-key (kbd "M-s 7 e") 'toggle-message-truncate-lines)
 
 (global-set-key (kbd "C-x o") 'switch-to-window)
 (global-set-key (kbd "C-x 2") 'vsplit-last-buffer)

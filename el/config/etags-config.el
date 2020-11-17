@@ -110,7 +110,7 @@
   ("M-l" #'list-tags "list")
   ("M-q" nil "quit"))
 
-(global-set-key (kbd "M-ç") 'hydra-xref/body)
+(global-set-key (kbd "M-Ç") 'hydra-xref/body)
 
 
 (provide 'etags-config)

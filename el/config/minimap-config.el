@@ -46,7 +46,7 @@
   (if (minimap-get-window)
       (minimap-kill)
     (minimap-create)))
-(global-set-key (kbd "M-s M-t m") 'minimap-toggle)
+(global-set-key (kbd "M-s 7 m") 'minimap-toggle)
 
 
 (provide 'minimap-config)

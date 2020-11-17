@@ -146,7 +146,7 @@
                   (push '("=="    . ?≡) prettify-symbols-alist))
                 (prettify-symbols-mode)))
 
-    (global-set-key (kbd "M-s M-t p") #'prettify-symbols-mode))
+    (global-set-key (kbd "M-s 7 p") #'prettify-symbols-mode))
 
 
 (provide 'prettify-symbols-config)
