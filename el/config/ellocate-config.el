@@ -3,11 +3,13 @@
 ;;; Commentary:
 
 ;; Usage:
+;; (with-eval-after-load 'ellocate
+;;   (require 'ellocate-config))
+;; never 
 ;; (require 'ellocate-config)
 
 ;;; Code:
-(require 'ellocate)
-(require 'dash)
+(message "Importing ellocate-config")
 
 (let ((ellocate-dir (expand-file-name "ellocate/" user-emacs-directory)))
   (make-directory ellocate-dir t)
