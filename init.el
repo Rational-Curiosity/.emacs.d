@@ -201,7 +201,9 @@
 ;;        Packages        ;;
 ;;                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'package-config)
+(add-hook 'after-init-hook
+          (lambda ()
+            (require 'package-config)))
 
 (require 'mode-line-config)
 
@@ -259,8 +261,6 @@
 
 (require 'tramp-config)
 
-(require 'ellocate-config)
-
 (require 'eww-config)
 
 (require 'menu-config)
@@ -297,6 +297,9 @@
 
 
 ;; [ <Not always required>
+(with-eval-after-load 'ellocate
+  (require 'ellocate-config))
+
 ;; shell
 (with-eval-after-load 'shell
   (require 'shell-config))
