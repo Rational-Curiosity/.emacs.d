@@ -78,7 +78,6 @@
      ein
      eldoc
      elfeed
-     ellocate
      emms
      epl
      exec-path-from-shell
@@ -151,7 +150,6 @@
      request
      request-deferred
      rg
-     ripgrep
      rust-mode
      s
      stickyfunc-enhance
@@ -287,8 +285,6 @@
 
 (require 'version-control-config)
 
-(require 'minimap-config)
-
 (require 'figlet-config)
 
 (require 'language-tools)
@@ -297,6 +293,10 @@
 
 
 ;; [ <Not always required>
+(with-eval-after-load 'minimap
+  (require 'minimap-config))
+(global-set-key (kbd "M-s 7 m") 'minimap-mode)
+
 (with-eval-after-load 'ellocate
   (require 'ellocate-config))
 
