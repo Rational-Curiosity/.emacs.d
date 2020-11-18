@@ -102,9 +102,31 @@
     "C-c p x" "run"))
 (add-hook 'projectile-mode-hook #'projectile-enable-which-key-integration)
 
+(when (bug-check-function-bytecode
+       'projectile-ripgrep
+       "wsPExSODIADGx8gICSIiyQPKIASDGwADgh4AywRCI4fMzSGH")
+  (defun projectile-ripgrep (search-term &optional arg)
+    "Run a Ripgrep search with `SEARCH-TERM' at current project root.
+
+With an optional prefix argument ARG SEARCH-TERM is interpreted as a
+regular expression."
+    (interactive
+     (list (projectile--read-search-string-with-default
+            (format "Ripgrep %ssearch for" (if current-prefix-arg "regexp " "")))
+           current-prefix-arg))
+    (if (require 'ripgrep nil 'noerror)
+        (let* ((project-root (projectile-ensure-project (projectile-project-root)))
+               (args (mapcar (lambda (val) (concat "--glob !" val))
+                             (append projectile-globally-ignored-files
+                                     projectile-globally-ignored-directories))))
+          (ripgrep-regexp search-term
+                          project-root
+                          (if arg
+                              args
+                            (cons "--fixed-strings" args))))
+      (error "Package `ripgrep' is not available"))))
+
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-(define-key projectile-mode-map (kbd "M-g M-a") 'projectile-ripgrep)
-(define-key projectile-mode-map (kbd "M-g M-f") 'projectile-find-file)
 
 
 (provide 'projectile-config)
