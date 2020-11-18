@@ -323,6 +323,29 @@ prompt the user for a coding system."
     (aset keyboard-translate-table ?º ?\\)
     (aset keyboard-translate-table ?\\ ?º)))
 
+(defun apple-keyboard-toggle-fn-key (&optional arg)
+  (interactive "P")
+  (setq arg  (number-to-string
+              (if (numberp arg)
+                  (if (and (<= arg 2)
+                           (>= arg 0))
+                      arg
+                    (user-error "Invalid number %i" arg))
+                (cl-case (string-to-number
+                          (shell-command-to-string
+                           "cat /sys/module/hid_apple/parameters/fnmode"))
+                  (0 1)
+                  (1 0)
+                  (2 0)
+                  (otherwise 0)))))
+  (with-temp-buffer
+    (cd "/sudo::/")
+    (shell-command
+     (concat "echo " arg
+             " | sudo tee /sys/module/hid_apple/parameters/fnmode"))))
+(global-set-key (kbd "<M-XF86MonBrightnessDown>") 'apple-keyboard-toggle-fn-key)
+(global-set-key (kbd "<M-f1>") 'apple-keyboard-toggle-fn-key)
+
 ;;;;;;;;;;;;;;;;;
 ;; Indentation ;;
 ;;;;;;;;;;;;;;;;;
@@ -1078,7 +1101,7 @@ This function avoid error and insert character at the end."
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
 (global-set-key (kbd "C-:") 'next-thing-like-this)
 (global-set-key (kbd "C-;") 'previous-thing-like-this)
-(global-set-key (kbd "C-)") 'delete-pair)
+(global-set-key (kbd "M-)") 'delete-pair)
 (define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
 (define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
 (define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
