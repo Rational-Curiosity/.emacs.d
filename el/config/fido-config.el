@@ -103,7 +103,7 @@ This function is part of the `orderless' completion style."
       ((executable-find "fd")
        (setq fd-dired-program "fd")))
 
-(rg-enable-default-bindings (kbd "M-g A"))
+(rg-enable-default-bindings (kbd "M-g a"))
 
 ;; Functions
 (defun orderless-first-regexp (pattern index _total)
@@ -122,6 +122,19 @@ This function is part of the `orderless' completion style."
   (completion--flush-all-sorted-completions)
   (icomplete-pre-command-hook)
   (icomplete-post-command-hook))
+
+(defun nmcli-connect-vpn (up-down name)
+  (interactive
+   (list
+    (completing-read "Choose up/down(up): " '("up" "down") nil t nil nil "up")
+    (completing-read "Choose VPN:"
+                     (split-string
+                      (shell-command-to-string
+                       "nmcli --colors no -t -f name con")
+                      "\n" t)
+                     nil t)))
+  (shell-command
+   (concat "nmcli --ask --colors no -t con " up-down " \"" name "\"")))
 
 (defun icomplete-vertical-kill-ring-insert (&optional arg)
   "Insert item from kill-ring, selected with completion."
@@ -164,6 +177,39 @@ This function is part of the `orderless' completion style."
 (with-eval-after-load 'crm
   (advice-add 'completing-read-multiple :around 'completing-read-advice))
 
+(if (null (require 'noccur nil 'noerror)) ;; noccur--find-files noccur-project
+    (message-color #("ERROR missing package `noccur'"
+                     0 5 (face error)))
+  (when (bug-check-function-bytecode
+         'noccur--find-files
+         "wyCDCQDEggoAxRjGxwgJIxrIyQohyiIqhw==")
+    (require 'pcre2el) ;; rxt-elisp-to-pcre
+    (if (executable-find "rg")
+        (defun noccur--find-files (regexp)
+          (split-string (shell-command-to-string
+                         (concat
+                          "rg --no-heading --color=never -lH \""
+                          (rxt-elisp-to-pcre regexp) "\""))
+                        "\n" t))
+      (defun noccur--find-files (regexp)
+        (let* ((listing-command (if (noccur--within-git-repository-p)
+                                    "git ls-files -z"
+                                  "find . -type f -print0"))
+               (command (format "%s | xargs -0 grep -l \"%s\""
+                                listing-command
+                                (rxt-elisp-to-pcre regexp))))
+          (split-string (shell-command-to-string command) "\n")))))
+
+  (defun noccur-projectile (regexp &optional nlines)
+    (interactive (occur-read-primary-args))
+    (if (require 'projectile nil 'noerror) ;; projectile-ensure-project
+                                           ;; projectile-project-root
+        (noccur-project regexp nlines
+                        (projectile-ensure-project
+                         (projectile-project-root)))
+      (error "Package `projectile' is not available"))))
+
+
 ;; Keys
 (with-eval-after-load 'simple
   (define-key minibuffer-local-shell-command-map (kbd "M-v")
@@ -182,9 +228,10 @@ This function is part of the `orderless' completion style."
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
 (define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-toggle)
+(global-set-key (kbd "M-g M-a") 'noccur-projectile)
+(global-set-key (kbd "M-g M-f") 'projectile-find-file)
 (global-set-key (kbd "M-y") 'icomplete-vertical-kill-ring-insert)
 (global-set-key (kbd "M-g f") 'fd-dired)
-(global-set-key (kbd "M-g a") 'ripgrep-regexp)
 (global-set-key (kbd "M-s O") 'multi-occur)
 (global-set-key (kbd "M-s M-o") 'noccur-project)
 (global-set-key (kbd "M-s C-o") 'noccur-dired)
