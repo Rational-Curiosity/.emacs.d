@@ -5,9 +5,6 @@
 ;; Usage:
 ;; (with-eval-after-load 'org
 ;;   (require 'org-config))
-;; or:
-;; (with-eval-after-load 'org
-;;   )
 ;; never:
 ;; (require 'org-config)
 
@@ -19,6 +16,9 @@
 (message "Importing org-config")
 ;; Spell checker
 (add-hook 'org-mode-hook 'flyspell-mode)
+(add-hook 'org-mode-hook
+          (defun org-mode-modify-syntax-entry< ()
+            (modify-syntax-entry ?< "_" org-mode-syntax-table)))
 ;; (plist-put org-format-latex-options :scale 1.) ;; default
 
 ;;;;;;;;;;;
