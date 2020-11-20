@@ -12,39 +12,80 @@
 ;;; Code:
 
 (require 'icomplete)
-(when (bug-check-function-bytecode
-       'icomplete-force-complete-and-exit
-       "wyDEIFaEFAAIhBAACYQUAAqDFwDFIIfGIIc=")
-  (defun icomplete-force-complete-and-exit ()
-    "Complete the minibuffer with the longest possible match and exit.
-Use the first of the matches if there are any displayed, and use
-the default otherwise."
-    (interactive)
-    ;; This function is tricky.  The mandate is to "force", meaning we
-    ;; should take the first possible valid completion for the input.
-    ;; However, if there is no input and we can prove that that
-    ;; coincides with the default, it is much faster to just call
-    ;; `minibuffer-complete-and-exit'.  Otherwise, we have to call
-    ;; `minibuffer-force-complete-and-exit', which needs the full
-    ;; completion set and is potentially slow and blocking.  Do the
-    ;; latter if:
-    (if (and (null completion-cycling)
-             (or
-              ;; there's some input, meaning the default in off the table by
-              ;; definition; OR
-              (> (icomplete--field-end) (icomplete--field-beg))
-              ;; there's no input, but there's also no minibuffer default
-              ;; (and the user really wants to see completions on no input,
-              ;; meaning he expects a "force" to be at least attempted); OR
-              (and (not minibuffer-default)
-                   icomplete-show-matches-on-no-input)
-              ;; there's no input but the full completion set has been
-              ;; calculated, This causes the first cached completion to
-              ;; be taken (i.e. the one that the user sees highlighted)
-              completion-all-sorted-completions))
-        (minibuffer-force-complete-and-exit)
-      ;; Otherwise take the faster route...
-      (minibuffer-complete-and-exit))))
+;; (when (bug-check-function-bytecode
+;;        'icomplete-force-complete-and-exit
+;;        "wyDEIFaEFAAIhBAACYQUAAqDFwDFIIfGIIc=")
+;;   (defun icomplete-force-complete-and-exit ()
+;;     "Complete the minibuffer with the longest possible match and exit.
+;; Use the first of the matches if there are any displayed, and use
+;; the default otherwise."
+;;     (interactive)
+;;     ;; This function is tricky.  The mandate is to "force", meaning we
+;;     ;; should take the first possible valid completion for the input.
+;;     ;; However, if there is no input and we can prove that that
+;;     ;; coincides with the default, it is much faster to just call
+;;     ;; `minibuffer-complete-and-exit'.  Otherwise, we have to call
+;;     ;; `minibuffer-force-complete-and-exit', which needs the full
+;;     ;; completion set and is potentially slow and blocking.  Do the
+;;     ;; latter if:
+;;     (if (and (null completion-cycling)
+;;              (or
+;;               ;; there's some input, meaning the default in off the table by
+;;               ;; definition; OR
+;;               (> (icomplete--field-end) (icomplete--field-beg))
+;;               ;; there's no input, but there's also no minibuffer default
+;;               ;; (and the user really wants to see completions on no input,
+;;               ;; meaning he expects a "force" to be at least attempted); OR
+;;               (and (not minibuffer-default)
+;;                    icomplete-show-matches-on-no-input)
+;;               ;; there's no input but the full completion set has been
+;;               ;; calculated, This causes the first cached completion to
+;;               ;; be taken (i.e. the one that the user sees highlighted)
+;;               completion-all-sorted-completions))
+;;         (minibuffer-force-complete-and-exit)
+;;       ;; Otherwise take the faster route...
+;;       (minibuffer-complete-and-exit))))
+;; (when (bug-check-function-bytecode
+;;        'icomplete--sorted-completions
+;;        "CIagAMMgxCDAAgIiCYMjAAk7gyMAxCDDIFWDIwDFxkSCNQAKhTUACT+FNQDHIMg9hTUAyUPKy8oDOoOVAANAsgMEysvKAzqDggADQTqDggADQUCyAwYGAyGDdwADiYlBQaG2AswGCwYLBQYMQiOyAcqJsgOCeADLg4IAA0GyBIJFALaDibICP4myA4OVAANBsgSCOAABg50ABIKeAIm2h4c=")
+;;   (defun icomplete--sorted-completions ()
+;;     (or completion-all-sorted-completions
+;;         (cl-loop
+;;          with beg = (icomplete--field-beg)
+;;          with end = (icomplete--field-end)
+;;          with all = (completion-all-sorted-completions beg end)
+;;          for fn in (cond ((and minibuffer-default
+;;                                (stringp minibuffer-default) ; bug#38992
+;;                                (= (icomplete--field-end) (icomplete--field-beg)))
+;;                           ;; When we have a non-nil string default and
+;;                           ;; no input whatsoever: we want to make sure
+;;                           ;; that default is bubbled to the top so that
+;;                           ;; `icomplete-force-complete-and-exit' will
+;;                           ;; select it (do that even if the match
+;;                           ;; doesn't match the completion perfectly.
+;;                           `(,(lambda (comp)
+;;                                (equal minibuffer-default comp))))
+;;                          ((and fido-mode
+;;                                (not minibuffer-default)
+;;                                (eq (icomplete--category) 'file))
+;;                           ;; `fido-mode' has some extra file-sorting
+;;                           ;; semantics even if there isn't a default,
+;;                           ;; which is to bubble "./" to the top if it
+;;                           ;; exists.  This makes M-x dired RET RET go to
+;;                           ;; the directory of current file, which is
+;;                           ;; what vanilla Emacs and `ido-mode' both do.
+;;                           `(,(lambda (comp)
+;;                                (string= "./" comp)))))
+;;          thereis (cl-loop
+;;                   for l on all
+;;                   while (consp (cdr l))
+;;                   for comp = (cadr l)
+;;                   when (funcall fn comp)
+;;                   do (setf (cdr l) (cddr l))
+;;                   and return
+;;                   (completion--cache-all-sorted-completions beg end (cons comp all)))
+;;          finally return all))))
+
 (require 'icomplete-vertical)
 (require 'completing-read-at-point)
 (require 'orderless)
@@ -78,21 +119,34 @@ This function is part of the `orderless' completion style."
 (add-hook 'minibuffer-exit-hook
           #'orderless-remove-transient-configuration)
 
-(setq icomplete-prospects-height 4
-      icomplete-separator " · "
-      ;; fido
-      icomplete-tidy-shadowed-file-names t
-      icomplete-show-matches-on-no-input t
-      icomplete-hide-common-prefix nil
-      completion-styles '(orderless)
-      completion-flex-nospace nil
-      completion-category-defaults nil
-      completion-ignore-case t
-      read-buffer-completion-ignore-case t
-      read-file-name-completion-ignore-case t
-      ;; orderless
-      orderless-matching-styles '(orderless-regexp orderless-flex)
-      orderless-style-dispatchers nil)
+;; Another functions override this variables, then
+;; set every time enter minibuffer
+(setq
+ ;; icomplete
+ icomplete-prospects-height 4
+ icomplete-separator " · "
+ ;; orderless
+ orderless-matching-styles '(orderless-regexp orderless-flex)
+ orderless-style-dispatchers nil)
+(defun icomplete--fido-mode-setup ()
+  "Setup `fido-mode''s minibuffer."
+  (when (and icomplete-mode (icomplete-simple-completing-p))
+    (use-local-map (make-composed-keymap icomplete-fido-mode-map
+                                         (current-local-map)))
+    (setq-local
+     ;; fido
+     icomplete-tidy-shadowed-file-names t
+     icomplete-show-matches-on-no-input t
+     icomplete-hide-common-prefix nil
+     completion-styles '(orderless)
+     completion-flex-nospace nil
+     completion-category-defaults nil
+     completion-ignore-case t
+     read-buffer-completion-ignore-case t
+     read-file-name-completion-ignore-case t)
+    (setq
+     ;; bugs
+     completion-cycling nil)))
 
 (cond ((executable-find "fdfind")
        (setq fd-dired-program "fdfind"
@@ -169,7 +223,7 @@ This function is part of the `orderless' completion style."
                        (t "[·]\\1")
                        (confirm "[!]\\1")
                        (confirm-after-completion "[`]\\1")
-                       (_ "[.]\\1"))
+                       (otherwise "[.]\\1"))
                      prompt t)
            collection predicate require-match initial-input
            hist def inherit-input-method))
@@ -222,8 +276,11 @@ This function is part of the `orderless' completion style."
 (define-key icomplete-minibuffer-map (kbd "C-k") 'icomplete-fido-kill)
 (define-key icomplete-minibuffer-map (kbd "C-d") 'icomplete-fido-delete-char)
 (define-key icomplete-minibuffer-map (kbd "RET") 'icomplete-fido-ret)
+(define-key icomplete-fido-mode-map (kbd "C-m") nil)
 (define-key icomplete-minibuffer-map (kbd "DEL") 'icomplete-fido-backward-updir)
 (define-key icomplete-minibuffer-map (kbd "C-j") 'icomplete-fido-exit)
+(define-key icomplete-fido-mode-map (kbd "C-j") 'icomplete-fido-exit)
+(define-key icomplete-fido-mode-map (kbd "M-j") nil)
 (define-key icomplete-minibuffer-map (kbd "C-s") 'icomplete-forward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
@@ -235,9 +292,13 @@ This function is part of the `orderless' completion style."
 (global-set-key (kbd "M-s O") 'multi-occur)
 (global-set-key (kbd "M-s M-o") 'noccur-project)
 (global-set-key (kbd "M-s C-o") 'noccur-dired)
+(global-set-key
+ (kbd "<f12>")
+ (lambda ()
+   (interactive)
+   (message "log: %s" (list completion-cycling minibuffer-default))))
 
-(icomplete-mode)
-(setq fido-mode t)
+(fido-mode)
 (completing-read-at-point-mode)
 
 
