@@ -36,9 +36,6 @@
 (defvar exwm-default-transparency 0.85
   "EXWM default transparency.")
 
-(defvar exwm-hide-mode-line '("code")
-  "EXWM instances without mode line.")
-
 ;; example: export EXWM_MONITOR_ORDER="eDP-1 HDMI-1 DP-1"
 (defvar exwm-default-monitor-order
   (let ((monitor-order (getenv "EXWM_MONITOR_ORDER")))
@@ -497,9 +494,7 @@
               (string-equal "gimp" exwm-instance-name))
     (exwm-workspace-rename-buffer exwm-class-name))
   (unless (member exwm-instance-name exwm-exclude-transparency)
-    (exwm-set-window-transparency (current-buffer) exwm-default-transparency))
-  (when (member exwm-instance-name exwm-hide-mode-line)
-    (setq mode-line-format nil)))
+    (exwm-set-window-transparency (current-buffer) exwm-default-transparency)))
 (add-hook 'exwm-update-class-hook 'exwm-update-class-defaults)
 
 (defun exwm-update-title-defaults ()
@@ -559,6 +554,9 @@
           ([?\s-p] . exwm-workspace-prev)
           ([?\s-s] . exwm-workspace-swap)
           ([?\s-m] . exwm-randr-workspace-move-current)
+          ;; windows
+          ([?\s-M] . exwm-layout-toggle-mode-line)
+          ([?\s-f] . exwm-floating-toggle-floating)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
           ;; switch buffer
@@ -577,7 +575,8 @@
 
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
-        '(((member exwm-class-name '("XTerm" "Emacs")) char-mode t)
+        '(((member exwm-class-name '("XTerm" "Emacs"))
+           char-mode t)
           ((member exwm-class-name
                    '("darkplaces" "doom" "gzdoom"))
            floating nil))))
@@ -829,28 +828,62 @@
                 (width . ,(round (* workarea-width 0.1278)))
                 ;; (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
                 (background-color . "black")))))
-        mini-frame-resize nil
+        mini-frame-resize t  ;; nil when icomplete-exhibit advice
+        ;; fix not resizing mini frame on gnome
+        ;; x-gtk-resize-child-frames 'resize-mode
         resize-mini-frames t
         mini-frame-ignore-commands '(debugger-eval-expression
                                      objed-ipipe
                                      "edebug-eval-expression"
                                      "exwm-workspace-"))
+
+  (defun mini-frame--resize-mini-frame (mini-frame-frame)
+    (modify-frame-parameters
+     mini-frame-frame
+     `((height . ,(count-visual-lines-in-string
+                   (concat
+                    (buffer-substring-no-properties (point-min) (point-max))
+                    (when (and icomplete-mode
+                               (icomplete-simple-completing-p))
+                     (overlay-get icomplete-overlay 'after-string)))
+                   (frame-width mini-frame-frame)))))
+    (when (and (frame-live-p mini-frame-completions-frame)
+               (frame-visible-p mini-frame-completions-frame))
+      (modify-frame-parameters
+       mini-frame-completions-frame
+       `((top
+          .
+          ,(+ (* 2 (frame-parameter mini-frame-frame 'internal-border-width))
+              (frame-parameter mini-frame-frame 'top)
+              (cdr (window-text-pixel-size
+                    (frame-selected-window mini-frame-frame)))))))))
+
   (add-hook 'exwm-init-hook 'mini-frame-mode)
 
-  (defun mini-frame-icomplete-exhibit-advice ()
-    (when (and (bound-and-true-p mini-frame-frame)
-               (frame-live-p mini-frame-frame)
-               (frame-visible-p mini-frame-frame))
-      (modify-frame-parameters
-       mini-frame-frame
-       `((height
-          .
-          ,(count-visual-lines-in-string
-            (concat
-             (buffer-substring-no-properties (point-min) (point-max))
-             (overlay-get icomplete-overlay 'after-string))
-            (frame-width mini-frame-frame)))))))
-  (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
+  ;; [ fix not resizing mini frame
+  ;; (defun mini-frame-icomplete-exhibit-advice ()
+  ;;   (when (and (bound-and-true-p mini-frame-frame)
+  ;;              (frame-live-p mini-frame-frame)
+  ;;              (frame-visible-p mini-frame-frame))
+  ;;     (modify-frame-parameters
+  ;;      mini-frame-frame
+  ;;      `((height . ,(count-visual-lines-in-string
+  ;;                    (concat
+  ;;                     (buffer-substring-no-properties (point-min) (point-max))
+  ;;                     (overlay-get icomplete-overlay 'after-string))
+  ;;                    (frame-width mini-frame-frame)))))
+  ;;     (when (and (frame-live-p mini-frame-completions-frame)
+  ;;                (frame-visible-p mini-frame-completions-frame))
+  ;;       (modify-frame-parameters
+  ;;        mini-frame-completions-frame
+  ;;        `((top
+  ;;           .
+  ;;           ,(+ (* 2 (frame-parameter mini-frame-frame 'internal-border-width))
+  ;;               (frame-parameter mini-frame-frame 'top)
+  ;;               (cdr (window-text-pixel-size
+  ;;                     (frame-selected-window mini-frame-frame))))))))))
+  ;; (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
+  ;; ]
 
   (defun mini-frame-toggle-resize ()
     (interactive)
