@@ -840,13 +840,17 @@
   (defun mini-frame--resize-mini-frame (mini-frame-frame)
     (modify-frame-parameters
      mini-frame-frame
-     `((height . ,(count-visual-lines-in-string
-                   (concat
-                    (buffer-substring-no-properties (point-min) (point-max))
-                    (when (and icomplete-mode
-                               (icomplete-simple-completing-p))
-                     (overlay-get icomplete-overlay 'after-string)))
-                   (frame-width mini-frame-frame)))))
+     `((height
+        .
+        ,(min
+          40
+          (count-visual-lines-in-string
+           (concat
+            (buffer-substring-no-properties (point-min) (point-max))
+            (when (and icomplete-mode
+                       (icomplete-simple-completing-p))
+              (overlay-get icomplete-overlay 'after-string)))
+           (frame-width mini-frame-frame))))))
     (when (and (frame-live-p mini-frame-completions-frame)
                (frame-visible-p mini-frame-completions-frame))
       (modify-frame-parameters
