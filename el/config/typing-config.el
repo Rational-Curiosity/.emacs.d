@@ -325,24 +325,28 @@ prompt the user for a coding system."
 
 (defun apple-keyboard-toggle-fn-key (&optional arg)
   (interactive "P")
-  (setq arg  (number-to-string
-              (if (numberp arg)
-                  (if (and (<= arg 2)
-                           (>= arg 0))
-                      arg
-                    (user-error "Invalid number %i" arg))
-                (cl-case (string-to-number
-                          (shell-command-to-string
-                           "cat /sys/module/hid_apple/parameters/fnmode"))
-                  (0 1)
-                  (1 0)
-                  (2 0)
-                  (otherwise 0)))))
-  (with-temp-buffer
-    (cd "/sudo::/")
-    (shell-command
-     (concat "echo " arg
-             " | sudo tee /sys/module/hid_apple/parameters/fnmode"))))
+  (if (eq last-command 'apple-keyboard-toggle-fn-key)
+      (user-error "Ignoring repeated call")
+    (setq arg  (number-to-string
+                (if (numberp arg)
+                    (if (and (<= arg 2)
+                             (>= arg 0))
+                        arg
+                      (user-error "Invalid number %i" arg))
+                  (cl-case (string-to-number
+                            (shell-command-to-string
+                             "cat /sys/module/hid_apple/parameters/fnmode"))
+                    (0 1)
+                    (1 0)
+                    (2 0)
+                    (otherwise 0)))))
+    (unwind-protect
+        (with-temp-buffer
+          (cd "/sudo::/")
+          (shell-command
+           (concat "echo " arg " | tee /sys/module/hid_apple/parameters/fnmode")))
+      (discard-input)
+      (setq unread-command-events nil))))
 (global-set-key (kbd "<M-XF86MonBrightnessDown>") 'apple-keyboard-toggle-fn-key)
 (global-set-key (kbd "<M-f1>") 'apple-keyboard-toggle-fn-key)
 
@@ -991,6 +995,33 @@ This function avoid error and insert character at the end."
         (kill-region opoint (point)))
     (backward-kill-sexp arg)))
 
+(defun surround-delete-pair (&optional arg escape-strings no-syntax-crossing)
+  (interactive "^p\nd\nd")
+  (save-excursion
+    (backward-up-list arg escape-strings no-syntax-crossing)
+    (delete-pair 1)))
+
+(defun surround-change-pair (&optional arg escape-strings no-syntax-crossing)
+  (interactive "^p\nd\nd")
+  (let ((alist '((?\( . ?\))
+                 (?\[ . ?\])
+                 (?{ . ?})
+                 (?< . ?>)
+                 (?¡ . ?!)
+                 (?¿ . ??)
+                 (?« . ?»)
+                 (?“ . ?”)))
+        (char (read-char "Left delimiter: ")))
+   (save-excursion
+    (backward-up-list arg escape-strings no-syntax-crossing)
+    (save-excursion
+      (forward-sexp 1)
+      (delete-char -1)
+      (insert (or (alist-get char alist nil nil 'char-equal)
+                  char)))
+    (delete-char 1)
+    (insert char))))
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard macros ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -1101,7 +1132,8 @@ This function avoid error and insert character at the end."
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
 (global-set-key (kbd "C-:") 'next-thing-like-this)
 (global-set-key (kbd "C-;") 'previous-thing-like-this)
-(global-set-key (kbd "M-)") 'delete-pair)
+(global-set-key (kbd "C-(") 'surround-change-pair)
+(global-set-key (kbd "C-)") 'surround-delete-pair)
 (define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
 (define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
 (define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
