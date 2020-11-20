@@ -29,6 +29,13 @@
 (setq gc-cons-percentage 0.6
       gc-cons-threshold (eval-when-compile
                           (* 100 1024 1024)))
+(defun gcmh-idle-garbage-collect-advice (orig-fun)
+  (unless (or ;; cursor-in-echo-area
+           prefix-arg
+           (< 0 (length (this-single-command-keys)))
+           (active-minibuffer-window))
+    (funcall orig-fun)))
+(advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
 
 ;; emacs 27 avoids (package-initialize)
 
