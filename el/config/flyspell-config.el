@@ -147,6 +147,7 @@
 (define-key flyspell-mode-map flyspell-auto-correct-binding nil)
 (define-key flyspell-mode-map [(control ?\,)] nil)
 (define-key flyspell-mode-map [(control ?\.)] nil)
+(define-key flyspell-mode-map (kbd "C-M-i") nil)
 (define-key flyspell-mode-map (kbd "C-c i c") #'flyspell-buffer)
 (define-key flyspell-mode-map (kbd "C-c i n") #'flyspell-goto-next-error)
 (define-key flyspell-mode-map (kbd "C-c i p") #'flyspell-goto-previous-error)
