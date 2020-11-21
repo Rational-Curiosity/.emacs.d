@@ -552,10 +552,10 @@
           ;; Workspaces
           ([?\s-n] . exwm-workspace-next)
           ([?\s-p] . exwm-workspace-prev)
-          ([?\s-s] . exwm-workspace-swap)
-          ([?\s-m] . exwm-randr-workspace-move-current)
+          ([?\s-S] . exwm-workspace-swap)
+          ([?\s-M] . exwm-randr-workspace-move-current)
           ;; windows
-          ([?\s-M] . exwm-layout-toggle-mode-line)
+          ([?\s-m] . exwm-layout-toggle-mode-line)
           ([?\s-f] . exwm-floating-toggle-floating)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
@@ -576,10 +576,16 @@
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
         '(((member exwm-class-name '("XTerm" "Emacs"))
-           char-mode t)
+           char-mode t
+           tiling-mode-line nil
+           floating-mode-line nil)
           ((member exwm-class-name
                    '("darkplaces" "doom" "gzdoom"))
-           floating nil))))
+           floating nil
+           tiling-mode-line nil
+           floating-mode-line nil)
+          (t tiling-mode-line nil
+             floating-mode-line nil))))
 
 ;; To add a key binding only available in line-mode, simply define it in
 ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
@@ -786,6 +792,19 @@
       (winum--undefine-keys exwm-mode-map)))
   (exwm-winum-bindings)
   (add-hook 'winum-mode-hook 'exwm-winum-bindings))
+
+(when (featurep 'ace-window)
+  (defun aw-select-advice (orig-fun &rest args)
+    (let ((exwm-buffer-list (exwm-buffer-list)))
+      (mapc (lambda (buffer)
+              (exwm-set-window-transparency buffer 0.2))
+            exwm-buffer-list)
+      (unwind-protect
+          (apply orig-fun args)
+        (mapc (lambda (buffer)
+                (exwm-set-window-transparency buffer exwm-default-transparency))
+              exwm-buffer-list))))
+  (advice-add 'aw-select :around 'aw-select-advice))
 
 ;; gaps
 ;; (let ((color (face-attribute 'default :background)))

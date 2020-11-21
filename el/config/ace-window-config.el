@@ -11,6 +11,9 @@
 (set-face-attribute 'aw-mode-line-face nil
                     :weight 'bold
                     :foreground "mint cream")
+(set-face-attribute 'aw-leading-char-face nil
+                    :background "green"
+                    :height 160)
 
 (push " *which-key*" aw-ignored-buffers)
 (setq   aw-scope 'global
