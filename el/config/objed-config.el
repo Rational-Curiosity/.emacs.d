@@ -101,7 +101,7 @@
 ;; basic edit ops
 (define-key objed-map (kbd "C-w") 'objed-kill)
 (define-key objed-map (kbd "M-w") 'objed-copy)
-(define-key objed-map (kbd "C-k") 'objed-delete)
+(define-key objed-map (kbd "C-S-d") 'objed-delete)
 (define-key objed-map (kbd "C-y") 'objed-yank)
 (define-key objed-map (kbd "C-\\")
   ;; dont exit

@@ -47,10 +47,9 @@
                          (set 'list-of-uninstalled (cons b list-of-uninstalled))))
                    list-of-boolean package-selected-packages)
           (mapc #'package-install list-of-uninstalled)))))
-  ;; Desinstalamos los que sobran
+  ;; uninstall packages not in list
   ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-  (unless (daemonp)
-    (package-autoremove)))
+  (package-autoremove))
 
 (defun package-emacswiki-update ()
   (interactive)
