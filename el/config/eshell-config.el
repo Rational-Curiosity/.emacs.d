@@ -12,6 +12,9 @@
 
 (message "Importing eshell-config")
 
+;; Make file paths clickable
+(add-hook 'eshell-mode-hook 'compilation-shell-minor-mode)
+
 (require 'pcomplete)
 (with-eval-after-load 'esh-module
   (add-to-list 'eshell-modules-list 'eshell-tramp))
@@ -240,17 +243,20 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;; virtualenvwrapper package
 (defvar venv-current-name nil)
 
-(defmacro with-face (STR &rest PROPS)
-  "Return STR propertized with PROPS."
-  `(propertize ,STR 'face (list ,@PROPS)))
-
-(defmacro esh-section (NAME ICON FORM &rest PROPS)
+(defmacro esh-section (NAME ICON FORM FACE)
   "Build eshell section NAME with ICON prepended to evaled FORM with PROPS."
   `(setq ,NAME
-         (lambda () (when ,FORM
-                 (-> ,ICON
-                    (concat esh-section-delim ,FORM)
-                    (with-face ,@PROPS))))))
+         (lambda ()
+           (when ,FORM
+             (let ((text (concat ,ICON esh-section-delim ,FORM)))
+               (add-text-properties
+                    0 (length text)
+                    '(read-only t
+                      font-lock-face ,FACE
+                      front-sticky (font-lock-face read-only)
+                      rear-nonsticky (font-lock-face read-only))
+                    text)
+               text)))))
 
 (defvar eshell-current-command-start-time nil)
 ;; Below I implement a "prompt number" section
@@ -276,70 +282,102 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                       (concat acc x)))
                   esh-header eshell-funcs)))
 
+(defface esh-dir
+  '((t (:foreground "gold" :weight ultra-bold :underline t)))
+  "EShell directory prompt face")
 (esh-section esh-dir
              (if (display-graphic-p) "📂" "δ")  ;  (faicon folder)
              (let ((name (eshell/pwd)))
                (rename-buffer (format "*esh:%s*" (file-name-nondirectory name)) t)
                (abbreviate-file-name name))
-             '(:foreground "gold" :weight ultra-bold :underline t))
+             'esh-dir)
 
+(defface esh-git
+  '((t (:foreground "pink")))
+  "EShell git prompt face")
 (esh-section esh-git
              (if (display-graphic-p) "⎇" "β")  ;  (git icon)
              ;; (magit-get-current-branch)
              (car (vc-git-branches))
-             '(:foreground "pink"))
+             'esh-git)
 
+(defface esh-python
+  '((t (:foreground "white")))
+  "EShell python prompt face")
 (esh-section esh-python
              (if (display-graphic-p) "⛶" "π")  ;  (python icon)
-             (or pyvenv-virtual-env-name venv-current-name))
+             (or pyvenv-virtual-env-name venv-current-name)
+             'esh-python)
 
+(defface esh-clock
+  '((t (:foreground "forest green")))
+  "EShell clock prompt face")
 (esh-section esh-clock
              (if (display-graphic-p) "⏳" "τ")  ;  (clock icon)
              (format-time-string "%H:%M" (current-time))
-             '(:foreground "forest green"))
+             'esh-clock)
 
+(defface esh-user
+  '((t (:foreground "deep sky blue")))
+  "EShell user prompt face")
 (esh-section esh-user
              (if (display-graphic-p) "👤" "υ")
              (eshell-user-name)
-             '(:foreground "deep sky blue"))
+             'esh-user)
 
+(defface esh-sysname
+  '((t (:foreground "firebrick")))
+  "EShell sysname prompt face")
 (esh-section esh-sysname
              (if (display-graphic-p) "💻" "σ")
              (system-name)
-             '(:foreground "firebrick"))
+             'esh-sysname)
 
+(defface esh-num
+  '((t (:foreground "brown")))
+  "EShell number prompt face")
 (esh-section esh-num
              (if (display-graphic-p) "☰" "n")  ;  (list icon)
              (number-to-string esh-prompt-num)
-             '(:foreground "brown"))
+             'esh-num)
 
 
-(setq ;; Separator between esh-sections
-      esh-sep "  "  ; or " | "
+(setq
+ eshell-highlight-prompt nil
+ ;; Separator between esh-sections
+ esh-sep "  "  ; or " | "
 
-      ;; Separator between an esh-section icon and form
-      esh-section-delim " "
+ ;; Separator between an esh-section icon and form
+ esh-section-delim " "
 
-      ;; Eshell prompt header
-      esh-header "\n"  ; or "\n┌─"
+ ;; Eshell prompt header
+ esh-header "\n"  ; or "\n┌─"
 
-      ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
-      ;; your login, these can be the same.
-      eshell-prompt-string "⊳ "  ; or "└─> " or "└─» "
-      eshell-prompt-regexp
-      (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|^[^#$
+ ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
+ ;; your login, these can be the same.
+ eshell-prompt-string (let ((last-prompt "⊳ "))
+                        (add-text-properties
+                         0 (length last-prompt)
+                         '(read-only t
+                           font-lock-face eshell-prompt
+                           front-sticky (font-lock-face read-only)
+                           rear-nonsticky (font-lock-face read-only))
+                         last-prompt)
+                        last-prompt)  ; or "└─> " or "└─» "
+ eshell-prompt-regexp
+ (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|^[^#$
 ]* [#$] ")  ; or "└─> "
-      ;; Choose which eshell-funcs to enable
-      eshell-funcs (list esh-python esh-git esh-user esh-sysname esh-clock esh-num
-                         "\n" esh-dir
-                         "\n" eshell-prompt-string)
-      ;; Enable the new eshell prompt
-      eshell-prompt-function 'esh-prompt-func
-      eshell-banner-message (format
-                             "%s\nEmacs version %s on %s. Compilation %s  %s\n"
-                             system-configuration-features
-                             emacs-version system-type system-configuration
-                             system-configuration-options))
+ ;; Choose which eshell-funcs to enable
+ eshell-funcs (list esh-python esh-git esh-user esh-sysname esh-clock esh-num
+                    "\n" esh-dir
+                    "\n" eshell-prompt-string)
+ ;; Enable the new eshell prompt
+ eshell-prompt-function 'esh-prompt-func
+ eshell-banner-message (format
+                        "%s\nEmacs version %s on %s. Compilation %s  %s\n"
+                        system-configuration-features
+                        emacs-version system-type system-configuration
+                        system-configuration-options))
 
 ;;;;;;;;;;;;;;;;;
 ;; Post prompt ;;
