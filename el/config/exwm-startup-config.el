@@ -422,6 +422,41 @@
          (let ((split (split-string command)))
            (apply #'start-process (car split) nil (pop split) split)))))
 
+(defun exwm-start-terminal (arg)
+  (interactive "P")
+  (if arg
+      (cond ((executable-find "tmux")
+             (cond ((executable-find "st")
+                    (message "Starting st with tmux")
+                    (start-process "st" nil "st" "-e" "tmux"))
+                   ((executable-find "urxvt")
+                    (message "Starting urxvt with tmux")
+                    (start-process "urxvt" nil "urxvt" "-e" "tmux"))))
+            ((executable-find "screen")
+             (cond ((executable-find "st")
+                    (message "Starting st with screen")
+                    (start-process "st" nil "st" "-e" "screen"))
+                   ((executable-find "urxvt")
+                    (message "Starting urxvt with screen")
+                    (start-process "urxvt" nil "urxvt" "-e" "screen"))))
+            (t (message "Terminal multiplexer not found")))
+    (cond ((executable-find "urxvt")
+           (message "Starting urxvt")
+           (start-process "urxvt" nil "urxvt"))
+          ((executable-find "alacritty")
+           (message "Starting alacritty")
+           (start-process "alacritty" nil "alacritty"))
+          ((executable-find "xterm")
+           (message "Starting xterm")
+           (start-process "xterm" nil "xterm")))))
+
+(defun exwm-start-emacs (filepath)
+  (interactive (list (buffer-file-name)))
+  (if (and (stringp filepath)
+           (null current-prefix-arg))
+      (start-process "emacs" nil "emacs" filepath)
+    (start-process "emacs" nil "emacs")))
+
 (defun exwm-ace-window (arg)
   (interactive "p")
   (if (and (derived-mode-p 'exwm-mode)
@@ -541,12 +576,18 @@
           ;; Bind "s-&" to launch applications ('M-&' also works if the output
           ;; buffer does not bother you).
           ([?\s-&] . exwm-start-process)
+          ;; New terminal
+          ([s-return] . exwm-start-terminal)
+          ([s-S-return] . exwm-start-emacs)
           ;; Bind "s-<f2>" to "slock", a simple X display locker.
           ([s-f2] . (lambda ()
                       (interactive)
                       (start-process "" nil "/usr/bin/slock")))
           ;; Toggle char-line modes
           ([?\s-q] . exwm-input-toggle-keyboard)
+          ([?\s-Q] . (lambda ()
+                       (interactive)
+                       (message "Actual input mode: %s" exwm--input-mode)))
           ;; Display datetime
           ([?\s-a] . display-time-mode)
           ;; Workspaces
@@ -559,6 +600,8 @@
           ([?\s-f] . exwm-floating-toggle-floating)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
+          ;; Switch to minibuffer window
+          ([?\s-s ?0] . switch-to-minibuffer-window)
           ;; switch buffer
           ([?\s-b] . switch-to-buffer)
           ;; Bind lock screen
@@ -575,7 +618,8 @@
 
 (with-eval-after-load 'exwm-manage
   (setq exwm-manage-configurations
-        '(((member exwm-class-name '("XTerm" "Emacs"))
+        '(((member exwm-class-name
+                   '("Emacs" "st-256color" "Alacritty" "URxvt" "XTerm"))
            char-mode t
            tiling-mode-line nil
            floating-mode-line nil)
