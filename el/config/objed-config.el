@@ -80,8 +80,8 @@
 (define-key objed-map (kbd "<C-home>") 'objed-top-object)
 (define-key objed-map (kbd "<C-end>") 'objed-bottom-object)
 ;; block expansions
-(define-key objed-map (kbd "C-a") 'objed-beg-of-block)
-(define-key objed-map (kbd "C-e") 'objed-end-of-block)
+(define-key objed-map (kbd "<home>") 'objed-beg-of-block)
+(define-key objed-map (kbd "<end>") 'objed-end-of-block)
 (define-key objed-map (kbd "C-M-o") 'objed-expand-block)
 ;; context expansions
 (define-key objed-map (kbd "C-S-o") 'objed-expand-context)

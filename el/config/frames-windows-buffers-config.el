@@ -488,10 +488,12 @@ ARG non-nil resize window to ARG height."
   (setq window-autoresize-size nil))
 
 ;; [ Marcas laterales
-(defun toggle-continuation-lines ()
-  (interactive)
-  (if (or visual-line-mode
-          (null truncate-lines))
+(defun toggle-continuation-lines (&optional arg)
+  (interactive "P")
+  (if (if (numberp arg)
+          (< 0 arg)
+        (or visual-line-mode
+            (null truncate-lines)))
       (progn
         (visual-line-mode -1)
         (toggle-truncate-lines 1))
