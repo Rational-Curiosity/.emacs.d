@@ -23,12 +23,12 @@
                    gcmh-verbose t
                    gcmh-low-cons-threshold ,gc-cons-threshold
                    gcmh-high-cons-threshold (eval-when-compile
-                                              (* 100 1024 1024)))
+                                              (* 10 1024 1024)))
              (gcmh-mode 1))
           t)
 (setq gc-cons-percentage 0.6
       gc-cons-threshold (eval-when-compile
-                          (* 100 1024 1024)))
+                          (* 10 1024 1024)))
 (defun gcmh-idle-garbage-collect-advice (orig-fun)
   (unless (or ;; cursor-in-echo-area
            prefix-arg
