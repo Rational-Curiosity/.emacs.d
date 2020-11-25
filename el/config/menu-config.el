@@ -26,7 +26,8 @@
        (mapcar #'substring-no-properties it)
        (mapcar #'abbreviate-file-name it)
        (cl-remove-duplicates it :test #'string-equal)
-       (find-file (completing-read "Recent Files: " it nil t))))
+       (find-file (let ((minibuffer-completing-file-name t))
+                    (completing-read "Recent Files: " it nil t)))))
 
 (defun recentf-remove-sudo-tramp-prefix (path)
   "Remove sudo from path.  Argument PATH is path."
