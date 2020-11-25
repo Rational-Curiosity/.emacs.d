@@ -87,42 +87,48 @@
     (interrupt-process exwm-record-process)
     (message "EXWM Record process interrupted")))
 
-(defun exwm-record-start (&optional monitor-name)
-  (interactive)
-  (let ((monitors (exwm-xrandr-parse)))
-    (if (null monitor-name)
-        (setq monitor-name (completing-read
-                            "Select monitor: "
-                            (hash-table-keys monitors)
-                            nil t)))
-    (let ((monitor (gethash monitor-name monitors)))
-      (setq exwm-record-process
-            (start-process
-             "*exwm-record-process*" (if current-prefix-arg "*ffmpeg output*")
-             "ffmpeg" "-thread_queue_size" "512"
-             "-nostats" "-hide_banner"
-             "-loglevel" (if current-prefix-arg "warning" "quiet")
-             ;; video input
-             "-video_size" (gethash 'resolution monitor)
-             "-framerate" "20"
-             "-probesize" "30M"
-             "-f" "x11grab"
-             "-i" (concat ":0.0+" (gethash 'x monitor) "," (gethash 'y monitor))
-             ;; audio imput
-             "-f" "pulse" "-ac" "2" "-i" "default"
-             ;; audio codec
-             "-codec:a" "copy"
-             ;; video codec
-             "-codec:v" "libx264"
-             ;; options
-             "-crf" "0" "-preset" "ultrafast"
-             "-threads" "4"
-             (expand-file-name (concat
-                                monitor-name
-                                (format-time-string "_%Y-%m-%d_%H.%M.%S.mkv"))
-                               (if (file-directory-p "~/Videos/")
-                                   "~/Videos/"
-                                 "~/"))))))
+(defun exwm-record-start (monitor pcm-device)
+  (interactive (list (let ((monitors (exwm-xrandr-parse)))
+                       (gethash (completing-read
+                                 "Select monitor: "
+                                 (hash-table-keys monitors)
+                                 nil t)
+                                monitors))
+                     (completing-read
+                      "Select audio input: "
+                      (split-string
+                       (shell-command-to-string
+                        "arecord -L | grep -v -E \"^[[:space:]]\"")
+                       "\n" t)
+                      nil t nil nil "default")))
+  (setq exwm-record-process
+        (start-process
+         "*exwm-record-process*" (if current-prefix-arg "*ffmpeg output*")
+         "ffmpeg" "-thread_queue_size" "512"
+         "-nostats" "-hide_banner"
+         "-loglevel" (if current-prefix-arg "warning" "quiet")
+         ;; video input
+         "-video_size" (gethash 'resolution monitor)
+         "-framerate" "20"
+         "-probesize" "30M"
+         "-f" "x11grab"
+         "-i" (concat ":0.0+" (gethash 'x monitor) "," (gethash 'y monitor))
+         ;; audio imput
+         "-f" "pulse" "-ac" "2" "-i" pcm-device
+         ;; audio codec
+         "-codec:a" "copy"
+         ;; video codec
+         "-codec:v" "libx264"
+         ;; options
+         "-crf" "0" "-preset" "ultrafast"
+         "-threads" "4"
+         (expand-file-name (concat
+                            "Capture_"
+                            (gethash 'resolution monitor)
+                            (format-time-string "_%Y-%m-%d_%H.%M.%S.mkv"))
+                           (if (file-directory-p "~/Videos/")
+                               "~/Videos/"
+                             "~/"))))
   (if (eq 'run (process-status exwm-record-process))
       (message "EXWM Record process started")
     (message "EXWM Record process failed")))
@@ -132,8 +138,8 @@
   (if exwm-record-process
       (if (eq 'run (process-status exwm-record-process))
           (exwm-record-stop)
-        (exwm-record-start))
-    (exwm-record-start)))
+        (call-interactively 'exwm-record-start))
+    (call-interactively 'exwm-record-start)))
 
 (defun exwm-screensaver-lock ()
   (interactive)
@@ -395,6 +401,27 @@
           (set-window-buffer (car avaible-window-list) buffer))
       (display-buffer-pop-up-window buffer alist))))
 
+(defun exwm-display-buffer-cycle (&optional arg)
+  (interactive "P")
+  (let ((funcs '(exwm-display-buffer-function
+                 display-buffer-pop-up-window
+                 display-buffer-at-bottom
+                 display-buffer-below-selected
+                 display-buffer-in-side-window
+                 display-buffer-in-direction
+                 display-buffer-same-window)))
+    (when arg
+      (setq funcs (nreverse funcs)))
+    (let* ((display-funcs (cdr (assoc 'exwm-display-buffer-condition
+                                      display-buffer-alist)))
+           (func (car display-funcs)))
+      (if (null func)
+          (message "`display-buffer-alist' without EXWM case.")
+        (let ((new-func (or (car (cdr (memq func funcs)))
+                            (car funcs))))
+          (setcar display-funcs new-func)
+          (message "EXWM display function: `%s'" new-func))))))
+
 (defun exwm-windows-processes ()
   (cl-remove-if-not (lambda (p)
                       (and (eq 'run (process-status p))
@@ -484,8 +511,15 @@
 ;;;;;;;;;;;;;;;;;;;;
 ;; Customizations ;;
 ;;;;;;;;;;;;;;;;;;;;
+(add-hook 'exwm-input-input-mode-change-hook
+          (defun exwm-input-mode-change-background ()
+            (cl-case exwm--input-mode
+              (line-mode (buffer-face-set '(:background "black")))
+              (char-mode (buffer-face-set '(:background "purple"))))))
 ;; display buffer rules
-(push '(exwm-display-buffer-condition exwm-display-buffer-function) display-buffer-alist)
+(push '(exwm-display-buffer-condition
+        exwm-display-buffer-function)
+      display-buffer-alist)
 
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
@@ -597,7 +631,8 @@
           ([?\s-M] . exwm-randr-workspace-move-current)
           ;; windows
           ([?\s-m] . exwm-layout-toggle-mode-line)
-          ([?\s-f] . exwm-floating-toggle-floating)
+          ([?\s-l] . exwm-floating-toggle-floating)
+          ([?\s-s ?6] . exwm-display-buffer-cycle)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
           ;; Switch to minibuffer window
