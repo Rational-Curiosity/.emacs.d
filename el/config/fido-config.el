@@ -126,7 +126,8 @@ This function is part of the `orderless' completion style."
  icomplete-prospects-height 4
  icomplete-separator " · "
  ;; orderless
- orderless-matching-styles '(orderless-regexp orderless-flex)
+ orderless-matching-styles '(orderless-regexp)
+ orderless-component-separator ",+"
  orderless-style-dispatchers nil)
 (defun icomplete--fido-mode-setup ()
   "Setup `fido-mode''s minibuffer."
@@ -144,9 +145,11 @@ This function is part of the `orderless' completion style."
      completion-ignore-case t
      read-buffer-completion-ignore-case t
      read-file-name-completion-ignore-case t)
-    (setq
-     ;; bugs
-     completion-cycling nil)))
+    ;; [ fix bugs
+    (when completion-cycling
+      (funcall (prog1 completion-cycling (setq completion-cycling nil))))
+    ;; ]
+    ))
 
 (cond ((executable-find "fdfind")
        (setq fd-dired-program "fdfind"
@@ -166,13 +169,18 @@ This function is part of the `orderless' completion style."
 (defun orderless-first-literal (pattern index _total)
   (if (= index 0) 'orderless-literal))
 
-(defun orderless-match-components-literal ()
+(defun orderless-match-components-cycle ()
   "Components match regexp for the rest of the session."
   (interactive)
-  (if orderless-transient-matching-styles
-      (orderless-remove-transient-configuration)
-    (setq orderless-transient-matching-styles '(orderless-literal)
-          orderless-transient-style-dispatchers '(ignore)))
+  (cl-case (car orderless-transient-matching-styles)
+    ;; last in cycle
+    (orderless-flex
+     (orderless-remove-transient-configuration))
+    ;; middle in cycle
+    ;; first in cycle
+    (otherwise
+     (setq orderless-transient-matching-styles '(orderless-flex)
+           orderless-transient-style-dispatchers '(ignore))))
   (completion--flush-all-sorted-completions)
   (icomplete-pre-command-hook)
   (icomplete-post-command-hook))
@@ -271,7 +279,7 @@ This function is part of the `orderless' completion style."
   (define-key read-expression-map (kbd "M-v") 'switch-to-completions))
 
 (define-key minibuffer-local-completion-map (kbd "C-v")
-  'orderless-match-components-literal)
+  'orderless-match-components-cycle)
 
 (define-key icomplete-minibuffer-map (kbd "C-k") 'icomplete-fido-kill)
 (define-key icomplete-minibuffer-map (kbd "C-d") 'icomplete-fido-delete-char)
