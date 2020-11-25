@@ -12,9 +12,6 @@
 
 (message "Importing eshell-config")
 
-;; Make file paths clickable
-(add-hook 'eshell-mode-hook 'compilation-shell-minor-mode)
-
 (require 'pcomplete)
 (with-eval-after-load 'esh-module
   (add-to-list 'eshell-modules-list 'eshell-tramp))
@@ -184,6 +181,76 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
         (setq proc t))))
     proc))
 
+(defun eshell-key-up (arg)
+  (interactive "p")
+  (if (eq (point)
+          (point-max))
+      (progn
+        (if (not (memq last-command '(eshell-key-up
+                                      eshell-key-down
+                                      eshell-key-alt-previous
+                                      eshell-key-alt-next)))
+            ;; Starting a new search
+            (setq eshell-matching-input-from-input-string
+                  (buffer-substring (save-excursion (eshell-bol) (point))
+                                    (point))
+                  eshell-history-index nil))
+        (eshell-previous-matching-input
+         (concat "^" (regexp-quote eshell-matching-input-from-input-string))
+         arg))
+    (line-move-1 (- arg))))
+
+(defun eshell-key-down (arg)
+  (interactive "p")
+  (eshell-key-up (- arg)))
+
+(defun eshell-key-alt-previous (arg)
+  (interactive "p")
+  (if (eq (point)
+          (point-max))
+      (progn
+        (if (not (memq last-command '(eshell-key-up
+                                      eshell-key-down
+                                      eshell-key-alt-previous
+                                      eshell-key-alt-next)))
+            ;; Starting a new search
+            (setq eshell-matching-input-from-input-string
+                  (buffer-substring (save-excursion (eshell-bol) (point))
+                                    (point))
+                  eshell-history-index nil))
+        (eshell-previous-matching-input
+         (concat "^" (regexp-quote eshell-matching-input-from-input-string))
+         arg))
+    (forward-paragraph (- arg))))
+
+(defun eshell-key-alt-next (arg)
+  (interactive "p")
+  (eshell-key-alt-previous (- arg)))
+
+(with-eval-after-load 'em-hist
+  (when (bug-check-function-bytecode
+         'eshell-put-history
+         "AYQHAAiyAomDEADBAgQih8ICBCKH")
+    (defun eshell-put-history (input &optional ring at-beginning)
+      "Put a new input line into the history ring."
+      (unless ring (setq ring eshell-history-ring))
+      (if at-beginning
+          (if (or (ring-empty-p ring)
+                  (not (string-equal input (ring-ref eshell-history-ring -1))))
+              (ring-insert-at-beginning ring input))
+        (if (or (ring-empty-p ring)
+                (not (string-equal input (ring-ref eshell-history-ring 0))))
+            (ring-insert ring input)))))
+  
+  ;; eshell-next-input call this
+  (defun eshell-previous-input (arg)
+    "Cycle backwards through input history."
+    (interactive "*p")
+    (if (eq (point)
+            (point-max))
+        (eshell-previous-matching-input "." arg)
+      (line-move-1 (- arg)))))
+
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
@@ -218,14 +285,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;; Filters ;;
 ;;;;;;;;;;;;;
 ;; Make URLs clickable & ag
-(add-hook 'eshell-mode-hook (lambda ()
-                              (goto-address-mode 1)
-                              (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
-                              (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
-                              (define-key eshell-mode-map (kbd "M-p") 'eshell-key-alt-previous)
-                              (define-key eshell-mode-map (kbd "M-n") 'eshell-key-alt-next)
-                              (define-key eshell-mode-map (kbd "C-c C-k") 'eshell-send-chars-interactive-process)
-                              (add-to-list 'eshell-complex-commands "ag")))
+
 ;; Colorize advices
 ;; brute force...
 ;; (add-hook 'eshell-post-command-hook (lambda () (unhl-advices) (hl-advices)))
@@ -290,7 +350,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
              (let ((name (eshell/pwd)))
                (rename-buffer (format "*esh:%s*" (file-name-nondirectory name)) t)
                (abbreviate-file-name name))
-             'esh-dir)
+             esh-dir)
 
 (defface esh-git
   '((t (:foreground "pink")))
@@ -299,7 +359,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
              (if (display-graphic-p) "⎇" "β")  ;  (git icon)
              ;; (magit-get-current-branch)
              (car (vc-git-branches))
-             'esh-git)
+             esh-git)
 
 (defface esh-python
   '((t (:foreground "white")))
@@ -307,7 +367,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (esh-section esh-python
              (if (display-graphic-p) "⛶" "π")  ;  (python icon)
              (or pyvenv-virtual-env-name venv-current-name)
-             'esh-python)
+             esh-python)
 
 (defface esh-clock
   '((t (:foreground "forest green")))
@@ -315,7 +375,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (esh-section esh-clock
              (if (display-graphic-p) "⏳" "τ")  ;  (clock icon)
              (format-time-string "%H:%M" (current-time))
-             'esh-clock)
+             esh-clock)
 
 (defface esh-user
   '((t (:foreground "deep sky blue")))
@@ -323,7 +383,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (esh-section esh-user
              (if (display-graphic-p) "👤" "υ")
              (eshell-user-name)
-             'esh-user)
+             esh-user)
 
 (defface esh-sysname
   '((t (:foreground "firebrick")))
@@ -331,7 +391,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (esh-section esh-sysname
              (if (display-graphic-p) "💻" "σ")
              (system-name)
-             'esh-sysname)
+             esh-sysname)
 
 (defface esh-num
   '((t (:foreground "brown")))
@@ -339,7 +399,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (esh-section esh-num
              (if (display-graphic-p) "☰" "n")  ;  (list icon)
              (number-to-string esh-prompt-num)
-             'esh-num)
+             esh-num)
 
 
 (setq
@@ -685,75 +745,6 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
-(defun eshell-key-up (arg)
-  (interactive "p")
-  (if (eq (point)
-          (point-max))
-      (progn
-        (if (not (memq last-command '(eshell-key-up
-                                      eshell-key-down
-                                      eshell-key-alt-previous
-                                      eshell-key-alt-next)))
-            ;; Starting a new search
-            (setq eshell-matching-input-from-input-string
-                  (buffer-substring (save-excursion (eshell-bol) (point))
-                                    (point))
-                  eshell-history-index nil))
-        (eshell-previous-matching-input
-         (concat "^" (regexp-quote eshell-matching-input-from-input-string))
-         arg))
-    (line-move-1 (- arg))))
-
-(defun eshell-key-down (arg)
-  (interactive "p")
-  (eshell-key-up (- arg)))
-
-(defun eshell-key-alt-previous (arg)
-  (interactive "p")
-  (if (eq (point)
-          (point-max))
-      (progn
-        (if (not (memq last-command '(eshell-key-up
-                                      eshell-key-down
-                                      eshell-key-alt-previous
-                                      eshell-key-alt-next)))
-            ;; Starting a new search
-            (setq eshell-matching-input-from-input-string
-                  (buffer-substring (save-excursion (eshell-bol) (point))
-                                    (point))
-                  eshell-history-index nil))
-        (eshell-previous-matching-input
-         (concat "^" (regexp-quote eshell-matching-input-from-input-string))
-         arg))
-    (forward-paragraph (- arg))))
-
-(defun eshell-key-alt-next (arg)
-  (interactive "p")
-  (eshell-key-alt-previous (- arg)))
-
-(with-eval-after-load 'em-hist
-  (when (bug-check-function-bytecode
-         'eshell-put-history
-         "AYQHAAiyAomDEADBAgQih8ICBCKH")
-    (defun eshell-put-history (input &optional ring at-beginning)
-      "Put a new input line into the history ring."
-      (unless ring (setq ring eshell-history-ring))
-      (if at-beginning
-          (if (or (ring-empty-p ring)
-                  (not (string-equal input (ring-ref eshell-history-ring -1))))
-              (ring-insert-at-beginning ring input))
-        (if (or (ring-empty-p ring)
-                (not (string-equal input (ring-ref eshell-history-ring 0))))
-            (ring-insert ring input)))))
-  
-  ;; eshell-next-input call this
-  (defun eshell-previous-input (arg)
-    "Cycle backwards through input history."
-    (interactive "*p")
-    (if (eq (point)
-            (point-max))
-        (eshell-previous-matching-input "." arg)
-      (line-move-1 (- arg)))))
 
 (defun eshell-cmpl-initialize-advice ()
   (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
@@ -767,6 +758,24 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
     (define-key eshell-command-map [(control ?l)] #'helm-eshell-history)))
 (advice-add 'eshell-hist-initialize :after 'eshell-hist-initialize-advice)
 
+(add-hook 'eshell-mode-hook (lambda ()
+                              (goto-address-mode 1)
+                              (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
+                              (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
+                              (define-key eshell-mode-map (kbd "M-p") 'eshell-key-alt-previous)
+                              (define-key eshell-mode-map (kbd "M-n") 'eshell-key-alt-next)
+                              (define-key eshell-mode-map (kbd "C-c C-k") 'eshell-send-chars-interactive-process)
+                              ;; Make file paths clickable
+                              (define-key eshell-mode-map (kbd "C-c c")
+                                (lambda (arg)
+                                  (interactive "P")
+                                  (if arg
+                                      (compilation-shell-minor-mode -1)
+                                    (if (null compilation-shell-minor-mode)
+                                        (compilation-shell-minor-mode 1)
+                                      (compilation-shell-minor-mode -1)
+                                      (compilation-shell-minor-mode 1)))))
+                              (add-to-list 'eshell-complex-commands "ag")))
 
 (provide 'eshell-config)
 ;;; eshell-config.el ends here
