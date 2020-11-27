@@ -16,13 +16,22 @@
                     :foreground "green"
                     :height 170)
 
+(defun aw-real-move-window (window)
+  "Real move the current buffer to WINDOW.
+Switch the current window to the previous buffer."
+  (let ((buffer (current-buffer)))
+    (delete-window (selected-window))
+    (aw-switch-to-window window)
+    (switch-to-buffer buffer)))
+
+
 (push " *which-key*" aw-ignored-buffers)
 (setq   aw-scope 'global
         aw-dispatch-alist
         '((?R aw-refresh "Refresh mode-line")
           (?X aw-delete-window "Delete Window")
           (?S aw-swap-window "Swap Windows")
-          (?M aw-move-window "Move Window")
+          (?M aw-real-move-window "Move Window")
           (?C aw-copy-window "Copy Window")
           (?J aw-switch-buffer-in-window "Select Buffer")
           (?N aw-flip-window)
