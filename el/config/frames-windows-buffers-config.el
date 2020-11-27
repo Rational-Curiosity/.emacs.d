@@ -92,11 +92,46 @@ For more information, see the function `buffer-menu'."
 ;;;;;;;;;;;;;
 ;; Windows ;;
 ;;;;;;;;;;;;;
-;; [ ace-window 1
-;; (set-face-attribute 'aw-leading-char-face nil
-;;                     :bold t :foreground "red" :background "green" :height 160)
-;; ]
+;; display left rotating anticlockwise
+(defun display-buffer-tiling-anticlockwise (buffer alist)
+  (rotate-frame-anticlockwise)
+  (display-buffer-in-direction buffer (cons '(direction . leftmost) alist)))
 
+;; display right
+(defun display-buffer-help-condition (buffer-name action)
+  (with-current-buffer buffer-name
+    (cl-some #'derived-mode-p '(help-mode))))
+
+(defun display-buffer-at-right (buffer alist)
+  (display-buffer-in-direction buffer (cons '(direction . rightmost) alist)))
+
+;; (push '(display-buffer-help-condition
+;;         display-buffer-at-right)
+;;       display-buffer-alist)
+
+;; display bottom
+(defun display-buffer-term-condition (buffer-name action)
+  (with-current-buffer buffer-name
+    (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode
+                                docker-container-mode))))
+
+;; (push '(display-buffer-term-condition
+;;         display-buffer-at-bottom)
+;;       display-buffer-alist)
+
+;; display left
+(defun display-buffer-main-condition (buffer-name action)
+  (with-current-buffer buffer-name
+    (cl-some #'derived-mode-p '(prog-mode org-mode))))
+
+(defun display-buffer-at-left (buffer alist)
+  (display-buffer-in-direction buffer (cons '(direction . leftmost) alist)))
+
+;; (push '(display-buffer-main-condition
+;;         display-buffer-at-left)
+;;       display-buffer-alist)
+
+;; split window
 (defun split-window-mode-sensibly (&optional window)
   (or window (setq window (selected-window)))
   (cond
@@ -107,14 +142,15 @@ For more information, see the function `buffer-menu'."
       (split-window-sensibly window)))
    ((with-selected-window window
       (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode
-                                            docker-container-mode)))
+                                  docker-container-mode)))
     (let ((split-height-threshold 20))
       (split-window-sensibly window)))
    (t
     (split-window-sensibly window))))
 
 (defvar hscroll-aggressive nil)
-(setq register-preview-delay nil
+(setq fit-window-to-buffer-horizontally nil
+      register-preview-delay nil
       split-window-preferred-function 'split-window-mode-sensibly
       message-truncate-lines nil
       ;; Vertical Scroll
@@ -244,12 +280,23 @@ For more information, see the function `buffer-menu'."
 ;;(advice-add 'message :around #'message-filter)
 
 ;; Don't show on windows buffers currently showed
+;; (defun diplay-buffer-advice (orig-fun buffer-or-name &optional action frame)
+;;   (let ((window (funcall orig-fun buffer-or-name action frame)))
+;;     (when (and (windowp window)
+;;                (window-live-p window))
+;;       (select-window window))))
+;; (advice-add 'display-buffer :around 'diplay-buffer-advice)
+
 (defun display-buffer-if-not-showed (orig-fun buffer-or-name &rest args)
   "Advice ORIG-FUN with args BUFFER-OR-NAME and ARGS.
 Don't show on windows buffers currently showed."
   (let ((window (get-buffer-window buffer-or-name 0)))
     (if (windowp window)
-        window
+        (progn
+          (with-selected-window window
+            (pulse-momentary-highlight-region (window-start window)
+                                              (window-end window)))
+          window)
       (apply orig-fun buffer-or-name args))))
 (advice-add 'display-buffer :around #'display-buffer-if-not-showed)
 
@@ -291,17 +338,17 @@ Don't show on windows buffers currently showed."
     (setq ff-ignore-include ignore)
     (setq ff-always-try-to-create create)))
 
-(defun vsplit-last-buffer ()
+(defun vsplit-last-buffer (&optional size)
   "Split last buffer vertically."
-  (interactive)
-  (split-window-vertically)
+  (interactive "P")
+  (split-window-vertically size)
   (other-window 1)
   (switch-to-other-buffer))
 
-(defun hsplit-last-buffer ()
+(defun hsplit-last-buffer (&optional size)
   "Split last buffer horizontally."
-  (interactive)
-  (split-window-horizontally)
+  (interactive "P")
+  (split-window-horizontally size)
   (other-window 1)
   (switch-to-other-buffer))
 
@@ -746,9 +793,9 @@ others."
 (global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
 (global-set-key (kbd "M-s 7 e") 'toggle-message-truncate-lines)
 
-(global-set-key (kbd "C-x o") 'switch-to-window)
-(global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
-(global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
+;; (global-set-key (kbd "C-x o") 'switch-to-window)
+;; (global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
+;; (global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
 
 
 (define-key winner-mode-map [(control c) left] nil)
@@ -781,6 +828,7 @@ others."
 (global-set-key (kbd "C-c w P w") 'window-preserve-width)
 (global-set-key (kbd "C-c w C-h") 'window-resize-height)
 (global-set-key (kbd "C-c w C-w") 'window-resize-width)
+(global-set-key (kbd "C-c w S") 'balance-windows-area)
 
 (define-key global-map [remap list-buffers] 'ibuffer)
 (define-key global-map (kbd "C-x B") 'ibuffer-list-buffers)
