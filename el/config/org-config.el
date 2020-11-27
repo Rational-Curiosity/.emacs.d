@@ -25,6 +25,37 @@
 ;;;;;;;;;;;
 ;; Faces ;;
 ;;;;;;;;;;;
+(defface org-checkbox-todo
+  '((t (:inherit org-todo)))
+  "Face for the text part of an unchecked org-mode checkbox."
+  :group 'org-faces)
+(font-lock-add-keywords
+ 'org-mode
+ '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?: \\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+    1 'org-checkbox-todo prepend))
+ 'append)
+
+(defface org-checkbox-partial
+  '((t (:foreground "gold" :inherit org-todo)))
+  "Face for the text part of a checked org-mode checkbox."
+  :group 'org-faces)
+(font-lock-add-keywords
+ 'org-mode
+ '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:-\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+    1 'org-checkbox-partial prepend))
+ 'append)
+
+(defface org-checkbox-done
+  '((t (:inherit org-done)))
+  "Face for the text part of a checked org-mode checkbox."
+  :group 'org-faces)
+(font-lock-add-keywords
+ 'org-mode
+ '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:X\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+    1 'org-checkbox-done prepend))
+ 'append)
+
+
 (set-face-attribute 'org-scheduled-previously nil :foreground "rosy brown")
 (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
 (set-face-attribute 'org-warning nil :foreground "gold")
