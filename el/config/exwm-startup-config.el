@@ -35,6 +35,9 @@
 ;;;;;;;;;;;;;;;
 ;; Variables ;;
 ;;;;;;;;;;;;;;;
+(defvar exwm-close-window-on-kill nil
+  "EXWM close window when kill buffer.")
+
 (defvar exwm-exclude-transparency '("totem" "vlc" "darkplaces" "doom" "gzdoom")
   "EXWM instances without transparency.")
 
@@ -406,10 +409,16 @@
           (set-window-buffer (car avaible-window-list) buffer))
       (display-buffer-pop-up-window buffer alist))))
 
+(defun exwm-display-buffer-tiling-anticlockwise (buffer alist)
+  (with-current-buffer buffer
+    (set (make-local-variable 'exwm-close-window-on-kill) t))
+  (rotate-frame-anticlockwise)
+  (display-buffer-in-direction buffer (cons '(direction . leftmost) alist)))
+
 (defun exwm-display-buffer-cycle (&optional arg)
   (interactive "P")
   (let ((funcs '(exwm-display-buffer-biggest
-                 display-buffer-tiling-anticlockwise
+                 exwm-display-buffer-tiling-anticlockwise
                  ;; display-buffer-pop-up-window
                  ;; display-buffer-at-bottom
                  ;; display-buffer-below-selected
@@ -437,13 +446,39 @@
                     (process-list)))
 
 (defun exwm-kill-emacs-query-function ()
-  (mapc #'interrupt-process (exwm-windows-processes))
-  (let (processes)
-    (while (setq processes (exwm-windows-processes))
-      (sit-for 0.1)
-      (message "Waiting processes: %s" (mapconcat #'process-name processes ", "))))
-  (message "All processes terminated.")
-  t)
+  (mapc (lambda (p)
+          (let ((sigcgt (string-to-number
+                         (shell-command-to-string
+                          (concat "cat /proc/"
+                                  (number-to-string (process-id p))
+                                  "/status | grep SigCgt | cut -f2"))
+                         16)))
+            (cond ((= 1 (mod sigcgt 2))
+                   (message "Sending `sighup' to `%s'" (process-name p))
+                   (signal-process p 'sighup))
+                  ((= 1 (mod (/ sigcgt 2) 2))
+                   (message "Sending `sigint' to `%s'" (process-name p))
+                   (interrupt-process p))
+                  (t
+                   (message "Sending `sigkill' to `%s'" (process-name p))
+                   (kill-process p)))))
+        (exwm-windows-processes))
+  (let ((times 30)
+        last-procs)
+    (while (and (<= 0 (cl-decf times))
+                (let ((procs (exwm-windows-processes)))
+                  (unless (equal last-procs procs)
+                    (setq last-procs procs)
+                    (message "Waiting processes: %s"
+                             (mapconcat #'process-name procs ", ")))
+                  procs))
+      (sit-for 0.1))
+    (if last-procs
+        (progn
+          (message "Interrupting processes failed.")
+          nil)
+      (message "All processes closed.")
+      t)))
 
 (defun exwm-start-process (command)
   (interactive (list (read-shell-command "> ")))
@@ -512,10 +547,7 @@
 (defun exwm-close-window-if-exwm-mode ()
   (when (and (derived-mode-p 'exwm-mode)
              (< 1 (length (window-list)))
-             (not (eq
-                   'exwm-display-buffer-biggest
-                   (car (cdr (assoc 'exwm-display-buffer-condition
-                                    display-buffer-alist))))))
+             exwm-close-window-on-kill)
     (delete-window)))
 
 ;;;;;;;;;;;;;
@@ -535,7 +567,7 @@
 ;; display buffer rules
 (push '(exwm-display-buffer-condition
         ;; exwm-display-buffer-biggest
-        display-buffer-tiling-anticlockwise)
+        exwm-display-buffer-tiling-anticlockwise)
       display-buffer-alist)
 
 (add-hook 'kill-buffer-hook 'exwm-close-window-if-exwm-mode)
