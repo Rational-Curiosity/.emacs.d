@@ -19,15 +19,16 @@
 ;;       (recentf-mode 1))))
 
 
-(defun icomplete-recentf-find-file ()
+(defun icomplete-recentf-find-file (arg)
   "Show a list of recent files."
-  (interactive)
+  (interactive "P")
   (--> recentf-list
        (mapcar #'substring-no-properties it)
        (mapcar #'abbreviate-file-name it)
        (cl-remove-duplicates it :test #'string-equal)
-       (find-file (let ((minibuffer-completing-file-name t))
-                    (completing-read "Recent Files: " it nil t)))))
+       (let ((minibuffer-completing-file-name t))
+         (completing-read "Recent Files: " it nil t))
+       (if arg (find-file-other-window it) (find-file it))))
 
 (defun recentf-remove-sudo-tramp-prefix (path)
   "Remove sudo from path.  Argument PATH is path."
