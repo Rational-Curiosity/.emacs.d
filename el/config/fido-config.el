@@ -126,7 +126,7 @@ This function is part of the `orderless' completion style."
  icomplete-prospects-height 4
  icomplete-separator " · "
  ;; orderless
- orderless-matching-styles '(orderless-regexp)
+ orderless-matching-styles '(orderless-regexp orderless-flex)
  orderless-component-separator ",+"
  orderless-style-dispatchers nil)
 (defun icomplete--fido-mode-setup ()
@@ -177,9 +177,11 @@ This function is part of the `orderless' completion style."
     (orderless-flex
      (orderless-remove-transient-configuration))
     ;; middle in cycle
+    (orderless-regexp
+     (setq orderless-transient-matching-styles '(orderless-flex)))
     ;; first in cycle
     (otherwise
-     (setq orderless-transient-matching-styles '(orderless-flex)
+     (setq orderless-transient-matching-styles '(orderless-regexp)
            orderless-transient-style-dispatchers '(ignore))))
   (completion--flush-all-sorted-completions)
   (icomplete-pre-command-hook)
