@@ -1,5 +1,10 @@
-;;;; Below are configurations for EXWM.
+;;; exwm-startup-config.el --- Provides EXWM improvements
 
+;;; Commentary:
+
+;;; Code:
+
+;; Below are configurations for EXWM.
 (message "Importing exwm-startup-config")
 ;; Add paths (not required if EXWM is installed from GNU ELPA).
 ;(add-to-list 'load-path "/path/to/xelb/")
@@ -376,11 +381,11 @@
 (defun exwm-buffer-list ()
   (cl-remove-if-not 'exwm-buffer-p (buffer-list)))
 
-(defun exwm-display-buffer-condition (buffer-name &optional action)
+(defun exwm-display-buffer-condition (buffer-name action)
   (and (exwm-buffer-p buffer-name)
        (exwm-buffer-p (current-buffer))))
 
-(defun exwm-display-buffer-function (buffer &optional alist)
+(defun exwm-display-buffer-biggest (buffer alist)
   (let ((avaible-window-list
          (cl-remove-if
           #'window-dedicated-p
@@ -403,13 +408,15 @@
 
 (defun exwm-display-buffer-cycle (&optional arg)
   (interactive "P")
-  (let ((funcs '(exwm-display-buffer-function
-                 display-buffer-pop-up-window
-                 display-buffer-at-bottom
-                 display-buffer-below-selected
-                 display-buffer-in-side-window
-                 display-buffer-in-direction
-                 display-buffer-same-window)))
+  (let ((funcs '(exwm-display-buffer-biggest
+                 display-buffer-tiling-anticlockwise
+                 ;; display-buffer-pop-up-window
+                 ;; display-buffer-at-bottom
+                 ;; display-buffer-below-selected
+                 ;; display-buffer-in-side-window
+                 ;; display-buffer-in-direction
+                 ;; display-buffer-same-window
+                 )))
     (when arg
       (setq funcs (nreverse funcs)))
     (let* ((display-funcs (cdr (assoc 'exwm-display-buffer-condition
@@ -502,6 +509,15 @@
               (call-process "systemctl" nil nil nil "poweroff")) t)
   (save-buffers-kill-terminal-with-choice arg))
 
+(defun exwm-close-window-if-exwm-mode ()
+  (when (and (derived-mode-p 'exwm-mode)
+             (< 1 (length (window-list)))
+             (not (eq
+                   'exwm-display-buffer-biggest
+                   (car (cdr (assoc 'exwm-display-buffer-condition
+                                    display-buffer-alist))))))
+    (delete-window)))
+
 ;;;;;;;;;;;;;
 ;; layouts ;;
 ;;;;;;;;;;;;;
@@ -518,8 +534,11 @@
               (char-mode (buffer-face-set '(:background "purple"))))))
 ;; display buffer rules
 (push '(exwm-display-buffer-condition
-        exwm-display-buffer-function)
+        ;; exwm-display-buffer-biggest
+        display-buffer-tiling-anticlockwise)
       display-buffer-alist)
+
+(add-hook 'kill-buffer-hook 'exwm-close-window-if-exwm-mode)
 
 ;; Turn on `display-time-mode' if you don't use an external bar.
 (setq display-time-default-load-average nil
@@ -936,19 +955,21 @@
                                      "exwm-workspace-"))
 
   (defun mini-frame--resize-mini-frame (mini-frame-frame)
-    (modify-frame-parameters
-     mini-frame-frame
-     `((height
-        .
-        ,(min
-          40
-          (count-visual-lines-in-string
-           (concat
-            (buffer-substring-no-properties (point-min) (point-max))
-            (when (and icomplete-mode
-                       (icomplete-simple-completing-p))
-              (overlay-get icomplete-overlay 'after-string)))
-           (frame-width mini-frame-frame))))))
+    (when (eq mini-frame-frame (selected-frame))
+      (modify-frame-parameters
+       mini-frame-frame
+       `((height
+          .
+          ,(min
+            40
+            (count-visual-lines-in-string
+             (concat
+              (minibuffer-prompt)
+              ;; (minibuffer-contents-no-properties)
+              (when (and icomplete-mode
+                         (icomplete-simple-completing-p))
+                (overlay-get icomplete-overlay 'after-string)))
+             (frame-width mini-frame-frame)))))))
     (when (and (frame-live-p mini-frame-completions-frame)
                (frame-visible-p mini-frame-completions-frame))
       (modify-frame-parameters
@@ -1107,3 +1128,4 @@ mode and header lines."
 
 
 (provide 'exwm-startup-config)
+;;; exwm-startup-config.el ends here
