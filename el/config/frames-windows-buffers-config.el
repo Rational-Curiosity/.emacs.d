@@ -287,16 +287,16 @@ For more information, see the function `buffer-menu'."
 ;;       (select-window window))))
 ;; (advice-add 'display-buffer :around 'diplay-buffer-advice)
 
+;; (with-selected-window window
+;;   (pulse-momentary-highlight-region (window-start window)
+;;                                     (window-end window)))
+
 (defun display-buffer-if-not-showed (orig-fun buffer-or-name &rest args)
   "Advice ORIG-FUN with args BUFFER-OR-NAME and ARGS.
 Don't show on windows buffers currently showed."
   (let ((window (get-buffer-window buffer-or-name 0)))
     (if (windowp window)
-        (progn
-          (with-selected-window window
-            (pulse-momentary-highlight-region (window-start window)
-                                              (window-end window)))
-          window)
+        window
       (apply orig-fun buffer-or-name args))))
 (advice-add 'display-buffer :around #'display-buffer-if-not-showed)
 
