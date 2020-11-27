@@ -37,24 +37,35 @@
 
 ;; =================================
 ;; PDB configuration
-;; =================================
-  (setq gud-pdb-command-name
-        (if (or (string-equal python-shell-interpreter "python3")
-                (string-equal python-shell-interpreter "ipython3"))
-            "python3 -m pdb"
-          "python -m pdb")))
+  ;; =================================
+  (defun pdb-advice (orig-fun &rest args)
+    ;; don't change default directory
+    (let ((gud-chdir-before-run nil)
+          (default-directory
+            (if current-prefix-arg
+                (read-directory-name "Default directory: " nil nil t)
+              (or (and (featurep 'projectile)
+                       (projectile-project-root))
+                  default-directory))))
+      (apply orig-fun args)))
+  (advice-add 'pdb :around 'pdb-advice)
+  (setq gud-pdb-command-name "python -m pdb"))
 ;; =================================
 ;; GDB configuration
 ;; =================================
-;;;;;;;;;;
-;;;;;;
 (with-eval-after-load 'gdb-mi
 
 ;; Dedicated windows except source window
   (defun gdb-dedicated-windows ()
     (dolist (window (window-list))
-      (when (and (eq 0 (string-match "*gud\\|*stack\\|*locals\\|*registers\\|*input/output\\|*breakpoints" (buffer-name (window-buffer window))))
-                 (not (buffer-file-name (window-buffer window))))
+      (when
+          (and
+           (eq
+            0
+            (string-match
+             "*gud\\|*stack\\|*locals\\|*registers\\|*input/output\\|*breakpoints"
+             (buffer-name (window-buffer window))))
+           (not (buffer-file-name (window-buffer window))))
         (set-window-dedicated-p window t))))
   (advice-add  'gdb-setup-windows :after #'gdb-dedicated-windows)
 
