@@ -597,7 +597,8 @@ ARG non-nil resize window to ARG height."
   ("M-q" nil "quit"))
 (global-set-key (kbd "C-c w m") 'hydra-win/body)
 (global-set-key (kbd "M-s 0") 'switch-to-minibuffer-window)
-(global-set-key (kbd "M-s 7 w") #'toggle-continuation-lines)
+(global-set-key (kbd "M-s 7 w") 'toggle-continuation-lines)
+(global-set-key (kbd "M-s 7 v") #'visual-line-mode)
 (global-set-key (kbd "C-x `") 'shrink-window)
 
 

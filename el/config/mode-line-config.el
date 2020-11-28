@@ -127,9 +127,8 @@
           ))
   (cyphejor-mode))
 (with-eval-after-load 'abbrev
-  (setcar (cdr (assq 'abbrev-mode minor-mode-alist)) (propertize "A"
-                                                                 'face
-                                                                 'mode-line-abbrev-mode)))
+  (setcar (cdr (assq 'abbrev-mode minor-mode-alist))
+          (propertize "A" 'face 'mode-line-abbrev-mode)))
 (with-eval-after-load 'compile
   (setcar (cdr (assq 'compilation-shell-minor-mode minor-mode-alist)) "Cs")
   (setcar (cdr (assq 'compilation-minor-mode minor-mode-alist)) "Cp"))
