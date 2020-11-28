@@ -15,13 +15,13 @@
 
 (message "Importing org-brain-config")
 
-(setq org-brain-path (or (cl-loop for folder in
-                                  '("~/var/Dropbox/Brain"
-                                    "~/Prog/org/brain")
-                                  when (file-exists-p folder)
-                                  return folder)
-                         org-brain-path)
-      org-id-track-globally t
+(when (boundp 'personal-notes-directory)
+  (setq org-brain-path (expand-file-name
+                        "brain"
+                        personal-notes-directory))
+  (make-directory org-brain-path t))
+
+(setq org-id-track-globally t
       ;; <only headlines entries>
       ;; org-brain-include-file-entries nil
       ;; org-brain-file-entries-use-title nil

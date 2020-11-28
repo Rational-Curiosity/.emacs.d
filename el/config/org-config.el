@@ -358,7 +358,7 @@
         (sequence "PLAN(p!)" "LINK(k@/!)" "WAIT(w@/!)" "|" "FINI(f!)")
         ;; Problems
         (sequence "FIXM(b@/!)" "REOP(r@/!)" "HOLD(h@/!)" "|" "CANC(c@/!)"))
-      org-archive-location "archived.org::* From %s"
+      org-archive-location ".archived.org::* From %s"
       org-archive-file-header-format nil
       ;; PRIORITIES
       org-highest-priority ?A
@@ -916,16 +916,29 @@ You can also customize this for each buffer, using something like
 ;;   (cfw:open-org-calendar))
 ;; ;;)
 (require 'org-agenda-property)
+;; (cl-loop for folder in
+;;          `("~/var/Dropbox/Orgzly"
+;;            ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
+;;            "~/Prog/org")
+;;          when (file-exists-p folder)
+;;          return folder)
 
-(setq org-directory (or (cl-loop for folder in
-                              `("~/var/Dropbox/Orgzly"
-                                ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
-                                "~/Prog/org")
-                              when (file-exists-p folder)
-                              return folder)
-                        org-directory)
-      org-default-notes-file (concat (or org-directory "~") "/.notes.org")
-      org-agenda-files (list org-directory) ;; reset in config.el
+(when (boundp 'personal-notes-directory)
+  (setq org-directory personal-notes-directory
+        org-default-notes-file (expand-file-name
+                                ".notes.org"
+                                org-directory)
+        org-agenda-files (list (expand-file-name
+                                "agenda"
+                                org-directory)) ;; reset in config.el
+        org-annotate-file-storage-file (expand-file-name
+                                        ".org-annotate-file.org"
+                                        org-directory))
+  (make-directory org-directory t)
+  (make-directory (car org-agenda-files) t))
+
+(setq org-annotate-file-always-open nil
+      org-annotate-file-add-search nil
       ;; <property>
       org-agenda-property-list '("REQUIRED")
       ;; <Calendar>
