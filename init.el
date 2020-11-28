@@ -66,6 +66,7 @@
  '(package-selected-packages
    '(ace-window
      anaphora
+     annotate
      async
      auctex
      avy
@@ -296,6 +297,8 @@
 
 (require 'language-tools)
 (language-tools-config)
+
+(require 'annotate-config)
 ;; ] <Always required>
 
 

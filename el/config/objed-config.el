@@ -20,7 +20,8 @@
       objed-disabled-modes
       '(exwm-mode
         browse-kill-ring-mode
-        completion-list-mode)
+        completion-list-mode
+        outline-mode)
       objed-mode-line-format
       '(:eval (propertize
                (format "%s(%s)"
