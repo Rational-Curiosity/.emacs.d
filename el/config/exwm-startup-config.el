@@ -448,10 +448,12 @@
 (defun exwm-kill-emacs-query-function ()
   (mapc (lambda (p)
           (let ((sigcgt (string-to-number
-                         (shell-command-to-string
-                          (concat "cat /proc/"
-                                  (number-to-string (process-id p))
-                                  "/status | grep SigCgt | cut -f2"))
+                         (substring
+                          (shell-command-to-string
+                           (concat "cat /proc/"
+                                   (number-to-string (process-id p))
+                                   "/status | grep SigCgt | cut -f2"))
+                          -1)
                          16)))
             (cond ((= 1 (mod sigcgt 2))
                    (message "Sending `sighup' to `%s'" (process-name p))
