@@ -324,6 +324,10 @@ prompt the user for a coding system."
     (aset keyboard-translate-table ?\\ ?º)))
 
 (defun apple-keyboard-toggle-fn-key (&optional arg)
+  ;; * permanent change
+  ;; 1. edit or create: /etc/modprobe.d/hid_apple.conf
+  ;; 2. append line:    options hid_apple fnmode=2
+  ;; 3. shell command:  sudo update-initramfs -u -k all
   (interactive "P")
   (if (eq last-command 'apple-keyboard-toggle-fn-key)
       (user-error "Ignoring repeated call")
@@ -336,10 +340,10 @@ prompt the user for a coding system."
                   (cl-case (string-to-number
                             (shell-command-to-string
                              "cat /sys/module/hid_apple/parameters/fnmode"))
-                    (0 1)
-                    (1 0)
+                    (0 2)
+                    (1 2)
                     (2 0)
-                    (otherwise 0)))))
+                    (otherwise 2)))))
     (unwind-protect
         (with-temp-buffer
           (cd "/sudo::/")
