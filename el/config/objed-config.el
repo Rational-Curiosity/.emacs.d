@@ -15,13 +15,34 @@
 
 ;; (add-hook 'prog-mode-hook 'objed-local-mode)
 
-(setq objed-initial-object 'symbol
+(setq objed-init-p-function
+      (lambda ()
+        (and
+         (not (minibufferp))
+         (not (and (bobp) (eobp)))
+         ;; don't interfere with other special modes
+         ;; like hydra
+         (not overriding-terminal-local-map)
+         (not objed--block-p)
+         (not objed-disabled-p)
+         (not (apply 'derived-mode-p objed-disabled-modes))
+         ;; don't activate when completing the regular Emacs way
+         (not (get-buffer-window "*Completions*" 0))
+         ;; don't activate during a company completion
+         (not (bound-and-true-p company-candidates))
+         ;; FIXME: temp workaround for starting commit
+         ;; message in insertion mode
+         (not (eq last-command 'magit-commit-create))
+         (or (memq  major-mode '(messages-buffer-mode help-mode))
+             (not (derived-mode-p 'comint-mode 'special-mode 'dired-mode)))))
+      objed-initial-object 'symbol
       objed-auto-init-on-buffer-change nil
       objed-disabled-modes
       '(exwm-mode
         browse-kill-ring-mode
         completion-list-mode
-        outline-mode)
+        outline-mode
+        special-mode)
       objed-mode-line-format
       '(:eval (propertize
                (format "%s(%s)"
@@ -202,6 +223,14 @@
 ;;   (which-key-add-key-based-replacements "'" "user map")
 ;;   (which-key-add-key-based-replacements "-" "other user map"))
 
+(defun objed--insert-keys-rebound-p ()
+  "Return non-nil when any self insertion key is rebound."
+  (cl-dolist (char (string-to-list "abcdefghijklmnopqrstuvwxyz"))
+    (let ((binding (key-binding (vector char))))
+      (when (not (and
+                  (symbolp binding)
+                  (string-match "insert" (symbol-name binding))))
+        (cl-return binding)))))
 
 (defun objed-focus-change (&rest _args)
   (when objed--buffer
