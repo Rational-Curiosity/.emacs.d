@@ -442,27 +442,32 @@
   (cl-remove-if-not (lambda (p)
                       (and (eq 'run (process-status p))
                            (process-tty-name p)
-                           (null (process-buffer p))))
+                           ;; (null (process-buffer p))
+                           ))
                     (process-list)))
 
 (defun exwm-kill-emacs-query-function ()
   (mapc (lambda (p)
           (let ((sigcgt (string-to-number
                          (substring
-                          (shell-command-to-string
-                           (concat "cat /proc/"
-                                   (number-to-string (process-id p))
-                                   "/status | grep SigCgt | cut -f2"))
+                          (string-trim-right
+                           (shell-command-to-string
+                            (concat "cat /proc/"
+                                    (number-to-string (process-id p))
+                                    "/status | grep SigCgt | cut -f2")))
                           -1)
                          16)))
             (cond ((= 1 (mod sigcgt 2))
-                   (message "Sending `sighup' to `%s'" (process-name p))
+                   (message "Sending `sighup' to `%s' with cgt %i"
+                            (process-name p) sigcgt)
                    (signal-process p 'sighup))
                   ((= 1 (mod (/ sigcgt 2) 2))
-                   (message "Sending `sigint' to `%s'" (process-name p))
+                   (message "Sending `sigint' to `%s' with cgt %i"
+                            (process-name p) sigcgt)
                    (interrupt-process p))
                   (t
-                   (message "Sending `sigkill' to `%s'" (process-name p))
+                   (message "Sending `sigkill' to `%s' with cgt %i"
+                            (process-name p) sigcgt)
                    (kill-process p)))))
         (exwm-windows-processes))
   (let ((times 30)
