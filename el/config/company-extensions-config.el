@@ -31,7 +31,7 @@
 ;;(require 'company-yasnippet)
 
 (defface mode-line-company-mode
-  '((t :inherit (mode-line) :foreground "slate blue" :weight bold))
+  '((t :foreground "slate blue" :weight bold))
   "Project name" :group 'mode-line)
 (setcar (cdr (assq 'company-mode minor-mode-alist))
         (propertize "C" 'face 'mode-line-company-mode))

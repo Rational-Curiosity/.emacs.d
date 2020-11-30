@@ -18,7 +18,7 @@
 
 (message "Importing yasnippet-config")
 (defface mode-line-yasnippet-mode
-  '((t :inherit (mode-line) :foreground "medium slate blue" :weight bold))
+  '((t :foreground "medium slate blue" :weight bold))
   "Project name" :group 'mode-line)
 (setcar (cdr (assq 'yas-minor-mode minor-mode-alist))
         (propertize "Y" 'face 'mode-line-yasnippet-mode))
