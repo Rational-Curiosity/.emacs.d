@@ -12,6 +12,13 @@
 
 ;;; Code:
 
+(defun save-messages-buffer ()
+  (with-current-buffer "*Messages*"
+    (write-region (point-min) (point-max)
+                  (expand-file-name "last-messages-buffer.txt"
+                                    user-emacs-directory))))
+(add-hook 'kill-emacs-hook 'save-messages-buffer 91)
+
 (add-hook 'after-init-hook
           `(lambda ()
              (setq gc-cons-percentage ,gc-cons-percentage
