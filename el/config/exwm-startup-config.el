@@ -89,6 +89,160 @@
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
+(defun exwm-set-border-color (color &optional buffer)
+  "Set BUFFER border COLOR color."
+  (when-let ((id (car (rassoc (or buffer (current-buffer))
+                              exwm--id-buffer-alist))))
+    (xcb:+request exwm--connection
+        (make-instance 'xcb:ChangeWindowAttributes
+                       :window id
+                       :value-mask xcb:CW:BorderPixel
+                       :border-pixel (exwm--color->pixel color)))))
+
+(defun exwm-set-border-width (border-width &optional buffer)
+  "Set BUFFER border BORDER-WIDTH width."
+  (when-let (id (car (rassoc (or buffer (current-buffer))
+                             exwm--id-buffer-alist)))
+    (xcb:+request exwm--connection
+        (make-instance 'xcb:ConfigureWindow
+                       :window id
+                       :value-mask xcb:ConfigWindow:BorderWidth
+                       :border-width border-width))))
+
+(when (bug-check-function-bytecode
+       'exwm-layout-toggle-fullscreen
+       "wzJKAAiDHADExQmDEwAJIIIUAMbHBIYaAMgkiImEKwDJyiGEKwDLw8wiiImFSQByic0BCiJBsgFxiM4gg0UAzwEhgkgA0AEhKTCH")
+  (cl-defun exwm-layout-toggle-fullscreen (&optional id)
+    "Toggle fullscreen mode."
+    (interactive (list (exwm--buffer->id (window-buffer))))
+    (exwm--log "id=#x%x" (or id 0))
+    (unless (or id (derived-mode-p 'exwm-mode))
+      (cl-return-from exwm-layout-toggle-fullscreen))
+    (when id
+      (with-current-buffer (exwm--id->buffer id)
+        (if (exwm-layout--fullscreen-p)
+            (progn
+              (exwm-randr-refresh)
+              (exwm-layout-unset-fullscreen id))
+          (let ((exwm-gap-monitor 0))
+            (exwm-randr-refresh))
+          (exwm-layout-set-fullscreen id))))))
+
+(when (bug-check-function-bytecode
+       'exwm-layout-unset-fullscreen
+       "xjKcAAiDHADHyAmDEwAJIIIUAMnKBIYaAMskiImEJgDMzSGDKwDOIIQwAM/G0CKIcomDQACJ0QEKIkGyAYJCANIgcYjTCwwiFA2DWADUDiXVDSEiiIKAANYOJtfY2Q4l2tsOJw4oItwOKd0OKiYJIoje0N8iiYN/ANQOJQIiiIjgASGI4Q4mIYji3iDQIogOK+M9hZoA5A4lISkwhw==")
+  (cl-defun exwm-layout-unset-fullscreen (&optional id)
+    "Restore window from fullscreen state."
+    (interactive)
+    (exwm--log "id=#x%x" (or id 0))
+    (unless (and (or id (derived-mode-p 'exwm-mode))
+                 (exwm-layout--fullscreen-p))
+      (cl-return-from exwm-layout-unset-fullscreen))
+    (with-current-buffer (if id (exwm--id->buffer id) (window-buffer))
+      (setq exwm--ewmh-state
+            (delq xcb:Atom:_NET_WM_STATE_FULLSCREEN exwm--ewmh-state))
+      (if exwm--floating-frame
+          (exwm-layout--show exwm--id (frame-root-window exwm--floating-frame))
+        (xcb:+request exwm--connection
+            (make-instance 'xcb:ConfigureWindow
+                           :window exwm--id
+                           :value-mask (logior xcb:ConfigWindow:Sibling
+                                               xcb:ConfigWindow:StackMode)
+                           :sibling exwm--guide-window
+                           :stack-mode xcb:StackMode:Above))
+        (let ((window (get-buffer-window nil t)))
+          (when window
+            (exwm-layout--show exwm--id window))))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ewmh:set-_NET_WM_STATE
+                         :window exwm--id
+                         :data exwm--ewmh-state))
+      (xcb:flush exwm--connection)
+      (set-window-dedicated-p (get-buffer-window) nil)
+      (when (eq 'line-mode exwm--selected-input-mode)
+        (exwm-input--grab-keyboard exwm--id)))))
+
+(when (bug-check-function-bytecode
+       'exwm-randr-refresh
+       "CIMTAMbHCYMPAAkgghAAyMkjiAqDHADKIIIeAMsgicycAc2cAs6cz4kEhRsBA4UbAQuDNwDMEwxHzIkCV4OXAInQDQIi0QEGCSJBDAOc0gHTIgKDYQDRBAYLIkGyBIJuAAYLsgTRBgwGDCJBsgOJ1AUhQkMGCaSyCYkCQkMGCKSyCNUC1gYGI4jVAtcFI7YGiVSyAYI6ALYC2CCIDImDrgCJQNkBIYgBQbaCgp0AiNoOLCGI2yCDwQDcIIPBAN0giN4giAyJg9cAiUDfAc8iiAFBtoKCxQCI4OHiDizjDizk5eYOLSMizyNA5yIhiYMSAYlAiQSeQYmDCgHoAQYGIrIF3wIFnkHpIoiIAUG2goLtAIjaDiwhiOrrIYc=")
+  (defvar exwm-gap-monitor 20)
+  (defun exwm-randr-refresh ()
+    "Refresh workspaces according to the updated RandR info."
+    (interactive)
+    (exwm--log)
+    (let* ((result (if exwm-randr--compatibility-mode
+                       (exwm-randr--get-outputs)
+                     (exwm-randr--get-monitors)))
+           (primary-monitor (elt result 0))
+           (monitor-geometry-alist (elt result 1))
+           (monitor-alias-alist (elt result 2))
+           container-monitor-alist container-frame-alist)
+      (when (and primary-monitor monitor-geometry-alist)
+        (when exwm-workspace--fullscreen-frame-count
+          ;; Not all workspaces are fullscreen; reset this counter.
+          (setq exwm-workspace--fullscreen-frame-count 0))
+        (dotimes (i (exwm-workspace--count))
+          (let* ((monitor (plist-get exwm-randr-workspace-monitor-plist i))
+                 (geometry (cdr (assoc monitor monitor-geometry-alist)))
+                 (frame (elt exwm-workspace--list i))
+                 (container (frame-parameter frame 'exwm-container)))
+            (if geometry
+                ;; Unify monitor names in case it's a mirroring setup.
+                (setq monitor (cdr (assoc monitor monitor-alias-alist)))
+              ;; Missing monitors fallback to the primary one.
+              (setq monitor primary-monitor
+                    geometry (cdr (assoc primary-monitor
+                                         monitor-geometry-alist))))
+            (setq container-monitor-alist (nconc
+                                           `((,container . ,(intern monitor)))
+                                           container-monitor-alist)
+                  container-frame-alist (nconc `((,container . ,frame))
+                                               container-frame-alist))
+            (set-frame-parameter frame 'exwm-randr-monitor monitor)
+            (set-frame-parameter
+             frame 'exwm-geometry
+             (with-slots (x y width height) geometry
+               (make-instance 'xcb:RECTANGLE
+                              :x (and x (+ x exwm-gap-monitor))
+                              :y (and y (+ y exwm-gap-monitor))
+                              :width (and width
+                                          (- width
+                                             (* 2 exwm-gap-monitor)))
+                              :height (and height
+                                           (- height
+                                              (* 2 exwm-gap-monitor))))))))
+        ;; Update workareas.
+        (exwm-workspace--update-workareas)
+        ;; Resize workspace.
+        (dolist (f exwm-workspace--list)
+          (exwm-workspace--set-fullscreen f))
+        (xcb:flush exwm--connection)
+        ;; Raise the minibuffer if it's active.
+        (when (and (active-minibuffer-window)
+                   (exwm-workspace--minibuffer-own-frame-p))
+          (exwm-workspace--show-minibuffer))
+        ;; Set _NET_DESKTOP_GEOMETRY.
+        (exwm-workspace--set-desktop-geometry)
+        ;; Update active/inactive workspaces.
+        (dolist (w exwm-workspace--list)
+          (exwm-workspace--set-active w nil))
+        ;; Mark the workspace on the top of each monitor as active.
+        (dolist (xwin
+                 (reverse
+                  (slot-value (xcb:+request-unchecked+reply exwm--connection
+                                  (make-instance 'xcb:QueryTree
+                                                 :window exwm--root))
+                              'children)))
+          (let ((monitor (cdr (assq xwin container-monitor-alist))))
+            (when monitor
+              (setq container-monitor-alist
+                    (rassq-delete-all monitor container-monitor-alist))
+              (exwm-workspace--set-active (cdr (assq xwin container-frame-alist))
+                                          t))))
+        (xcb:flush exwm--connection)
+        (run-hooks 'exwm-randr-refresh-hook))))
+  )
+
 (defun exwm-record-stop ()
   (interactive)
   (when exwm-record-process
@@ -203,7 +357,9 @@
         (mapc (lambda (buffer)
                 (with-current-buffer buffer
                   (unless (member exwm-instance-name exwm-exclude-transparency)
-                    (exwm-set-window-transparency buffer exwm-default-transparency))))
+                    (exwm-set-window-transparency
+                     buffer
+                     exwm-default-transparency))))
               (exwm-buffer-list)))
     (setq exwm-default-transparency 1)
     (mapc 'exwm-set-window-transparency (exwm-buffer-list))))
@@ -386,7 +542,9 @@
 
 (defun exwm-display-buffer-condition (buffer-name action)
   (and (exwm-buffer-p buffer-name)
-       (exwm-buffer-p (current-buffer))))
+       (let ((buf (current-buffer)))
+         (and (null (eq buf (get-buffer buffer-name)))
+              (exwm-buffer-p buf)))))
 
 (defun exwm-display-buffer-biggest (buffer alist)
   (let ((avaible-window-list
@@ -557,6 +715,23 @@
              exwm-close-window-on-kill)
     (delete-window)))
 
+(defun exwm-input-mode-change-color ()
+  (cl-case exwm--input-mode
+    (line-mode (exwm-set-border-color "blue"))
+    (char-mode (exwm-set-border-color "red"))))
+
+(defun exwm-selected-window-advice (&rest _args)
+  (when (derived-mode-p 'exwm-mode)
+    (exwm-set-border-width 1)))
+(advice-add 'select-frame :after 'exwm-selected-window-advice)
+(advice-add 'select-window :after 'exwm-selected-window-advice)
+
+(defun exwm-unselected-window-advice (&rest _args)
+  (when (derived-mode-p 'exwm-mode)
+    (exwm-set-border-width 0)))
+(advice-add 'select-frame :before 'exwm-unselected-window-advice)
+(advice-add 'select-window :before 'exwm-unselected-window-advice)
+
 ;;;;;;;;;;;;;
 ;; layouts ;;
 ;;;;;;;;;;;;;
@@ -567,10 +742,8 @@
 ;; Customizations ;;
 ;;;;;;;;;;;;;;;;;;;;
 (add-hook 'exwm-input-input-mode-change-hook
-          (defun exwm-input-mode-change-background ()
-            (cl-case exwm--input-mode
-              (line-mode (buffer-face-set '(:background "black")))
-              (char-mode (buffer-face-set '(:background "purple"))))))
+          'exwm-input-mode-change-color)
+
 ;; display buffer rules
 (push '(exwm-display-buffer-condition
         ;; exwm-display-buffer-biggest
@@ -689,6 +862,7 @@
           ([?\s-M] . exwm-randr-workspace-move-current)
           ;; windows
           ([?\s-m] . exwm-layout-toggle-mode-line)
+          ([?\s-f] . exwm-layout-toggle-fullscreen)
           ([?\s-l] . exwm-floating-toggle-floating)
           ([?\s-s ?6] . exwm-display-buffer-cycle)
           ;; ace-window
@@ -734,9 +908,7 @@
 ;; and DEST is what EXWM actually sends to application.  Note that both SRC
 ;; and DEST should be key sequences (vector or string).
 (setq exwm-input-simulation-keys
-      `(;; window
-        ([?\s-f] . ,(kbd "<f11>"))
-        ;; movement
+      `(;; movement
         ([?\C-b] . [left])
         ([?\M-b] . [C-left])
         ([?\C-f] . [right])
