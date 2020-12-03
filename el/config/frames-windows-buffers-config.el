@@ -100,7 +100,7 @@ For more information, see the function `buffer-menu'."
 ;; display right
 (defun display-buffer-help-condition (buffer-name action)
   (with-current-buffer buffer-name
-    (cl-some #'derived-mode-p '(help-mode))))
+    (derived-mode-p 'help-mode)))
 
 (defun display-buffer-at-right (buffer alist)
   (display-buffer-in-direction buffer (cons '(direction . rightmost) alist)))
@@ -112,8 +112,8 @@ For more information, see the function `buffer-menu'."
 ;; display bottom
 (defun display-buffer-term-condition (buffer-name action)
   (with-current-buffer buffer-name
-    (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode
-                                docker-container-mode))))
+    (derived-mode-p 'term-mode 'shell-mode 'eshell-mode
+                    'docker-container-mode)))
 
 ;; (push '(display-buffer-term-condition
 ;;         display-buffer-at-bottom)
@@ -122,7 +122,7 @@ For more information, see the function `buffer-menu'."
 ;; display left
 (defun display-buffer-main-condition (buffer-name action)
   (with-current-buffer buffer-name
-    (cl-some #'derived-mode-p '(prog-mode org-mode))))
+    (derived-mode-p 'prog-mode 'org-mode)))
 
 (defun display-buffer-at-left (buffer alist)
   (display-buffer-in-direction buffer (cons '(direction . leftmost) alist)))
@@ -136,13 +136,13 @@ For more information, see the function `buffer-menu'."
   (or window (setq window (selected-window)))
   (cond
    ((with-selected-window window
-      (cl-some #'derived-mode-p '(prog-mode org-mode help-mode)))
+      (derived-mode-p 'prog-mode 'org-mode 'help-mode))
     (let ((split-height-threshold nil)
           (split-width-threshold 140))
       (split-window-sensibly window)))
    ((with-selected-window window
-      (cl-some #'derived-mode-p '(term-mode shell-mode eshell-mode
-                                  docker-container-mode)))
+      (derived-mode-p 'term-mode 'shell-mode 'eshell-mode
+                      'docker-container-mode))
     (let ((split-height-threshold 20))
       (split-window-sensibly window)))
    (t

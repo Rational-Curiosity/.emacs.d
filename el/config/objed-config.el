@@ -232,7 +232,7 @@
                   (string-match "insert" (symbol-name binding))))
         (cl-return binding)))))
 
-(defun objed-focus-change (&rest _args)
+(defun objed-focus-change ()
   (when objed--buffer
     (with-current-buffer objed--buffer
       (objed--reset))))
@@ -241,14 +241,14 @@
   (if (boundp 'after-focus-change-function)
       (add-function :before after-focus-change-function 'objed-focus-change)
     (add-hook 'focus-in-hook 'objed-focus-change)
-    (add-hook 'focus-out-hook 'symon-clean-echo-area)))
+    (add-hook 'focus-out-hook 'objed-focus-change)))
 (add-hook 'objed-init-hook 'objed-focus-change-add-hook)
 
 (defun objed-focus-change-remove-hook ()
   (if (boundp 'after-focus-change-function)
       (remove-function after-focus-change-function 'objed-focus-change)
     (remove-hook 'focus-in-hook 'objed-focus-change)
-    (remove-hook 'focus-out-hook 'symon-clean-echo-area)))
+    (remove-hook 'focus-out-hook 'objed-focus-change)))
 (add-hook 'objed-exit-hook 'objed-focus-change-remove-hook)
 
 (advice-add 'objed-eval-expression :before 'objed-focus-change)

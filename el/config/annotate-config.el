@@ -37,7 +37,7 @@
 
 (setcdr annotate-mode-map nil)
 (define-key annotate-mode-map (kbd "C-c A a") 'annotate-annotate)
-(define-key annotate-mode-map (kbd "C-c A .") 'annotate-show-annotation-summary)
+(define-key annotate-mode-map (kbd "C-c A s") 'annotate-show-annotation-summary)
 (define-key annotate-mode-map (kbd "C-c A n") 'annotate-goto-next-annotation)
 (define-key annotate-mode-map (kbd "C-c A p") 'annotate-goto-previous-annotation)
 (define-key annotate-mode-map (kbd "C-c A r") 'annotate-refresh)

@@ -928,14 +928,16 @@ You can also customize this for each buffer, using something like
         org-default-notes-file (expand-file-name
                                 ".notes.org"
                                 org-directory)
-        org-agenda-files (list (expand-file-name
-                                "agenda"
-                                org-directory)) ;; reset in config.el
+        org-agenda-files (cl-remove-if-not
+                          'file-exists-p
+                          `("~/var/Dropbox/Orgzly/"
+                            ,(expand-file-name
+                              "agenda"
+                              org-directory))) ;; reset in config.el
         org-annotate-file-storage-file (expand-file-name
                                         ".org-annotate-file.org"
                                         org-directory))
-  (make-directory org-directory t)
-  (make-directory (car org-agenda-files) t))
+  (make-directory org-directory t))
 
 (setq org-annotate-file-always-open nil
       org-annotate-file-add-search nil
