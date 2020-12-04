@@ -158,14 +158,61 @@
                          :window exwm--id
                          :data exwm--ewmh-state))
       (xcb:flush exwm--connection)
-      (set-window-dedicated-p (get-buffer-window) nil)
-      (when (eq 'line-mode exwm--selected-input-mode)
-        (exwm-input--grab-keyboard exwm--id)))))
+      (set-window-dedicated-p (get-buffer-window) nil))))
+
+(when (bug-check-function-bytecode
+       'exwm-layout-set-fullscreen
+       "xjKdAAiDHADHyAmDEwAJIIIUAMnKBIYaAMskiImEJgDMzSGDKwDOIIMwAM/G0CKIcomDQACJ0QEKIkGyAYJCANIgcYjTCyHUDNUD1iLVBNci1QXYItUGBtkiJbYC2g3b3N0M3t8OKQ4qIuDL4Q4rJgkiiA4s4gEOLSKDgwAOLYiCiQCJDi1CFi2I4wEhiOQNIYjl5iDnIojoDCEpMIc=")
+  (cl-defun exwm-layout-set-fullscreen (&optional id)
+    "Make window ID fullscreen."
+    (interactive)
+    (exwm--log "id=#x%x" (or id 0))
+    (unless (and (or id (derived-mode-p 'exwm-mode))
+                 (not (exwm-layout--fullscreen-p)))
+      (cl-return-from exwm-layout-set-fullscreen))
+    (with-current-buffer (if id (exwm--id->buffer id) (window-buffer))
+      ;; Expand the X window to fill the whole screen.
+      (with-slots (x y width height) (exwm-workspace--get-geometry exwm--frame)
+        (exwm--set-geometry exwm--id x y width height))
+      ;; Raise the X window.
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ConfigureWindow
+                         :window exwm--id
+                         :value-mask (logior xcb:ConfigWindow:BorderWidth
+                                             xcb:ConfigWindow:StackMode)
+                         :border-width 0
+                         :stack-mode xcb:StackMode:Above))
+      (cl-pushnew xcb:Atom:_NET_WM_STATE_FULLSCREEN exwm--ewmh-state)
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ewmh:set-_NET_WM_STATE
+                         :window exwm--id
+                         :data exwm--ewmh-state))
+      (exwm-layout--set-ewmh-state id)
+      (xcb:flush exwm--connection)
+      (set-window-dedicated-p (get-buffer-window) t))))
+
+(defvar exwm-gap-monitor 20)
+(defun exwm-gap-toggle ()
+  (interactive)
+  (let* ((result (if exwm-randr--compatibility-mode
+                     (exwm-randr--get-outputs)
+                   (exwm-randr--get-monitors)))
+         (primary-monitor (elt result 0))
+         (monitor-geometry-alist (elt result 1))
+         (monitor (plist-get exwm-randr-workspace-monitor-plist 0))
+         (frame (elt exwm-workspace--list 0))
+         (geometry (cdr (assoc monitor monitor-geometry-alist))))
+    (unless geometry
+      (setq geometry (cdr (assoc primary-monitor
+                                 monitor-geometry-alist))))
+    (if (equal geometry (frame-parameter frame 'exwm-geometry))
+        (exwm-randr-refresh)
+      (let ((exwm-gap-monitor 0))
+        (exwm-randr-refresh)))))
 
 (when (bug-check-function-bytecode
        'exwm-randr-refresh
        "CIMTAMbHCYMPAAkgghAAyMkjiAqDHADKIIIeAMsgicycAc2cAs6cz4kEhRsBA4UbAQuDNwDMEwxHzIkCV4OXAInQDQIi0QEGCSJBDAOc0gHTIgKDYQDRBAYLIkGyBIJuAAYLsgTRBgwGDCJBsgOJ1AUhQkMGCaSyCYkCQkMGCKSyCNUC1gYGI4jVAtcFI7YGiVSyAYI6ALYC2CCIDImDrgCJQNkBIYgBQbaCgp0AiNoOLCGI2yCDwQDcIIPBAN0giN4giAyJg9cAiUDfAc8iiAFBtoKCxQCI4OHiDizjDizk5eYOLSMizyNA5yIhiYMSAYlAiQSeQYmDCgHoAQYGIrIF3wIFnkHpIoiIAUG2goLtAIjaDiwhiOrrIYc=")
-  (defvar exwm-gap-monitor 20)
   (defun exwm-randr-refresh ()
     "Refresh workspaces according to the updated RandR info."
     (interactive)
@@ -865,6 +912,7 @@
           ([?\s-f] . exwm-layout-toggle-fullscreen)
           ([?\s-l] . exwm-floating-toggle-floating)
           ([?\s-s ?6] . exwm-display-buffer-cycle)
+          ([?\s-s ?7] . exwm-gap-toggle)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
           ;; Switch to minibuffer window
@@ -1165,8 +1213,9 @@
                                      "edebug-eval-expression"
                                      "exwm-workspace-"))
 
-  (defun mini-frame--resize-mini-frame (mini-frame-frame)
-    (when (eq mini-frame-frame (selected-frame))
+  (defun mini-frame--resize-mini-frame (frame)
+    (when (and (eq mini-frame-frame frame)
+               (frame-live-p mini-frame-frame))
       (modify-frame-parameters
        mini-frame-frame
        `((height
@@ -1176,21 +1225,22 @@
             (count-visual-lines-in-string
              (concat
               (minibuffer-prompt)
-              ;; (minibuffer-contents-no-properties)
+              (with-selected-window (minibuffer-window mini-frame-frame)
+                (minibuffer-contents-no-properties))
               (when (and icomplete-mode
                          (icomplete-simple-completing-p))
                 (overlay-get icomplete-overlay 'after-string)))
-             (frame-width mini-frame-frame)))))))
-    (when (and (frame-live-p mini-frame-completions-frame)
-               (frame-visible-p mini-frame-completions-frame))
-      (modify-frame-parameters
-       mini-frame-completions-frame
-       `((top
-          .
-          ,(+ (* 2 (frame-parameter mini-frame-frame 'internal-border-width))
-              (frame-parameter mini-frame-frame 'top)
-              (cdr (window-text-pixel-size
-                    (frame-selected-window mini-frame-frame)))))))))
+             (frame-width mini-frame-frame))))))
+      (when (and (frame-live-p mini-frame-completions-frame)
+                 (frame-visible-p mini-frame-completions-frame))
+        (modify-frame-parameters
+         mini-frame-completions-frame
+         `((top
+            .
+            ,(+ (* 2 (frame-parameter mini-frame-frame 'internal-border-width))
+                (frame-parameter mini-frame-frame 'top)
+                (cdr (window-text-pixel-size
+                      (frame-selected-window mini-frame-frame))))))))))
 
   (add-hook 'exwm-init-hook 'mini-frame-mode)
 
