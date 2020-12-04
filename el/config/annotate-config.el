@@ -18,7 +18,8 @@
 
 (setq annotate-use-messages nil
       annotate-annotation-column 80
-      annotate-annotation-max-size-not-place-new-line 10)
+      annotate-annotation-max-size-not-place-new-line 10
+      annotate-blacklist-major-mode '(text-mode))
 
 (defun annotate-refresh ()
   (interactive)
