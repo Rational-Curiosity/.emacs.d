@@ -716,7 +716,7 @@ while(1)                                                            \
   (advice-remove #'message #'symon--message-advice)
   (advice-remove #'current-message #'symon--current-message-advice))
 
-(defun symon-clean-echo-area ()
+(defun symon-clean-echo-area (&optional _ign)
   (message 'clean))
 
 (defun symon--available-space (cur-frame-width)

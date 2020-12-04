@@ -84,15 +84,15 @@
 (define-key objed-map (kbd "C-M-S-f") 'objed-move-object-forward)
 (define-key objed-map (kbd "C-M-S-b") 'objed-move-object-backward)
 (define-key objed-map (kbd "C-p") (objed--call-and-switch
-                             previous-line line
-                             nil
-                             (when (objed--point-in-periphery)
-                               (back-to-indentation))))
+                                   previous-line line
+                                   nil
+                                   (when (objed--point-in-periphery)
+                                     (back-to-indentation))))
 (define-key objed-map (kbd "C-n") (objed--call-and-switch
-                             next-line line
-                             nil
-                             (when (objed--point-in-periphery)
-                               (back-to-indentation))))
+                                   next-line line
+                                   nil
+                                   (when (objed--point-in-periphery)
+                                     (back-to-indentation))))
 (define-key objed-map (kbd "C-S-n") 'objed-move-line-forward)
 (define-key objed-map (kbd "C-S-p") 'objed-move-line-backward)
 (define-key objed-map (kbd "M-+") 'objed-backward-until-context)
@@ -232,7 +232,7 @@
                   (string-match "insert" (symbol-name binding))))
         (cl-return binding)))))
 
-(defun objed-focus-change ()
+(defun objed-focus-change (&optional _ign)
   (when objed--buffer
     (with-current-buffer objed--buffer
       (objed--reset))))
