@@ -575,7 +575,11 @@
   (interactive (list (buffer-file-name)))
   (if (and (stringp filepath)
            (null current-prefix-arg))
-      (start-process "emacs" nil "emacs" filepath)
+      (start-process "emacs" nil
+                     "emacs" (concat
+                              "+" (number-to-string (line-number-at-pos))
+                              ":" (number-to-string (1+ (current-column))))
+                     filepath)
     (start-process "emacs" nil "emacs")))
 
 (defun exwm-ace-window (arg)
