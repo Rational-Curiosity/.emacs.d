@@ -224,17 +224,16 @@ This function is part of the `orderless' completion style."
         (insert candidate)))))
 
 (defun completing-read-advice (orig-fun prompt collection &optional
-                               predicate require-match initial-input
-                               hist def inherit-input-method)
-  (funcall orig-fun (replace-regexp-in-string
-                     "\\(:? *\\)$"
-                     (cl-case require-match
-                       (nil "[>]\\1")
-                       (t "[·]\\1")
-                       (confirm "[!]\\1")
-                       (confirm-after-completion "[`]\\1")
-                       (otherwise "[.]\\1"))
-                     prompt t)
+                                        predicate require-match initial-input
+                                        hist def inherit-input-method)
+  (funcall orig-fun (propertize prompt
+                                'face
+                                (cl-case require-match
+                                  (nil 'hi-green-b)
+                                  (t 'hi-red-b)
+                                  (confirm 'hi-red-b)
+                                  (confirm-after-completion 'hi-red-b)
+                                  (otherwise 'hi-blue-b)))
            collection predicate require-match initial-input
            hist def inherit-input-method))
 (advice-add 'completing-read :around 'completing-read-advice)
