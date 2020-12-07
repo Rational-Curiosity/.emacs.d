@@ -16,9 +16,14 @@
     (if fn (setq crap-backend fn))
     res))
 
+(defun crap-insert (start end base-size completion)
+  (with-current-buffer (marker-buffer start)
+        (goto-char end)
+        (delete-region (+ start base-size) end)
+        (insert (substring-no-properties completion))))
+
 (defun crap-completion-in-region
     (start end collection &optional predicate)
-  (completion-in-region-mode -1)
   (if (window-minibuffer-p)
       (with-no-warnings
         (funcall crap-previous-completion-in-region-function
@@ -32,39 +37,60 @@
     (let* ((string (buffer-substring-no-properties start end))
            (comps (completion-all-completions
                    string
-                   collection predicate (- end start)))
-           (base-size (cdr (last comps)))
-           (common (substring-no-properties string base-size))
-           (proxy (completing-read
-                   (if crap-backend
-                       (format
-                        "`%s' "
-                        crap-backend)
-                     "")
-                   `(lambda (string pred action)
-                      (with-current-buffer
-                          (if (minibufferp)
-                              (window-buffer (minibuffer-selected-window))
-                            (current-buffer))
-                        (if (eq action 'metadata)
-                            '(metadata
-                              (annotation-function
-                               .
-                               (lambda (proxy)
-                                 (concat
-                                  ;; (make-string (max 2 (- 20 (length proxy))) ? )
-                                  " -"
-                                  (funcall ,(plist-get completion-extra-properties
-                                                      :annotation-function)
-                                          proxy)))))
-                        (funcall ,collection
-                               string pred action))))
-                   predicate t
-                   common)))
-      (with-current-buffer (marker-buffer start)
-        (goto-char end)
-        (delete-region (+ start base-size) end)
-        (insert (substring-no-properties proxy))))))
+                   collection predicate (- end start))))
+      ;; No candidates
+      (if (null comps)
+          (message "No matches")
+        (let* ((base-size (cdr (last comps)))
+               (common (substring-no-properties string base-size)))
+          (nconc comps nil)
+          (if (null (cdr comps))
+              ;; Single candidate
+              (crap-insert start end base-size (car comps))
+            ;; Many candidates
+            (let ((choice
+                   (completing-read
+                    (if crap-backend
+                        (format
+                         "`%s' "
+                         crap-backend)
+                      "")
+                    (let ((fn (plist-get completion-extra-properties
+                                         :annotation-function)))
+                      (if (functionp fn)
+                          `(lambda (probe pred action)
+                             (cond
+                              ((eq (car-safe action) 'boundaries) nil)
+                              ((eq action 'metadata)
+                               '(metadata
+                                 (annotation-function
+                                  .
+                                  (lambda (proxy)
+                                    (concat
+                                     (make-string (+
+                                                   2
+                                                   (- ,(apply
+                                                        'max
+                                                        (mapcar
+                                                         'string-width
+                                                         comps))
+                                                      (string-width proxy)))
+                                                  ? )
+                                     (funcall ,fn proxy))))
+                                 (display-sort-function . identity)
+                                 (cycle-sort-function . identity)))
+                              (t
+                               (funcall
+                                  (cond
+                                   ((null action) 'try-completion)
+                                   ((eq action t) 'all-completions)
+                                   (t 'test-completion))
+                                  probe (quote ,comps) pred))))
+                        comps))
+                    nil t
+                    common)))
+              (when (stringp choice)
+                (crap-insert start end base-size choice)))))))))
 
 (defvar crap-previous-completion-in-region-function nil)
 
