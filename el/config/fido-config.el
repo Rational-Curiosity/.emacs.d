@@ -231,9 +231,9 @@ This function is part of the `orderless' completion style."
                                 (cl-case require-match
                                   (nil 'hi-green-b)
                                   (t 'hi-red-b)
-                                  (confirm 'hi-red-b)
-                                  (confirm-after-completion 'hi-red-b)
-                                  (otherwise 'hi-blue-b)))
+                                  (confirm 'hi-magenta-b)
+                                  (confirm-after-completion 'hi-magenta-b)
+                                  (otherwise 'hi-yellow-b)))
            collection predicate require-match initial-input
            hist def inherit-input-method))
 (advice-add 'completing-read :around 'completing-read-advice)
