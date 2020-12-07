@@ -1419,7 +1419,7 @@ Throw an error when trying to set a property with an invalid name."
         (org-entry-put-multiline-property nil property value)))))
 
 (defun org-shift-advice (orig-fun arg)
-  (condition-case nil
+  (condition-case-unless-debug nil
       (funcall orig-fun arg)
     (error
      (cl-some (lambda (keymap)

@@ -923,7 +923,7 @@ This function avoid error and insert character at the end."
     (setq this-command
           `(lambda () (interactive)
              (setq this-command (quote ,this-command))
-             (condition-case _
+             (condition-case-unless-debug _
                  (call-interactively (quote ,this-command))
                (text-read-only (goto-char (point-max))
                                ,(cl-case this-command
@@ -933,7 +933,9 @@ This function avoid error and insert character at the end."
                                      last-command-event))
                                   (otherwise
                                    (list this-command))))
-               (beginning-of-buffer (goto-char (point-max)))
+               ((beginning-of-buffer
+                 end-of-buffer)
+                (goto-char (point-max)))
                (end-of-buffer (goto-char (point-max))))))))
 
 (defun minibuffer-try-add-hooks ()

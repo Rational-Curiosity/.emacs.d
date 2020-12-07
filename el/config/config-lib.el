@@ -410,7 +410,7 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
   (advice-add 'undo-boundary :before #'rollback-on-error-inc)
   (unwind-protect
       (let ((rollback-on-error-counter 1))
-        (condition-case raised-error
+        (condition-case-unless-debug raised-error
             (apply orig-fun args)
           (error (primitive-undo rollback-on-error-counter
                                  buffer-undo-list)

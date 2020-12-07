@@ -106,18 +106,24 @@
   "Default set of commands that should be mirrored by all cursors")
 
 (defun multiple-windows--post-command ()
-  (let ((prepare (alist-get this-original-command multiple-windows--default-cmds-prepare-alist)))
+  (let ((prepare (alist-get this-original-command
+                            multiple-windows--default-cmds-prepare-alist)))
     (if prepare (eval prepare)))
   (catch 'break
-    (let ((cmd (or (alist-get this-original-command multiple-windows--default-cmds-remap-alist)
-                   (car (memq this-original-command multiple-windows--default-cmds-to-run-for-all))
+    (let ((cmd (or (alist-get this-original-command
+                              multiple-windows--default-cmds-remap-alist)
+                   (car (memq this-original-command
+                              multiple-windows--default-cmds-to-run-for-all))
                    (throw 'break nil))))
       (save-selected-window
         (dolist (other-window (cdr (window-list (selected-frame) 0 (selected-window))))
           (select-window other-window)
-          (condition-case raised-error
+          (condition-case-unless-debug raised-error
               (call-interactively cmd)
-            (error (message "%s: %s %s" cmd (error-message-string raised-error) other-window))))))))
+            (error (message "%s: %s %s"
+                            cmd
+                            (error-message-string raised-error)
+                            other-window))))))))
 
 (define-minor-mode multiple-windows-mode
   "Toggle Multiple Windows mode.

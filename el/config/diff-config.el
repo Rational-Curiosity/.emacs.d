@@ -52,7 +52,7 @@ ARG - `C-u' differ with prompted file.
 
 (defun vdiff-hydra-or-diff (&optional arg)
   (interactive "P")
-  (condition-case nil
+  (condition-case-unless-debug nil
       (call-interactively 'vdiff-hydra/body)
     (error
      (cond

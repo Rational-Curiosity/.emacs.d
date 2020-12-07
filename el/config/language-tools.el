@@ -82,7 +82,7 @@ If no ITEMS `language-items-number'."
 (defun language-goto-insertion-point ()
   "Goto proper insertion point."
   (let ((curr-char (char-after (point))))
-    (condition-case nil
+    (condition-case-unless-debug nil
         (when (and curr-char
                    (memq (get-char-code-property curr-char 'general-category)
                          '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
