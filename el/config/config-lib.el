@@ -95,14 +95,19 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
               directory
               last-dir)
           (displaying-byte-compile-warnings
-           (cl-incf
-            (pcase (byte-recompile-file
-                    (expand-file-name "init.el" user-emacs-directory) force 0)
-              ('no-byte-compile skip-count)
-              ('t file-count)
-              (_
-               (message "Failed %s" source)
-               fail-count)))
+           (dolist (file '(user-init-file early-init-file
+                           package-quickstart-file custom-file))
+             (when (and (boundp file)
+                        (setq file (symbol-value file))
+                        (file-exists-p file))
+               (cl-incf
+                (pcase (byte-recompile-file
+                        file force 0)
+                  ('no-byte-compile skip-count)
+                  ('t file-count)
+                  (_
+                   (message "Failed %s" file)
+                   fail-count)))))
            (while directories
              (setq directory (car directories))
              ;; (message "Checking %s..." directory)
