@@ -12,22 +12,6 @@
 ;; Machine name ;;
 ;;;;;;;;;;;;;;;;;;
 (cond
- ;;;;;;;;;;;;;;;;;;;
- ;; OOOOO machine ;;
- ;;;;;;;;;;;;;;;;;;;
- ((string-equal (system-name) "OOOOO")
-  (add-to-list 'default-frame-alist '(width . 90))
-  (add-to-list 'default-frame-alist '(height . 30))
-  (add-to-list 'initial-frame-alist '(width . 90))
-  (add-to-list 'initial-frame-alist '(height . 30)))
- ;;;;;;;;;;;;;;;;;;;
- ;; OOOO  machine ;;
- ;;;;;;;;;;;;;;;;;;;
- ((string-equal (system-name) "OOOO")
-  (add-to-list 'default-frame-alist '(width . 90))
-  (add-to-list 'default-frame-alist '(height . 25))
-  (add-to-list 'initial-frame-alist '(width . 90))
-  (add-to-list 'initial-frame-alist '(height . 25)))
  ;;;;;;;;;;;;;;;;;;;;;;;
  ;; localhost machine ;;
  ;;;;;;;;;;;;;;;;;;;;;;;

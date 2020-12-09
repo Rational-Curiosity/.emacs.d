@@ -534,7 +534,7 @@ ARG non-nil resize window to ARG height."
   (interactive)
   (setq window-autoresize-size nil))
 
-;; [ Marcas laterales
+;; [ Visual line mode
 (defun toggle-continuation-lines (&optional arg)
   (interactive "P")
   (if (if (numberp arg)
@@ -549,17 +549,9 @@ ARG non-nil resize window to ARG height."
     (when global-visual-line-mode
       (visual-line-mode 1))))
 
-(with-eval-after-load 'fringe
-  (setq-default indicate-buffer-boundaries 'right))
-;; (fringe-mode '(4 . 4))
 (with-eval-after-load 'simple
   (setq minor-mode-alist (assq-delete-all 'visual-line-mode minor-mode-alist))
-  (defface visual-line-fringe-face
-    '((t :foreground "gold1"))
-    "Visual line fringe face" :group 'visual-line)
-  (set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
-  (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
-  (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+  
   (global-visual-line-mode 1)
   (add-hook 'minibuffer-setup-hook 'visual-line-mode))
 ;; ]
@@ -609,13 +601,6 @@ ARG non-nil resize window to ARG height."
 ;;       default-frame-alist (nconc '((minibuffer . nil)) default-frame-alist)
 ;;       minibuffer-auto-raise t)
 ;; (add-hook 'minibuffer-exit-hook 'lower-frame)
-;; Deshabilita la barra de scroll
-(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-;; Deshabilita la barra de iconos
-(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-(if (fboundp 'tooltip-bar-mode) (tooltip-bar-mode -1))
-;; Deshabilida la barra de menús
-(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 ;; Ajusta el tamaño de la ventana a la resolución.
 ;; (defun set-frame-size-according-to-resolution ()
 ;;   (interactive)

@@ -7,7 +7,8 @@
 (require 'config-lib)
 
 ;; avoid automatic startup
-(setq package-enable-at-startup nil)
+(setq package-enable-at-startup nil
+      package-quickstart t)
 ;; [ <repos> configure repositories
 ;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
 ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
