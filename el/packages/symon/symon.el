@@ -29,20 +29,15 @@
 ;; core
 
 (defcustom symon-refresh-rate 4
-  "Refresh rate of symon display. *set this option BEFORE
-  enabling `symon-mode'.*"
-  :group 'symon
-  :type 'float)
-
-(defcustom symon-delay 2
-  "Delay in seconds until symon is displayed. *set this option
-BEFORE enabling `symon-mode'.*"
+  "Refresh rate of symon display.
+Set this option BEFORE enabling `symon-mode'."
   :group 'symon
   :type 'float)
 
 (defcustom symon-history-size 50
-  "number of old values to keep. sparklines grow faster when set
-smaller. *set this option BEFORE enabling `symon-mode'.*"
+  "Number of old values to keep.
+Sparklines grow faster when set smaller. 
+Set this option BEFORE enabling `symon-mode'."
   :group 'symon
   :type 'integer)
 
@@ -225,26 +220,26 @@ static char * sparkline_xpm[] = { \"%d %d 2 1\", \"@ c %s\", \". c none\""
   (cons 0 (cons symon-history-size (make-vector symon-history-size nil))))
 
 (defmacro define-symon-monitor (name &rest plist)
-  "define a new symon monitor NAME. following keywords are
-supoprted in PLIST:
+  "Define a new symon monitor NAME.
+Following keywords are supoprted in PLIST:
 
 :setup (default: nil)
 
-    an expression evaluated when activating symon-mode, and
+    an expression evaluated when activating `symon-mode', and
     expected to do some preparation.
 
 :cleanup (default: nil)
 
-    an expression evaluated when deactivating symon-mode, and
+    an expression evaluated when deactivating `symon-mode', and
     expected to do some cleanup.
 
 :fetch (default: nil)
 
-    an expression that evaluates to the latest status value. the
+    an expression that evaluates to the latest status value, the
     value must be a number (otherwise `N/A' is displayed as the
     value).
 
-:interval (default: symon-refresh-rate)
+:interval (default: `symon-refresh-rate')
 
     fetch interval in seconds.
 
@@ -664,17 +659,15 @@ while(1)                                                            \
 
 (defvar symon--cleanup-fns    nil)      ; List[Fn]
 (defvar symon--display-fns    nil)      ; List[List[Fn]]
-(defvar symon--display-active nil)
-(defvar symon--active-page    nil)
+(defvar symon--active-page    -1)
 (defvar symon--total-page-num nil)
 (defvar symon--timer-objects  nil)
 
+(defvar symon--force-redisplay nil)
 (defvar symon--symon-message "")
 (defvar symon--last-frame-width 0)
 
 (defun symon--initialize ()
-  (advice-add #'current-message :around #'symon--current-message-advice)
-  (advice-add #'message :around #'symon--message-advice)
   (unless symon-monitors
     (message "Warning: `symon-monitors' is empty."))
   (let* ((symon-monitors                ; for backward-compatibility
@@ -688,15 +681,19 @@ while(1)                                                            \
          (monitors-flattened
           (symon--flatten monitors)))
     (mapc (lambda (m) (funcall (aref m 0))) monitors-flattened) ; setup-fns
-    (setq symon--cleanup-fns    (mapcar (lambda (m) (aref m 1)) monitors-flattened)
-          symon--display-fns    (mapcar (lambda (l) (mapcar (lambda (m) (aref m 2)) l)) monitors)
-          symon--display-active t
+    (setq symon--cleanup-fns (mapcar
+                              (lambda (m) (aref m 1))
+                              monitors-flattened)
+          symon--display-fns (mapcar
+                              (lambda (l) (mapcar (lambda (m) (aref m 2)) l))
+                              monitors)
           symon--total-page-num (length symon-monitors)
           symon--timer-objects
-          (list (run-with-timer 0 symon-refresh-rate 'symon--redisplay)
-                (run-with-idle-timer symon-delay t 'symon-display)))
-    (add-hook 'pre-command-hook 'symon--display-stop)
-    (add-hook 'post-command-hook 'symon--display-start)
+          (list (run-with-timer 0 symon-refresh-rate 'symon--next-frame)))
+    (advice-add #'current-message :around #'symon--current-message-advice)
+    (advice-add #'message :around #'symon--message-advice)
+
+    (add-hook 'post-command-hook 'symon--force-redisplay)
     (add-hook 'kill-emacs-hook 'symon--cleanup)
     (if (boundp 'after-focus-change-function)
         (add-function :before after-focus-change-function 'symon-clean-echo-area)
@@ -705,8 +702,7 @@ while(1)                                                            \
 
 (defun symon--cleanup ()
   (remove-hook 'kill-emacs-hook 'symon--cleanup)
-  (remove-hook 'post-command-hook 'symon--display-start)
-  (remove-hook 'pre-command-hook 'symon--display-stop)
+  (remove-hook 'post-command-hook 'symon--force-redisplay)
   (mapc 'cancel-timer symon--timer-objects)
   (mapc 'funcall symon--cleanup-fns)
   (if (boundp 'after-focus-change-function)
@@ -717,7 +713,7 @@ while(1)                                                            \
   (advice-remove #'current-message #'symon--current-message-advice))
 
 (defun symon-clean-echo-area (&optional _ign)
-  (message 'clean))
+  (clear-minibuffer-message))
 
 (defun symon--available-space (cur-frame-width)
   (- cur-frame-width (string-width symon--symon-message)
@@ -745,11 +741,11 @@ while(1)                                                            \
                       (make-string (- available-space last-line-width) ? )))))
           (when (/= cur-frame-width symon--last-frame-width)
             (setq symon--last-frame-width cur-frame-width)
-            (message 'clean))
+            (clear-minibuffer-message))
           (concat msg sep symon--symon-message))
       (when (/= cur-frame-width symon--last-frame-width)
         (setq symon--last-frame-width cur-frame-width)
-        (message 'clean))
+        (clear-minibuffer-message))
       (concat (if (< 0 available-space)
                   (make-string available-space ? )
                 "")
@@ -770,11 +766,12 @@ while(1)                                                            \
 
 (defun symon--message-advice (orig-fun format-string &rest args)
   (cond
-   ;; original (message nil) without symon message
-   ;; always first
-   ((eq format-string 'clean)
-    ;; return value from original message function
-    (funcall orig-fun nil))
+   ;; force redisplay
+   (symon--force-redisplay
+    (let ((message-log-max nil)
+          (msg (apply #'format format-string args)))
+      (funcall orig-fun "%s"
+               (symon-compose-message msg))))
    ;; original (message format args...) without symon message
    ((or ;; cursor-in-echo-area
         prefix-arg
@@ -808,7 +805,7 @@ while(1)                                                            \
   (symon-clean-message (funcall orig-fun)))
 
 (defun symon--display-update ()
-  "Update symon display"
+  "Update symon display."
   (unless (or ;; cursor-in-echo-area
               prefix-arg
               ;; (benchmark 100 (this-single-command-keys))
@@ -826,32 +823,18 @@ while(1)                                                            \
               (setq symon--symon-message (apply 'concat (mapcar 'funcall lst)))
               (message "%s" msg))
           (mapc 'funcall lst))
-        (setq page (1+ page))))
-    (setq symon--display-active 'redisplay)))
+        (setq page (1+ page))))))
 
-(defun symon-display ()
-  "Activate symon display."
-  (interactive)
-  (when (eq symon--display-active t)
-    (setq symon--active-page 0)
-    (symon--display-update)))
+(defun symon--force-redisplay ()
+  "Redisplay last display."
+  (unless (active-minibuffer-window)
+    (let ((symon--force-redisplay t))
+      (message "%s" (current-message)))))
 
-(defun symon--redisplay ()
-  "Update symon display."
-  (when (and symon--display-active
-             (or (eq symon--display-active 'redisplay)
-                 ;; exwm-mode avoids symon-display idle timer
-                 (derived-mode-p 'exwm-mode)))
-    (setq symon--active-page (% (1+ symon--active-page) symon--total-page-num))
-    (symon--display-update)))
-
-(defun symon--display-start ()
-  "Activate symon display."
-  (setq symon--display-active t))
-
-(defun symon--display-stop ()
-  "Deactivate symon display."
-  (setq symon--display-active nil))
+(defun symon--next-frame ()
+  "Update symon display with next frame."
+  (setq symon--active-page (% (1+ symon--active-page) symon--total-page-num))
+  (symon--display-update))
 
 ;;;###autoload
 (define-minor-mode symon-mode

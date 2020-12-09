@@ -914,8 +914,7 @@
 (push 'symon-venv-current-name-monitor symon-monitors)
 (push 'symon-recording-monitor symon-monitors)
 
-(setq symon-delay 0.5
-      symon-refresh-rate 4
+(setq symon-refresh-rate 4
       symon-sparkline-type 'bounded
       symon-sparkline-thickness 1
       symon-history-size 24
