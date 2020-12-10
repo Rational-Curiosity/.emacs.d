@@ -9,7 +9,7 @@
 
 (require 'vlf-setup)
 
-(setq vlf-batch-size (* 1024 1025))
+(setq vlf-batch-size (* 1024 1024))
 
 (defun find-file-check-make-large-file-read-only-hook ()
   "If a file is over a given size, make the buffer read only."

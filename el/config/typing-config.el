@@ -362,13 +362,12 @@ prompt the user for a coding system."
               tab-width 4
               sh-indent-for-case-label 0
               sh-indent-for-case-alt '+)
-;; long lines
-(global-so-long-mode 1)
 ;; Line numbers
 (require 'display-line-numbers)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 (setq tab-always-indent 'complete
-      line-number-display-limit-width 500
+      line-number-display-limit large-file-warning-threshold
+      line-number-display-limit-width 3000
       display-line-numbers-width-start t
       display-line-numbers-grow-only t
       display-line-numbers-type 'visual

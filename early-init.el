@@ -37,6 +37,11 @@
              (setq file-name-handler-alist (quote ,file-name-handler-alist))))
 (setq file-name-handler-alist nil)
 ;; ]
+;; [ long lines
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)
+(global-so-long-mode 1)
+;; ]
 
 (when (getenv "BENCHMARK")
   (setq benchmark-last-time (current-time)
