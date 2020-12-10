@@ -573,14 +573,17 @@
 
 (defun exwm-start-emacs (filepath)
   (interactive (list (buffer-file-name)))
-  (if (and (stringp filepath)
-           (null current-prefix-arg))
-      (start-process "emacs" nil
-                     "emacs" (concat
-                              "+" (number-to-string (line-number-at-pos))
-                              ":" (number-to-string (1+ (current-column))))
-                     filepath)
-    (start-process "emacs" nil "emacs")))
+  (cond ((null current-prefix-arg)
+         (start-process "emacs" nil "emacs"))
+        ((and (stringp filepath)
+              (file-exists-p filepath))
+         (start-process "emacs" nil
+                        "emacs" (concat
+                                 "+" (number-to-string (line-number-at-pos))
+                                 ":" (number-to-string (1+ (current-column))))
+                        filepath))
+        (t
+         (message "File not found: %s" filepath))))
 
 (defun exwm-ace-window (arg)
   (interactive "p")

@@ -35,7 +35,10 @@
   (add-to-list 'eshell-visual-commands "apt")
   (add-to-list 'eshell-visual-commands "htop")
   (add-to-list 'eshell-visual-commands "atop")
-  (add-to-list 'eshell-visual-commands "ag")
+  (add-to-list 'eshell-visual-commands "top")
+  (add-to-list 'eshell-visual-commands "vim")
+  (add-to-list 'eshell-visual-commands "nvim")
+  (add-to-list 'eshell-visual-commands "nano")
   (add-to-list 'eshell-visual-commands "unison")
   (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
   (add-to-list 'eshell-visual-subcommands '("git" "help" "log" "diff" "show" "reflog")))
@@ -51,6 +54,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
+(defun eshell-vi-transfer-file (filepath)
+  (interactive (list (buffer-file-name)))
+  (cond ((and (stringp filepath)
+              (file-exists-p filepath))
+         (eshell-exec-visual
+          "vi" (concat
+                "+call cursor(" (number-to-string (line-number-at-pos))
+                "," (number-to-string (1+ (current-column))) ")")
+          filepath)
+         (unless current-prefix-arg
+           (when-let ((buffer (find-buffer-visiting filepath)))
+             (kill-buffer buffer))))
+        (t
+         (message "File not found: %s" filepath))))
+
 (defun eshell-send-chars-interactive-process ()
   (interactive)
   (let ((char (read-key "Char (C-c exits): ")))
