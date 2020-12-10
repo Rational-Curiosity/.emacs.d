@@ -66,6 +66,7 @@
   (set-face-attribute 'which-key-special-key-face nil
                       :foreground "#78e56d"))
 
+(global-set-key (kbd "C-h C-h") 'which-key-show-top-level)
 (which-key-mode)
 
 
