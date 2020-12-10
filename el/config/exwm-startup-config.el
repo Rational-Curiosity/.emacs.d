@@ -487,8 +487,7 @@
   (cl-remove-if-not (lambda (p)
                       (and (eq 'run (process-status p))
                            (process-tty-name p)
-                           ;; (null (process-buffer p))
-                           ))
+                           (null (process-buffer p))))
                     (process-list)))
 
 (defun exwm-kill-emacs-query-function ()
