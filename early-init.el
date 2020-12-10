@@ -43,6 +43,7 @@
 (global-so-long-mode 1)
 ;; ]
 
+;; [ benchmark startup
 (when (getenv "BENCHMARK")
   (setq benchmark-last-time (current-time)
         benchmark-last-feature "early-init"
@@ -64,10 +65,13 @@
   (add-hook 'emacs-startup-hook
             (lambda ()
               (advice-remove 'require 'benchmark-require-advice))))
+;; ]
 
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
+;; display hover help text in the echo area
+(tooltip-mode -1)
 
 ;; (fringe-mode '(4 . 4))
 (setq-default indicate-buffer-boundaries 'right)
@@ -76,4 +80,8 @@
   "Visual line fringe face" :group 'visual-line)
 (set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
 (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
-(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)
+      ;; package management
+      package-enable-at-startup t
+      package-quickstart t
+      frame-inhibit-implied-resize t)
