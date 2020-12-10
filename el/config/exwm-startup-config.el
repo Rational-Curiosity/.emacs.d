@@ -755,11 +755,11 @@
           ([?\s-S] . exwm-workspace-swap)
           ([?\s-M] . exwm-randr-workspace-move-current)
           ;; windows
-          ([?\s-m] . exwm-layout-toggle-mode-line)
           ([?\s-f] . exwm-layout-toggle-fullscreen)
-          ([?\s-l] . exwm-floating-toggle-floating)
           ([?\s-s ?6] . exwm-display-buffer-cycle)
-          ([?\s-s ?7] . exwm-gap-toggle)
+          ([?\s-s ?7 ?g] . exwm-gap-toggle)
+          ([?\s-s ?7 ?m] . exwm-layout-toggle-mode-line)
+          ([?\s-s ?7 ?f] . exwm-floating-toggle-floating)
           ;; ace-window
           ([?\s-o] . exwm-ace-window)
           ;; Switch to minibuffer window
