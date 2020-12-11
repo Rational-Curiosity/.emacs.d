@@ -1031,6 +1031,15 @@ You can also customize this for each buffer, using something like
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;
+(with-eval-after-load 'ob-tangle
+  (defun org-byte-compile-tangle-file ()
+    (when (derived-mode-p 'emacs-lisp-mode)
+      (let ((file-name (buffer-file-name)))
+        (when (and (stringp file-name)
+                   (file-exists-p file-name))
+          (byte-recompile-file file-name nil 0)))))
+  (add-hook 'org-babel-post-tangle-hook 'org-byte-compile-tangle-file))
+
 (defun org-entry-is-todo-get-subtree (pos property)
   (save-excursion
     (goto-char pos)
