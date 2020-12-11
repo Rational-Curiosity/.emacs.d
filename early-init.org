@@ -1,0 +1,214 @@
+#+TITLE:  Emacs Configuration File
+#+AUTHOR: e
+#+EMAIL:  no-reply@
+#+PROPERTY:  header-args:elisp   :results silent
+#+PROPERTY:  header-args:elisp+  :tangle ~/.emacs.d/early-init.el
+#+PROPERTY:  header-args:elisp+  :eval no-export
+# Save to tangle file: C-c C-v C-t
+
+* Persist *Messages* buffer to file
+
+#+begin_src elisp
+(defun save-messages-buffer ()
+  (with-current-buffer "*Messages*"
+    (write-region (point-min) (point-max)
+                  (expand-file-name "last-messages-buffer.txt"
+                                    user-emacs-directory))))
+(add-hook 'kill-emacs-hook 'save-messages-buffer 91)
+#+end_src
+
+* Better control of garbage collection
+
+#+begin_src elisp
+(add-hook 'emacs-startup-hook
+          `(lambda ()
+             (setq gc-cons-percentage ,gc-cons-percentage
+                   gc-cons-threshold ,gc-cons-threshold)
+             (require 'gcmh)
+             (setq minor-mode-alist
+                   (cl-delete 'gcmh-mode minor-mode-alist :key 'car))
+             (setq gcmh-idle-delay 20
+                   gcmh-verbose t
+                   gcmh-low-cons-threshold ,gc-cons-threshold
+                   gcmh-high-cons-threshold (eval-when-compile
+                                              (* 10 1024 1024)))
+             (gcmh-mode 1))
+          t)
+(setq gc-cons-percentage 0.6
+      gc-cons-threshold (eval-when-compile
+                          (* 10 1024 1024)))
+(defun gcmh-idle-garbage-collect-advice (orig-fun)
+  (unless (or ;; cursor-in-echo-area
+           prefix-arg
+           (< 0 (length (this-single-command-keys)))
+           (active-minibuffer-window))
+    (funcall orig-fun)))
+(advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
+
+(add-hook 'after-init-hook
+          (lambda ()
+            (defun post-gc-truncate-buffers ()
+              (comint-truncate-buffers "^\\*EGLOT (.*) \\(stderr\\|output\\)\\*$" t))
+            (add-hook 'post-gc-hook 'post-gc-truncate-buffers)))
+#+end_src
+
+* Don't handle file names before init
+
+#+begin_src elisp
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
+(setq file-name-handler-alist nil)
+#+end_src
+
+* Long lines performance
+
+#+begin_src elisp
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
+(setq file-name-handler-alist nil)
+#+end_src
+
+* Benchmark startup advising ~require~
+
+#+begin_src elisp
+(when (getenv "BENCHMARK")
+  (defvar benchmark-last-time (current-time))
+  (defvar benchmark-last-feature "early-init")
+  (defvar benchmark-buffer (generate-new-buffer "*Benchmarks*"))
+  (require 'time-date)
+  (defun benchmark-require-advice (orig-fun feature &optional filename noerror)
+    (let* ((time (float-time (time-since benchmark-last-time)))
+           (initial-time (current-time))
+           (result (funcall orig-fun feature filename noerror))
+           (require-time (float-time (time-since initial-time))))
+      (with-current-buffer benchmark-buffer
+        (insert (format "%fs  between `%s' and `%s'\n%fs  loading `%s'\n"
+                        time benchmark-last-feature feature
+                        require-time feature)))
+      (setq benchmark-last-time (current-time)
+            benchmark-last-feature feature)
+      result))
+  (advice-add 'require :around 'benchmark-require-advice)
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (advice-remove 'require 'benchmark-require-advice))))
+#+end_src
+
+* Frame configuration previous GUI activation
+
+#+begin_src elisp
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+;; display hover help text in the echo area
+(tooltip-mode -1)
+
+;; (fringe-mode '(4 . 4))
+(setq-default indicate-buffer-boundaries 'right)
+(defface visual-line-fringe-face
+  '((t :foreground "gold1"))
+  "Visual line fringe face" :group 'visual-line)
+(set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
+(set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
+(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+#+end_src
+
+* Package management
+
+Call ~package-quickstart-refresh~ every time ~package-load-list~ is
+modified.
+
+#+begin_src elisp
+(require 'package)
+
+(setq package-enable-at-startup nil
+      ;; call `package-quickstart-refresh' every time `package-load-list'
+      ;; is modified
+      package-quickstart t
+      frame-inhibit-implied-resize t)
+
+;; [ <repos> configure repositories
+;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
+;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+
+(let* ((protocol (if (and (memq system-type '(windows-nt ms-dos))
+                          (not (gnutls-available-p)))
+                     "http"
+                   "https"))
+       (repos '(("org"          . "://orgmode.org/elpa/")
+                ("melpa"        . "://melpa.org/packages/")
+                ("melpa-stable" . "://stable.melpa.org/packages/")
+                ;; package name conflict: `project'
+                ;; ("marmalade"    . "://marmalade-repo.org/packages/")
+                ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
+  (mapc (lambda (p)
+          (add-to-list
+           'package-archives
+           (cons (car p) (concat protocol (cdr p))) t))
+        repos))
+
+(package-initialize)
+;; sort package list
+(defun package--save-selected-packages-advice (orig-fun value)
+  (funcall orig-fun (sort value 'string-lessp)))
+(advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
+
+(with-eval-after-load 'custom
+  (add-hook 'after-init-hook
+            (lambda ()
+              ;; install packages in list
+              (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
+                (if (cl-every #'identity list-of-boolean)
+                    (message "Nothing to install")
+                  (progn
+                    (package-refresh-contents)
+                    (let ((list-of-uninstalled '()))
+                      (cl-mapc #'(lambda (a b)
+                                   (unless a
+                                     (set 'list-of-uninstalled (cons b list-of-uninstalled))))
+                               list-of-boolean package-selected-packages)
+                      (mapc #'package-install list-of-uninstalled)))))
+              ;; uninstall packages not in list
+              ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
+              (package-autoremove))))
+
+(defun package-emacswiki-update ()
+  (interactive)
+  ;; bookmark+
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-mac.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-mac.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-bmu.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-bmu.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-1.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-1.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-key.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-key.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-lit.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-lit.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-doc.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-doc.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-chg.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-chg.el" t)
+  (byte-recompile-directory "~/.emacs.d/el/packages/bookmark+" 0 t)
+  ;; thingatpt+
+  (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
+                 "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
+  (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
+#+end_src
+
+* Initial configurations
+
+#+begin_src elisp
+(setq initial-buffer-choice nil
+      inhibit-startup-screen t
+      initial-major-mode 'fundamental-mode
+      visible-bell t
+      history-delete-duplicates t
+      debugger-bury-or-kill nil
+      ;; avoids warnings
+      ad-redefinition-action 'accept)
+#+end_src
