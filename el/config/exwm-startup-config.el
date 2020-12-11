@@ -455,10 +455,11 @@
       (display-buffer-pop-up-window buffer alist))))
 
 (defun exwm-display-buffer-tiling-anticlockwise (buffer alist)
-  (with-current-buffer buffer
-    (set (make-local-variable 'exwm-close-window-on-kill) t))
   (rotate-frame-anticlockwise)
-  (display-buffer-in-direction buffer (cons '(direction . leftmost) alist)))
+  (display-buffer-in-direction buffer (cons '(direction . leftmost) alist))
+  (with-current-buffer buffer
+    (set (make-local-variable 'exwm-close-window-on-kill)
+         (get-buffer-window buffer))))
 
 (defun exwm-display-buffer-cycle (&optional arg)
   (interactive "P")
@@ -606,7 +607,13 @@
   (when (and (derived-mode-p 'exwm-mode)
              (< 1 (length (window-list)))
              exwm-close-window-on-kill)
-    (delete-window)))
+    (if (null (eq exwm-close-window-on-kill (get-buffer-window (current-buffer))))
+        (delete-window)
+      (delete-window)
+      (when (eq (car (cdr (assoc 'exwm-display-buffer-condition
+                                 display-buffer-alist)))
+                'exwm-display-buffer-tiling-anticlockwise)
+        (rotate-frame-clockwise)))))
 
 (defun exwm-input-mode-change-color ()
   (cl-case exwm--input-mode
