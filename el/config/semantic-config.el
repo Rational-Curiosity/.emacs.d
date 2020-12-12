@@ -13,11 +13,21 @@
 ;; (add-to-list 'semantic-default-submodes 'global-semanticdb-minor-mode)
 ;; ]
 (require 'semantic)
+;;(setq-default semantic-symref-tool "grep")
 (setq semantic-default-submodes '(semantic-tag-folding-mode
                                   semantic-mru-bookmark-mode
                                   semantic-stickyfunc-mode
                                   semantic-idle-scheduler-mode
-                                  semanticdb-minor-mode))
+                                  semanticdb-minor-mode)
+      semantic-stickyfunc-sticky-classes '(function type)
+      ;; semantic-symref-tool "grep"
+      ;; semantic-decoration-styles
+      ;; '(("semantic-decoration-on-includes" . t)
+      ;;   ("semantic-decoration-on-protected-members" . t)
+      ;;   ("semantic-decoration-on-private-members" . t)
+      ;;   ("semantic-tag-boundary" . t))
+      semantic-idle-scheduler-idle-time 3)
+
 ;; Disabled, completions by company
 ;; (add-to-list 'semantic-default-submodes 'global-semantic-idle-completions-mode)
 ;; First line show current function
@@ -54,15 +64,6 @@
 ;;(require 'semantic-bug)
 (require 'semantic-parse-dir)
 
-;;(setq-default semantic-symref-tool "grep")
-(setq semantic-stickyfunc-sticky-classes '(function type)
-      ;; semantic-symref-tool "grep"
-      ;; semantic-decoration-styles
-      ;; '(("semantic-decoration-on-includes" . t)
-      ;;   ("semantic-decoration-on-protected-members" . t)
-      ;;   ("semantic-decoration-on-private-members" . t)
-      ;;   ("semantic-tag-boundary" . t))
-      semantic-idle-scheduler-idle-time 3)
 ;;;;;;;;;;;;;;;
 ;; Functions ;;
 ;;;;;;;;;;;;;;;

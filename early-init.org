@@ -23,27 +23,19 @@
 (add-hook 'emacs-startup-hook
           `(lambda ()
              (setq gc-cons-percentage ,gc-cons-percentage
-                   gc-cons-threshold ,gc-cons-threshold)
-             (require 'gcmh)
-             (setq minor-mode-alist
-                   (cl-delete 'gcmh-mode minor-mode-alist :key 'car))
-             (setq gcmh-idle-delay 20
-                   gcmh-verbose t
-                   gcmh-low-cons-threshold ,gc-cons-threshold
-                   gcmh-high-cons-threshold (eval-when-compile
-                                              (* 10 1024 1024)))
-             (gcmh-mode 1))
+                   gc-cons-threshold ,gc-cons-threshold))
           t)
 (setq gc-cons-percentage 0.6
       gc-cons-threshold (eval-when-compile
                           (* 10 1024 1024)))
-(defun gcmh-idle-garbage-collect-advice (orig-fun)
-  (unless (or ;; cursor-in-echo-area
-           prefix-arg
-           (< 0 (length (this-single-command-keys)))
-           (active-minibuffer-window))
-    (funcall orig-fun)))
-(advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
+
+;; (defun gcmh-idle-garbage-collect-advice (orig-fun)
+;;   (unless (or ;; cursor-in-echo-area
+;;            prefix-arg
+;;            (< 0 (length (this-single-command-keys)))
+;;            (active-minibuffer-window))
+;;     (funcall orig-fun)))
+;; (advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
 
 (add-hook 'after-init-hook
           (lambda ()
@@ -64,10 +56,9 @@
 * Long lines performance
 
 #+begin_src elisp
-(add-hook 'after-init-hook
-          `(lambda ()
-             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
-(setq file-name-handler-alist nil)
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)
+(global-so-long-mode 1)
 #+end_src
 
 * Benchmark startup advising ~require~
@@ -113,6 +104,58 @@
 (set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
 (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+#+end_src
+
+* Theme config
+
+#+begin_src elisp
+;; (set 'custom-enabled-themes 'wheatgrass)
+(load-theme 'wombat t)
+(set-face-attribute 'mode-line nil :background "#003445")
+(with-eval-after-load 'which-func
+  (set-face-attribute 'which-func nil :foreground "#a040bb"))
+
+;; (require 'cursor-chg)  ; Load this library
+;; (change-cursor-mode 1) ; On for overwrite/read-only/input mode
+;; (toggle-cursor-type-when-idle 1) ; On when idle
+;; (setq curchg-idle-cursor-type 'hbar
+;;       curchg-default-cursor-type 'bar
+;;       curchg-overwrite/read-only-cursor-type 'box)
+(add-to-list 'default-frame-alist '(cursor-color . "red"))
+;; [ Cycle themes
+(require 'ring)
+(defvar theme-ring nil)
+(let ((themes '(whiteboard adwaita misterioso wombat)))
+  (setq theme-ring (make-ring (length themes)))
+  (dolist (elem themes) (ring-insert theme-ring elem)))
+
+(defun cycle-themes ()
+  "Cycle themes in ring."
+  (interactive)
+  (let ((theme (ring-ref theme-ring -1)))
+    (ring-insert theme-ring theme)
+    (load-theme theme)
+    (message "%s theme loaded" theme)))
+;; ]
+
+;; [ transparency
+(defun toggle-transparency ()
+   (interactive)
+   (let ((alpha (frame-parameter nil 'alpha)))
+     (set-frame-parameter
+      nil 'alpha
+      (if (eql (cond ((numberp alpha) alpha)
+                     ((numberp (cdr alpha)) (cdr alpha))
+                     ;; Also handle undocumented (<active> <inactive>) form.
+                     ((numberp (cadr alpha)) (cadr alpha)))
+               100)
+          '(90 . 75) '(100 . 100)))))
+(add-to-list 'default-frame-alist '(alpha . (90 . 75)))
+;; (set-frame-parameter (selected-frame) 'alpha '(90 . 75))
+;; ]
+
+(global-set-key (kbd "M-s 6 t") #'cycle-themes)
+(global-set-key (kbd "M-s 7 t") #'toggle-transparency)
 #+end_src
 
 * Package management

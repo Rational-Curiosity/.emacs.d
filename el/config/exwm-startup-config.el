@@ -573,7 +573,7 @@
 
 (defun exwm-start-emacs (filepath)
   (interactive (list (buffer-file-name)))
-  (cond ((null current-prefix-arg)
+  (cond (current-prefix-arg
          (start-process "emacs" nil "emacs"))
         ((and (stringp filepath)
               (file-exists-p filepath))

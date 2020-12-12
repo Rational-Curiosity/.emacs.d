@@ -39,7 +39,6 @@
      figlet
      flymake
      flyspell-correct
-     gcmh
      git-commit
      gnuplot
      gnuplot-mode
@@ -48,7 +47,6 @@
      guess-language
      haskell-mode
      hide-comnt
-     highlight
      hl-todo
      ht
      htmlize

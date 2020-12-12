@@ -15,6 +15,10 @@
 
 (message "Importing eglot-config")
 
+(defun eglot-xor-semantic ()
+  (semantic-mode (if (eglot-managed-p)
+                     -1
+                   1)))
 (setq mode-line-misc-info
       (delq (assoc 'eglot--managed-mode
                    mode-line-misc-info)
@@ -24,7 +28,12 @@
       ;; eglot
       eglot-events-buffer-size 50000
       eglot-sync-connect nil
-      eglot-ignored-server-capabilites '(:documentHighlightProvider))
+      eglot-ignored-server-capabilites '(:documentHighlightProvider)
+      eglot-managed-mode-hook (nconc
+                               '(eglot-xor-semantic
+                                 (lambda ()
+                                   (eldoc-mode -1)))
+                               eglot-managed-mode-hook))
 
 
 
