@@ -2139,10 +2139,13 @@ This function avoid error and insert character at the end."
     (setq thgcmd--last-like-this this)
     (if (re-search-forward "\\_>" nil t)
         (goto-char (1- (match-end 0))))
-    (if (re-search-forward (format "\\_<%s\\_>"
-                                   (regexp-quote this)) nil t)
-        (goto-char (match-beginning 0))
-      (message "No next match"))))
+    (if (null (re-search-forward (format "\\_<%s\\_>"
+                                         (regexp-quote this)) nil t))
+        (message "No next match")
+      (goto-char (match-beginning 0))
+      (mapc (lambda (ov)
+              (overlay-put ov 'invisible nil))
+            (overlays-at (point))))))
 
 (defun previous-thing-like-this (this)
   (interactive (list
@@ -2167,10 +2170,13 @@ This function avoid error and insert character at the end."
                      thing))))))
   (when this
     (setq thgcmd--last-like-this this)
-    (if (re-search-backward (format "\\_<%s\\_>"
-                                    (regexp-quote this)) nil t)
-        (goto-char (match-beginning 0))
-      (message "No previous match"))))
+    (if (null (re-search-backward (format "\\_<%s\\_>"
+                                          (regexp-quote this)) nil t))
+        (message "No previous match")
+      (goto-char (match-beginning 0))
+      (mapc (lambda (ov)
+              (overlay-put ov 'invisible nil))
+            (overlays-at (point))))))
 
 ;;;;;;;;;;
 ;; Keys ;;
