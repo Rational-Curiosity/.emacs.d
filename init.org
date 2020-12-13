@@ -10834,7 +10834,10 @@ end note
   (require 'latex-config))
 
 ;; [ org
-(defvar org-replace-disputed-keys t)
+(setq org-replace-disputed-keys t)
+(unless (fboundp 'org-mode)
+  (message "`org-mode' not found")
+  (autoload 'org-mode "org"))
 (with-eval-after-load 'org
   (require 'org-config)
   (require 'org-super-agenda-config)
