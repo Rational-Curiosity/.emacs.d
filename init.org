@@ -282,20 +282,6 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   (let ((message-truncate-lines t))
     (apply orig-fun args)))
 
-(require 'server)
-(defmacro eval-and-when-daemon (frame &rest body)
-  "When starting daemon wait FRAME ready before BODY."
-  (declare (indent defun))
-  (cons 'if
-        (cons
-         (list 'daemonp)
-         (nconc
-          (list (list 'add-hook (quote 'after-make-frame-functions)
-                      (cons 'lambda (cons (list (if frame frame 'frame)) body))))
-          (list (list 'funcall
-                      (cons 'lambda (cons (list (if frame frame 'frame)) body))
-                      (list 'selected-frame)))))))
-
 ;; Load all libraries in directory
 (defun load-all-in-directory (dir)
   "`load' all elisp libraries in directory DIR which are not already loaded."
@@ -1462,6 +1448,7 @@ prompt the user for a coding system."
   ;; 1. edit or create: /etc/modprobe.d/hid_apple.conf
   ;; 2. append line:    options hid_apple fnmode=2
   ;; 3. shell command:  sudo update-initramfs -u -k all
+  ;; 4. shell command:  sudo update-grub2
   (interactive "P")
   (if (eq last-command 'apple-keyboard-toggle-fn-key)
       (user-error "Ignoring repeated call")
@@ -1559,110 +1546,6 @@ prompt the user for a coding system."
 
 ;; No lo activamos por ser muy engorroso
 ;;(put 'scroll-left 'disabled nil)
-
-;;;;;;;;;;
-;; Font ;;
-;;;;;;;;;;
-;; set a default font
-;; $(sudo fc-cache -rfv)
-(setq inhibit-compacting-font-caches t)
-(eval-and-when-daemon frame
-  (when (display-graphic-p frame)
-    (with-selected-frame frame
-      (cond
-       ((member "Fira Code" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Fira Code"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Fira Code Family"))
-       ((member "Hack" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Hack"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Hack Family"))
-       ((member "DejaVu Sans Mono" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "DejaVu Sans Mono"
-                            :height 100
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: DejaVu Sans Mono Family"))
-       ((member "Iosevka Term" (font-family-list)) ;; Iosevka case
-        (set-face-attribute 'default nil
-                            :family "Iosevka Term"
-                            :height 100
-                            :foundry "unknown"
-                            :weight 'light
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Iosevka Term Family"))
-       ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                (x-list-fonts "*" nil (selected-frame)))
-        (set-face-attribute 'default nil
-                            :font "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                            :height 100)
-        (message "Monospace font: Iosevka Term Light"))
-       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                (x-list-fonts "*" nil (selected-frame)))
-        (set-face-attribute 'default nil
-                            :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                            :height 100)
-        (message "Monospace font: Unifont"))
-       ;; sudo apt install fonts-mononoki
-       ((member "mononoki" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Mononoki"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Mononoki Family"))
-       (t ;; default case
-        (message "Monospace font not found")
-        (set-face-attribute 'default nil
-                            :height 100
-                            :weight 'light
-                            :slant 'normal
-                            :width 'normal)))
-      ;; [ Iosevka 3.0.0 supports unicode
-      ;; (let ((font-spec-args
-      ;;        (cond
-      ;;         ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-      ;;                  (font-family-list))
-      ;;          '(:family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-      ;;         ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-      ;;                  (x-list-fonts "*" nil (selected-frame)))
-      ;;          '(:name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
-      ;;         ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-      ;;                  (x-list-fonts "*" nil (selected-frame)))
-      ;;          '(:name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1")))))
-      ;;   (if (null font-spec-args)
-      ;;       (message "Monospace utf-8 font not found.")
-      ;;     (dolist (range '((#x2100 . #x230F)
-      ;;                        (#x2380 . #x23F3)
-      ;;                        (#x2420 . #x2424)
-      ;;                        (#x25A0 . #x25FF)
-      ;;                        (#x2610 . #x2613)
-      ;;                        (#x2692 . #x26A0)
-      ;;                        (#x26D2 . #x26D4)
-      ;;                        (#x2709 . #x270C)))
-      ;;         (set-fontset-font "fontset-default" range
-      ;;                           (apply 'font-spec font-spec-args)))
-      ;;     (message "Monospace utf-8 font: %s" (or (plist-get font-spec-args :family)
-      ;;                                             (plist-get font-spec-args :name)))))
-      ;; ]
-      )))
 
 ;;;;;;;;;;;;;;;;;
 ;; Copy things ;;
@@ -3318,14 +3201,13 @@ This function is part of the `orderless' completion style."
                                 (rxt-elisp-to-pcre regexp))))
           (split-string (shell-command-to-string command) "\n")))))
 
-  (defun noccur-projectile (regexp &optional nlines)
+  (defun occur-project (regexp &optional nlines)
     (interactive (occur-read-primary-args))
-    (if (require 'projectile nil 'noerror) ;; projectile-ensure-project
-                                           ;; projectile-project-root
-        (noccur-project regexp nlines
-                        (projectile-ensure-project
-                         (projectile-project-root)))
-      (error "Package `projectile' is not available"))))
+    (noccur-project regexp nlines
+                        (if (require 'projectile nil 'noerror)
+                            (projectile-ensure-project
+                             (projectile-project-root))
+                          (cdr (project-current))))))
 
 
 ;; Keys
@@ -3349,8 +3231,8 @@ This function is part of the `orderless' completion style."
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
 (define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-toggle)
-(global-set-key (kbd "M-g M-a") 'noccur-projectile)
-(global-set-key (kbd "M-g M-f") 'projectile-find-file)
+(global-set-key (kbd "M-g M-a") 'occur-project)
+(global-set-key (kbd "M-g M-f") 'project-find-file)
 (global-set-key (kbd "M-y") 'icomplete-vertical-kill-ring-insert)
 (global-set-key (kbd "M-g f") 'fd-dired)
 (global-set-key (kbd "M-s O") 'multi-occur)
