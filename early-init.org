@@ -103,7 +103,8 @@
   "Visual line fringe face" :group 'visual-line)
 (set-fringe-bitmap-face 'left-curly-arrow 'visual-line-fringe-face)
 (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
-(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)
+      frame-inhibit-implied-resize t)
 #+end_src
 
 * Theme config
@@ -169,8 +170,7 @@ modified.
 (setq package-enable-at-startup nil
       ;; call `package-quickstart-refresh' every time `package-load-list'
       ;; is modified
-      package-quickstart t
-      frame-inhibit-implied-resize t)
+      package-quickstart t)
 
 ;; [ <repos> configure repositories
 ;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
