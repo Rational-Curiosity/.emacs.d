@@ -30,7 +30,6 @@
      eldoc
      elfeed
      emms
-     epl
      exec-path-from-shell
      expand-region
      exwm
@@ -56,7 +55,6 @@
      json-mode
      json-reformat
      json-snatcher
-     let-alist
      link-hint
      lua-mode
      lv
@@ -71,7 +69,6 @@
      multiple-cursors
      noccur
      ob-async
-     objed
      orderless
      org
      org-agenda-property
@@ -88,11 +85,9 @@
      pcre2el
      peg
      php-mode
-     pkg-info
      plantuml-mode
      polymode
      project
-     projectile
      protobuf-mode
      rainbow-delimiters
      rebox2
