@@ -3566,9 +3566,10 @@ If `case-replace' is nil, do not alter case of replacement text."
 (require 'tramp)
 
 (setq password-cache t
-        password-cache-expiry 3600
-        auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
-        tramp-default-method "ssh")
+      password-cache-expiry 3600
+      auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
+      tramp-default-method "ssh"
+      auth-source-save-behavior nil)
 #+end_src
 
 *** /recentf/
