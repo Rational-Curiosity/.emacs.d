@@ -967,7 +967,8 @@
                            (concat " *" executable)
                            (concat " *" executable " outputs*")
                            program-and-args-list)
-                  (message "Unable to find `%s' executable." executable))))))
+                  (message "Unable to find `%s' executable." executable)))))
+          92)
 
 (when (load "helm-exwm" t t)
   (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source)
@@ -1039,9 +1040,9 @@
                       (z-group . above)
                       (left . ,(+ (aref workarea 0) 20))
                       ;; (height . ,(cons 'text-pixels (round (* (aref workarea 3) 0.3))))
-                      (height . ,(round (* (aref workarea 3) 0.023)))
+                      (height . ,(round (* (aref workarea 3) (default-font-height) 0.001)))
                       ;; [ in this fuction 'text-pixels then white mini frame
-                      (width . ,(round (* (aref workarea 2) 0.13635)))
+                      (width . ,(round (* (aref workarea 2) (default-font-width) 0.0186)))
                       ;; (width . ,(cons 'text-pixels (- (aref workarea 2) 60)))
                       ;; ]
                       (background-color . "black")))))
@@ -1054,7 +1055,7 @@
                 (top . ,(+ (aref workarea 1) 10))
                 (left . ,(round (+ (aref workarea 0) (* workarea-width 0.05))))
                 (height . 1)
-                (width . ,(round (* workarea-width 0.1278)))
+                (width . ,(round (* workarea-width (default-font-width) 0.018)))
                 ;; (width . ,(cons 'text-pixels (round (* workarea-width 0.9))))
                 (background-color . "black")))))
         mini-frame-resize t  ;; nil when icomplete-exhibit advice
