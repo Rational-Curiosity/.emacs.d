@@ -369,16 +369,18 @@
                           exwm-default-minibuffer-workspace-or-screen)))
    ((and
      (stringp exwm-default-minibuffer-workspace-or-screen)
-     (let ((pos (cl-position exwm-default-minibuffer-workspace-or-screen
-                             exwm-randr-workspace-monitor-plist
-                             :test 'equal)))
-       (if (and pos (/= pos 0))
+     (let* ((pos (cl-position exwm-default-minibuffer-workspace-or-screen
+                              exwm-randr-workspace-monitor-plist
+                              :test 'equal))
+            (workspace (nth (1- pos) exwm-randr-workspace-monitor-plist)))
+       (if (and pos (/= pos 0)
+                workspace (/= workspace 0))
            (progn
              (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
                                   (exwm-workspace--workspace-from-frame-or-index
                                    (nth (1- pos) exwm-randr-workspace-monitor-plist)))
              t)))))))
-(advice-add #'exwm-randr--init :after 'exwm-update-minibuffer-monitor)
+(add-hook 'exwm-init-hook 'exwm-update-minibuffer-monitor 91)
 
 (defun exwm-screen-count ()
   (let ((monitor-number 0))
@@ -931,7 +933,7 @@
       symon-sparkline-width 24
       symon-total-spark-width 12)
 
-(add-hook 'exwm-init-hook 'symon-mode)
+(add-hook 'exwm-init-hook 'symon-mode 91)
 
 ;; Background
 (defvar exwm-timer-random-wallpaper nil
@@ -1096,7 +1098,7 @@
                 (cdr (window-text-pixel-size
                       (frame-selected-window mini-frame-frame))))))))))
 
-  (add-hook 'exwm-init-hook 'mini-frame-mode)
+  (add-hook 'exwm-init-hook 'mini-frame-mode 91)
 
   ;; [ fix not resizing mini frame
   ;; (defun mini-frame-icomplete-exhibit-advice ()
