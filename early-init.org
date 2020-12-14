@@ -6,23 +6,6 @@
 #+PROPERTY:  header-args:elisp+  :eval no-export
 # Save to tangle file: C-c C-v C-t
 
-* Utils
-
-#+begin_src elisp
-(defmacro eval-and-when-daemon (frame &rest body)
-  "When starting daemon wait FRAME ready before BODY."
-  (declare (indent defun))
-  (cons 'if
-        (cons
-         (list 'daemonp)
-         (nconc
-          (list (list 'add-hook (quote 'after-make-frame-functions)
-                      (cons 'lambda (cons (list (if frame frame 'frame)) body))))
-          (list (list 'funcall
-                      (cons 'lambda (cons (list (if frame frame 'frame)) body))
-                      (list 'selected-frame)))))))
-#+end_src
-
 * Persist *Messages* buffer to file
 
 #+begin_src elisp
@@ -104,111 +87,6 @@
   (add-hook 'emacs-startup-hook
             (lambda ()
               (advice-remove 'require 'benchmark-require-advice))))
-#+end_src
-
-* Font configuration
-
-#+begin_src elisp
-;; set a default font
-;; $(sudo fc-cache -rfv)
-(setq inhibit-compacting-font-caches t)
-(eval-and-when-daemon frame
-  (when (display-graphic-p frame)
-    (with-selected-frame frame
-      (cond
-       ((member "Fira Code" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Fira Code"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Fira Code Family"))
-       ((member "Hack" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Hack"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Hack Family"))
-       ((member "DejaVu Sans Mono" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "DejaVu Sans Mono"
-                            :height 100
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: DejaVu Sans Mono Family"))
-       ((member "Iosevka Term" (font-family-list)) ;; Iosevka case
-        (set-face-attribute 'default nil
-                            :family "Iosevka Term"
-                            :height 100
-                            :foundry "unknown"
-                            :weight 'light
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Iosevka Term Family"))
-       ((member "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                (x-list-fonts "*" nil (selected-frame)))
-        (set-face-attribute 'default nil
-                            :font "-outline-Iosevka Term Light-light-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-                            :height 100)
-        (message "Monospace font: Iosevka Term Light"))
-       ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                (x-list-fonts "*" nil (selected-frame)))
-        (set-face-attribute 'default nil
-                            :font "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-                            :height 100)
-        (message "Monospace font: Unifont"))
-       ;; sudo apt install fonts-mononoki
-       ((member "mononoki" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Mononoki"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Mononoki Family"))
-       (t ;; default case
-        (message "Monospace font not found")
-        (set-face-attribute 'default nil
-                            :height 100
-                            :weight 'light
-                            :slant 'normal
-                            :width 'normal)))
-      ;; [ Iosevka 3.0.0 supports unicode
-      ;; (let ((font-spec-args
-      ;;        (cond
-      ;;         ((member "DejaVu Sans Mono monospacified for Iosevka Term Light"
-      ;;                  (font-family-list))
-      ;;          '(:family "DejaVu Sans Mono monospacified for Iosevka Term Light"))
-      ;;         ((member "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"
-      ;;                  (x-list-fonts "*" nil (selected-frame)))
-      ;;          '(:name "-outline-DejaVu Sans Mono monospacified -normal-normal-normal-mono-*-*-*-*-c-*-iso8859-1"))
-      ;;         ((member "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1"
-      ;;                  (x-list-fonts "*" nil (selected-frame)))
-      ;;          '(:name "-outline-Unifont-normal-normal-normal-*-*-*-*-*-p-*-iso8859-1")))))
-      ;;   (if (null font-spec-args)
-      ;;       (message "Monospace utf-8 font not found.")
-      ;;     (dolist (range '((#x2100 . #x230F)
-      ;;                        (#x2380 . #x23F3)
-      ;;                        (#x2420 . #x2424)
-      ;;                        (#x25A0 . #x25FF)
-      ;;                        (#x2610 . #x2613)
-      ;;                        (#x2692 . #x26A0)
-      ;;                        (#x26D2 . #x26D4)
-      ;;                        (#x2709 . #x270C)))
-      ;;         (set-fontset-font "fontset-default" range
-      ;;                           (apply 'font-spec font-spec-args)))
-      ;;     (message "Monospace utf-8 font: %s" (or (plist-get font-spec-args :family)
-      ;;                                             (plist-get font-spec-args :name)))))
-      ;; ]
-      )))
 #+end_src
 
 * Frame configuration previous GUI activation
