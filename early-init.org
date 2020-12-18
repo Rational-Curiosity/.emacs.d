@@ -157,6 +157,13 @@
 ;; (set-frame-parameter (selected-frame) 'alpha '(90 . 75))
 ;; ]
 
+(defun unspecified-background-in-terminal (&optional frame)
+  (let ((frame (or frame (selected-frame))))
+    (unless (display-graphic-p frame)
+    (set-face-background 'default "unspecified-bg" frame))))
+(add-hook 'window-setup-hook 'unspecified-background-in-terminal)
+(add-hook 'after-make-frame-functions 'unspecified-background-in-terminal)
+
 (global-set-key (kbd "M-s 6 t") #'cycle-themes)
 (global-set-key (kbd "M-s 7 t") #'toggle-transparency)
 #+end_src
