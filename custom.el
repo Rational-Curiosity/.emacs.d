@@ -114,6 +114,7 @@
      which-key
      with-editor
      xahk-mode
+     xclip
      xelb
      xref
      xterm-color

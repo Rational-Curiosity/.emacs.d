@@ -1244,6 +1244,9 @@ mouse-3: Toggle minor modes"
 * Typing
 
 #+begin_src elisp
+(unless (display-graphic-p)
+  (xterm-mouse-mode 1)
+  (xclip-mode 1))
 ;; [ don't work properly and cpu expensive
 ;; (setq blink-cursor-blinks 0)
 ;; (eval-and-when-daemon frame
@@ -5130,8 +5133,8 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 
 #+begin_src elisp
 ;; [ expensive
-;; (require 'display-line-numbers)
-;; (add-hook 'prog-mode-hook #'display-line-numbers-mode)
+(require 'display-line-numbers)
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
 ;; ]
 (with-eval-after-load 'display-line-numbers
   (setq line-number-display-limit large-file-warning-threshold
@@ -6513,11 +6516,11 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (with-eval-after-load 'prog-mode
   ;; Generate tags file:
   ;; # cd <project root path>
-  ;; # rm TAGS
-  ;; # find <root code path> -type f -name "<source files pattern>" -print 2>/dev/null | xargs etags --append
+  ;; # rm ETAGS
+  ;; # find <root code path> -type f -name "<source files pattern>" -print 2>/dev/null | xargs etags -o ETAGS --append
   (require 'etags)
 
-  (defvar tags-default-file-name "TAGS")
+  (defvar tags-default-file-name "ETAGS")
 
   (defun visit-tags-table-advice (orig-fun &optional file &rest args)
     (if file
@@ -6549,9 +6552,12 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                 (if (= 0
                        (shell-command
                         (concat
-                         "rm TAGS && find . ! -readable -prune -o -type f -name \"*."
+                         "rm " tags-default-file-name
+                         " && find . ! -readable -prune -o -type f -name \"*."
                          extension
-                         "\" -print -exec etags --append {} \\;")))
+                         "\" -print -exec etags -o "
+                         tags-default-file-name
+                         " --append {} \\;")))
                     (message "%s file created with .%s files."
                              (expand-file-name tags-default-file-name tags-directory)
                              extension)
@@ -6591,7 +6597,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
 
 ;;;;;;;;;;
-;; Keys ;;
+  ;; Keys ;;
 ;;;;;;;;;;
   (with-eval-after-load 'hydra
     (defhydra hydra-xref (:foreign-keys run :hint nil)
@@ -6662,7 +6668,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 #+begin_src elisp
 (with-eval-after-load 'eldoc
   (setq eldoc-minor-mode-string "")
-  (global-eldoc-mode -1)
+  ;; (global-eldoc-mode -1)
   (global-set-key (kbd "C-h .") 'global-eldoc-mode))
 #+end_src
 
@@ -9440,6 +9446,7 @@ Switch the current window to the previous buffer."
                                         ((:right-align t)
                                          (:help-echo "Current branch changes not in push branch")))
                                        ("Path" 99 magit-repolist-column-path nil))))
+
 (with-eval-after-load 'magit-repos
   (setq magit-repolist-columns '(("Name" 25 magit-repolist-column-ident nil)
                                  ("Branch" 25 magit-repolist-column-branch nil)
@@ -9460,6 +9467,9 @@ Switch the current window to the previous buffer."
                                   ((:right-align t)
                                    (:help-echo "Current branch changes not in push branch")))
                                  ("Path" 99 magit-repolist-column-path nil))))
+
+(with-eval-after-load 'magit-section
+  (face-spec-set 'magit-section-highlight '((((type tty)) :background "grey20"))))
 
 ;; (with-eval-after-load 'magit-status
 ;;   (define-key magit-status-mode-map (kbd "M-g c") #'avy-goto-char)
