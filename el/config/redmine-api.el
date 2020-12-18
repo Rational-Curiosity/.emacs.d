@@ -7,8 +7,6 @@
 (require 'map)
 (require 'json)
 
-(require 'config-lib)
-
 (defcustom redmine-api-token ""
   "Private-Token")
 

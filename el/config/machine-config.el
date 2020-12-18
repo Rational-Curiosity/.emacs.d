@@ -7,7 +7,6 @@
 
 ;;; Code:
 
-(require 'config-lib)
 ;;;;;;;;;;;;;;;;;;
 ;; Machine name ;;
 ;;;;;;;;;;;;;;;;;;

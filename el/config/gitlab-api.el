@@ -32,8 +32,6 @@
 (require 'map)
 (require 'json)
 
-(require 'config-lib)
-
 (defcustom gitlab-api-token ""
   "Private-Token")
 

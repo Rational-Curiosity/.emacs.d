@@ -1159,7 +1159,6 @@ You can also customize this for each buffer, using something like
   (interactive)
   (org-sort-entries nil ?f 'org-entry-to-key 'string<))
 
-(require 'config-lib)
 (defun org-af (&optional prefix suffix)
   "Return filename counting blocks using this function.
 Filename returned has the format:
