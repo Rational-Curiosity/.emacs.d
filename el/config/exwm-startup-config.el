@@ -563,12 +563,12 @@
                     (message "Starting urxvt with screen")
                     (start-process "urxvt" nil "urxvt" "-e" "screen"))))
             (t (message "Terminal multiplexer not found")))
-    (cond ((executable-find "urxvt")
-           (message "Starting urxvt")
-           (start-process "urxvt" nil "urxvt"))
-          ((executable-find "alacritty")
+    (cond ((executable-find "alacritty")
            (message "Starting alacritty")
            (start-process "alacritty" nil "alacritty"))
+          ((executable-find "urxvt")
+           (message "Starting urxvt")
+           (start-process "urxvt" nil "urxvt"))
           ((executable-find "xterm")
            (message "Starting xterm")
            (start-process "xterm" nil "xterm")))))
@@ -859,7 +859,8 @@
 
 ;; Do not forget to enable EXWM. It will start by itself when things are
 ;; ready.  You can put it _anywhere_ in your configuration.
-(exwm-enable)
+(when (member "--exwm" command-line-args)
+  (exwm-enable))
 
 ;; Multi-monitor
 (add-hook 'exwm-randr-screen-change-hook 'exwm-update-screens)
