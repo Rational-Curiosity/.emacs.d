@@ -18,7 +18,6 @@
 (add-hook 'org-mode-hook 'flyspell-mode)
 (add-hook 'org-mode-hook
           (defun org-mode-modify-syntax-entry<-and-continuation-lines ()
-            (toggle-continuation-lines 1)
             (modify-syntax-entry ?< "_" org-mode-syntax-table)))
 ;; (plist-put org-format-latex-options :scale 1.) ;; default
 
