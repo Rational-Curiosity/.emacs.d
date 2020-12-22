@@ -45,6 +45,7 @@
      guess-language
      haskell-mode
      hide-comnt
+     hl-line+
      hl-todo
      ht
      htmlize

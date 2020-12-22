@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --with-cairo --with-x-toolkit=no CFLAGS='-O3'
+./configure --with-json --with-cairo --with-x-toolkit=no --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings CFLAGS='-O3 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -549,13 +549,15 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 (let ((backup-directory (expand-file-name "~/.emacs.d/backup/")))
   (make-directory backup-directory t)
 
-  (setq backup-directory-alist
+  (setq undo-limit (eval-when-compile
+                     (* 1024 1024))
+        backup-directory-alist
         `((".*" . ,backup-directory))
         ;; auto-save-file-name-transforms
         ;; '((".*" "~/.emacs.d/backup/" t))
-        ;; Graba cada 10 caracteres introducidos a #<file-name>#
+        ;; 10 input events #<file-name>#
         auto-save-interval 10
-        ;; o cada 10 segundos
+        ;; 10 seconds
         auto-save-timeout 10
         ;; create local .#<file-name> to avoid collisions
         create-lockfiles nil))
@@ -610,7 +612,7 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 * Personal config
 
 #+begin_src elisp
-(load "config" t)
+(load (expand-file-name "config.el" user-emacs-directory) t)
 #+end_src
 
 * Mode line
@@ -1029,39 +1031,48 @@ mouse-3: Toggle minor modes"
 (defun mode-line-buffer-identification-shorten ()
   (if mode-line-mock
       ""
-    (let ((total-len (window-total-width))
-          (cached-file-name (or (buffer-file-name) (buffer-name)))
-          (cached-vc-name (or vc-mode ""))
-          (others-len (string-width (let ((mode-line-mock t))
-                                     (format-mode-line mode-line-format)))))
-      (if (equal mode-line-cached (list total-len others-len cached-vc-name cached-file-name))
+    (let ((total-len (window-total-width)))
+      (if (equal mode-line-cached total-len)
           mode-line-identification
         (prog1
-            (let ((len (- total-len others-len))
-                  (vc-name cached-vc-name)
-                  (final-name (or (mode-line-abbreviate-file-name) (buffer-name))))
-              (if (< len (+ (string-width final-name) (string-width vc-name)))
-                  (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
-                      (let ((dir-name (match-string 1 final-name))
-                            (base-name (match-string 2 final-name)))
-                        (if vc-mode
-                            (let ((result (abbrev-strings-try len base-name dir-name vc-name)))
-                              (setq vc-name (car (cdr (cdr result)))
-                                    len (- len (string-width vc-name))
-                                    final-name (abbrev-string len (concat (car (cdr result)) (car result)))))
-                          (let ((result (abbrev-strings-try len base-name dir-name)))
-                            (setq final-name (abbrev-string len (concat (car (cdr result)) (car result)))))))
-                    (if vc-mode
-                        (let ((result (abbrev-strings-try len "" final-name vc-name)))
-                          (setq vc-name (car (cdr (cdr result)))
-                                len (- len (string-width vc-name))
-                                final-name (abbrev-string len (car (cdr result)))))
-                      (setq final-name (abbrev-string len (abbrev-string-try len final-name)))))
-                (setq len (- len (string-width vc-name))))
-              (setq mode-line-identification (concat
-                                              (format (concat "%-" (int-to-string (max len 0)) "s") final-name)
-                                              vc-name)))
-          (setq mode-line-cached (list total-len others-len cached-vc-name cached-file-name)))))))
+            (let ((others-len (string-width
+                               (let ((mode-line-mock t))
+                                 (format-mode-line mode-line-format)))))
+              (let ((len (- total-len others-len 3)) ;; 3 margin
+                    (vc-name (or vc-mode ""))
+                    (final-name (or (mode-line-abbreviate-file-name) (buffer-name))))
+                (if (< len (+ (string-width final-name) (string-width vc-name)))
+                    (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
+                        (let ((dir-name (match-string 1 final-name))
+                              (base-name (match-string 2 final-name)))
+                          (if vc-mode
+                              (let ((result (abbrev-strings-try
+                                             len base-name dir-name vc-name)))
+                                (setq vc-name (car (cdr (cdr result)))
+                                      len (- len (string-width vc-name))
+                                      final-name (abbrev-string
+                                                  len (concat
+                                                       (car (cdr result))
+                                                       (car result)))))
+                            (let ((result (abbrev-strings-try
+                                           len base-name dir-name)))
+                              (setq final-name (abbrev-string
+                                                len (concat
+                                                     (car (cdr result))
+                                                     (car result)))))))
+                      (if vc-mode
+                          (let ((result (abbrev-strings-try len "" final-name vc-name)))
+                            (setq vc-name (car (cdr (cdr result)))
+                                  len (- len (string-width vc-name))
+                                  final-name (abbrev-string len (car (cdr result)))))
+                        (setq final-name (abbrev-string
+                                          len (abbrev-string-try len final-name)))))
+                  (setq len (- len (string-width vc-name))))
+                (setq mode-line-identification
+                      (concat
+                       (format (concat "%-" (int-to-string (max len 0)) "s") final-name)
+                                                vc-name))))
+          (setq mode-line-cached total-len))))))
 
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
@@ -1146,6 +1157,15 @@ mouse-3: Toggle minor modes"
   (when (display-graphic-p frame)
     (with-selected-frame frame
       (cond
+       ((member "Monaco" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "Fira Code"
+                            :height 90
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: Fira Code Family"))
        ((member "Fira Code" (font-family-list))
         (set-face-attribute 'default nil
                             :family "Fira Code"
@@ -1263,7 +1283,7 @@ mouse-3: Toggle minor modes"
 (setq-default
  ;; t -   long lines go away from window width, ei, continuation lines
  ;; nil - soft wrap lines
- truncate-lines t
+ truncate-lines nil ;; so-long-variable-overrides doc
  ;; ignore case searching
  case-fold-search t)
 ;; [ Demasiado agresivo, mejor con ido
@@ -2403,17 +2423,19 @@ For more information, see the function `buffer-menu'."
       message-truncate-lines nil
       ;; Vertical Scroll
       ;; scroll-preserve-screen-position 'always
-      ;;scroll-margin 2
-      ;;scroll-step (* 2 scroll-margin)
-      redisplay-dont-pause nil
-      fast-but-imprecise-scrolling t
-      mouse-wheel-progressive-speed nil
-      ;; Scroll line by line
-      ;;scroll-conservatively 101
+      ;; scroll-margin 2
+      ;; scroll-step 2
+      ;; Nil means display update is paused when input is detected
+      redisplay-dont-pause t
+      ;; Dangerous, annoying scroll holding next-line
+      ;; fast-but-imprecise-scrolling t
+      ;; mouse-wheel-progressive-speed nil
+      ;; > 100 Never recenter point
+      ;; scroll-conservatively 101
       ;; Horizontal Scroll
       ;;hscroll-margin 2
       ;;hscroll-step (* 2 hscroll-margin)
-      )
+      auto-window-vscroll nil)
 
 (add-hook 'term-mode-hook
           (lambda ()
@@ -2795,8 +2817,9 @@ ARG non-nil resize window to ARG height."
 
 (with-eval-after-load 'simple
   (setq minor-mode-alist (assq-delete-all 'visual-line-mode minor-mode-alist))
-  
-  (global-visual-line-mode 1)
+
+  ;; slow performance
+  ;; (global-visual-line-mode 1)
   (add-hook 'minibuffer-setup-hook 'visual-line-mode))
 ;; ]
 
@@ -5014,13 +5037,20 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
   (unhl-apirest))
 #+end_src
 
+*** /h-line+/
+
+#+begin_src elisp
+;; [ conflict with objed with (setq objed-use-hl nil)
+(require 'hl-line+)
+;; ]
+(hl-line-when-idle-interval 0.3)
+(toggle-hl-line-when-idle 1)
+#+end_src
+
 *** /hl-line/
 
 #+begin_src elisp
 (require 'hl-line)
-;; [ conflict with objed with (setq objed-use-hl nil)
-;; (require 'hl-line+)
-;; ]
 (set-face-attribute 'hl-line nil
                     :foreground 'unspecified
                     :background "#000000"
@@ -5324,6 +5354,36 @@ By default insert it, with prefix display a message with it."
                parenthesis))))))
 
 (defvar language-text-to-speak-process nil)
+#+end_src
+
+*** Vi transfer
+
+#+begin_src elisp
+(defun vi-transfer-file (filepath &optional nokill)
+  (interactive (list (buffer-file-name) current-prefix-arg))
+  (if (and (stringp filepath)
+           (file-exists-p filepath))
+      (let ((terminal (or (executable-find "alacritty")
+                          (executable-find "urxvt")
+                          (executable-find "xterm"))))
+        (if (null terminal)
+            (message
+             "Terminal not found, install `alacritty', `urxvt' or `xterm'")
+          (start-process
+           (concat "*vi " filepath "*") nil terminal "-e"
+           "vi"
+           (concat
+            "+call cursor(" (number-to-string (line-number-at-pos))
+            "," (number-to-string (1+ (current-column))) ")")
+           filepath)
+          (unless nokill
+            (when-let ((buffer (find-buffer-visiting filepath)))
+              (kill-buffer buffer)
+              (when (< 1 (length (window-list)))
+                (delete-window))))))
+    (message "File not found: %s" filepath)))
+
+(global-set-key (kbd "M-RET") 'vi-transfer-file)
 #+end_src
 
 ** Not always required
@@ -5636,8 +5696,8 @@ ARG - `C-u' differ with prompted file.
 *** /eshell/
 
 #+begin_src elisp
-(defun eshell-vi-transfer-file (filepath)
-  (interactive (list (buffer-file-name)))
+(defun eshell-vi-transfer-file (filepath &optional nokill)
+  (interactive (list (buffer-file-name) current-prefix-arg))
   (cond ((and (stringp filepath)
               (file-exists-p filepath))
          (require 'em-term)
@@ -5646,7 +5706,7 @@ ARG - `C-u' differ with prompted file.
                 "+call cursor(" (number-to-string (line-number-at-pos))
                 "," (number-to-string (1+ (current-column))) ")")
           filepath)
-         (unless current-prefix-arg
+         (unless nokill
            (when-let ((buffer (find-buffer-visiting filepath)))
              (kill-buffer buffer))))
         (t
@@ -7217,14 +7277,16 @@ Improve default ia jump at point."
 ;; Disabled because annoying cursor movement
 ;; (require 'flyspell-lazy)
 
-(dolist (hook '(text-mode-hook))
-  (add-hook hook (lambda () (flyspell-mode 1))))
-(dolist (hook '(change-log-mode-hook log-edit-mode-hook))
-  (add-hook hook (lambda () (flyspell-mode -1))))
+;; [ better call `flyspell-buffer' C-c i c
+;; (dolist (hook '(text-mode-hook))
+;;   (add-hook hook (lambda () (flyspell-mode 1))))
+;; (dolist (hook '(change-log-mode-hook log-edit-mode-hook))
+;;   (add-hook hook (lambda () (flyspell-mode -1))))
 
-(dolist (hook '(prog-mode-hook))
-;;  (add-hook hook #'flyspell-lazy-mode)
-  (add-hook hook 'flyspell-prog-mode))
+;; (dolist (hook '(prog-mode-hook))
+;; ;;  (add-hook hook #'flyspell-lazy-mode)
+;;   (add-hook hook 'flyspell-prog-mode))
+;; ]
 
 (with-eval-after-load 'flyspell
   (message "Importing flyspell config")
@@ -9419,6 +9481,7 @@ Switch the current window to the previous buffer."
     (interactive)
     (dolist (buffer (buffers-from-file))
       (with-current-buffer buffer
+        (setq mode-line-cached nil)
         (vc-refresh-state))))
   (advice-add 'magit-refresh :after 'vc-refresh-buffers)
   (require 'magit-todos)
@@ -9508,7 +9571,7 @@ Switch the current window to the previous buffer."
 #+begin_src elisp
 (require 'guess-language)
 
-(add-hook 'text-mode-hook 'guess-language-mode)
+;; (add-hook 'text-mode-hook 'guess-language-mode)
 
 (defface guess-language-mode-line
   '((t  (:foreground "#822")))
@@ -12257,6 +12320,8 @@ to get different commands to edit and resubmit."
 
 #+begin_src elisp
 (with-eval-after-load 'virtualenvwrapper
+  (eval-when-compile
+    (require 'virtualenvwrapper))
   (when (bug-check-function-bytecode
          'venv-mkvirtualenv-using
          "xiCICIMNAMfIIYIOAAkaCzuDHADJygshIYIdAAwdCoUlAMsKUB4gDiGDMQAOIYI1AMzNIUOJHiHOHiKJHiODtQAOI0AeJM/QIA4kIoNTANHSIYjT1CGI1Q4l1g4g1g0OJLAGIYgLPIOBAA0OJFCJHiYLnYN7AAuIgoAADiYLQhMpDA4nHigeKdcOJCGI2A4qIYjZjtPaIYgr29whg6YA3d4OJFAhiCkOIlQWIg4jQYkWI4RBACrX3w4hIUAhLIc=")
