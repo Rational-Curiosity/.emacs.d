@@ -107,13 +107,14 @@
 (set-fringe-bitmap-face 'right-curly-arrow 'visual-line-fringe-face)
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)
       frame-inhibit-implied-resize t)
+;; (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
 #+end_src
 
 * Theme config
 
 #+begin_src elisp
 ;; (set 'custom-enabled-themes 'wheatgrass)
-(load-theme 'wombat t)
+(load-theme 'misterioso t)
 (set-face-attribute 'mode-line nil :background "#003445")
 (with-eval-after-load 'which-func
   (set-face-attribute 'which-func nil :foreground "#a040bb"))
@@ -157,12 +158,12 @@
 ;; (set-frame-parameter (selected-frame) 'alpha '(90 . 75))
 ;; ]
 
-(defun unspecified-background-in-terminal (&optional frame)
+(defun unspecified-background (&optional frame)
   (let ((frame (or frame (selected-frame))))
     (unless (display-graphic-p frame)
-    (set-face-background 'default "unspecified-bg" frame))))
-(add-hook 'window-setup-hook 'unspecified-background-in-terminal)
-(add-hook 'after-make-frame-functions 'unspecified-background-in-terminal)
+      (set-face-background 'default "unspecified-bg" frame))))
+(add-hook 'window-setup-hook 'unspecified-background)
+(add-hook 'after-make-frame-functions 'unspecified-background)
 
 (global-set-key (kbd "M-s 6 t") #'cycle-themes)
 (global-set-key (kbd "M-s 7 t") #'toggle-transparency)
