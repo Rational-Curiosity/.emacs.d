@@ -14,13 +14,106 @@
     (write-region (point-min) (point-max)
                   (expand-file-name "last-messages-buffer.txt"
                                     user-emacs-directory))))
-(add-hook 'kill-emacs-hook 'save-messages-buffer 91)
+(add-hook 'kill-emacs-hook 'save-messages-buffer 92)
+#+end_src
+
+* Early command line arguments
+
+#+begin_src elisp
+(defvar exwm-p (member "--exwm" command-line-args))
+#+end_src
+
+* Package management
+
+Call ~package-quickstart-refresh~ every time ~package-load-list~ is
+modified.
+
+#+begin_src elisp
+(require 'package)
+
+(setq package-enable-at-startup nil
+      ;; call `package-quickstart-refresh' every time `package-load-list'
+      ;; is modified
+      package-quickstart t)
+
+;; [ <repos> configure repositories
+;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
+;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+
+(let* ((protocol (if (and (memq system-type '(windows-nt ms-dos))
+                          (not (gnutls-available-p)))
+                     "http"
+                   "https"))
+       (repos '(("org"          . "://orgmode.org/elpa/")
+                ("melpa"        . "://melpa.org/packages/")
+                ("melpa-stable" . "://stable.melpa.org/packages/")
+                ;; package name conflict: `project'
+                ;; ("marmalade"    . "://marmalade-repo.org/packages/")
+                ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
+  (mapc (lambda (p)
+          (add-to-list
+           'package-archives
+           (cons (car p) (concat protocol (cdr p))) t))
+        repos))
+
+(package-initialize)
+;; sort package list
+(defun package--save-selected-packages-advice (orig-fun value)
+  (funcall orig-fun (sort value 'string-lessp)))
+(advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
+
+(defun package-auto-install-remove ()
+            ;; install packages in list
+            (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
+              (if (cl-every #'identity list-of-boolean)
+                  (message "Nothing to install")
+                (progn
+                  (package-refresh-contents)
+                  (let ((list-of-uninstalled '()))
+                    (cl-mapc #'(lambda (a b)
+                                 (unless a
+                                   (set 'list-of-uninstalled (cons b list-of-uninstalled))))
+                             list-of-boolean package-selected-packages)
+                    (mapc #'package-install list-of-uninstalled)))))
+            ;; uninstall packages not in list
+            ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
+            (package-autoremove))
+
+(add-hook (if exwm-p
+              'exwm-init-hook
+            'emacs-startup-hook)
+          'package-auto-install-remove)
+
+(defun package-emacswiki-update ()
+  (interactive)
+  ;; bookmark+
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-mac.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-mac.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-bmu.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-bmu.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-1.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-1.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-key.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-key.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-lit.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-lit.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-doc.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-doc.el" t)
+  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-chg.el"
+                 "~/.emacs.d/el/packages/bookmark+/bookmark+-chg.el" t)
+  (byte-recompile-directory "~/.emacs.d/el/packages/bookmark+" 0 t)
+  ;; thingatpt+
+  (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
+                 "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
+  (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
 #+end_src
 
 * Better control of garbage collection
 
 #+begin_src elisp
-(add-hook (if (member "--exwm" command-line-args)
+(add-hook (if exwm-p
               'exwm-init-hook
            'emacs-startup-hook)
           `(lambda ()
@@ -129,7 +222,7 @@
 ;; [ Cycle themes
 (require 'ring)
 (defvar theme-ring nil)
-(let ((themes '(whiteboard adwaita misterioso wombat)))
+(let ((themes '(wombat whiteboard adwaita misterioso)))
   (setq theme-ring (make-ring (length themes)))
   (dolist (elem themes) (ring-insert theme-ring elem)))
 
@@ -167,93 +260,6 @@
 
 (global-set-key (kbd "M-s 6 t") #'cycle-themes)
 (global-set-key (kbd "M-s 7 t") #'toggle-transparency)
-#+end_src
-
-* Package management
-
-Call ~package-quickstart-refresh~ every time ~package-load-list~ is
-modified.
-
-#+begin_src elisp
-(require 'package)
-
-(setq package-enable-at-startup nil
-      ;; call `package-quickstart-refresh' every time `package-load-list'
-      ;; is modified
-      package-quickstart t)
-
-;; [ <repos> configure repositories
-;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
-;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-
-(let* ((protocol (if (and (memq system-type '(windows-nt ms-dos))
-                          (not (gnutls-available-p)))
-                     "http"
-                   "https"))
-       (repos '(("org"          . "://orgmode.org/elpa/")
-                ("melpa"        . "://melpa.org/packages/")
-                ("melpa-stable" . "://stable.melpa.org/packages/")
-                ;; package name conflict: `project'
-                ;; ("marmalade"    . "://marmalade-repo.org/packages/")
-                ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
-  (mapc (lambda (p)
-          (add-to-list
-           'package-archives
-           (cons (car p) (concat protocol (cdr p))) t))
-        repos))
-
-(package-initialize)
-;; sort package list
-(defun package--save-selected-packages-advice (orig-fun value)
-  (funcall orig-fun (sort value 'string-lessp)))
-(advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
-
-(defun package-auto-install-remove ()
-            ;; install packages in list
-            (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
-              (if (cl-every #'identity list-of-boolean)
-                  (message "Nothing to install")
-                (progn
-                  (package-refresh-contents)
-                  (let ((list-of-uninstalled '()))
-                    (cl-mapc #'(lambda (a b)
-                                 (unless a
-                                   (set 'list-of-uninstalled (cons b list-of-uninstalled))))
-                             list-of-boolean package-selected-packages)
-                    (mapc #'package-install list-of-uninstalled)))))
-            ;; uninstall packages not in list
-            ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-            (package-autoremove))
-
-(add-hook (if (member "--exwm" command-line-args)
-              'exwm-init-hook
-            'emacs-startup-hook)
-          'package-auto-install-remove)
-
-(defun package-emacswiki-update ()
-  (interactive)
-  ;; bookmark+
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-mac.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-mac.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-bmu.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-bmu.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-1.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-1.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-key.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-key.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-lit.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-lit.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-doc.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-doc.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-chg.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-chg.el" t)
-  (byte-recompile-directory "~/.emacs.d/el/packages/bookmark+" 0 t)
-  ;; thingatpt+
-  (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
-                 "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
-  (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
 #+end_src
 
 * Initial configurations
