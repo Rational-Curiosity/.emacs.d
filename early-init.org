@@ -17,6 +17,32 @@
 (add-hook 'kill-emacs-hook 'save-messages-buffer 92)
 #+end_src
 
+* Benchmark startup advising ~require~
+
+#+begin_src elisp
+(when (member "--benchmark" command-line-args)
+  (defvar benchmark-last-time (current-time))
+  (defvar benchmark-last-feature "early-init")
+  (defvar benchmark-buffer (generate-new-buffer "*Benchmarks*"))
+  (require 'time-date)
+  (defun benchmark-require-advice (orig-fun feature &optional filename noerror)
+    (let* ((time (float-time (time-since benchmark-last-time)))
+           (initial-time (current-time))
+           (result (funcall orig-fun feature filename noerror))
+           (require-time (float-time (time-since initial-time))))
+      (with-current-buffer benchmark-buffer
+        (insert (format "%fs  between `%s' and `%s'\n%fs  loading `%s'\n"
+                        time benchmark-last-feature feature
+                        require-time feature)))
+      (setq benchmark-last-time (current-time)
+            benchmark-last-feature feature)
+      result))
+  (advice-add 'require :around 'benchmark-require-advice)
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (advice-remove 'require 'benchmark-require-advice))))
+#+end_src
+
 * Early command line arguments
 
 #+begin_src elisp
@@ -156,32 +182,6 @@ modified.
 (global-so-long-mode 1)
 #+end_src
 
-* Benchmark startup advising ~require~
-
-#+begin_src elisp
-(when (getenv "BENCHMARK")
-  (defvar benchmark-last-time (current-time))
-  (defvar benchmark-last-feature "early-init")
-  (defvar benchmark-buffer (generate-new-buffer "*Benchmarks*"))
-  (require 'time-date)
-  (defun benchmark-require-advice (orig-fun feature &optional filename noerror)
-    (let* ((time (float-time (time-since benchmark-last-time)))
-           (initial-time (current-time))
-           (result (funcall orig-fun feature filename noerror))
-           (require-time (float-time (time-since initial-time))))
-      (with-current-buffer benchmark-buffer
-        (insert (format "%fs  between `%s' and `%s'\n%fs  loading `%s'\n"
-                        time benchmark-last-feature feature
-                        require-time feature)))
-      (setq benchmark-last-time (current-time)
-            benchmark-last-feature feature)
-      result))
-  (advice-add 'require :around 'benchmark-require-advice)
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (advice-remove 'require 'benchmark-require-advice))))
-#+end_src
-
 * Frame configuration previous GUI activation
 
 #+begin_src elisp
@@ -218,7 +218,9 @@ modified.
 ;; (setq curchg-idle-cursor-type 'hbar
 ;;       curchg-default-cursor-type 'bar
 ;;       curchg-overwrite/read-only-cursor-type 'box)
-(add-to-list 'default-frame-alist '(cursor-color . "red"))
+
+;; (add-to-list 'default-frame-alist '(cursor-color . "red"))
+
 ;; [ Cycle themes
 (require 'ring)
 (defvar theme-ring nil)

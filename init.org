@@ -3314,13 +3314,33 @@ others."
                                             exwm-default-wallpaper-folder)))
     (let* ((paths (directory-files path t "^[^.]"))
            (random-picture (nth (random (length paths)) paths)))
-      (start-process " *feh" " *feh outputs*" "feh" "--bg-fill"
-                     random-picture)
+      (start-process " *feh" " *feh outputs*"
+                     "feh" "--bg-fill" random-picture)
       (let ((inhibit-message t))
         (message "EXWM wallpaper%s: %s" (if reason
                                             (concat " (" reason ")")
                                           "")
-                 (abbreviate-file-name random-picture)))))
+                 (abbreviate-file-name random-picture)))
+      (when (and
+             nil ;; TODO
+             (executable-find "dominant-color"))
+        (set-process-sentinel
+         (start-process "*dominant color*" " *dominant color*"
+                        "dominant-color" random-picture)
+         `(lambda (proc signal)
+            (when (memq (process-status proc) '(exit signal))
+              (with-current-buffer " *dominant color*"
+                (let* ((pos (1- (point-max)))
+                       (color (buffer-substring-no-properties
+                               (progn
+                                 (goto-char pos)
+                                 (beginning-of-line)
+                                 (point))
+                               pos)))
+                  (set-face-background 'default color)
+                  (let ((inhibit-message t))
+                    (message "Setted %s background color" color)))
+                (erase-buffer))))))))
 
   (defun exwm-set-window-transparency (buffer &optional opacity)
     (interactive (list (current-buffer)
@@ -4057,19 +4077,19 @@ others."
       (setq exwm-timer-random-wallpaper nil)))
 
   ;; Applications
-  (add-hook 'exwm-init-hook
-            (lambda ()
-              (dolist (program-and-args-list '(("compton")
-                                               ("volumeicon")
-                                               ("nm-applet")))
-                (let ((executable (car program-and-args-list)))
-                  (if (executable-find executable)
-                      (apply 'start-process
-                             (concat " *" executable)
-                             (concat " *" executable " outputs*")
-                             program-and-args-list)
-                    (message "Unable to find `%s' executable." executable)))))
-            92)
+  ;; (add-hook 'exwm-init-hook
+  ;;           (lambda ()
+  ;;             (dolist (program-and-args-list '(("compton")
+  ;;                                              ("volumeicon")
+  ;;                                              ("nm-applet")))
+  ;;               (let ((executable (car program-and-args-list)))
+  ;;                 (if (executable-find executable)
+  ;;                     (apply 'start-process
+  ;;                            (concat " *" executable)
+  ;;                            (concat " *" executable " outputs*")
+  ;;                            program-and-args-list)
+  ;;                   (message "Unable to find `%s' executable." executable)))))
+  ;;           92)
 
   (when (load "helm-exwm" t t)
     (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source)
@@ -4535,11 +4555,12 @@ This function is part of the `orderless' completion style."
     (completing-read "Choose VPN:"
                      (split-string
                       (shell-command-to-string
-                       "nmcli --colors no -t -f name con")
+                       "nmcli --colors no -t -f name connection")
                       "\n" t)
                      nil t)))
-  (shell-command
-   (concat "nmcli --ask --colors no -t con " up-down " \"" name "\"")))
+  (start-process "*nmcli connect vpn*" " *nmcli connect vpn*"
+                 "nmcli" "--ask" "--colors" "no" "-t" "-w" "0" "connection"
+                 up-down name))
 
 (defun icomplete-vertical-kill-ring-insert (&optional arg)
   "Insert item from kill-ring, selected with completion."
@@ -8444,8 +8465,8 @@ Improve default ia jump at point."
 
 (add-hook 'python-mode-hook custom-lsp-startup-function)
 (setq python-shell-interpreter (or (executable-find "~/bin/python-emacs")
-                                   (executable-find "~/bin/pypy3")
-                                   (executable-find "~/bin/pypy")
+                                   (executable-find "pypy3")
+                                   (executable-find "pypy")
                                    (executable-find "/usr/local/bin/python3")
                                    (executable-find "/usr/bin/python3")
                                    (executable-find "/usr/local/bin/python")
@@ -12406,11 +12427,16 @@ end note
 
 #+begin_src elisp
 ;; Usage: emacs --exwm
-;; first of all in command-switch-alist
 (defun argument--exwm (switch)
   "Command line arg `--exwm'.  SWITCH ignored."
   (exwm-enable))
 (add-to-list 'command-switch-alist '("--exwm" . argument--exwm))
+
+;; Usage: emacs --benchmark
+(defun argument--benchmark (switch)
+  "Command line arg `--benchmark'.  SWITCH ignored."
+  (switch-to-buffer "*Benchmarks*"))
+(add-to-list 'command-switch-alist '("--benchmark" . argument--benchmark))
 
 (defun argument--all (switch)
   "Command line arg `--all'.  SWITCH ignored."
@@ -13646,177 +13672,180 @@ current `default-directory'."
 ** /exwm/
 
 #+begin_src elisp
-(when (bug-check-function-bytecode
-       'exwm-manage--manage-window
-       "CIMUAMbHCYMPAAkgghAAyMkEJIjKMlIDywrMCs3OzwYH0AvR0iAmByIigzIA08rUIojVCs3W1wzPBgclIohy2B3Z2iEpcYgOQAFwQkOkFkDbIIiJFkEOQhZD3AEhiN0BIYjeASGI3wEhiOABIYjhASGI4gEhiOMBIYjkASGI5SAWROYOROcihH8B6A5E5yKEyQAORYOlAOkORQ5GDkcOSEUig8kADkmEfwEOSoR/AQ5LhMkADkyEyQAORg5FPoTJAA5HDkU+g38BCIPdAMbqCYPYAAkggtkAyMkEJIgOTQ5FPoPpAOsBIYjVCs3OzwXQC9EOTQ5FPoP/ANIgggEBDk4mByKI1QrN7M8FIyKIDk8OUA5FPoNJAQ5R7Q5DIZyJ7kgB70gC8EgD8UjyBgcFBPMGCvQiWvClXAUE8wYL9SJa8KVc9okltgaIDlIORT6DZQGJFlPVCs33zwXQDlT4DlUmByKI+QohiPoBDkAiFkD22B0eVvtwIYgq08r8IojmDkT9IomDlgGJDldHV4OWAQ5XAZwWQ4gIg6sBxv4Jg6YBCSCCpwHIyQQkiNUKzffPBdAOWP/uJgciiA5ZDloOW0WJgwICiUDVCs2BZwCBaADugWkABgnRDlyBagAOXYFrAA5egWwADl+BbQAOYIFuAAYTgW8ADmEmEyKIAUG2goLBAYiBcAAgiPkKIYjoDkSBcQAig18C5g5EgXEAIoMpAoFyAAEhiIK6AoFzAIF0AA5DISFygXUA7oF2AIF3AIF4AAUhgXkAIvAkjoF6AAFAgXsAIoiBfAACIYgqiIK6Ag5ihIcCDkuEfgIOTIR+Ag5GDkU+hH4CDkcORT6DhwKBcgABIYiCugKBcwCBdAAOQyEhcoF1AO6BdgCBdwCBeAAFIYF9ACLwJI6BegABQIF7ACKIgXwAAiGIKojmDkSBfgAig80CgX8AASGIgtMCgYAAASGI5g5EgYEAIuYORIGCACJyAoGDAAEOQCJBsgFxiAGD+QKBhAACIYiJgwgDgYUAgWMAIYiJFmMptgLYFmSBhgABIYiBhwABIYhyiYGDAAEOQCJBsgFxiOYORIGIACKEOQOBiQAgg0kDgYoADmUOZiIWZoGLAAEhiIGMAIGNACEqMIc=")
- (defun exwm-manage--manage-window (id)
-  "Manage window ID."
-  (exwm--log "Try to manage #x%x" id)
-  (catch 'return
-    ;; Ensure it's alive
-    (when (xcb:+request-checked+request-check exwm--connection
-              (make-instance 'xcb:ChangeWindowAttributes
-                             :window id :value-mask xcb:CW:EventMask
-                             :event-mask (exwm--get-client-event-mask)))
-      (throw 'return 'dead))
-    ;; Add this X window to save-set.
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:ChangeSaveSet
-                       :mode xcb:SetMode:Insert
-                       :window id))
-    (with-current-buffer (let ((exwm-input--skip-buffer-list-update t))
-                           (generate-new-buffer "*EXWM*"))
-      ;; Keep the oldest X window first.
-      (setq exwm--id-buffer-alist
-            (nconc exwm--id-buffer-alist `((,id . ,(current-buffer)))))
-      (exwm-mode)
-      (setq exwm--id id
-            exwm--frame exwm-workspace--current)
-      (exwm--update-window-type id)
-      (exwm--update-class id)
-      (exwm--update-transient-for id)
-      (exwm--update-normal-hints id)
-      (exwm--update-hints id)
-      (exwm-manage--update-geometry id)
-      (exwm-manage--update-mwm-hints id)
-      (exwm--update-title id)
-      (exwm--update-protocols id)
-      (setq exwm--configurations (exwm-manage--get-configurations))
-      ;; OverrideRedirect is not checked here.
-      (when (and
-             ;; The user has specified to manage it.
-             (not (plist-get exwm--configurations 'managed))
-             (or
-              ;; The user has specified not to manage it.
-              (plist-member exwm--configurations 'managed)
-              ;; This is not a type of X window we can manage.
-              (and exwm-window-type
-                   (not (cl-intersection
-                         exwm-window-type
-                         (list xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY
-                               xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG
-                               xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL))))
-              ;; Check the _MOTIF_WM_HINTS property to not manage floating X
-              ;; windows without decoration.
-              (and (not exwm--mwm-hints-decorations)
-                   (not exwm--hints-input)
-                   ;; Floating windows only
-                   (or exwm-transient-for exwm--fixed-size
-                       (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY
-                             exwm-window-type)
-                       (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG
-                             exwm-window-type)))))
-        (exwm--log "No need to manage #x%x" id)
-        ;; Update struts.
-        (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DOCK exwm-window-type)
-          (exwm--update-struts id))
-        ;; Remove all events
+(with-eval-after-load 'exwm-manage
+  (when (bug-check-function-bytecode
+         'exwm-manage--manage-window
+         "CIMUAMbHCYMPAAkgghAAyMkEJIjKMlIDywrMCs3OzwYH0AvR0iAmByIigzIA08rUIojVCs3W1wzPBgclIohy2B3Z2iEpcYgOQAFwQkOkFkDbIIiJFkEOQhZD3AEhiN0BIYjeASGI3wEhiOABIYjhASGI4gEhiOMBIYjkASGI5SAWROYOROcihH8B6A5E5yKEyQAORYOlAOkORQ5GDkcOSEUig8kADkmEfwEOSoR/AQ5LhMkADkyEyQAORg5FPoTJAA5HDkU+g38BCIPdAMbqCYPYAAkggtkAyMkEJIgOTQ5FPoPpAOsBIYjVCs3OzwXQC9EOTQ5FPoP/ANIgggEBDk4mByKI1QrN7M8FIyKIDk8OUA5FPoNJAQ5R7Q5DIZyJ7kgB70gC8EgD8UjyBgcFBPMGCvQiWvClXAUE8wYL9SJa8KVc9okltgaIDlIORT6DZQGJFlPVCs33zwXQDlT4DlUmByKI+QohiPoBDkAiFkD22B0eVvtwIYgq08r8IojmDkT9IomDlgGJDldHV4OWAQ5XAZwWQ4gIg6sBxv4Jg6YBCSCCpwHIyQQkiNUKzffPBdAOWP/uJgciiA5ZDloOW0WJgwICiUDVCs2BZwCBaADugWkABgnRDlyBagAOXYFrAA5egWwADl+BbQAOYIFuAAYTgW8ADmEmEyKIAUG2goLBAYiBcAAgiPkKIYjoDkSBcQAig18C5g5EgXEAIoMpAoFyAAEhiIK6AoFzAIF0AA5DISFygXUA7oF2AIF3AIF4AAUhgXkAIvAkjoF6AAFAgXsAIoiBfAACIYgqiIK6Ag5ihIcCDkuEfgIOTIR+Ag5GDkU+hH4CDkcORT6DhwKBcgABIYiCugKBcwCBdAAOQyEhcoF1AO6BdgCBdwCBeAAFIYF9ACLwJI6BegABQIF7ACKIgXwAAiGIKojmDkSBfgAig80CgX8AASGIgtMCgYAAASGI5g5EgYEAIuYORIGCACJyAoGDAAEOQCJBsgFxiAGD+QKBhAACIYiJgwgDgYUAgWMAIYiJFmMptgLYFmSBhgABIYiBhwABIYhyiYGDAAEOQCJBsgFxiOYORIGIACKEOQOBiQAgg0kDgYoADmUOZiIWZoGLAAEhiIGMAIGNACEqMIc=")
+    (eval-and-compile
+      (require 'exwm-core))
+    (defun exwm-manage--manage-window (id)
+      "Manage window ID."
+      (exwm--log "Try to manage #x%x" id)
+      (catch 'return
+        ;; Ensure it's alive
+        (when (xcb:+request-checked+request-check exwm--connection
+                  (make-instance 'xcb:ChangeWindowAttributes
+                                 :window id :value-mask xcb:CW:EventMask
+                                 :event-mask (exwm--get-client-event-mask)))
+          (throw 'return 'dead))
+        ;; Add this X window to save-set.
         (xcb:+request exwm--connection
-            (make-instance 'xcb:ChangeWindowAttributes
-                           :window id :value-mask xcb:CW:EventMask
-                           :event-mask
-                           (if (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DOCK
-                                     exwm-window-type)
-                               ;; Listen for PropertyChange (struts) and
-                               ;; UnmapNotify/DestroyNotify event of the dock.
-                               (exwm--get-client-event-mask)
-                             xcb:EventMask:NoEvent)))
-        ;; The window needs to be mapped
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:MapWindow :window id))
-        (with-slots (x y width height) exwm--geometry
-          ;; Center window of type _NET_WM_WINDOW_TYPE_SPLASH
-          (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_SPLASH exwm-window-type)
-            (let* ((workarea (elt exwm-workspace--workareas
-                                  (exwm-workspace--position exwm--frame)))
-                   (x* (aref workarea 0))
-                   (y* (aref workarea 1))
-                   (width* (aref workarea 2))
-                   (height* (aref workarea 3)))
-              (exwm--set-geometry id
-                                  (+ x* (/ (- width* width) 2))
-                                  (+ y* (/ (- height* height) 2))
-                                  nil
-                                  nil))))
-        ;; Check for desktop.
-        (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DESKTOP exwm-window-type)
-          ;; There should be only one desktop X window.
-          (setq exwm-manage--desktop id)
-          ;; Put it at bottom.
-          (xcb:+request exwm--connection
+            (make-instance 'xcb:ChangeSaveSet
+                           :mode xcb:SetMode:Insert
+                           :window id))
+        (with-current-buffer (let ((exwm-input--skip-buffer-list-update t))
+                               (generate-new-buffer "*EXWM*"))
+          ;; Keep the oldest X window first.
+          (setq exwm--id-buffer-alist
+                (nconc exwm--id-buffer-alist `((,id . ,(current-buffer)))))
+          (exwm-mode)
+          (setq exwm--id id
+                exwm--frame exwm-workspace--current)
+          (exwm--update-window-type id)
+          (exwm--update-class id)
+          (exwm--update-transient-for id)
+          (exwm--update-normal-hints id)
+          (exwm--update-hints id)
+          (exwm-manage--update-geometry id)
+          (exwm-manage--update-mwm-hints id)
+          (exwm--update-title id)
+          (exwm--update-protocols id)
+          (setq exwm--configurations (exwm-manage--get-configurations))
+          ;; OverrideRedirect is not checked here.
+          (when (and
+                 ;; The user has specified to manage it.
+                 (not (plist-get exwm--configurations 'managed))
+                 (or
+                  ;; The user has specified not to manage it.
+                  (plist-member exwm--configurations 'managed)
+                  ;; This is not a type of X window we can manage.
+                  (and exwm-window-type
+                       (not (cl-intersection
+                             exwm-window-type
+                             (list xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY
+                                   xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG
+                                   xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL))))
+                  ;; Check the _MOTIF_WM_HINTS property to not manage floating X
+                  ;; windows without decoration.
+                  (and (not exwm--mwm-hints-decorations)
+                       (not exwm--hints-input)
+                       ;; Floating windows only
+                       (or exwm-transient-for exwm--fixed-size
+                           (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY
+                                 exwm-window-type)
+                           (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG
+                                 exwm-window-type)))))
+            (exwm--log "No need to manage #x%x" id)
+            ;; Update struts.
+            (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DOCK exwm-window-type)
+              (exwm--update-struts id))
+            ;; Remove all events
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:ChangeWindowAttributes
+                               :window id :value-mask xcb:CW:EventMask
+                               :event-mask
+                               (if (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DOCK
+                                         exwm-window-type)
+                                   ;; Listen for PropertyChange (struts) and
+                                   ;; UnmapNotify/DestroyNotify event of the dock.
+                                   (exwm--get-client-event-mask)
+                                 xcb:EventMask:NoEvent)))
+            ;; The window needs to be mapped
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:MapWindow :window id))
+            (with-slots (x y width height) exwm--geometry
+              ;; Center window of type _NET_WM_WINDOW_TYPE_SPLASH
+              (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_SPLASH exwm-window-type)
+                (let* ((workarea (elt exwm-workspace--workareas
+                                      (exwm-workspace--position exwm--frame)))
+                       (x* (aref workarea 0))
+                       (y* (aref workarea 1))
+                       (width* (aref workarea 2))
+                       (height* (aref workarea 3)))
+                  (exwm--set-geometry id
+                                      (+ x* (/ (- width* width) 2))
+                                      (+ y* (/ (- height* height) 2))
+                                      nil
+                                      nil))))
+            ;; Check for desktop.
+            (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DESKTOP exwm-window-type)
+              ;; There should be only one desktop X window.
+              (setq exwm-manage--desktop id)
+              ;; Put it at bottom.
+              (xcb:+request exwm--connection
+                  (make-instance 'xcb:ConfigureWindow
+                                 :window id
+                                 :value-mask xcb:ConfigWindow:StackMode
+                                 :stack-mode xcb:StackMode:Below)))
+            (xcb:flush exwm--connection)
+            (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
+            (let ((kill-buffer-query-functions nil)
+                  (exwm-input--skip-buffer-list-update t))
+              (kill-buffer (current-buffer)))
+            (throw 'return 'ignored))
+          (let ((index (plist-get exwm--configurations 'workspace)))
+            (when (and index (< index (length exwm-workspace--list)))
+              (setq exwm--frame (elt exwm-workspace--list index))))
+          ;; Manage the window
+          (exwm--log "Manage #x%x" id)
+          (xcb:+request exwm--connection    ;remove border
               (make-instance 'xcb:ConfigureWindow
-                             :window id
-                             :value-mask xcb:ConfigWindow:StackMode
-                             :stack-mode xcb:StackMode:Below)))
-        (xcb:flush exwm--connection)
-        (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
-        (let ((kill-buffer-query-functions nil)
-              (exwm-input--skip-buffer-list-update t))
-          (kill-buffer (current-buffer)))
-        (throw 'return 'ignored))
-      (let ((index (plist-get exwm--configurations 'workspace)))
-        (when (and index (< index (length exwm-workspace--list)))
-          (setq exwm--frame (elt exwm-workspace--list index))))
-      ;; Manage the window
-      (exwm--log "Manage #x%x" id)
-      (xcb:+request exwm--connection    ;remove border
-          (make-instance 'xcb:ConfigureWindow
-                         :window id :value-mask xcb:ConfigWindow:BorderWidth
-                         :border-width 0))
-      (dolist (button       ;grab buttons to set focus / move / resize
-               (list xcb:ButtonIndex:1 xcb:ButtonIndex:2 xcb:ButtonIndex:3))
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:GrabButton
-                           :owner-events 0 :grab-window id
-                           :event-mask xcb:EventMask:ButtonPress
-                           :pointer-mode xcb:GrabMode:Sync
-                           :keyboard-mode xcb:GrabMode:Async
-                           :confine-to xcb:Window:None :cursor xcb:Cursor:None
-                           :button button :modifiers xcb:ModMask:Any)))
-      (exwm-manage--set-client-list)
-      (xcb:flush exwm--connection)
-      (if (plist-member exwm--configurations 'floating)
-          ;; User has specified whether it should be floating.
-          (if (plist-get exwm--configurations 'floating)
-              (exwm-floating--set-floating id)
-            ;; [ <FIXED>
-            (select-window (frame-selected-window exwm--frame))
-            (exwm-floating--unset-floating id)
-            ;; ] <FIXED>  
-              )
-        ;; Try to determine if it should be floating.
-        (if (and (not exwm-manage-force-tiling)
-                 (or exwm-transient-for exwm--fixed-size
-                     (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY
-                           exwm-window-type)
-                     (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG
-                           exwm-window-type)))
-            (exwm-floating--set-floating id)
-          ;; [ <FIXED>
-          (select-window (frame-selected-window exwm--frame))
-          (exwm-floating--unset-floating id)
-          ;; ] <FIXED>
-          ))
-      (if (plist-get exwm--configurations 'char-mode)
-          (exwm-input-release-keyboard id)
-        (exwm-input-grab-keyboard id))
-      (let ((simulation-keys (plist-get exwm--configurations 'simulation-keys))
-            (prefix-keys (plist-get exwm--configurations 'prefix-keys)))
-        (with-current-buffer (exwm--id->buffer id)
-          (when simulation-keys
-            (exwm-input-set-local-simulation-keys simulation-keys))
-          (when prefix-keys
-            (setq-local exwm-input-prefix-keys prefix-keys))))
-      (setq exwm-workspace--switch-history-outdated t)
-      (exwm--update-desktop id)
-      (exwm-manage--update-ewmh-state id)
-      (with-current-buffer (exwm--id->buffer id)
-        (when (or (plist-get exwm--configurations 'fullscreen)
-                  (exwm-layout--fullscreen-p))
-          (setq exwm--ewmh-state (delq xcb:Atom:_NET_WM_STATE_FULLSCREEN
-                                       exwm--ewmh-state))
-          (exwm-layout-set-fullscreen id))
-        (run-hooks 'exwm-manage-finish-hook))))))
+                             :window id :value-mask xcb:ConfigWindow:BorderWidth
+                             :border-width 0))
+          (dolist (button       ;grab buttons to set focus / move / resize
+                   (list xcb:ButtonIndex:1 xcb:ButtonIndex:2 xcb:ButtonIndex:3))
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:GrabButton
+                               :owner-events 0 :grab-window id
+                               :event-mask xcb:EventMask:ButtonPress
+                               :pointer-mode xcb:GrabMode:Sync
+                               :keyboard-mode xcb:GrabMode:Async
+                               :confine-to xcb:Window:None :cursor xcb:Cursor:None
+                               :button button :modifiers xcb:ModMask:Any)))
+          (exwm-manage--set-client-list)
+          (xcb:flush exwm--connection)
+          (if (plist-member exwm--configurations 'floating)
+              ;; User has specified whether it should be floating.
+              (if (plist-get exwm--configurations 'floating)
+                  (exwm-floating--set-floating id)
+                ;; [ <FIXED>
+                (select-window (frame-selected-window exwm--frame))
+                (exwm-floating--unset-floating id)
+                ;; ] <FIXED>  
+                )
+            ;; Try to determine if it should be floating.
+            (if (and (not exwm-manage-force-tiling)
+                     (or exwm-transient-for exwm--fixed-size
+                         (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY
+                               exwm-window-type)
+                         (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG
+                               exwm-window-type)))
+                (exwm-floating--set-floating id)
+              ;; [ <FIXED>
+              (select-window (frame-selected-window exwm--frame))
+              (exwm-floating--unset-floating id)
+              ;; ] <FIXED>
+              ))
+          (if (plist-get exwm--configurations 'char-mode)
+              (exwm-input-release-keyboard id)
+            (exwm-input-grab-keyboard id))
+          (let ((simulation-keys (plist-get exwm--configurations 'simulation-keys))
+                (prefix-keys (plist-get exwm--configurations 'prefix-keys)))
+            (with-current-buffer (exwm--id->buffer id)
+              (when simulation-keys
+                (exwm-input-set-local-simulation-keys simulation-keys))
+              (when prefix-keys
+                (setq-local exwm-input-prefix-keys prefix-keys))))
+          (setq exwm-workspace--switch-history-outdated t)
+          (exwm--update-desktop id)
+          (exwm-manage--update-ewmh-state id)
+          (with-current-buffer (exwm--id->buffer id)
+            (when (or (plist-get exwm--configurations 'fullscreen)
+                      (exwm-layout--fullscreen-p))
+              (setq exwm--ewmh-state (delq xcb:Atom:_NET_WM_STATE_FULLSCREEN
+                                           exwm--ewmh-state))
+              (exwm-layout-set-fullscreen id))
+            (run-hooks 'exwm-manage-finish-hook)))))))
 #+end_src
 
 * Improvements

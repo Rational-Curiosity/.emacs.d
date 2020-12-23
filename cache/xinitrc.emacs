@@ -9,6 +9,10 @@ xrdb ~/.Xresources
 export VISUAL=emacsclient
 export EDITOR="$VISUAL"
 
+compton -b --config /dev/null --backend xrender
+nm-applet &
+volumeicon &
+
 case "$(uname -n)" in
 OOOOO)
     # Place emacs directory into memory
