@@ -103,7 +103,10 @@
   (if enable
       (prog1
           (setq crap-previous-completion-in-region-function
-                completion-in-region-function
+                (if (eq completion-in-region-function
+                        'crap-completion-in-region)
+                    'completion--in-region
+                  completion-in-region-function)
                 completion-in-region-function
                 'crap-completion-in-region)
         (advice-add 'completion--capf-wrapper :around
@@ -111,7 +114,8 @@
     (advice-remove 'completion--capf-wrapper
                    'completion--capf-wrapper-advice)
     (setq completion-in-region-function
-          crap-previous-completion-in-region-function)))
+          crap-previous-completion-in-region-function
+          crap-previous-completion-in-region-function nil)))
 
 ;;;###autoload
 (define-minor-mode completing-read-at-point-mode
