@@ -523,7 +523,47 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
   (goto-char (random (- (point-max) (point-min)))))
 #+end_src
 
-** Miscellaneous
+* Backup and Undo
+
+#+begin_src elisp
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Backup & Auto save ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; create the autosave dir if necessary, since emacs won't.
+;; with backup directory is not necessary
+(let ((backup-directory (expand-file-name "~/.emacs.d/backup/")))
+  (make-directory backup-directory t)
+
+  (setq undo-limit (eval-when-compile
+                     (* 1024 1024))
+        undo-outer-limit (eval-when-compile
+                           (* 30 1024 1024))
+        undo-strong-limit (eval-when-compile
+                            (* 30 1024 1024))
+        backup-directory-alist
+        `((".*" . ,backup-directory))
+        ;; auto-save-file-name-transforms
+        ;; '((".*" "~/.emacs.d/backup/" t))
+        ;; 10 input events #<file-name>#
+        auto-save-interval 10
+        ;; 10 seconds
+        auto-save-timeout 10
+        ;; create local .#<file-name> to avoid collisions
+        create-lockfiles nil))
+
+(defun buffer-reset-undo (&optional buffer)
+  "Reset BUFFER undo information.
+No argument or nil as argument means do this for the current buffer."
+  (interactive)
+  (with-current-buffer (if buffer (get-buffer buffer) (current-buffer))
+    (setq buffer-undo-list nil)))
+
+(defun undo-advice (&optional arg)
+  (recenter nil t))
+(advice-add #'undo :after 'undo-advice)
+#+end_src
+
+* Miscellaneous
 
 #+begin_src elisp
 ;;;;;;;;;;;;;;;
@@ -540,27 +580,6 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 (defun copy-buffer-file-name-directory ()
   (interactive)
   (kill-new (file-name-directory buffer-file-name)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; Backup & Auto save ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; create the autosave dir if necessary, since emacs won't.
-;; with backup directory is not necessary
-(let ((backup-directory (expand-file-name "~/.emacs.d/backup/")))
-  (make-directory backup-directory t)
-
-  (setq undo-limit (eval-when-compile
-                     (* 1024 1024))
-        backup-directory-alist
-        `((".*" . ,backup-directory))
-        ;; auto-save-file-name-transforms
-        ;; '((".*" "~/.emacs.d/backup/" t))
-        ;; 10 input events #<file-name>#
-        auto-save-interval 10
-        ;; 10 seconds
-        auto-save-timeout 10
-        ;; create local .#<file-name> to avoid collisions
-        create-lockfiles nil))
 
 ;;;;;;;;;;
 ;; Math ;;
@@ -3943,8 +3962,12 @@ others."
           ([?\M->] . [C-end])
           ([?\M-v] . [prior])
           ([?\C-v] . [next])
+          ;; edition
           ([?\C-d] . [delete])
+          ([?\M-d] . [C-delete])
           ([?\C-k] . [S-end delete])
+          ([?\C-u] . [S-home delete])
+          (,(kbd "<C-S-backspace>") . [home S-end delete])
           ;; jumps
           (,(kbd "M-g M-g") . [?\C-g])
           (,(kbd "M-g M-n") . ,(kbd "<f8>"))
