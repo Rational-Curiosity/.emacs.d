@@ -7438,8 +7438,9 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                            last-prompt)
                           last-prompt)  ; or "└─> " or "└─» "
    eshell-prompt-regexp
-   (concat "^" eshell-prompt-string "\\|^[a-z]*>\\{1,4\\} \\|^[^#$
-]* [#$] ")  ; or "└─> "
+   (concat "^" (regexp-quote eshell-prompt-string) ;;"\\|^[a-z]*>\\{1,4\\} \\|^[^#$
+;;]* [#$] "
+           )  ; or "└─> "
    ;; Choose which eshell-funcs to enable
    eshell-funcs (list esh-python esh-git esh-user esh-sysname esh-clock esh-num
                       "\n" esh-dir
