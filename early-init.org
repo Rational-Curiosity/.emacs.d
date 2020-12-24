@@ -17,7 +17,14 @@
 (add-hook 'kill-emacs-hook 'save-messages-buffer 92)
 #+end_src
 
-* Benchmark startup advising ~require~
+* Early command line arguments
+
+#+begin_src elisp
+(defvar exwm-p (member "--exwm" command-line-args))
+#+end_src
+
+* Performance
+** Benchmark startup advising ~require~
 
 #+begin_src elisp
 (when (member "--benchmark" command-line-args)
@@ -43,10 +50,140 @@
               (advice-remove 'require 'benchmark-require-advice))))
 #+end_src
 
-* Early command line arguments
+** Better control of garbage collection
 
 #+begin_src elisp
-(defvar exwm-p (member "--exwm" command-line-args))
+(add-hook (if exwm-p
+              'exwm-init-hook
+           'emacs-startup-hook)
+          `(lambda ()
+             (setq gc-cons-percentage ,gc-cons-percentage
+                   gc-cons-threshold ,gc-cons-threshold))
+          t)
+(setq gc-cons-percentage 0.6
+      gc-cons-threshold (eval-when-compile
+                          (* 10 1024 1024)))
+
+;; (defun gcmh-idle-garbage-collect-advice (orig-fun)
+;;   (unless (or ;; cursor-in-echo-area
+;;            prefix-arg
+;;            (< 0 (length (this-single-command-keys)))
+;;            (active-minibuffer-window))
+;;     (funcall orig-fun)))
+;; (advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
+
+(add-hook 'after-init-hook
+          (lambda ()
+            (defun post-gc-truncate-buffers ()
+              (comint-truncate-buffers "^\\*EGLOT (.*) \\(stderr\\|output\\)\\*$" t))
+            (add-hook 'post-gc-hook 'post-gc-truncate-buffers)))
+#+end_src
+
+** Don't handle file names before init or while require
+
+#+begin_src elisp
+(setq jka-compr-load-suffixes nil)
+(jka-compr-update)
+(defun jka-enable-gz ()
+  (interactive)
+  (unless (member ".gz" jka-compr-load-suffixes)
+    (push ".gz" jka-compr-load-suffixes)
+    (jka-compr-update)))
+
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
+(setq file-name-handler-alist nil)
+
+(defun avoid-file-handler-require-advice (orig-fun &rest args)
+  (let (file-name-handler-alist)
+    (apply orig-fun args)))
+(advice-add #'require :around 'avoid-file-handler-require-advice)
+#+end_src
+
+** Long lines performance
+
+#+begin_src elisp
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)
+(global-so-long-mode 1)
+#+end_src
+
+** Fast pager
+
+#+begin_src elisp
+(defvar-local fast-pager-column-goal 0)
+
+(defun fast-pager-store-column ()
+  (if (not (memq last-command '(fast-pager-page-down fast-pager-page-up fast-pager-row-up fast-pager-row-down)))
+      (setq fast-pager-column-goal (current-column))))
+
+(defun fast-pager-restore-column ()
+  (move-to-column fast-pager-column-goal))
+
+(defun fast-line-move (lines)
+  (unless (line-move-1 lines t)
+    (if (> lines 0)
+        (goto-char (point-max))
+        (goto-char (point-min)))))
+
+(defun fast-pager-scroll-screen (lines)
+  (save-excursion
+    (goto-char (window-start))
+    (fast-line-move lines)
+    (set-window-start (selected-window) (point)))
+  (fast-line-move lines))
+
+(defun fast-pager-page-down ()
+  (interactive)
+  (fast-pager-store-column)
+  (if (pos-visible-in-window-p (point-max))
+      (goto-char (point-max))
+      (fast-pager-scroll-screen (- (1- (window-height))
+                                 next-screen-context-lines)))
+  (fast-pager-restore-column))
+
+(defun fast-pager-page-up ()
+  (interactive)
+  (fast-pager-store-column)
+  (if (pos-visible-in-window-p (point-min))
+      (goto-char (point-min))
+      (fast-pager-scroll-screen (- next-screen-context-lines
+                                 (1- (window-height))))
+      (fast-pager-restore-column)))
+
+(defun fast-pager-row-up ()
+  (interactive)
+  (fast-pager-store-column)
+  (save-excursion
+    (goto-char (window-start))
+    (fast-line-move -1)
+    (set-window-start (selected-window) (point)))
+  (while (save-excursion
+           (fast-line-move (+ scroll-margin 2))
+           (>= (point) (window-end)))
+    (fast-line-move -1))
+  (fast-pager-restore-column))
+
+(defun fast-pager-row-down ()
+  (interactive)
+  (fast-pager-store-column)
+  (save-excursion
+    (goto-char (window-start))
+    (fast-line-move 1)
+    (set-window-start (selected-window) (point)))
+  (while (save-excursion
+           (fast-line-move (- 0 scroll-margin))
+           (< (point) (window-start)))
+    (fast-line-move 1))
+  (fast-pager-restore-column))
+
+(global-set-key [remap scroll-up-command] 'fast-pager-page-down)
+(global-set-key [remap scroll-down-command] 'fast-pager-page-up)
+(global-set-key (kbd "<S-up>") 'fast-pager-row-up)
+(global-set-key (kbd "C-S-p") 'fast-pager-row-up)
+(global-set-key (kbd "<S-down>") 'fast-pager-row-down)
+(global-set-key (kbd "C-S-n") 'fast-pager-row-down)
 #+end_src
 
 * Package management
@@ -134,52 +271,6 @@ modified.
   (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
                  "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
   (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
-#+end_src
-
-* Better control of garbage collection
-
-#+begin_src elisp
-(add-hook (if exwm-p
-              'exwm-init-hook
-           'emacs-startup-hook)
-          `(lambda ()
-             (setq gc-cons-percentage ,gc-cons-percentage
-                   gc-cons-threshold ,gc-cons-threshold))
-          t)
-(setq gc-cons-percentage 0.6
-      gc-cons-threshold (eval-when-compile
-                          (* 10 1024 1024)))
-
-;; (defun gcmh-idle-garbage-collect-advice (orig-fun)
-;;   (unless (or ;; cursor-in-echo-area
-;;            prefix-arg
-;;            (< 0 (length (this-single-command-keys)))
-;;            (active-minibuffer-window))
-;;     (funcall orig-fun)))
-;; (advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
-
-(add-hook 'after-init-hook
-          (lambda ()
-            (defun post-gc-truncate-buffers ()
-              (comint-truncate-buffers "^\\*EGLOT (.*) \\(stderr\\|output\\)\\*$" t))
-            (add-hook 'post-gc-hook 'post-gc-truncate-buffers)))
-#+end_src
-
-* Don't handle file names before init
-
-#+begin_src elisp
-(add-hook 'after-init-hook
-          `(lambda ()
-             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
-(setq file-name-handler-alist nil)
-#+end_src
-
-* Long lines performance
-
-#+begin_src elisp
-(setq-default bidi-paragraph-direction 'left-to-right)
-(setq bidi-inhibit-bpa t)
-(global-so-long-mode 1)
 #+end_src
 
 * Frame configuration previous GUI activation
