@@ -7439,7 +7439,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
     (when eshell-current-command-start-time
       (eshell-interactive-print
        (propertize
-        (format "\n>  Exit code: %i   Elapsed time: %.3fs  <"
+        (format "\n<Exit code: %i  Elapsed time: %.3fs>"
                 eshell-last-command-status
                 (float-time
                  (time-subtract (current-time)
