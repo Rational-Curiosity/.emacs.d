@@ -2248,8 +2248,8 @@ This function avoid error and insert character at the end."
 (global-set-key (kbd "M-s 7 c") #'toggle-buffer-coding-system)
 (global-set-key (kbd "M-s 7 i") #'toggle-case-fold-search)
 (global-set-key (kbd "M-s k w") #'backward-kill-word)
-;; (global-set-key (kbd "M-n") #'forward-paragraph)
-;; (global-set-key (kbd "M-p") #'backward-paragraph)
+(global-set-key (kbd "M-n") #'forward-paragraph)
+(global-set-key (kbd "M-p") #'backward-paragraph)
 (global-set-key (kbd "C-<left>") #'left-word)
 (global-set-key (kbd "C-<right>") #'right-word)
 (global-set-key (kbd "<S-delete>") #'kill-sexp)
@@ -8469,26 +8469,258 @@ Improve default ia jump at point."
   (speedbar-enable-update))
 #+end_src
 
-*** TODO /python-mode/                                             :programming:
+*** /cc-mode/                                                      :programming:
 
 #+begin_src elisp
-(defvar custom-lsp-startup-function 'eglot-ensure
-  "'eglot-ensure or 'lsp-deferred")
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 
-(cl-case custom-lsp-startup-function
-  ('eglot-ensure
-   ;; eglot
-   (with-eval-after-load 'eglot
-     (require 'eglot-config)))
-  ('lsp-deferred
-   ;; lsp
-   (with-eval-after-load 'lsp-mode
-     (require 'lsp-config))
-   ;; dap
-   (with-eval-after-load 'dap-mode
-     (require 'dap-config))))
+(defun c-c++-config ()
+  ;; run only once
+  (remove-hook 'c-mode-hook 'c-c++-config)
+  (remove-hook 'c++-mode-hook 'c-c++-config)
+  (message "Importing c-c++-config")
 
-(add-hook 'python-mode-hook custom-lsp-startup-function)
+  (defvar c-c++-include-paths nil)
+  (defvar c-c++-default-mode-for-headers 'c++-mode)
+  (defvar c-c++-enable-clang-support t)
+
+  (require 'faces)
+  (require 'find-file)
+  ;; Directorios para busqueda del archivo dual
+  (dolist (path c-c++-include-paths)
+    (add-to-list 'cc-search-directories path))
+
+  ;; ;;;;;;;; ;;
+  ;; C macros ;;
+  ;; ;;;;;;;; ;;
+  ;; Create Header Guards
+  (defun c-c++-header-guards ()
+    "Prevent read more than one time a c or c++ header file."
+    (interactive)
+    (if buffer-file-name
+        (let*
+            ((name (file-name-nondirectory
+                    (file-name-sans-extension buffer-file-name)))
+             (proj-name (condition-case nil
+                            (replace-regexp-in-string
+                             (regexp-quote (file-name-directory (oref (ede-current-project) file))) ""
+                             (file-name-sans-extension buffer-file-name) nil t)
+                          (error name)))
+             (ext   (file-name-extension buffer-file-name))
+             (label (concat "__" (upcase
+                                  (replace-regexp-in-string "[^a-zA-Z0-9_]" "_" proj-name t t))
+                            "_" (upcase ext) "__")))
+          (save-excursion
+            (when (< (buffer-size) 5)
+              (insert "\nclass " (upcase-initials name) "\n{\n\npublic:\n\n};\n"))
+            (goto-char (point-min))
+            (insert "#ifndef " label "\n#define " label "\n\n")
+            (goto-char (point-max))
+            (insert "\n\n#endif" " // " label)))
+      (message (concat "Buffer " (buffer-name) " must have a filename"))))
+
+  ;; supply by package
+  ;; (defun toggle-camelcase-underscores ()
+  ;;   "Toggle between camelcase and underscore notation for the symbol at point."
+  ;;   (interactive)
+  ;;   (save-excursion
+  ;;     (let* ((bounds (bounds-of-thing-at-point 'symbol))
+  ;;            (start (car bounds))
+  ;;            (end (cdr bounds))
+  ;;            (currently-using-underscores-p (progn (goto-char start)
+  ;;                                                  (re-search-forward "_" end t))))
+  ;;       (if currently-using-underscores-p
+  ;;           (progn
+  ;;             (upcase-initials-region start end)
+  ;;             (replace-string "_" "" nil start end)
+  ;;             (downcase-region start (1+ start)))
+  ;;         (replace-regexp "\\([A-Z]\\)" "_\\1" nil (1+ start) end)
+  ;;         (downcase-region start (cdr (bounds-of-thing-at-point 'symbol)))))))
+
+  ;; ;;; ;;
+  ;; C++ ;;
+  ;; ;;; ;;
+  (defun avoid-shared-ptr-by-ref (arg)
+    (interactive "P")
+    (goto-char (point-min))
+    (let ((counts 0))
+      (while (search-forward-regexp "> *&[^&]" nil t)
+        (let ((pos-end (- (point) 2)))
+          (goto-char (match-beginning 0))
+          (let ((angles 1))
+            (while (< 0 angles)
+              (backward-char 1)
+              (if (char-equal (char-after (point)) ?<)
+                  (cl-decf angles)
+                (if (char-equal (char-after (point)) ?>)
+                    (cl-incf angles))))
+            (search-backward-regexp "[^_a-zA-Z0-9: \t\n]" nil t)
+            (if (or (char-equal (char-after (point)) ?,)
+                    (char-equal (char-after (point)) ?\())
+                (let ((pos-beg (point)))
+                  (when (and
+                         (cl-search
+                          "shared_ptr"
+                          (buffer-substring-no-properties pos-beg pos-end))
+                         (or arg
+                             (progn
+                               (goto-char pos-end)
+                               (pulse-momentary-highlight-region (1+ pos-beg)
+                                                                 (1+ pos-end) 'region)
+                               (y-or-n-p "Delete match? "))))
+                    (delete-region pos-end (1+ pos-end))
+                    (save-restriction
+                      (narrow-to-region pos-beg pos-end)
+                      (goto-char (point-min))
+                      (if (search-forward-regexp "[^a-zA-Z_]\\(const +\\)[a-zA-Z_:]" nil t)
+                          (delete-region (match-beginning 1) (match-end 1))))
+                    (cl-incf counts)))))
+          (goto-char pos-end)))
+      (message "Found %i pointers by ref" counts)))
+
+  ;; ;;;; ;;
+  ;; Keys ;;
+  ;; ;;;; ;;
+  (global-set-key (kbd "C-x O") 'ff-find-other-file)
+
+  (dolist (mode-map (list c-mode-map c++-mode-map))
+    (define-key mode-map [C-M-tab] 'clang-format-region)
+    (define-key mode-map [(shift return)] 'c-context-line-break)
+    (define-key mode-map (kbd "C-c c h") 'c-c++-header-guards)
+    (define-key mode-map (kbd "M-b") 'c-beginning-of-statement)
+    (define-key mode-map (kbd "M-b") 'c-end-of-statement))
+  ;; (define-key c-mode-map (kbd "C-c c h") 'c-c++-header-guards)
+  ;; (define-key c++-mode-map (kbd "C-c c h") 'c-c++-header-guards)
+  ;; (define-key c-mode-map [(shift return)] 'c-context-line-break)
+  ;; (define-key c++-mode-map [(shift return)] 'c-context-line-break)
+
+  ;; After semantic
+  ;; After ede-projects-config
+
+  ;; ;;;;;;;;;;;;;;;;;;;; ;;
+  ;; cmake and make utils ;;
+  ;; ;;;;;;;;;;;;;;;;;;;; ;;
+  (message "Importing cmake-make-config")
+  ;; cmake-make begin
+  (require 's)
+  (require 'cmake-mode)
+
+  ;; ;;;;;;;;;;;;;;;;; ;;
+  ;; Smart compilation ;;
+  ;; ;;;;;;;;;;;;;;;;; ;;
+  (require 'ede)
+  (defun make-targets (&optional file)
+    "Get the targets of the Makefile FILE."
+    (butlast (split-string (shell-command-to-string (if file (concat "targets " file) "targets")) "\n")))
+
+  (defun compilation-execute (&optional prefix)
+    "Execute compilation command replacing $p $n $b.  PREFIX ignored."
+    (interactive)
+    (let ((bufferpathname (or buffer-file-name ""))
+          (buffername (or (buffer-name) ""))
+          (bufferbasename (or (file-name-base) ""))
+          (command (read-shell-command "Shell command: " prefix nil nil)))
+      (compilation-start (concat "LC_ALL=C " (replace-regexp-in-string "\$p" (concat "\"" bufferpathname "\"")
+                                                                       (replace-regexp-in-string "\$n" (concat "\"" buffername "\"")
+                                                                                                 (replace-regexp-in-string "\$b" (concat "\"" bufferbasename "\"")
+                                                                                                                           command t t) t t) t t)))))
+
+  (defun recursive-find-to-root (file-list directory)
+    "Search FILE-LIST in paths from DIRECTORY to root."
+    (let ((dir directory))
+      (cl-block nested-while
+        (while (not (string-equal dir "/"))
+          (progn
+            (dolist (element file-list)
+              (let ((path-file (concat dir element)))
+                (message path-file)
+                (when (file-exists-p path-file)
+                  (cl-return-from nested-while path-file))))
+            (setq dir (concat (expand-file-name (concat dir "..")) "/"))))
+        (error "Project file not found"))))
+
+  (defun cmake-make-path-file (&optional directory)
+    "Find Makefile or CMakelists.txt path starting in DIRECTORY."
+    (cond
+     (directory
+      (recursive-find-to-root '("CMakeLists.txt" "Makefile" "makefile") directory))
+     ((ede-current-project)
+      (oref (ede-current-project) file))
+     ;; ((projectile-project-root)
+     ;;  (let ((project-root (projectile-project-root)))
+     ;;    (dolist (element '("CMakeLists.txt" "Makefile" "makefile"))
+     ;;      (let ((path-file (concat project-root element)))
+     ;;        (when (file-exists-p path-file)
+     ;;          (return path-file))))))
+     (t
+      (recursive-find-to-root '("CMakeLists.txt" "Makefile" "makefile") default-directory))))
+  
+  (defun cmake-make-conf ()
+    "Get current compilation mode.  Examples: debug, release..."
+    (cond
+     ((ede-current-project)
+      (oref (ede-current-project) configuration-default))
+     (t "debug")))
+
+  (defun make-completing-read (file last)
+    "Read target with completion.  Targets for completing are in FILE.  LAST is last selection."
+    (let ((selection (completing-read-multiple "Select target: " (make-targets file) nil nil (s-replace " " "," last))))
+      (if (listp selection)
+          (mapconcat 'identity selection " ")
+        selection)))
+
+  (defvar make-target-last "")
+  (defun compile-cmake-make (&optional directory)
+    "Compile with cmake or make inside DIRECTORY."
+    (interactive
+     (cond
+      ((equal current-prefix-arg '(4))
+       (list
+        (read-directory-name "Initial directory: ")))))
+    (let* ((path-file (cmake-make-path-file directory))
+           (path (file-name-directory path-file))
+           (file (file-name-nondirectory path-file))
+           (conf (cmake-make-conf)))
+      (cond
+       ((string-equal file "CMakeLists.txt")
+        (let ((dir (concat path conf "/")))
+          (unless (file-exists-p dir)
+            (make-directory dir))
+          (let ((default-directory dir))
+            (when (file-newer-than-file-p "../CMakeLists.txt" "CMakeCache.txt")
+              (progn
+                (when (file-exists-p "CMakeCache.txt") (delete-file "CMakeCache.txt"))
+                (when (file-exists-p "Makefile") (delete-file "Makefile"))
+                (when (file-exists-p "cmake_install.cmake") (delete-file "cmake_install.cmake"))
+                (when (file-exists-p "CTestTestfile.cmake") (delete-file "CTestTestfile.cmake"))
+                (when (file-exists-p "DartConfiguration.tcl") (delete-file "DartConfiguration.tcl"))
+                (when (file-exists-p "CMakeFiles") (delete-directory "CMakeFiles" t))
+                (when (file-exists-p "Testing") (delete-directory "Testing" t))))
+            (unless (file-exists-p "CMakeCache.txt")
+              (cond ((string-equal (downcase conf) "debug")
+                     (compilation-execute "cmake -DCMAKE_BUILD_TYPE=Debug .."))
+                    ((string-equal (downcase conf) "release")
+                     (compilation-execute "cmake -DCMAKE_BUILD_TYPE=Release .."))
+                    (t (compilation-execute "cmake .."))))
+            (set 'make-target-last (make-completing-read file make-target-last))
+            (compilation-execute (concat "make -k " make-target-last " ")))))
+       ((string-equal (downcase (substring file 0 8)) "makefile")
+        (let ((default-directory path))
+          (set 'make-target-last (make-completing-read file make-target-last))
+          (compilation-execute (concat "make -k -f " file " " make-target-last " ")))))))
+
+  ;; Teclas
+  (with-eval-after-load 'cc-mode
+    (define-key c++-mode-map (kbd "C-c m c") 'compile-cmake-make)
+    (define-key c-mode-map (kbd "C-c m c") 'compile-cmake-make)))
+
+(add-hook 'c-mode-hook   'c-c++-config)
+(add-hook 'c++-mode-hook 'c-c++-config)
+#+end_src
+
+*** /python-mode/                                                  :programming:
+
+#+begin_src elisp
 (add-hook 'python-mode-hook (lambda ()
                               (setq forward-sexp-function nil)))
 (setq python-shell-interpreter (or (executable-find "~/bin/python-emacs")
@@ -8700,6 +8932,18 @@ if __name__ == \"__main__\":
   ;;  (add-hook 'python-mode-hook #'detect-python-project-version)
   (with-eval-after-load 'dap-mode
     (require 'dap-python)))
+#+end_src
+
+*** WAIT /python-integrated/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
+
+#+begin_src elisp
+;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
+;(autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
+;(add-to-list 'auto-mode-alist '("\\.py\\." . python-integrated-mode))
+;(require 'python-integrated)
 #+end_src
 
 *** /flymake/
@@ -9151,24 +9395,7 @@ if __name__ == \"__main__\":
       (helm-posframe-enable)))
   ;; ]
 
-  (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers)
-
-  (with-eval-after-load 'machine-config
-    (define-key global-map [remap find-file] 'helm-find-files)
-    (define-key global-map [remap occur] 'helm-occur)
-    (define-key global-map [remap list-buffers] 'helm-buffers-list)
-    (define-key global-map [remap yank-pop] 'helm-show-kill-ring)
-    (define-key global-map [remap kmacro-end-and-call-macro] 'helm-execute-kmacro)
-    (define-key global-map [remap switch-to-buffer] 'helm-mini)
-    (define-key global-map [remap insert-register] 'helm-register)
-    (define-key global-map [remap bookmark-jump] 'helm-filtered-bookmarks)
-    (define-key global-map [remap dabbrev-expand] 'helm-dabbrev)
-    (define-key global-map [remap apropos-command] 'helm-apropos)
-    (define-key global-map [remap jump-to-register] 'helm-register)
-    (define-key global-map [remap find-dired] (if (fboundp 'helm-fd) 'helm-fd 'helm-find))
-    (unless (boundp 'completion-in-region-function)
-      (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
-      (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point))))
+  (add-hook 'helm-after-initialize-hook #'helm-init-relative-display-line-numbers))
 
 #+end_src
 
@@ -11089,6 +11316,270 @@ Switch the current window to the previous buffer."
 #+end_src
 
 ** Not always required
+*** Language server protocol /lsp-mode/ or /eglot/                 :programming:
+
+#+begin_src elisp
+(defvar custom-lsp-startup-function 'eglot-ensure
+  "'eglot-ensure or 'lsp-deferred")
+
+(add-hook 'c-mode-hook   custom-lsp-startup-function)
+(add-hook 'c++-mode-hook custom-lsp-startup-function)
+(add-hook 'python-mode-hook custom-lsp-startup-function)
+
+(cl-case custom-lsp-startup-function
+  ('eglot-ensure
+   ;; ;;;;; ;;
+   ;; eglot ;;
+   ;; ;;;;; ;;
+   (with-eval-after-load 'eglot
+     (message "Importing eglot-config")
+
+     (defun eglot-xor-semantic ()
+       (semantic-mode (if (eglot-managed-p)
+                          -1
+                        1)))
+     (setq mode-line-misc-info
+           (delq (assoc 'eglot--managed-mode
+                        mode-line-misc-info)
+                 mode-line-misc-info)
+           ;; performance
+           read-process-output-max (* 3 1024 1024)
+           ;; eglot
+           eglot-events-buffer-size 50000
+           eglot-sync-connect nil
+           eglot-ignored-server-capabilites '(:documentHighlightProvider)
+           eglot-managed-mode-hook (nconc
+                                    '(eglot-xor-semantic
+                                      (lambda ()
+                                        (eldoc-mode -1)))
+                                    eglot-managed-mode-hook))))
+  ('lsp-deferred
+   ;; ;;; ;;
+   ;; lsp ;;
+   ;; ;;; ;;
+   (with-eval-after-load 'lsp-mode
+     (message "Importing lsp-config")
+
+     (add-hook 'lsp-after-open-hook #'lsp-enable-imenu)
+     (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
+     (when (fboundp 'lsp-origami-try-enable)
+       (add-hook 'lsp-after-open-hook #'lsp-origami-try-enable))
+
+     (set-face-attribute 'lsp-face-highlight-read nil
+                         :inherit 'unspecified
+                         :underline t
+                         :weight 'bold
+                         :background 'unspecified)
+     (set-face-attribute 'lsp-face-highlight-write nil
+                         :inherit 'unspecified
+                         :underline t
+                         :weight 'bold
+                         :background 'unspecified)
+
+     (when (bug-check-function-bytecode
+            'lsp-mode-line
+            "wCCJgxcAwcLDAyLExcYDAyO2glCCHgDBx8jJyiNQhw==")
+       (require 'subr-x)
+       (defun lsp-mode-line ()
+         "Construct the mode line text."
+         (if-let (workspaces (lsp-workspaces))
+             (string-join (--map (format "[%s]" (lsp--workspace-print it))
+                                 workspaces))
+           (propertize "[Disconnected]" 'face 'warning))))
+
+     (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
+           ;; performance
+           read-process-output-max (* 3 1024 1024)
+           lsp-completion-provider :capf
+           lsp-idle-delay 2.0
+           lsp-enable-file-watchers nil
+           lsp-file-watch-threshold 500
+           ;; snippet is slow
+           lsp-enable-snippet nil
+           ;; lsp log
+           lsp-log-io nil    ;; `(lsp-workspace-show-log)' Display the log buffer
+           lsp-log-max 1000  ;; Max lines in the log buffer
+           ;; lsp
+           lsp-keymap-prefix "s-l"
+           ;; flycheck option bug https://github.com/emacs-lsp/lsp-ui/issues/347
+           lsp-diagnostics-provider :flymake
+           lsp-modeline-code-actions-enable nil
+           lsp-modeline-diagnostics-enable nil
+           lsp-file-watch-ignored (cons "[/\\\\]tmp$"
+                                        lsp-file-watch-ignored)
+           ;; signature
+           lsp-signature-render-documentation nil)
+
+     (if (null (require 'lsp-pyls nil 'noerror))
+         (message-color #("ERROR missing package `lsp-pyls'" 0 5 (face error)))
+       ;; lsp-pyls
+       ;; [ Fix https://github.com/palantir/python-language-server/issues/771
+       ;;   changing autopep8 for yapf
+       (setq lsp-pyls-plugins-autopep8-enabled nil
+             lsp-pyls-plugins-yapf-enabled t)
+       ;; ]
+       )
+
+     ;; [ lsp-ui
+     (if (require 'lsp-ui nil 'noerror)
+         (progn (add-hook 'lsp-mode-hook #'lsp-ui-mode)
+
+                (setq lsp-ui-doc-enable nil
+                      lsp-signature-auto-activate nil ;; <xor signature>
+                      lsp-ui-doc-include-signature t  ;; <xor signature>
+                      lsp-ui-doc-position 'top
+                      lsp-ui-doc-alignment 'frame
+                      lsp-ui-doc-max-height 10
+                      lsp-ui-doc-max-width 80
+                      ;; lsp-ui-sideline
+                      lsp-ui-sideline-delay 0.5
+                      lsp-ui-sideline-show-hover t)
+                (when (or (eq lsp-diagnostics-provider :flymake)
+                          (and (eq lsp-diagnostics-provider :auto)
+                               (not (locate-library "flycheck"))))
+                  ;; not working with flymake
+                  (setq lsp-ui-sideline-show-diagnostics nil))
+
+                (defun lsp-ui-or-xref-find-definitions ()
+                  (interactive)
+                  (let (result)
+                    (condition-case nil
+                        (setq result (call-interactively
+                                      'lsp-ui-peek-find-definitions))
+                      (error (call-interactively 'xref-find-definitions)))
+                    (if (and (stringp result)
+                             (string-equal "Not found" (substring result 0 9)))
+                        (call-interactively 'xref-find-definitions))))
+
+                (defun lsp-ui-or-xref-find-references ()
+                  (interactive)
+                  (let (result)
+                    (condition-case nil
+                        (setq result (call-interactively
+                                      'lsp-ui-peek-find-references))
+                      (error (call-interactively 'xref-find-references)))
+                    (if (and (stringp result)
+                             (string-equal "Not found" (substring result 0 9)))
+                        (call-interactively 'xref-find-references))))
+
+                (define-key lsp-ui-mode-map [remap xref-find-definitions]
+                  'lsp-ui-or-xref-find-definitions)
+                (define-key lsp-ui-mode-map [remap xref-find-references]
+                  'lsp-ui-or-xref-find-references))
+
+       (defun lsp-or-xref-find-definition ()
+         (interactive)
+         (let (result)
+           (condition-case nil
+               (setq result (call-interactively 'lsp-find-definition))
+             (error (call-interactively 'xref-find-definitions)))
+           (if (and (stringp result)
+                    (string-equal "Not found" (substring result 0 9)))
+               (call-interactively 'xref-find-definitions))))
+
+       (defun lsp-or-xref-find-references ()
+         (interactive)
+         (let (result)
+           (condition-case nil
+               (setq result (call-interactively 'lsp-find-references))
+             (error (call-interactively 'xref-find-references)))
+           (if (and (stringp result)
+                    (string-equal "Not found" (substring result 0 9)))
+               (call-interactively 'xref-find-references))))
+
+       (define-key lsp-mode-map [remap xref-find-definitions]
+         'lsp-or-xref-find-definition)
+       (define-key lsp-mode-map [remap xref-find-references]
+         'lsp-or-xref-find-references))
+     ;; ]
+
+     ;; [ company-lsp -- not supported by lsp-mode
+     ;; (when (and (featurep 'company)
+     ;;            (load "company-lsp" t))
+     ;;   (push 'company-lsp company-backends)
+     ;;   (setq company-lsp-cache-candidates 'auto))
+     ;; ]
+
+     ;; [ dap-mode
+     (when (locate-library "dap-mode")
+       (defun dap-enable-which-key-integration ()
+         (apply
+          #'which-key-add-major-mode-key-based-replacements
+          major-mode
+          (lsp--prepend-prefix
+           (list "d" "debugging"
+                 "d m" "dap hydra menu"
+                 "d d" "start dap debugging"
+                 "d t" "toggle dap tooltip mode"))))
+       (add-hook 'lsp-mode-hook #'dap-enable-which-key-integration)
+       (define-key lsp-command-map (kbd "d m") #'dap-hydra)
+       (define-key lsp-command-map (kbd "d d") #'dap-debug)
+       (define-key lsp-command-map (kbd "d t") #'dap-tooltip-mode))
+     ;; ]
+     )
+   ;; dap
+   (with-eval-after-load 'dap-mode
+     (message "Importing dap-config")
+
+     (setq dap-python-terminal "xterm -e "
+           dap-auto-configure-features nil
+           ;; or '(sessions locals breakpoints expressions)
+           )
+
+     (dap-ui-mode))))
+#+end_src
+
+*** /rust/                                                         :programming:
+
+#+begin_src elisp
+;; rustic has automatic configuration
+(with-eval-after-load 'rustic
+  (message "Importing rustic config")
+  (setq rustic-lsp-client 'eglot))
+(with-eval-after-load 'rust-mode
+  (message "Importing rust-mode config")
+  (add-hook 'rust-mode-hook custom-lsp-startup-function))
+#+end_src
+
+*** /java/                                                         :programming:
+
+#+begin_src elisp
+(add-hook 'java-mode-hook (lambda ()
+                            (if (eq custom-lsp-startup-function 'lsp-deferred)
+                                (when (require 'lsp-java nil t)
+                                  (lsp-deferred))
+                              (eglot-ensure))))
+(defun load-once-java-stuff ()
+  (with-eval-after-load 'dap-mode
+    (require 'dap-java))
+  (remove-hook 'java-mode-hook 'load-once-java-stuff))
+(add-hook 'java-mode-hook 'load-once-java-stuff)
+#+end_src
+
+*** /javascript/                                                   :programming:
+
+#+begin_src elisp
+(defun language-server-protocol-js-cond ()
+  (unless (or (derived-mode-p 'ein:ipynb-mode)
+              (derived-mode-p 'json-mode))
+    (funcall custom-lsp-startup-function)))
+(add-hook 'js-mode-hook #'language-server-protocol-js-cond)
+(with-eval-after-load 'js
+  (with-eval-after-load 'dap-mode
+    (require 'dap-firefox)
+    (dap-firefox-setup)))
+#+end_src
+
+*** /php/                                                          :programming:
+
+#+begin_src elisp
+(add-hook 'php-mode-hook custom-lsp-startup-function)
+(with-eval-after-load 'php-mode
+  (with-eval-after-load 'dap-mode
+    (require 'dap-php))
+  (require 'php-config))
+#+end_src
+
 *** /minimap/
 
 #+begin_src elisp
@@ -11223,7 +11714,1738 @@ Switch the current window to the previous buffer."
   (define-key yaml-mode-map "\C-m" 'newline-and-indent))
 #+end_src
 
-*** TODO /rst/
+*** /org/                                                             :markdown:
+
+#+begin_src elisp
+(setq org-replace-disputed-keys t)
+(unless (fboundp 'org-mode)
+  (message "`org-mode' not found")
+  (autoload 'org-mode "org"))
+(with-eval-after-load 'org
+  (message "Importing org-config")
+  ;; Spell checker
+  (add-hook 'org-mode-hook 'flyspell-mode)
+  (add-hook 'org-mode-hook
+            (defun org-mode-modify-syntax-entry<-and-continuation-lines ()
+              (modify-syntax-entry ?< "_" org-mode-syntax-table)))
+  ;; (plist-put org-format-latex-options :scale 1.) ;; default
+
+  ;; ;;;;; ;;
+  ;; Faces ;;
+  ;; ;;;;; ;;
+  (defface org-checkbox-todo
+    '((t (:inherit org-todo)))
+    "Face for the text part of an unchecked org-mode checkbox."
+    :group 'org-faces)
+  (font-lock-add-keywords
+   'org-mode
+   '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?: \\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+      1 'org-checkbox-todo prepend))
+   'append)
+
+  (defface org-checkbox-partial
+    '((t (:foreground "gold" :inherit org-todo)))
+    "Face for the text part of a checked org-mode checkbox."
+    :group 'org-faces)
+  (font-lock-add-keywords
+   'org-mode
+   '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:-\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+      1 'org-checkbox-partial prepend))
+   'append)
+
+  (defface org-checkbox-done
+    '((t (:inherit org-done)))
+    "Face for the text part of a checked org-mode checkbox."
+    :group 'org-faces)
+  (font-lock-add-keywords
+   'org-mode
+   '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:X\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
+      1 'org-checkbox-done prepend))
+   'append)
+
+
+  (set-face-attribute 'org-scheduled-previously nil :foreground "rosy brown")
+  (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
+  (set-face-attribute 'org-warning nil :foreground "gold")
+  (set-face-attribute 'org-tag nil :bold nil)
+  (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")
+  (set-face-attribute 'org-level-2 nil :bold t :foreground "medium turquoise")
+  (set-face-attribute 'org-level-3 nil :bold t :foreground "pale turquoise")
+
+  (set-face-attribute 'org-block-begin-line nil
+                      :underline "#A7A6AA")  ;; :foreground "#388EFF" :background "#222210")
+
+  ;; (set-face-attribute 'org-block nil
+  ;;                     :background "#292929")
+
+  (set-face-attribute 'org-block-end-line nil
+                      :underline nil
+                      :overline "#A7A6AA") ;; :foreground "#388EFF" :background "#222210")
+
+  (org-link-set-parameters
+   "file"
+   :face (lambda (path) (if (file-exists-p path) 'org-link 'org-warning)))
+
+  (require 'org-table)
+  (setq org-hide-emphasis-markers nil
+        org-hide-leading-stars t
+        org-priority-faces
+        '((?A . "#C39BD3")
+          (?B . "#AF7AC5")
+          (?C . "#9B59B6")
+          (?D . "#884EA0")
+          (?E . "#76448A")
+
+          (?F . "#85C1E9")
+          (?G . "#5DADE2")
+          (?H . "#3498DB")
+          (?I . "#2E86C1")
+          (?J . "#2874A6")
+
+          (?K . "#82E0AA")
+          (?L . "#58D68D")
+          (?M . "#2ECC71")
+          (?N . "#28B463")
+          (?O . "#239B56"))
+        org-emphasis-alist
+        '(("*" (bold :foreground "#AAF") bold)
+          ("/" (italic :foreground "#FF8") italic)
+          ("_" underline)
+          ("=" org-verbatim verbatim)
+          ("~" (org-code :box t) org-code)
+          ("+" (:strike-through t)))
+        ;; TODO keyword faces
+        org-todo-keyword-faces
+        '(("TODO" :foreground "orange red" :weight bold)               ;; TODO
+          ("NEXT" :foreground "gold" :weight bold)                     ;; NEXT
+          ("DONE" :foreground "forest green" :weight bold)             ;; DONE
+          ("PLAN" :foreground "deep sky blue" :weight bold)            ;; PLANNED
+          ("STAR" :foreground "sky blue" :weight bold)                 ;; STARTED
+          ("REOP" :foreground "indian red" :weight bold)               ;; REOPENED
+          ("FINI" :foreground "dark olive green" :weight bold)         ;; FINISHED
+          ("ENOU" :foreground "green yellow" :weight bold)             ;; ENOUGH
+          ("DELE" :foreground "light green" :weight bold)              ;; DELEGATED
+          ("LINK" :foreground "violet" :weight bold)                   ;; LINKED
+          ("WAIT" :foreground "blue violet" :weight bold)              ;; WAITING
+          ("HOLD" :foreground "dark violet" :weight bold :underline t) ;; HOLD
+          ("CANC" :foreground "dark green" :weight bold)               ;; CANCELED
+          ("FIXM" :foreground "dark red" :weight bold)                 ;; FIXME
+          ("VERI" :foreground "dodger blue" :weight bold)              ;; VERIFY
+          ("UNDO" :foreground "royal blue" :weight bold))              ;; UNDO
+        ;; TAG faces
+        org-tag-faces
+        '(("@business"      :foreground "deep sky blue") ;; #00bfff
+          ("@admin"         :foreground "blue")          ;; #0000ff
+          ("@health"        :foreground "pink")          ;; #ffc0cb
+          ("@job"           :foreground "dim gray")
+          ("@improvement"   :foreground "green")         ;; #00ff00
+          ("@research"      :foreground "yellow")        ;; #ffff00
+          ("@language"      :foreground "orange")        ;; #ffa500
+          ("@sport"         :foreground "purple")        ;; #a020f0
+          ("@entertainment" :foreground "lime green")    ;; #32cd32
+          ("@others"        :foreground "red")           ;; #ff0000
+          ("business"       :foreground "#00a0e0")
+          ("admin"          :foreground "#0000e0")
+          ("job"            :foreground "dark gray")
+          ("health"         :foreground "#e0a1ba")
+          ("improvement"    :foreground "#00e000")
+          ("research"       :foreground "#e0e000")
+          ("language"       :foreground "#e0b400")
+          ("sport"          :foreground "#9010e0")
+          ("entertainment"  :foreground "#20ba20")
+          ("others"         :foreground "#e00000"))
+        org-tag-alist
+        '((:startgrouptag) ("business")      (:grouptags) ("@business")
+          (:endgrouptag)
+          (:startgrouptag) ("admin")         (:grouptags) ("@admin")
+          (:endgrouptag)
+          (:startgrouptag) ("job")           (:grouptags) ("@job")
+          (:endgrouptag)
+          (:startgrouptag) ("improvement")   (:grouptags) ("@improvement")
+          (:endgrouptag)
+          (:startgrouptag) ("health")        (:grouptags) ("@health")
+          (:endgrouptag)
+          (:startgrouptag) ("research")      (:grouptags) ("@research")
+          (:endgrouptag)
+          (:startgrouptag) ("language")      (:grouptags) ("@language")
+          (:endgrouptag)
+          (:startgrouptag) ("sport")         (:grouptags) ("@sport")
+          (:endgrouptag)
+          (:startgrouptag) ("entertainment") (:grouptags) ("@entertainment")
+          (:endgrouptag)
+          (:startgrouptag) ("others")        (:grouptags) ("@others")
+          (:endgrouptag))
+        org-table-convert-region-max-lines 9999)
+  ;;(:box t :foreground "#AAF")
+
+
+  ;; ;;;;;;;;;;;;;;; ;;
+  ;; Heading markers ;;
+  ;; ;;;;;;;;;;;;;;; ;;
+  ;; (require 'org-superstar)
+  ;; (setq org-superstar-todo-bullet-alist
+  ;;       '(("TODO" . ?☐)
+  ;;         ("NEXT" . ?⇒)
+  ;;         ("DONE" . ?✓)
+  ;;         ("PLAN" . ?☶)
+  ;;         ("STAR" . ?☆)
+  ;;         ("REOP" . ?◯)
+  ;;         ("FINI" . ?☑)
+  ;;         ("ENOU" . ?~)
+  ;;         ("DELE" . ?↓)
+  ;;         ("LINK" . ?⛓)
+  ;;         ("WAIT" . ?⏳)
+  ;;         ("HOLD" . ?✋)
+  ;;         ("CANC" . ?✗)
+  ;;         ("FIXM" . ?!)
+  ;;         ("VERI" . ??)
+  ;;         ("UNDO" . ?←))
+  ;;       org-superstar-special-todo-items t
+  ;;       org-superstar-headline-bullets-list
+  ;;       '("α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "λ" "μ"))
+  ;; (add-hook 'org-mode-hook #'org-superstar-mode)
+
+  ;; ;;;;;;; ;;
+  ;; Modules ;;
+  ;; ;;;;;;; ;;
+
+  (add-to-list 'org-modules 'org-habit)
+  (add-to-list 'org-modules 'org-mouse)
+
+  ;; ;;;;;;; ;;
+  ;; Exports ;;
+  ;; ;;;;;;; ;;
+  (add-to-list 'org-export-backends 'taskjuggler)
+
+  ;; ;;;;;;;;;;;;;;; ;;
+  ;; Startup options ;;
+  ;; ;;;;;;;;;;;;;;; ;;
+  (setq org-hide-block-startup t
+        org-link-descriptive nil ;; nil display the full links
+        org-replace-disputed-keys t
+        org-startup-folded 'content
+        org-startup-with-inline-images t
+        org-pretty-entities t
+        org-use-property-inheritance t
+        org-use-sub-superscripts nil
+        org-export-with-sub-superscripts '{}
+        org-export-allow-bind-keywords nil
+        org-tags-column -80
+        org-agenda-tags-column -90
+        org-cycle-include-plain-lists t ;; 'integrate ;; list initally folded
+        org-tags-sort-function #'string>
+        org-ellipsis "▼"
+        org-use-speed-commands
+        (lambda () (and (looking-at org-outline-regexp)
+                        (looking-back "^\**" (line-beginning-position))))
+        org-adapt-indentation nil)
+
+  ;; ;;;;;;;;;;;;;;;;;;; ;;
+  ;; Babel block options ;;
+  ;; ;;;;;;;;;;;;;;;;;;; ;;
+  (setenv "GRAPHVIZ_DOT" (executable-find "dot"))
+
+  (setq org-edit-src-content-indentation 0
+        org-babel-min-lines-for-block-output 2
+        org-babel-sh-command "bash"
+        org-babel-python-command "python3"
+        ;; No pregunta al usuario antes de evaluar un bloque de código
+        org-confirm-babel-evaluate nil
+        org-src-fontify-natively t
+        org-src-tab-acts-natively t
+        org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar")
+        org-babel-default-header-args:plantuml
+        '((:results . "file")
+          (:exports . "results")
+          (:java . "-Dfile.encoding=UTF-8"))
+        org-ditaa-jar-path (expand-file-name "~/.emacs.d/cache/java/ditaa.jar"))
+
+  ;; active Babel languages
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((C          . t)
+     (awk        . t)
+     (calc       . t)
+     (csharp     . t)
+     (ditaa      . t)
+     (dot        . t)
+     (emacs-lisp . t)
+     (gnuplot    . t)
+     (java       . t)
+     (js         . t)
+     (latex      . t)
+     (maxima     . t)
+     (octave     . t)
+     (org        . t)
+     (perl       . t)
+     (plantuml   . t)
+     (python     . t)
+     (shell      . t)
+     (sql        . t)
+     (sqlite     . t)))
+
+  (require 'ob)
+  (require 'ob-screen)
+  (require 'ob-async)
+
+  (setq ob-async-no-async-languages-alist
+        '("ipython")
+        org-babel-default-header-args:python
+        '((:results . "output")
+          (:exports . "results"))
+        org-babel-default-header-args:sh
+        '((:results . "output")
+          (:exports . "results"))
+        org-babel-default-header-args:bash
+        '((:results . "output")
+          (:exports . "results")))
+
+  ;; Activated by default
+  ;; (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+  ;; (add-to-list 'org-src-lang-modes '("conf" . conf))
+  (push '("ini"      . conf) org-src-lang-modes)
+  (push '("log"      . compilation) org-src-lang-modes)
+  ;; [ replaced by ob-async
+  ;; (push '("sh-async" . sh) org-src-lang-modes)
+  ;; ;; new Babel languages
+  ;; (defun org-babel-execute:sh-async (body params)
+  ;;   "Execute a block of shell code BODY asynchronously.  PARAMS ignored."
+  ;;   (let ((pid (process-id
+  ;;               (async-start
+  ;;                `(lambda ()
+  ;;                   (org-babel-execute:shell ,body ,params))
+  ;;                (lambda (result)
+  ;;                  (message "sh-async result: %s" result))))))
+  ;;     (message "Launched shell source code block asynchronously. PID: %s" pid)
+  ;;     (format "PID: %s" pid)))
+  ;; ]
+
+  ;; ;;;;;;;;;;;; ;;
+  ;; TODO options ;;
+  ;; ;;;;;;;;;;;; ;;
+  (defun org-abbrev-es-heading ()
+    (replace-regexp-in-string
+     " +\\'" ""
+     (replace-regexp-in-string
+      "  +" " "
+      (replace-regexp-in-string
+       "\\([^[:space:]]\\{3\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
+       (let ((case-fold-search t))
+         (replace-regexp-in-string
+          ,(concat "\\("
+                   (mapconcat 'identity
+                              '("al" "un" "uno" "una" "unos" "unas"
+                                "del"
+                                ;; conjunciones
+                                "y" "e" "o" "u"
+                                ;; prepositions
+                                "el" "la" "lo" "las" "los"
+                                "a" "ante" "bajo" "cabe" "con"
+                                "contra" "de" "desde" "durante"
+                                "en" "entre" "hacia" "hasta"
+                                "mediante" "para" "por" "según"
+                                "sin" "so" "sobre" "tras")
+                              "\\|")
+                   "\\)\\( \\|\\'\\)") " "
+          (org-entry-get nil "ITEM") nil t)) t) t t) t t))
+  (require 'org-clock)
+  (setq org-duration-units '(("min" . 1)
+                             ("h" . 60)
+                             ("d" . 480)
+                             ("w" . 2400)
+                             ("m" . 9600)
+                             ("y" . 96000))
+        org-effort-threshold 20
+        org-enforce-todo-dependencies t
+        ;; [ 'note Graba el tiempo y una nota cuando se realiza una tarea
+        org-log-done 'time ; 'time - solo guarda el tiempo
+        ;; ]
+        ;;org-clock-in-switch-to-state "STARTED"
+        org-clock-out-when-done t
+        org-columns-default-format
+        "%51ITEM %8EFFORT(Estimate){:} %8CLOCKSUM(Clocked) %4TODO(State)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
+        org-clock-into-drawer "LOGCLOCK"
+        org-log-into-drawer "LOGSTATE"
+        org-todo-keywords
+        '(;; Basic
+          (sequence "TODO(t)" "NEXT(n)" "STAR(s!)" "|" "DONE(d!)")
+          ;; Actions
+          (sequence "UNDO(u!)" "VERI(v@/!)" "|" "ENOU(e@/!)" "DELE(l@/!)")
+          ;; States
+          (sequence "PLAN(p!)" "LINK(k@/!)" "WAIT(w@/!)" "|" "FINI(f!)")
+          ;; Problems
+          (sequence "FIXM(b@/!)" "REOP(r@/!)" "HOLD(h@/!)" "|" "CANC(c@/!)"))
+        org-archive-location ".archived.org::* From %s"
+        org-archive-file-header-format nil
+        ;; PRIORITIES
+        org-highest-priority ?A
+        org-default-priority ?H
+        org-lowest-priority ?O
+        ;; Clocking
+        org-clock-string-limit 25
+        org-clock-in-resume t
+        org-clock-persist t
+        org-clock-clocked-in-display
+        (if (featurep 'symon)
+            t ;; org don't document this value, it's a trick
+          'frame-title)
+        org-clock-heading-function 'org-abbrev-es-heading)
+
+  (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
+
+  ;; ;;;;;;;;;;;;;;; ;;
+  ;; Convert options ;;
+  ;; ;;;;;;;;;;;;;;; ;;
+  (require 'ox)
+  (defun org-element-find-all (key)
+    (let ((alist '())
+          (pattern (concat "^[ \t]*#\\+\\(" key "\\):")))
+      (org-with-wide-buffer
+       (goto-char (point-min))
+       (while (re-search-forward
+               pattern nil t)
+         (let ((element (org-element-at-point)))
+           (when (eq (org-element-type element) 'keyword)
+             (let ((val (org-element-property :value element)))
+               (if (equal (org-element-property :key element)
+                          key)
+                   (push (read (format "%s" val)) alist))))))
+       alist)))
+
+  ;; ;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert to Markdown ;;
+  ;; ;;;;;;;;;;;;;;;;;;; ;;
+  ;;(require 'ox-md)
+  (require 'ox-gfm)  ; Include ox-md
+  (defun org-gfm-publish-to-gfm (plist filename pub-dir)
+    (org-publish-org-to 'gfm filename ".md" plist pub-dir))
+
+  ;; ;;;;;;;;;;;;;;; ;;
+  ;; Convert to Wiki ;;
+  ;; ;;;;;;;;;;;;;;; ;;
+  (require 'ox-mediawiki)
+  ;; Change dispatcher bind key because of conflict with markdown
+  (setcar (org-export-backend-menu (-first (lambda (b) (string-equal "mw" (symbol-name (org-export-backend-name b))))
+                                           org-export-registered-backends)) ?M)
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert to reStructuredText ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  (require 'ox-rst)
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert to LibreOffice ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;; ;;
+  (require 'ox-odt nil t)
+
+  (setq org-odt-fontify-srcblocks t
+        org-odt-create-custom-styles-for-srcblocks t
+        org-odt-table-styles
+        (append org-odt-table-styles
+                '(("TableWithBandingRows" "Custom"
+                   ((use-banding-rows-styles . t)))
+                  ("TableWithBandingColumns" "Custom"
+                   ((use-banding-column-styles . t)))
+                  ("TableWithHeaderRow" "Custom"
+                   ((use-first-row-styles . t)))))
+        ;; Convert formulas
+        org-latex-to-mathml-convert-command
+        "java -jar %j -unicode -force -df %o %I"
+        org-latex-to-mathml-jar-file
+        (expand-file-name "~/.emacs.d/cache/java/mathtoweb.jar")
+        ;; Convert to other formats
+        org-odt-convert-processes
+        `(("WINWORD"
+           ,(concat "WINWORD /q \"%i\" /mFormatAll"))
+          ("LibreOffice"
+           "soffice --headless --convert-to %f%x --outdir %d %i")
+          ("unoconv"
+           "unoconv -f %f -o %d %i"))
+        org-odt-convert-process (cond
+                                 ((executable-find "WINWORD") "WINWORD")
+                                 ((executable-find "soffice") "LibreOffice")
+                                 ((executable-find "unoconv") "unoconv")
+                                 (t nil))
+        org-odt-preferred-output-format (and org-odt-convert-process "doc"))
+
+  (defun org-odt-export-update-convert-processes ()
+    (interactive)
+    (setq org-odt-convert-processes
+          `(("WINWORD"
+             ,(concat "WINWORD /q \""
+                      (concat (file-name-sans-extension buffer-file-name) ".odt")
+                      "\" /m"
+                      (or (car (org-element-find-all "MACRO"))
+                          "FormatAll")))
+            ("LibreOffice"
+             "soffice --headless --convert-to %f%x --outdir %d %i")
+            ("unoconv"
+             "unoconv -f %f -o %d %i"))))
+
+  (defun org-export-update (backend)
+    (cond
+     ((eq 'odt backend)
+      (org-odt-export-update-convert-processes))))
+  (add-hook 'org-export-before-processing-hook 'org-export-update)
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert pytex environments ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+
+  ;; Formatea el archivo antes del proceso de org-mode
+  ;; para tener una salida adecuada.
+  (defun pytex-org-export-replacement (backend)
+    "Límpia los códigos pytex para dejar sólo el latex."
+    (org-map-entries
+     (lambda ()
+       (if (cl-find backend '(latex html)) (pytex-clean-environments)))))
+  (add-hook 'org-export-before-processing-hook 'pytex-org-export-replacement)
+
+  ;; ;;;;;;;;;;;;;;;; ;;
+  ;; Convert to latex ;;
+  ;; ;;;;;;;;;;;;;;;; ;;
+
+  ;; [ Formato latex por defecto
+  ;; (org los coloca en orden inverso)
+  ;; (add-to-list 'org-latex-packages-alist
+  ;; '("" "color" nil))
+  ;; (add-to-list 'org-latex-packages-alist
+  ;; '("verbose,a4paper,headheight=5mm,footskip=7mm,left=19mm,right=16mm,top=37mm,bottom=23mm" "geometry" nil))
+  ;; (add-to-list 'org-latex-packages-alist
+  ;; '("" "multirow" nil))
+  ;; (add-to-list 'org-latex-packages-alist
+  ;; '("" "multicol" nil))
+  ;; (add-to-list 'org-latex-packages-alist
+  ;; '("AUTO" "babel" nil))
+  (require 'ox-latex)
+  (setq org-latex-listings 'minted ;; xor 'listings
+        org-latex-listings-options
+        '(("basicstyle" "\\small\\ttfamily")
+          ("breaklines" "true")
+          ("captionpos" "b")
+          ("extendedchars" "true")
+          ("tabsize" "4")
+          ("columns" "fixed")
+          ("keepspaces" "true")
+          ("showstringspaces" "false")
+          ("breaklines" "true")
+          ("frame" "tb")
+          ("framerule" "0.5pt")
+          ("framexleftmargin" "0.5em")
+          ("framexrightmargin" "0.5em")
+          ("xleftmargin" "0.5em")
+          ("xrightmargin" "0.5em")
+          ("mathescape" "false")
+          ("escapeinside" "{\\%*}{*)}")
+          ("showspaces" "false")
+          ("showstringspaces" "false")
+          ("numbers" "none")
+          ("numberstyle" "\\tiny\\ttfamily")
+          ("commentstyle" "\\color{red}")
+          ("keywordstyle" "\\color{blue}\\bfseries")
+          ("stringstyle" "\\color{green}"))
+        org-latex-minted-options
+        '(("bgcolor" "blockbg"))
+        org-latex-pdf-process
+        '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")
+        org-latex-packages-alist
+        '(
+          ;; ("verbose,a4paper,headheight=5mm,footskip=7mm,left=19mm,right=16mm,top=37mm,bottom=23mm" "geometry" nil)  ;; problems with beamer class
+          ("AUTO" "babel" nil)
+          ("" "multirow" nil)
+          ("" "multicol" nil)
+          ;; ("" "titlesec" nil)  ;; problems with beamer class
+          ;; ("" "listings")
+          ;; xor
+          ("" "minted")
+          ("" "color" nil)
+          "
+\\makeatletter
+\\definecolor{blockbg}{rgb}{0.95,0.95,0.95}
+\\@ifpackageloaded{titlesec}{
+\\definecolor{partcolor}{rgb}{0,0,0.1}
+\\definecolor{sectcolor}{rgb}{0,0,0.3}
+\\definecolor{ssctcolor}{rgb}{0,0,0.5}
+\\definecolor{ssstcolor}{rgb}{0,0,0.7}
+%\\renewcommand{\\headrulewidth}{0pt}
+\\titleformat{\\part}[hang]{\\huge\\sc{\\color{blue}\\titlerule[1pt]\\vspace{2pt}\\titlerule[1pt]}}{\\llap{\\bf\\color{blue}\\thepart.}}{10pt}{\\color{partcolor}}[{\\color{blue}\\titlerule[1pt]\\vspace{2pt}\\titlerule[1pt]}]
+\\titleformat{\\section}[hang]{\\Large\\sc}{\\llap{\\bf\\color{blue}\\thesection.}}{10pt}{\\color{sectcolor}}[{\\color{blue}\\nobreak\\titlerule[1pt]}]
+\\titleformat{\\subsection}[hang]{\\large\\bf}{\\llap{\\color{blue}\\thesubsection.}}{7pt}{\\color{ssctcolor}\\underline}
+\\titleformat{\\subsubsection}[hang]{\\normalsize\\it}{\\llap{\\bf\\color{blue}\\thesubsubsection.}}{4pt}{\\color{ssstcolor}}
+}{\\relax}
+\\makeatother
+")
+        ;; org-latex-image-default-width nil
+        org-beamer-outline-frame-options "allowframebreaks=0.9"
+        org-beamer-frame-default-options "allowframebreaks=0.9"
+        )
+  ;; ]
+
+  (when (and (eq org-latex-listings 'minted)
+             (not (executable-find "pygmentize")))
+    (message-color #("WARN pygmentize not found, add to path or run 'apt install python-pygments'."
+                     0 4 (face warning))))
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert to beamer presentation ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  (require 'ox-beamer)
+
+  ;; ;;;;;;;;;;;;;;; ;;
+  ;; Convert to html ;;
+  ;; ;;;;;;;;;;;;;;; ;;
+
+  ;; Formato html por defecto
+  (require 'ox-html)
+  (setq  org-html-head
+         "<style type=\"text/css\">
+ <!--/*--><![CDATA[/*><!--*/
+body{
+	font-family: Titillium, Arial, sans-serif;
+	background: #fff repeat top left;
+	font-weight: 400;
+	font-size: 14px;
+	color:#505050;
+	-webkit-font-smoothing: antialiased;
+	-moz-font-smoothing: antialiased;
+	font-smoothing: antialiased;
+        margin: 10px;
+        padding: 60px;
+}
+a{
+	color: #0066FF;
+	text-decoration: underline;
+}
+a:hover{
+	color: #66A3FF;
+	text-decoration: none;
+}
+math, math[mode=\"inline\"] {
+  display: inline;
+  font-family: sans-serif;
+  font-style: normal;
+font-size: 17px;
+}
+math[mode=\"display\"] {
+  display: block;
+  text-align: center;
+  font-family: sans-serif;
+  font-style: normal;
+  font-size: 17px;
+}
+
+h1 {
+	font-size: 40px;
+	line-height: 40px;
+	margin: 10px;
+	position: relative;
+	font-weight: 300;
+	color: #0000A0;
+	text-shadow: 1px 1px 1px rgba(255,255,255,0.7);
+}
+h2 {
+	font-size: 27px;
+	line-height: 27px;
+	margin: 16px;
+	position: relative;
+	font-weight: 300;
+	color: #0041C2;
+	text-shadow: 1px 1px 1px rgba(255,255,255,0.7);
+        text-indent: -20px;
+        border-bottom: 2px solid blue;
+}
+h3 {
+	font-size: 18px;
+	line-height: 18px;
+	margin: 22px;
+	position: relative;
+	font-weight: 300;
+	color: #1569C7;
+	text-shadow: 1px 1px 1px rgba(255,255,255,0.7);
+        text-indent: -40px;
+        text-decoration: underline;
+        text-decoration-color: blue;
+}
+h4 {
+	font-size: 17px;
+	line-height: 17px;
+	margin: 28px;
+	position: relative;
+	font-weight: 300;
+	color: #659EC7;
+	text-shadow: 1px 1px 1px rgba(255,255,255,0.7);
+        text-indent: -60px;
+        text-decoration: underline;
+        text-decoration-color: blue;
+}
+
+p {
+	font-size: 17px;
+	line-height: 22px;
+	text-align: justify;
+	text-indent: 14px;
+	margin: 3px 40px 5px 0;
+	padding-left: 15px;
+	/*font-family: Cambria, Georgia, serif;*/
+}
+
+p img {
+	vertical-align: middle;
+}
+li img {
+	vertical-align: middle;
+}
+img {
+    max-width: 820px;
+}
+
+/* org-mode */
+
+ol {
+    list-style-type: decimal;
+}
+ol > li > ol {
+    list-style-type: lower-latin;
+}
+ol > li > ol > li > ol {
+    list-style-type: lower-roman;
+}
+ol p {
+    border-left: none;
+}
+
+/*
+ol p, ul p, div.figure p{
+    border-left: none;
+}*/
+
+.todo   { font-family: monospace; color: red; }
+.done   { color: green; }
+.tag    { background-color: #eee; font-family: monospace;
+          padding: 2px; font-size: 80%; font-weight: normal; }
+.timestamp { color: #bebebe; }
+.timestamp-kwd { color: #5f9ea0; }
+.right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+.left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+.center { margin-left: auto; margin-right: auto; text-align: center; }
+.underline { text-decoration: underline; }
+#postamble p, #preamble p { font-size: 90%; margin: .2em; }
+
+p.verse { margin-left: 3%; }
+div.verbatim {
+  border: 1px solid #ccc;
+  box-shadow: 3px 3px 3px #eee;
+  padding: 8pt;
+  overflow: auto;
+  margin: 1.2em;
+}
+
+samp {
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-family: \"Lucida Console\", Monaco, monospace;
+  background-color: #E8E8E8;
+}
+code {
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-family: \"Lucida Console\", Monaco, monospace;
+  background-color: #FFFFFF;
+}
+.org-src-container {
+  overflow: auto;
+  position: relative;
+}
+pre {
+  border: 1px solid #ccc;
+  box-shadow: 3px 3px 3px #eee;
+  padding: 8pt;
+  font-family: monospace;
+  overflow: visible;
+  margin: 1.2em;
+}
+pre.src {
+  display: table;
+  margin: 1em 0 0 0;
+  position: initial;
+  padding-top: 1em;
+  color: #C0C0C0;
+  Background-color: #202020;
+}
+pre.src:before {
+  display: none;
+  position: absolute;
+  background-color: white;
+  top: 0px;
+  right: 10px;
+  padding: 3px;
+  border: 1px solid black;
+}
+pre.src:hover:before { display: inline;}
+pre.src-sh:before    { content: 'sh'; }
+pre.src-sh-async:before    { content: 'sh'; }
+pre.src-bash:before  { content: 'bash'; }
+pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+pre.src-c:before   { content: 'C'; }
+pre.src-cpp:before   { content: 'C++'; }
+pre.src-R:before     { content: 'R'; }
+pre.src-perl:before  { content: 'Perl'; }
+pre.src-java:before  { content: 'Java'; }
+pre.src-sql:before   { content: 'SQL'; }
+
+table { border-collapse:collapse; }
+caption.t-above { caption-side: top; }
+caption.t-bottom { caption-side: bottom; }
+td, th { vertical-align:top;  }
+th.right  { text-align: center;  }
+th.left   { text-align: center;   }
+th.center { text-align: center; }
+td.right  { text-align: right;  }
+td.left   { text-align: left;   }
+td.center { text-align: center; }
+dt { font-weight: bold; }
+.footpara:nth-child(2) { display: inline; }
+.footpara { display: block; }
+.footdef  { margin-bottom: 1em; }
+.figure { padding: 1em; }
+.figure p { text-align: center; }
+.inlinetask {
+  padding: 10px;
+  border: 2px solid gray;
+  margin: 10px;
+  background: #ffffcc;
+}
+#org-div-home-and-up
+ { text-align: right; font-size: 70%; white-space: nowrap; }
+textarea { overflow-x: auto; }
+.linenr { font-size: smaller }
+.code-highlighted { background-color: #ffff00; }
+.org-info-js_info-navigation { border-style: none; }
+#org-info-js_console-label
+  { font-size: 10px; font-weight: bold; white-space: nowrap; }
+.org-info-js_search-highlight
+  { background-color: #ffff00; color: #000000; font-weight: bold; }
+/* modificado org-mode */
+#text-table-of-contents ul
+  { list-style-type: none; }
+span.section-number-2 {
+  font-size: 30px;
+  color: #003399;
+}
+span.section-number-3 {
+  font-size: 20px;
+  color: #003399;
+}
+span.section-number-4 {
+  font-size: 18px;
+  color: #003399;
+}
+
+blockquote {
+  border: 1px solid #ccc;
+  box-shadow: 3px 3px 3px #eee;
+  padding: 8pt;
+  overflow: auto;
+  margin: 1.2em;
+}
+  /*]]>*/-->
+</style>"
+         ;; [ No se debería modificar
+         ;; org-html-style-default
+         ;; "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\" />"
+         )
+
+  (defcustom org-html-mathjax-options
+    '((path  "js/MathJax.js")
+      (scale "100")
+      (align "center")
+      (indent "2em")
+      (mathml nil))
+    "Options for MathJax setup.
+
+path        The path where to find MathJax
+scale       Scaling for the HTML-CSS backend, usually between 100 and 133
+align       How to align display math: left, center, or right
+indent      If align is not center, how far from the left/right side?
+mathml      Should a MathML player be used if available?
+            This is faster and reduces bandwidth use, but currently
+            sometimes has lower spacing quality.  Therefore, the default is
+            nil.  When browsers get better, this switch can be flipped.
+
+You can also customize this for each buffer, using something like
+
+,#+MATHJAX: scale:\"133\" align:\"right\" mathml:t path:\"/MathJax/\""
+    :group 'org-export-html
+    :type '(list :greedy t
+                 (list :tag "path   (the path from where to load MathJax.js)"
+                       (const :format "       " path) (string))
+                 (list :tag "scale  (scaling for the displayed math)"
+                       (const :format "       " scale) (string))
+                 (list :tag "align  (alignment of displayed equations)"
+                       (const :format "       " align) (string))
+                 (list :tag "indent (indentation with left or right alignment)"
+                       (const :format "       " indent) (string))
+                 (list :tag "mathml (should MathML display be used is possible)"
+                       (const :format "       " mathml) (boolean))))
+
+  ;; Definen =verbatim= y ~code~ en html
+  (eval-after-load 'ox-html
+    '(progn
+       (push '(verbatim . "<samp>%s</samp>") org-html-text-markup-alist)
+       (push '(code . "<code>%s</code>") org-html-text-markup-alist)))
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert to html with Twitter Bootstrap ;;
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
+  (require 'ox-twbs)
+
+  ;; ;;;;;;;;;;;;;;;;;;; ;;
+  ;; Convert taskjuggler ;;
+  ;; ;;;;;;;;;;;;;;;;;;; ;;
+  (require 'ox-taskjuggler)
+
+  ;; ;;;;;;; ;;
+  ;; Publish ;;
+  ;; ;;;;;;; ;;
+  (require 'ox-publish)
+
+  ;; ;;;;; ;;
+  ;; Links ;;
+  ;; ;;;;; ;;
+  (setq org-html-validation-link nil
+        org-return-follows-link t)
+
+  (delete '("\\.pdf\\'" . default) org-file-apps)
+
+  (add-to-list 'org-file-apps '("\\.pdf::\\([0-9]+\\)\\'" . "evince \"%s\" -p %1"))
+  (add-to-list 'org-file-apps '("\\.png\\'" . "eog \"%s\""))
+
+  ;; ;;;;;; ;;
+  ;; Agenda ;;
+  ;; ;;;;;; ;;
+
+  ;; (require 'calfw-org)
+  ;; (defun cfw:open-org-calendar-command (&args)
+  ;;   (interactive)
+  ;; ;;  (let ((org-agenda-skip-function 'org-agenda-skip-work))
+  ;;   (cfw:open-org-calendar))
+  ;; ;;)
+  (require 'org-agenda-property)
+  ;; (cl-loop for folder in
+  ;;          `("~/var/Dropbox/Orgzly"
+  ;;            ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
+  ;;            "~/Prog/org")
+  ;;          when (file-exists-p folder)
+  ;;          return folder)
+
+  (when (boundp 'personal-notes-directory)
+    (setq org-directory personal-notes-directory
+          org-default-notes-file (expand-file-name
+                                  ".notes.org"
+                                  org-directory)
+          org-agenda-files (cl-remove-if-not
+                            'file-exists-p
+                            `("~/var/Dropbox/Orgzly/"
+                              ,(expand-file-name
+                                "agenda"
+                                org-directory))) ;; reset in config.el
+          org-annotate-file-storage-file (expand-file-name
+                                          ".org-annotate-file.org"
+                                          org-directory))
+    (make-directory org-directory t))
+
+  (setq org-annotate-file-always-open nil
+        org-annotate-file-add-search nil
+        ;; <property>
+        org-agenda-property-list '("REQUIRED")
+        ;; <Calendar>
+        calendar-week-start-day 1
+        calendar-day-name-array     ["domingo" "lunes" "martes"
+                                     "miércoles" "jueves" "viernes" "sábado"]
+        calendar-day-abbrev-array   ["dom" "lun" "mar" "mié" "jue" "vie" "sáb"]
+        calendar-day-header-array   ["D" "L" "M" "X" "J" "V" "S"]
+        calendar-month-name-array   ["Enero" "Febrero" "Marzo" "Abril" "Mayo"
+                                     "Junio" "Julio" "Agosto" "Septiembre"
+                                     "Octubre" "Noviembre" "Diciembre"]
+        calendar-month-abbrev-array ["Ene" "Feb" "Mar" "Abr" "May" "Jun"
+                                     "Jul" "Ago" "Sep" "Oct" "Nov" "Dic"]
+        ;; <Agenda includes>
+        org-agenda-skip-deadline-prewarning-if-scheduled t
+        org-agenda-skip-scheduled-if-deadline-is-shown t
+        org-agenda-include-deadlines t
+        ;; org-agenda-include-diary t
+        ;; org-agenda-include-inactive-timestamps t
+        ;; <Agenda format>
+        org-agenda-time-grid
+        '((daily today require-timed remove-match)
+          (800 1000 1200 1400 1600 1800 2000)
+          "......" "----------------")
+        org-agenda-prefix-format
+        '((agenda . " %i %-4.4 c%?-12t% s")  ;; (agenda . " %i %-12:c%?-12t% s")
+          (timeline . "  % s")
+          (todo . " %i %-4.4 c%?-12t% s")    ;; (todo . " %i %-12:c")
+          (tags . " %i %-4.4 c")             ;; (tags . " %i %-12:c")
+          (search . " %i %-4.4 c"))          ;; (search . " %i %-12:c")
+        org-agenda-scheduled-leaders '("Sche" "S-%3dd")
+        org-agenda-deadline-leaders  '("Dead" "D+%3dd" "D-%3dd")
+        org-agenda-sorting-strategy
+        '((agenda habit-down time-up user-defined-up category-keep)
+          (todo priority-down category-keep)
+          (tags priority-down category-keep)
+          (search category-keep))
+        org-agenda-cmp-user-defined 'org-agenda-cmp-user-defined-function
+        org-agenda-deadline-faces
+        '((1.01 . '(:foreground "magenta" :bold t))
+          (1.0 . org-warning)
+          (0.5 . org-upcoming-deadline)
+          (0.0 . default))
+        org-deadline-warning-days 15
+        org-agenda-start-on-weekday 1
+        org-habit-show-habits-only-for-today t
+        ;; <Agenda commands>
+        org-agenda-custom-commands
+        '(("h" "[h]abits" 
+           ((agenda ""))
+           ((org-agenda-show-log t)
+            (org-agenda-ndays 7)
+            (org-agenda-log-mode-items '(state))
+            (org-agenda-skip-function
+             '(org-agenda-skip-entry-if
+               'notregexp
+               ":STYLE: *habit"))))
+          ("r" "[r]epeat timestamps"
+           ((alltodo ""
+                     ((org-agenda-skip-function
+                       '(and (not (org-get-repeat))
+                             (org-entry-end-position)))))))
+          ("c" "[c]alendar" cfw:open-org-calendar-command)
+          ("n" "[n]ot closed timestamps"
+           ((alltodo ""
+                     ((org-agenda-skip-function
+                       '(org-agenda-skip-entry-if
+                         'regexp
+                         "CLOSED: \\[[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]"))))))
+          ("u" "[u]nscheduled tasks"
+           ((alltodo ""
+                     ((org-agenda-skip-function
+                       '(org-agenda-skip-entry-if
+                         'scheduled 'deadline
+                         ;;'todo '("DONE" "CANCELLED" "FINISHED" "ENOUGH")
+                         ))))))
+          ("A" "[A]ll scheduled or not"
+           ((agenda "")
+            (alltodo ""
+                     ((org-agenda-skip-function
+                       '(org-agenda-skip-entry-if
+                         'scheduled 'deadline
+                         ;;'todo '("DONE" "CANCELLED" "FINISHED" "ENOUGH")
+                         ))))))
+          ;;("u" "[u]nscheduled tasks" tags "-SCHEDULED={.+}/!+TODO|+NEXT|+STARTED|+WAITING|+HOLD")
+          ))
+
+  ;; ;;;;;;;;; ;;
+  ;; Functions ;;
+  ;; ;;;;;;;;; ;;
+  (with-eval-after-load 'ob-tangle
+    (defun org-byte-compile-tangle-file ()
+      (when (derived-mode-p 'emacs-lisp-mode)
+        (let ((file-name (buffer-file-name)))
+          (when (and (stringp file-name)
+                     (file-exists-p file-name))
+            (byte-recompile-file file-name nil 0)))))
+    (add-hook 'org-babel-post-tangle-hook 'org-byte-compile-tangle-file))
+
+  (defun org-entry-is-todo-get-subtree (pos property)
+    (save-excursion
+      (goto-char pos)
+      (save-restriction
+        (org-narrow-to-subtree)
+        (goto-char (point-max))
+        (save-match-data
+          (cl-loop while (re-search-backward org-heading-regexp nil t)
+                   when (org-entry-is-todo-p)
+                   collect (org-entry-get (point) property))))))
+
+  (defun org-entry-to-key (&optional pos)
+    (let ((entry-pos (or pos (point)))
+          (order '(;; Todo
+                   ("FIXM" . 49) ;; 48 ?0
+                   ("REOP" . 50)
+                   ("VERI" . 51)
+                   ("PLAN" . 52)
+                   ("STAR" . 53)
+                   ("NEXT" . 54)
+                   ("TODO" . 55)
+                   ("UNDO" . 56)
+                   ;; Hold
+                   ("LINK" . 64) ;; ?A
+                   ("WAIT" . 65)
+                   ("HOLD" . 66)
+                   ;; Done
+                   ("ENOU" . 71) ;; 97 ?a
+                   ("DELE" . 72)
+                   ("CANC" . 73)
+                   ("FINI" . 74)
+                   ("DONE" . 75)
+                   )))
+      (let ((todo (cdr (assoc (org-entry-get entry-pos "TODO") order))))
+        (cond
+         ((not todo)
+          " ")
+         ((< todo 65)
+          ;;
+          ;; todo
+          ;;
+          (let ((effort-list (cl-loop for minutes in (org-entry-is-todo-get-subtree entry-pos "EFFORT")
+                                      when minutes
+                                      collect (org-duration-to-minutes minutes)))
+                (priority (org-entry-get entry-pos "PRIORITY"))
+                (tags (mapconcat 'identity
+                                 (sort (split-string
+                                        (or (org-entry-get entry-pos "TAGS") "") ":" t)
+                                       'string<) " ")))
+            (concat
+             ;; type of todo
+             "0"
+             ;; effort condition
+             (if (and effort-list (< (apply 'min effort-list) org-effort-threshold))
+                 " "
+               "~")
+             priority
+             (byte-to-string todo)
+             tags)))
+         ((< todo 71)
+          ;;
+          ;; blocked
+          ;;
+          (let ((priority (org-entry-get entry-pos "PRIORITY"))
+                (tags (mapconcat 'identity
+                                 (sort (split-string
+                                        (or (org-entry-get entry-pos "TAGS") "") ":" t)
+                                       'string<) " ")))
+            (concat
+             "1"
+             (byte-to-string todo)
+             priority
+             tags)))
+         (t
+          ;;
+          ;; done
+          ;;
+          (let ((closed (let ((closed-time (org-entry-get entry-pos "CLOSED")))
+                          (if closed-time
+                              (number-to-string
+                               (- most-positive-fixnum
+                                  (round (org-time-string-to-seconds closed-time))))
+                            " "))))
+            (concat
+             "2"
+             closed)))))))
+
+  (defun org-agenda-cmp-user-defined-function (a b)
+    (let ((a-pos (or (get-text-property 1 'org-marker a)
+                     (get-text-property 1 'org-hd-marker a)))
+          (b-pos (or (get-text-property 1 'org-marker b)
+                     (get-text-property 1 'org-hd-marker b))))
+      (if (and a-pos b-pos)
+          (let ((a-key (with-current-buffer (marker-buffer a-pos)
+                         (org-entry-to-key a-pos)))
+                (b-key (with-current-buffer (marker-buffer b-pos)
+                         (org-entry-to-key b-pos))))
+            (if (string< a-key b-key)
+                -1
+              1))
+        ;; (message "A pos: %s heading: %s entry: %s" a-pos (text-property-any 0 (length a) 'org-heading t a) a)
+        ;; (message "B pos: %s heading: %s entry: %s" b-pos (text-property-any 0 (length b) 'org-heading t b) b)
+        (if (string< a b)
+            -1
+          1))))
+
+  (defun org-sort-entries-user-defined ()
+    (interactive)
+    (org-sort-entries nil ?f 'org-entry-to-key 'string<))
+
+  (defun org-af (&optional prefix suffix)
+    "Return filename counting blocks using this function.
+Filename returned has the format:
+
+PREFIX block-number SUFFIX
+
+Example: doc-000012.png
+
+PREFIX - default buffer name without extension
+SUFFIX - default .png"
+    (let ((number 0)
+          (pre (or prefix (file-name-sans-extension (buffer-name))))
+          (suf (or suffix ".png")))
+      (save-excursion
+        (forward-line 1)
+        (while (re-search-forward (format "#\\+BEGIN_SRC.*%s" (compile-time-function-name)) nil t)
+          (cl-incf number)))
+      (concat pre (format "-%06d" number) suf)))
+
+  (defun org-archive-done-tasks (&optional scope)
+    (interactive "P")
+    (cond
+     ((equal scope '(16))
+      (setq scope 'agenda))
+     ((equal scope '(4))
+      (setq scope 'tree))
+     ((equal scope nil)
+      (setq scope 'file)))
+    (org-map-entries
+     (lambda ()
+       (org-archive-subtree)
+       (setq org-map-continue-from (outline-previous-heading)))
+     "/DONE|ENOU|FINI|CANC" scope))
+
+  (defun org-read-entry-property-name ()
+    "Read a property name from the current entry."
+    (let ((completion-ignore-case t)
+          (default-prop (or (and (org-at-property-p)
+                                 (match-string-no-properties 2))
+                            org-last-set-property)))
+      (org-completing-read
+       (format "Property [%s]: " (if default-prop default-prop ""))
+       (org-entry-properties nil nil)
+       nil nil nil nil default-prop)))
+
+  (defun org-region-to-property (&optional property)
+    "Copies the region as value to an Org-mode PROPERTY."
+    (interactive)
+    ;; if no region is defined, do nothing
+    (if (use-region-p)
+        ;; if a region string is found, ask for a property and set property to
+        ;; the string in the region
+        (let ((val (replace-regexp-in-string
+                    "\\`[ \t\n]*" ""
+                    (replace-regexp-in-string "[ \t\n]*\\'" ""
+                                              (substring (buffer-string)
+                                                         (- (region-beginning) 1)
+                                                         (region-end)) t t) t t))
+              ;; if none was stated by user, read property from user
+              (prop (or property
+                        (org-read-entry-property-name))))
+          ;; set property
+          (org-set-property prop val))))
+
+  (defun org-table-sort-column ()
+    "Sort table column at point."
+    (interactive)
+    (let* ((thisline (org-current-line))
+           (thiscol (org-table-current-column))
+           (otc org-table-overlay-coordinates)
+           beg end bcol ecol tend tbeg column lns pos)
+      (when (equal thiscol 0)
+        (if (called-interactively-p 'any)
+            (setq thiscol
+                  (string-to-number
+                   (read-string "Use column N for sorting: ")))
+          (setq thiscol 1))
+        (org-table-goto-column thiscol))
+      (org-table-check-inside-data-field)
+      (if (org-region-active-p)
+          (progn
+            (setq beg (region-beginning) end (region-end))
+            (goto-char beg)
+            (setq column (org-table-current-column)
+                  beg (point-at-bol))
+            (goto-char end)
+            (setq end (point-at-bol 2)))
+        (setq column (org-table-current-column)
+              pos (point)
+              tbeg (org-table-begin)
+              tend (org-table-end))
+        (if (re-search-backward org-table-hline-regexp tbeg t)
+            (setq beg (point-at-bol 2))
+          (goto-char tbeg)
+          (setq beg (point-at-bol 1)))
+        (goto-char pos)
+        (if (re-search-forward org-table-hline-regexp tend t)
+            (setq end (point-at-bol 1))
+          (goto-char tend)
+          (setq end (point-at-bol))))
+      (setq beg (move-marker (make-marker) beg)
+            end (move-marker (make-marker) end))
+      (untabify beg end)
+      (goto-char beg)
+      (org-table-goto-column column)
+      (skip-chars-backward "^|")
+      (setq bcol (point))
+      (goto-char end)
+      (forward-line -1)
+      (org-table-goto-column column)
+      (skip-chars-forward "^|")
+      (setq ecol (point))
+      (org-table-copy-region bcol ecol nil)
+      (setq lns (mapcar (lambda (x) (cons 
+                                     (org-sort-remove-invisible 
+                                      (substring-no-properties x) )
+                                     x))
+                        ( mapcar 'car org-table-clip)))
+      (setq lns (org-do-sort lns "Column" ))
+      (setq org-table-clip (mapcar 'list (mapcar 'cdr lns)))
+      (goto-char beg)
+      (org-table-goto-column column)
+      (org-table-paste-rectangle)
+      (org-goto-line thisline)
+      (org-table-goto-column thiscol)
+      (when otc (org-table-toggle-coordinate-overlays))
+      (message "%d element sorted in column %d" (length lns) column)))
+
+  (defun org-auto-redisplay-inline-images ()
+    (when org-inline-image-overlays
+      (org-redisplay-inline-images)))
+  (add-hook 'org-babel-after-execute-hook 'org-auto-redisplay-inline-images)
+
+  (defun copy-buffer-file-name-org-link ()
+    (interactive)
+    (let* ((path-name (abbreviate-file-name buffer-file-name))
+           (name (file-name-nondirectory path-name)))
+      (kill-new (concat "[[" path-name "][" name "]]"))))
+
+  (defun copy-buffer-file-name-and-line-org-link ()
+    (interactive)
+    (let* ((path-name (abbreviate-file-name buffer-file-name))
+           (name (file-name-nondirectory path-name)))
+      (kill-new (concat "[[" path-name "::"
+                        (number-to-string (line-number-at-pos))
+                        "][" name "]]"))))
+
+  (defun org-todo-prompt-date (&optional arg)
+    (interactive "P")
+    (cl-letf* ((org-read-date-prefer-future nil)
+               (my-current-time (org-read-date t t nil "when:" nil nil nil))
+               ((symbol-function #'org-current-effective-time)
+                #'(lambda () my-current-time)))
+      (org-todo arg)))
+
+  ;; (defun org-block-and-result-hide-all ()
+  ;;   (interactive)
+  ;;   (call-interactively #'org-hide-block-all)
+  ;;   (call-interactively #'org-babel-result-hide-all))
+
+  ;; (defun org-block-and-result-show-all ()
+  ;;   (interactive)
+  ;;   (call-interactively #'org-show-block-all)
+  ;;   (call-interactively #'org-babel-show-result-all))
+
+  (defun org-entry-put-multiline-property (pom property value)
+    "Set PROPERTY to VALUE for entry at point-or-marker POM.
+Allow multiline properties.
+
+If the value is nil, it is converted to the empty string.  If it
+is not a string, an error is raised.  Also raise an error on
+invalid property names.
+
+PROPERTY can be any regular property (see
+`org-special-properties').  It can also be \"TODO\",
+\"PRIORITY\", \"SCHEDULED\" and \"DEADLINE\".
+
+For the last two properties, VALUE may have any of the special
+values \"earlier\" and \"later\".  The function then increases or
+decreases scheduled or deadline date by one day."
+    (cond ((null value) (setq value ""))
+          ((not (stringp value)) (error "Properties values should be strings"))
+          ((not (org--valid-property-p property))
+           (user-error "Invalid property name: \"%s\"" property)))
+    (org-with-point-at pom
+      (if (or (not (featurep 'org-inlinetask)) (org-inlinetask-in-task-p))
+          (org-back-to-heading t)
+        (org-with-limited-levels (org-back-to-heading t)))
+      (let ((beg (point)))
+        (cond
+         ((equal property "TODO")
+          (cond ((not (org-string-nw-p value)) (setq value 'none))
+                ((not (member value org-todo-keywords-1))
+                 (user-error "\"%s\" is not a valid TODO state" value)))
+          (org-todo value)
+          (org-align-tags))
+         ((equal property "PRIORITY")
+          (org-priority (if (org-string-nw-p value) (string-to-char value) ?\s))
+          (org-align-tags))
+         ((equal property "SCHEDULED")
+          (forward-line)
+          (if (and (looking-at-p org-planning-line-re)
+                   (re-search-forward
+                    org-scheduled-time-regexp (line-end-position) t))
+              (cond ((string= value "earlier") (org-timestamp-change -1 'day))
+                    ((string= value "later") (org-timestamp-change 1 'day))
+                    ((string= value "") (org-schedule '(4)))
+                    (t (org-schedule nil value)))
+            (if (member value '("earlier" "later" ""))
+                (call-interactively #'org-schedule)
+              (org-schedule nil value))))
+         ((equal property "DEADLINE")
+          (forward-line)
+          (if (and (looking-at-p org-planning-line-re)
+                   (re-search-forward
+                    org-deadline-time-regexp (line-end-position) t))
+              (cond ((string= value "earlier") (org-timestamp-change -1 'day))
+                    ((string= value "later") (org-timestamp-change 1 'day))
+                    ((string= value "") (org-deadline '(4)))
+                    (t (org-deadline nil value)))
+            (if (member value '("earlier" "later" ""))
+                (call-interactively #'org-deadline)
+              (org-deadline nil value))))
+         ((member property org-special-properties)
+          (error "The %s property cannot be set with `org-entry-put'" property))
+         (t
+          (let* ((range (org-get-property-block beg 'force))
+                 (end (cdr range))
+                 (case-fold-search t))
+            (goto-char (car range))
+            (if (re-search-forward (org-re-property property nil t) end t)
+                (let ((property-plus (concat property "+")))
+                  (delete-region (match-beginning 0) (match-end 0))
+                  (goto-char (match-beginning 0))
+                  (while (re-search-forward (org-re-property property-plus nil t) end t)
+                    (delete-region (match-beginning 0) (1+ (match-end 0)))
+                    (goto-char (1- (match-beginning 0)))))
+              (goto-char end)
+              (insert "\n")
+              (backward-char))
+            (let ((lines (split-string value "\n")))
+              (insert ":" property ": " (pop lines))
+              (org-indent-line)
+              (end-of-line)
+              (dolist (line lines)
+                (insert "\n:" property "+: " line)
+                (org-indent-line)
+                (end-of-line)))))))
+      (run-hook-with-args 'org-property-changed-functions property value)))
+
+  (defun org-set-multiline-property (property value)
+    "In the current entry, set PROPERTY to VALUE.
+
+When called interactively, this will prompt for a property name, offering
+completion on existing and default properties.  And then it will prompt
+for a value, offering completion either on allowed values (via an inherited
+xxx_ALL property) or on existing values in other instances of this property
+in the current file.
+
+Throw an error when trying to set a property with an invalid name."
+    (interactive (list nil nil))
+    (let ((property (or property (org-read-property-name))))
+      ;; `org-entry-put' also makes the following check, but this one
+      ;; avoids polluting `org-last-set-property' and
+      ;; `org-last-set-property-value' needlessly.
+      (unless (org--valid-property-p property)
+        (user-error "Invalid property name: \"%s\"" property))
+      (let ((value (or value (org-read-property-value property)))
+            (fn (cdr (assoc-string property org-properties-postprocess-alist t))))
+        (setq org-last-set-property property)
+        (setq org-last-set-property-value (concat property ": " value))
+        ;; Possibly postprocess the inserted value:
+        (when fn (setq value (funcall fn value)))
+        (unless (equal (org-entry-get nil property) value)
+          (org-entry-put-multiline-property nil property value)))))
+
+  (defun org-shift-advice (orig-fun arg)
+    (condition-case-unless-debug nil
+        (funcall orig-fun arg)
+      (error
+       (cl-some (lambda (keymap)
+                  (unless (eq keymap org-mode-map)
+                    (let ((binding (lookup-key keymap (vector last-command-event))))
+                      (if (commandp binding)
+                          (call-interactively binding)))))
+                (current-active-maps t)))))
+  (advice-add 'org-shiftup :around 'org-shift-advice)
+  (advice-add 'org-shiftdown :around 'org-shift-advice)
+
+  ;; ;;;;;;;;;;;;; ;;
+  ;; Org templates ;;
+  ;; ;;;;;;;;;;;;; ;;
+  (require 'org-tempo)
+  ;; [ Thanks to: https://gist.github.com/alphapapa/84ec3396442915ca277b
+  (require 's)
+  (defun org-read-structure-template ()
+    "Read org-mode structure template with completion.  Returns template string."
+    (let* ((templates (map 'list 'cdr org-structure-template-alist))
+           (template (completing-read "Template: " templates nil t)))
+      (car (rassoc template org-structure-template-alist))))
+
+  (defun org-babel-insert-structure-template-or-enclose-region ()
+    "Insert structure block template.  When region is active, enclose region in block."
+    (interactive)
+    (let* ((template (org-read-structure-template))
+           (text ""))
+      (if (use-region-p)
+          (progn
+            (setq text (buffer-substring-no-properties (region-beginning) (region-end)))
+            (delete-region (region-beginning) (region-end))
+            (insert (concat "<" template))
+            (org-tempo-complete-tag)
+            (when (char-equal ?  (char-before (point)))
+              (forward-line)
+              (end-of-line))
+            (insert text))
+        (insert (concat "<" template))
+        (org-tempo-complete-tag))))
+  ;; ]
+  ;; ;;;; ;;
+  ;; Keys ;;
+  ;; ;;;; ;;
+  (add-hook 'org-mode-hook '(lambda()
+                              (set
+                               (make-local-variable 'semantic-mode) nil)))
+
+  (define-key org-mode-map (kbd "M-,") #'org-priority)
+  (define-key org-mode-map (kbd "C-c v e") #'org-show-entry)
+  (define-key org-mode-map (kbd "C-c TAB") #'org-show-subtree)
+  (define-key org-mode-map (kbd "C-c <backtab>") #'org-show-all)
+  (define-key org-mode-map (kbd "C-c v t") #'org-show-todo-tree)
+  ;; (define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all) 
+  ;; (define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all) 
+  (define-key org-mode-map (kbd "C-c M-s") #'org-sort-entries-user-defined)
+  (define-key org-mode-map (kbd "C-c C") #'org-capture)
+  (define-key org-mode-map (kbd "C-c a") #'org-agenda)
+  (define-key org-mode-map (kbd "C-c C-l") #'org-store-link)
+  (define-key org-mode-map (kbd "C-c L") #'org-insert-link-global)
+  (define-key org-mode-map (kbd "C-c O") #'org-open-at-point-global)
+  (define-key org-mode-map (kbd "C-c p") #'org-publish)
+  (define-key org-mode-map (kbd "C-c C-v <") #'org-babel-insert-structure-template-or-enclose-region)
+  (define-key org-mode-map (kbd "C-c C-v k") #'org-babel-remove-result)
+  (define-key org-mode-map (kbd "C-c C-v C-k") #'org-babel-remove-result)
+  (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
+  (define-key org-mode-map (kbd "M-s 7 k") #'org-toggle-link-display)
+
+  (require 'gitlab-api)
+  (require 'redmine-api))
+#+end_src
+
+*** /org-super-agenda/
+
+#+begin_example
+;; (setq org-super-agenda-groups
+;;       '(;; Each group has an implicit boolean OR operator between its selectors.
+;;         (:name "Today"  ; Optionally specify section name
+;;                :time-grid t  ; Items that appear on the time grid
+;;                :todo "TODAY")  ; Items that have this TODO keyword
+;;         (:name "Important"
+;;                ;; Single arguments given alone
+;;                :tag "bills"
+;;                :priority "A")
+;;         ;; Set order of multiple groups at once
+;;         (:order-multi (2 (:name "Shopping in town"
+;;                                 ;; Boolean AND group matches items that match all subgroups
+;;                                 :and (:tag "shopping" :tag "@town"))
+;;                          (:name "Food-related"
+;;                                 ;; Multiple args given in list with implicit OR
+;;                                 :tag ("food" "dinner"))
+;;                          (:name "Personal"
+;;                                 :habit t
+;;                                 :tag "personal")
+;;                          (:name "Space-related (non-moon-or-planet-related)"
+;;                                 ;; Regexps match case-insensitively on the entire entry
+;;                                 :and (:regexp ("space" "NASA")
+;;                                               ;; Boolean NOT also has implicit OR between selectors
+;;                                               :not (:regexp "moon" :tag "planet")))))
+;;         ;; Groups supply their own section names when none are given
+;;         (:todo "WAITING" :order 8)  ; Set order of this section
+;;         (:todo ("SOMEDAY" "TO-READ" "CHECK" "TO-WATCH" "WATCHING")
+;;                ;; Show this group at the end of the agenda (since it has the
+;;                ;; highest number). If you specified this group last, items
+;;                ;; with these todo keywords that e.g. have priority A would be
+;;                ;; displayed in that group instead, because items are grouped
+;;                ;; out in the order the groups are listed.
+;;                :order 9)
+;;         (:priority<= "B"
+;;                      ;; Show this section after "Today" and "Important", because
+;;                      ;; their order is unspecified, defaulting to 0. Sections
+;;                      ;; are displayed lowest-number-first.
+;;                      :order 1)
+;;         ;; After the last group, the agenda will display items that didn't
+;;         ;; match any of these groups, with the default order position of 99
+;;         ))
+#+end_example
+
+#+begin_src elisp
+(add-hook 'org-mode-hook #'org-super-agenda-mode)
+(with-eval-after-load 'org-super-agenda
+  (message "Importing org-super-agenda-config")
+
+  (setq org-super-agenda-fontify-whole-header-line t
+        org-super-agenda-groups
+        '((:name "Hoy"
+                 :time-grid t
+                 :todo "TODAY")
+          (:name "Negocios"
+                 :tag "@business")
+          (:name "Administración"
+                 :tag "@admin")
+          (:name "Mejora"
+                 :tag "@improvement")
+          (:name "Trabajo"
+                 :tag "@job")
+          (:name "Hogar"
+                 :tag "@home")
+          (:name "Hábito"
+                 :habit t))))
+#+end_src
+
+*** /org-appt/
+
+#+begin_src elisp
+(with-eval-after-load 'org
+  (message "Importing org-appt")
+
+  (require 'appt)
+  (fset 'org-appt-start-process
+        (if (require 'async nil t)
+            #'async-start-process
+          (lambda (name program finish &rest args)
+            (apply #'start-process name finish program args))))
+
+  (setq appt-disp-window-function 'org-appt-disp-function
+        ;; appt-delete-window-function (lambda () t)
+        appt-display-interval 5
+        appt-message-warning-time (* 2 appt-display-interval)
+        appt-display-duration 12
+        appt-display-diary nil
+        diary-file "~/.emacs.d/cache/diary"
+        ;; delete old appointments
+        ;; appt-time-msg-list nil
+        )
+  ;; turn appointment checking on
+  (appt-activate t)
+  ;; Add org agenda appointments
+  ;; t means refresh
+  (defun org-appt-update (&rest args)
+    (interactive (list nil))
+    (let (msg)
+      (let ((inhibit-message t)
+            (message-log-max nil))
+        (set 'msg (org-agenda-to-appt t)))
+      (let* ((nowtime (current-time))
+             (now-ms (nth 2 nowtime)))
+        (message (concat msg " at "
+                         (format-time-string "%Y-%m-%d %T" nowtime)
+                         (format ".%06d" now-ms))))))
+  (advice-add 'org-deadline :after #'org-appt-update)
+  (advice-add 'org-schedule :after #'org-appt-update)
+  (advice-add 'org-agenda-schedule :after #'org-appt-update)
+  (run-at-time "00:00" (* 24 3600) 'org-appt-update)
+
+  (defvar org-appt-disp-functions nil)
+
+  ;; text notification
+  (if (not (executable-find "termux-notification"))
+      (cl-block 'find
+        (cond
+         ((executable-find "gxmessage")
+          (defun org-appt-function-xmessage (msg)
+            (org-appt-start-process "gxmessage disp" "gxmessage" nil msg)))
+         ((executable-find "xmessage")
+          (defun org-appt-function-xmessage (msg)
+            (org-appt-start-process "xmessage disp" "xmessage" nil msg)))
+         (t (cl-return-from 'find)))
+        (set 'org-appt-disp-functions (cons 'org-appt-function-xmessage org-appt-disp-functions)))
+    (defun org-appt-function-termux-notification (msg)
+      (org-appt-start-process "termux notification disp" "termux-notification" nil
+                              "-c" msg
+                              "-t" "Org Agenda"))
+    (set 'org-appt-disp-functions (cons 'org-appt-function-termux-notification org-appt-disp-functions)))
+
+  ;; voice notification
+  (if (not (executable-find "termux-tts-speak"))
+      (cl-block 'find
+        (cond
+         ((executable-find "sfestival")
+          (defun org-appt-function-sfestival (msg)
+            (org-appt-start-process "sfestival disp" "sfestival" nil msg)))
+         (t (cl-return-from 'find)))
+        (set 'org-appt-disp-functions (cons 'org-appt-function-sfestival org-appt-disp-functions)))
+    (defun org-appt-function-termux-tts-speak (msg)
+      (org-appt-start-process "termux tts disp" "termux-tts-speak" nil
+                              "-l" "es" msg))
+    (set 'org-appt-disp-functions (cons 'org-appt-function-termux-tts-speak org-appt-disp-functions)))
+
+  ;; vibrate notification
+  (when (executable-find "termux-vibrate")
+    (defun org-appt-function-termux-vibrate (msg)
+      (org-appt-start-process "termux vibrate disp" "termux-vibrate" nil
+                              "-d" "1000"))
+    (set 'org-appt-disp-functions (cons 'org-appt-function-termux-vibrate org-appt-disp-functions)))
+
+  (unless org-appt-disp-functions
+    (set 'org-appt-disp-functions (cons 'message org-appt-disp-functions)))
+
+
+  (defun org-appt-format-and-calls (min-to-app new-time appt-msg)
+    (let ((msg (concat min-to-app " minutos para " appt-msg)))
+      (dolist (fun org-appt-disp-functions)
+        (funcall fun msg))))
+
+  (defun org-appt-disp-function (min-to-app new-time appt-msg)
+    "Display appointment due in MIN-TO-APP (a string) minutes.
+NEW-TIME is a string giving the current date.
+Displays the appointment message APPT-MSG in a separate buffer.
+The arguments may also be lists, where each element relates to a
+separate appointment."
+    (appt-disp-window min-to-app new-time appt-msg)
+    (if org-appt-disp-functions
+        (if (atom min-to-app)
+            (org-appt-format-and-calls min-to-app new-time appt-msg)
+          (cl-mapc (lambda (min msg) (org-appt-format-and-calls min new-time msg))
+                   min-to-app appt-msg)))))
+#+end_src
+
+*** /org-brain/
+
+#+begin_src elisp
+(with-eval-after-load 'org-brain
+  (message "Importing org-brain-config")
+
+  (when (boundp 'personal-notes-directory)
+    (setq org-brain-path (expand-file-name
+                          "brain"
+                          personal-notes-directory))
+    (make-directory org-brain-path t))
+
+  (setq org-id-track-globally t
+        ;; <only headlines entries>
+        ;; org-brain-include-file-entries nil
+        ;; org-brain-file-entries-use-title nil
+        org-brain-title-max-length 80)
+
+  (push 'org-brain-entry-todo-state org-brain-vis-current-title-prepend-functions)
+  (push 'org-brain-entry-tags-string org-brain-vis-current-title-append-functions)
+
+
+  (when (require 'helm-org-rifle nil t)
+    (defun helm-org-rifle-brain ()
+      "Rifle files in `org-brain-path'."
+      (interactive)
+      (let ((helm-org-rifle-close-unopened-file-buffers nil))
+        (helm-org-rifle-directories (list org-brain-path))))
+
+    (defun helm-org-rifle-open-in-brain (candidate)
+      (-let (((buffer . pos) candidate))
+        (with-current-buffer buffer
+          (goto-char pos)
+          (org-brain-visualize-entry-at-pt))))
+
+    (add-to-list 'helm-org-rifle-actions
+                 (cons "Show entry in org-brain" 'helm-org-rifle-open-in-brain)
+                 t))
+
+  (when (require 'org-noter nil t)
+    (add-hook 'org-noter-insert-heading-hook #'org-id-get-create)
+    (defun org-brain-open-org-noter (entry)
+      "Open `org-noter' on the ENTRY.
+If run interactively, get ENTRY from context."
+      (interactive (list (org-brain-entry-at-pt)))
+      (org-with-point-at (org-brain-entry-marker entry)
+        (org-noter)))
+
+    (define-key org-brain-visualize-mode-map (kbd "\C-c n") 'org-brain-open-org-noter)))
+#+end_src
+
+*** TODO /rst/                                                        :markdown:
 
 - [ ] Find /sphinx-frontend-config/ in repo
 
@@ -11233,6 +13455,122 @@ Switch the current window to the previous buffer."
 
   (with-eval-after-load 'sphinx-doc
     (require 'sphinx-frontend-config)))
+#+end_src
+
+*** /latex/                                                           :markdown:
+
+#+begin_src elisp
+(add-to-list 'auto-mode-alist '("\\.ptx\\'" . latex-mode))
+(with-eval-after-load 'latex
+  (message "Importing latex config")
+  ;; latex mode buttons
+  (defvar TeX-bar-LaTeX-button-alist
+    (quote
+     ((latex :image
+             (lambda nil
+               (if TeX-PDF-mode "pdftex" "tex"))
+             :command
+             (progn
+               (TeX-save-document
+                (TeX-master-file))
+               (TeX-command "LaTeX"
+                            (quote TeX-master-file)
+                            -1))
+             :help
+             (lambda
+               (&rest ignored)
+               (TeX-bar-help-from-command-list "LaTeX")))
+      (pdfpslatex :image "pdftex" :command
+                  (progn
+                    (TeX-save-document
+                     (TeX-master-file))
+                    (TeX-command "PDFpsLaTeX"
+                                 (quote TeX-master-file)
+                                 -1))
+                  :help
+                  (lambda
+                    (&rest ignored)
+                    (TeX-bar-help-from-command-list "PDFpsLaTeX")))
+      (evince :image "viewpdf" :command
+              (TeX-command "Evince"
+                           (quote TeX-master-file)
+                           -1)
+              :help
+              (lambda
+                (&rest ignored)
+                (TeX-bar-help-from-command-list "Evince")))
+      (clean :image "delete" :command
+             (TeX-command "Clean"
+                          (quote TeX-master-file)
+                          -1)
+             :help
+             (lambda
+               (&rest ignored)
+               (TeX-bar-help-from-command-list "Clean")))
+      (pdflatex :image "pdftex" :command
+                (progn
+                  (TeX-save-document
+                   (TeX-master-file))
+                  (TeX-command "PDFLaTeX"
+                               (quote TeX-master-file)
+                               -1))
+                :help
+                (lambda
+                  (&rest ignored)
+                  (TeX-bar-help-from-command-list "PDFLaTeX")))
+      (next-error :image "error" :command TeX-next-error :enable
+                  (plist-get TeX-error-report-switches
+                             (intern
+                              (TeX-master-file)))
+                  :visible
+                  (plist-get TeX-error-report-switches
+                             (intern
+                              (TeX-master-file))))
+      (view :image
+            (lambda nil
+              (if TeX-PDF-mode "viewpdf" "viewdvi"))
+            :command
+            (TeX-command "View"
+                         (quote TeX-master-file)
+                         -1)
+            :help
+            (lambda
+              (&rest ignored)
+              (TeX-bar-help-from-command-list "View")))
+      (file :image "dvips" :command
+            (TeX-command "File"
+                         (quote TeX-master-file)
+                         -1)
+            :visible
+            (not TeX-PDF-mode)
+            :help
+            (lambda
+              (&rest ignored)
+              (TeX-bar-help-from-command-list "File")))
+      (bibtex :image "bibtex" :command
+              (TeX-command "BibTeX"
+                           (quote TeX-master-file)
+                           -1)
+              :help
+              (lambda
+                (&rest ignored)
+                (TeX-bar-help-from-command-list "BibTeX")))
+      (clean :image "delete" :command
+             (TeX-command "Clean"
+                          (quote TeX-master-file)
+                          -1)
+             :help
+             (lambda
+               (&rest ignored)
+               (TeX-bar-help-from-command-list "Clean")))
+      (latex-symbols-experimental :alias :eval-group LaTeX-symbols-toolbar-switch-contents LaTeX-symbols-toolbar-contents))))
+
+  (defvar TeX-bar-LaTeX-buttons
+    (quote
+     (new-file open-file dired kill-buffer save-buffer undo cut copy paste
+               [separator nil]
+               latex next-error view bibtex
+               (pdfpslatex evince clean)))))
 #+end_src
 
 *** CANC /ellocate/
@@ -12544,106 +14882,187 @@ end note
   (setq ein:output-area-inlined-images t))
 #+end_src
 
-* TODO Rest of init file
+*** /xahk-mode/
 
 #+begin_src elisp
-;;;;;;;;;;;;;;;;;
-;; Programming ;;
-;;;;;;;;;;;;;;;;;
-(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
-
-;; [ cc-mode
-(add-hook 'c-mode-hook   custom-lsp-startup-function)
-(add-hook 'c++-mode-hook custom-lsp-startup-function)
-(defun c-c++-config ()
-  ;; run only once
-  (remove-hook 'c-mode-hook 'c-c++-config)
-  (remove-hook 'c++-mode-hook 'c-c++-config)
-  (require 'c-c++-config)
-  ;; After semantic
-  ;; After ede-projects-config
-  (require 'cmake-make-config))
-(add-hook 'c-mode-hook   'c-c++-config)
-(add-hook 'c++-mode-hook 'c-c++-config)
-;; ]
-
-;; [ rust
-;; rustic has automatic configuration
-(with-eval-after-load 'rustic
-  (require 'rustic-config))
-(with-eval-after-load 'rust-mode
-  (add-hook 'rust-mode-hook custom-lsp-startup-function)
-  (require 'rust-config))
-;; ]
-
-;; [ java
-(add-hook 'java-mode-hook (lambda ()
-                            (if (eq custom-lsp-startup-function 'lsp-deferred)
-                                (when (require 'lsp-java nil t)
-                                  (lsp-deferred))
-                              (eglot-ensure))))
-(defun load-once-java-stuff ()
-  (with-eval-after-load 'dap-mode
-    (require 'dap-java))
-  (remove-hook 'java-mode-hook 'load-once-java-stuff))
-(add-hook 'java-mode-hook 'load-once-java-stuff)
-;; ]
-
-;; [ javascript
-(defun language-server-protocol-js-cond ()
-  (unless (or (derived-mode-p 'ein:ipynb-mode)
-              (derived-mode-p 'json-mode))
-    (funcall custom-lsp-startup-function)))
-(add-hook 'js-mode-hook #'language-server-protocol-js-cond)
-(with-eval-after-load 'js
-  (with-eval-after-load 'dap-mode
-    (require 'dap-firefox)
-    (dap-firefox-setup)))
-;; ]
-
-;; [ php
-(add-hook 'php-mode-hook custom-lsp-startup-function)
-(with-eval-after-load 'php-mode
-  (with-eval-after-load 'dap-mode
-    (require 'dap-php))
-  (require 'php-config))
-;; ]
-
-;; TODO: implementar la función python-integrated-mode dentro de python-integrated.el
-;(autoload 'python-integrated-mode "python-integrated" "Python everywhere" t)
-;(add-to-list 'auto-mode-alist '("\\.py\\." . python-integrated-mode))
-;(require 'python-integrated)
-
-(add-to-list 'auto-mode-alist '("\\.ptx\\'" . latex-mode))
-(with-eval-after-load 'latex
-  (require 'latex-config))
-
-;; [ org
-(setq org-replace-disputed-keys t)
-(unless (fboundp 'org-mode)
-  (message "`org-mode' not found")
-  (autoload 'org-mode "org"))
-(with-eval-after-load 'org
-  (require 'org-config)
-  (require 'org-super-agenda-config)
-  (require 'org-appt)
-  (require 'gitlab-api)
-  (require 'redmine-api))
-(add-hook 'org-mode-hook #'org-super-agenda-mode)
-(with-eval-after-load 'org-brain
-  (require 'org-brain-config))
-;; ]
-
-;; <ahk> AutoHotKey programming
 (add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
+#+end_src
 
-;; ] <Not always required>
+* Machine config
 
-;; ---------- ;;
-;; Hide modes ;;
-;; ---------- ;;
-;; Last config file
-(require 'machine-config)
+#+begin_src elisp
+;;;;;;;;;;;;;;;;;;
+;; Machine name ;;
+;;;;;;;;;;;;;;;;;;
+(cond
+ ;;;;;;;;;;;;;;;;;;;;;;;
+ ;; localhost machine ;;
+ ;;;;;;;;;;;;;;;;;;;;;;;
+ ((string-equal (system-name) "localhost")
+  ;; (setq temporary-file-directory "~/tmp/")
+  (with-eval-after-load 'python-mode
+    (set 'py-temp-directory temporary-file-directory))
+  (toggle-hscroll-aggressive)
+  (remove-hook 'c++-mode-hook 'irony-mode)
+  (remove-hook 'c-mode-hook 'irony-mode)
+  (remove-hook 'objc-mode-hook 'irony-mode)
+  (remove-hook 'c-mode-hook 'rtags-start-process-unless-running)
+  (remove-hook 'c++-mode-hook 'rtags-start-process-unless-running)
+  (require 'gtags-config)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Machine operating system ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(cond
+ ;;;;;;;;;;;
+ ;; Linux ;;
+ ;;;;;;;;;;;
+ ((eq system-type 'gnu/linux)
+  )
+ ;;;;;;;;;;;;;
+ ;; Windows ;;
+ ;;;;;;;;;;;;;
+ ((eq system-type 'windows-nt)
+  ;; Coding system
+  (setq default-process-coding-system '(windows-1252-dos . windows-1252-dos))
+  ;; Clean environment PATH
+  (setenv "PATH" (mapconcat 'identity (remove-if (lambda (s) (string-match-p "\\\\MKS\\\\" s)) (delete "" (split-string (getenv "PATH") ";"))) ";"))
+  (set 'exec-path (delete "" (split-string (getenv "PATH") ";")))
+  ;; Paths
+  (defun path-style-linux-to-windows (filename)
+    (if (string-match "^/" filename)
+        (concat "c:/cygwin64" filename)
+      filename))
+  (defun figlet-get-font-dir-advice (orig-fun &rest args)
+    (path-style-linux-to-windows (apply orig-fun args)))
+  (advice-add 'figlet-get-font-dir :around #'figlet-get-font-dir-advice)
+  ;; Python
+  (with-eval-after-load 'elpy
+    (setq elpy-rpc-python-command (or (executable-find "py")
+                                      (executable-find "pythonw")
+                                      "python"))
+    (let ((time (* 15 60)))
+      (run-with-timer time time 'elpy-rpc-restart-max 7 "python.exe")
+      (message "Limiting python's interpreters every %i seconds" time)))
+  ;; Org
+  (with-eval-after-load 'org-config
+    (setq org-babel-python-command python-shell-interpreter))
+  ;; UTF 8
+  ;;(modify-coding-system-alist 'file "" 'utf-8)
+  ;;(modify-coding-system-alist 'process "" 'utf-8)
+  ;; Bugs
+  (require 'emacs-win-bug))
+ ;;;;;;;;;;;;
+ ;; Cygwin ;;
+ ;;;;;;;;;;;;
+ ((eq system-type 'cygwin)
+  (add-to-list 'recentf-exclude "\\\\")
+  (setq recentf-save-file "recentf_cygwin"
+        cygwin-root-path (if (executable-find "cygpath")
+                             (substring (shell-command-to-string "cygpath -m /") 0 -1)
+                           "/cygwin64"))
+  ;; coding
+  (defun get-buffer-file-coding-system-local (process)
+    (if (ede-current-project)
+        (buffer-local-value 'buffer-file-coding-system (find-file-noselect (oref (ede-current-project) file)))
+      'utf-8-dos))
+  (add-to-list 'process-coding-system-alist '("ag" . get-buffer-file-coding-system-local))
+  (add-to-list 'process-coding-system-alist '("grep" . get-buffer-file-coding-system-local))
+  (defun helm-ag--remove-carrige-returns ()
+    (save-excursion
+      ;; [ solve ^M at the end of the line
+      (goto-char (point-min))
+      (while (re-search-forward "\xd" nil t)
+        (replace-match "" t t))
+      ;; ]
+      ;; <xor>
+      ;; [ solve both ^M at end and acutes
+      ;; but have any problems... I don't remember
+      ;; (recode-region (point-min) (point-max) 'latin-1-dos 'utf-8-unix)
+      ;; ]
+      ))
+  ;; correct ascii characters
+  (defun ascii-to-utf8-compilation-filter ()
+    (ascii-to-utf8-forward compilation-filter-start (point-max)))
+  (add-hook 'compilation-filter-hook 'ascii-to-utf8-compilation-filter)
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; obtain linux style paths ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (defun path-style-windows-to-linux (filename)
+    (if (string-match "\\([A-Z]\\):\\\\" filename)
+        (replace-regexp-in-string
+         "\\\\" "/"
+         (replace-match
+          (concat "/cygdrive/"
+                  (downcase (match-string 1 filename))
+                  "/") nil t filename) nil t)
+      (replace-regexp-in-string "\\\\" "/" filename nil t)))
+  ;; shell-command
+  (defun shell-command-advice (orig-fun command &rest args)
+    (cond
+     ((string-match "^WINWORD" command)
+      (apply orig-fun (replace-regexp-in-string
+                       "/q \""
+                       (concat "/q \"" cygwin-root-path)
+                       command nil t) args))
+     ((or
+       (string-match "^java" command)
+       (string-match "^soffice" command))
+      (apply orig-fun (replace-regexp-in-string
+                       "\\([^<>] +\"?\\)/"
+                       (concat "\\1" cygwin-root-path "/")
+                       command) args))
+     (t (apply orig-fun command args))))
+  (advice-add 'shell-command :around #'shell-command-advice)
+  (advice-add 'shell-command-to-string :around #'shell-command-advice)
+  (advice-add 'org-babel-eval :around #'shell-command-advice)
+  ;; find-file
+  ;; (defun find-file-advice (orig-fun filename &rest args)
+  ;;   (set 'filename (path-style-windows-to-linux filename))
+  ;;   (apply orig-fun filename args))
+  ;; (require 'files)
+  ;; (advice-add 'find-file-noselect :around #'find-file-advice)
+  ;; expand file name
+  ;; (defun expand-file-name-advice (orig-fun filename &rest args)
+  ;;   (if (string-match "^\\([A-Z]\\):\\\\" filename)
+  ;;       filename
+  ;;     (apply orig-fun filename args)))
+  ;; (advice-add 'expand-file-name :around #'expand-file-name-advice)
+  ;; file exist
+  ;; (defun file-exists-p-advice (orig-fun filename &rest args)
+  ;;   (apply orig-fun (path-style-windows-to-linux filename) args))
+  ;; (advice-add 'file-exists-p :around #'file-exists-p-advice)
+  ;; compile
+  (defun compilation-find-file-advice (orig-fun maker filename &rest args)
+    (set 'filename (path-style-windows-to-linux filename))
+    (apply orig-fun maker filename args))
+  (require 'compile)
+  (advice-add 'compilation-find-file :around #'compilation-find-file-advice)
+  ;; ffap
+  (defun ffap-string-at-point-advice (orig-fun &rest args)
+    (path-style-windows-to-linux (apply orig-fun args)))
+  (require 'ffap)
+  (advice-add 'ffap-string-at-point :around #'ffap-string-at-point-advice)
+  (global-set-key (kbd "C-v") 'yank)
+  ;; Python
+  (setq python-shell-interpreter "python3")))
+
+(when (locate-library "helm")
+  (define-key global-map [remap find-file] 'helm-find-files)
+  (define-key global-map [remap occur] 'helm-occur)
+  (define-key global-map [remap list-buffers] 'helm-buffers-list)
+  (define-key global-map [remap yank-pop] 'helm-show-kill-ring)
+  (define-key global-map [remap kmacro-end-and-call-macro] 'helm-execute-kmacro)
+  (define-key global-map [remap switch-to-buffer] 'helm-mini)
+  (define-key global-map [remap insert-register] 'helm-register)
+  (define-key global-map [remap bookmark-jump] 'helm-filtered-bookmarks)
+  (define-key global-map [remap dabbrev-expand] 'helm-dabbrev)
+  (define-key global-map [remap apropos-command] 'helm-apropos)
+  (define-key global-map [remap jump-to-register] 'helm-register)
+  (define-key global-map [remap find-dired] (if (fboundp 'helm-fd) 'helm-fd 'helm-find))
+  (unless (boundp 'completion-in-region-function)
+    (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
+    (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point)))
 #+end_src
 
 * Command line arguments
