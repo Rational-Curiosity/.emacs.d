@@ -558,9 +558,13 @@ No argument or nil as argument means do this for the current buffer."
   (with-current-buffer (if buffer (get-buffer buffer) (current-buffer))
     (setq buffer-undo-list nil)))
 
-(defun undo-advice (&optional arg)
-  (recenter nil t))
-(advice-add #'undo :after 'undo-advice)
+;; (defun undo-advice (&optional arg)
+;;   (recenter nil t))
+;; (advice-add #'undo :after 'undo-advice)
+(defun allow-undoing-advice (&rest args)
+  (when (eq last-command 'undo)
+    (setq this-command 'undo)))
+(advice-add #'recenter-top-bottom :after 'allow-undoing-advice)
 #+end_src
 
 * Miscellaneous
@@ -3495,28 +3499,43 @@ others."
                   names)
             (setq exwm-workspace-number (1+ monitor-number)))))))
 
-  (defun exwm-update-minibuffer-monitor ()
+  (defun exwm-update-minibuffer-monitor (&optional workspace-or-screen)
     (interactive)
-    (cond
-     ((and (numberp exwm-default-minibuffer-workspace-or-screen)
-           (< 0 exwm-default-minibuffer-workspace-or-screen)
-           (> exwm-workspace-number exwm-default-minibuffer-workspace-or-screen))
-      (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
-                           (exwm-workspace--workspace-from-frame-or-index
-                            exwm-default-minibuffer-workspace-or-screen)))
-     ((and
-       (stringp exwm-default-minibuffer-workspace-or-screen)
-       (let* ((pos (cl-position exwm-default-minibuffer-workspace-or-screen
-                                exwm-randr-workspace-monitor-plist
-                                :test 'equal))
-              (workspace (nth (1- pos) exwm-randr-workspace-monitor-plist)))
-         (if (and pos (/= pos 0)
-                  workspace (/= workspace 0))
-             (progn
-               (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index 0)
-                                    (exwm-workspace--workspace-from-frame-or-index
-                                     (nth (1- pos) exwm-randr-workspace-monitor-plist)))
-               t)))))))
+    (let ((minibuffer-pos
+           (cl-some (lambda (frame)
+                      (when (eq frame (window-frame (minibuffer-window frame)))
+                        (exwm-workspace--position frame)))
+                    exwm-workspace--list)))
+      (if (null
+           (and (numberp minibuffer-pos)
+                (<= 0 minibuffer-pos)
+                (< minibuffer-pos (length exwm-workspace--list))))
+          (message "Frame with minibuffer not found.")
+        (or workspace-or-screen
+            (setq workspace-or-screen
+                  exwm-default-minibuffer-workspace-or-screen))
+        (cond
+         ((and (numberp workspace-or-screen)
+               (<= 0 workspace-or-screen)
+               (< workspace-or-screen (length exwm-workspace--list)))
+          (when (/= minibuffer-pos workspace-or-screen)
+            (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index
+                                  minibuffer-pos)
+                                 (exwm-workspace--workspace-from-frame-or-index
+                                  workspace-or-screen))))
+         ((and (stringp workspace-or-screen)
+               (setq workspace-or-screen
+                     (cl-position workspace-or-screen
+                                  exwm-randr-workspace-monitor-plist
+                                  :test 'equal)))
+          (setq workspace-or-screen
+                (nth (1- workspace-or-screen)
+                     exwm-randr-workspace-monitor-plist))
+          (when (/= minibuffer-pos workspace-or-screen)
+            (exwm-workspace-swap (exwm-workspace--workspace-from-frame-or-index
+                                  minibuffer-pos)
+                                 (exwm-workspace--workspace-from-frame-or-index
+                                  workspace-or-screen))))))))
   (add-hook 'exwm-init-hook 'exwm-update-minibuffer-monitor 91)
 
   (defun exwm-screen-count ()
@@ -4121,7 +4140,7 @@ others."
                                       helm-exwm-source
                                       helm-source-recentf)))
 
-  (when (featurep 'helm-posframe)
+  (with-eval-after-load 'helm-posframe
     (defvar exwm-helm-posframe-display-buffer nil)
     (defun helm-posframe-display-advice (&rest args)
       (let ((buffer (current-buffer)))
@@ -4140,7 +4159,7 @@ others."
         (setq exwm-helm-posframe-display-buffer nil)))
     (advice-add 'helm-posframe-cleanup :after 'helm-posframe-cleanup-advice))
 
-  (when (featurep 'winum)
+  (with-eval-after-load 'winum
     (defun exwm-winum-bindings ()
       (if winum-mode
           (winum--define-keys exwm-mode-map)
@@ -4148,7 +4167,7 @@ others."
     (exwm-winum-bindings)
     (add-hook 'winum-mode-hook 'exwm-winum-bindings))
 
-  (when (featurep 'ace-window)
+  (with-eval-after-load 'ace-window
     (defun aw-select-advice (orig-fun &rest args)
       (let ((exwm-buffer-list (exwm-buffer-list)))
         (mapc (lambda (buffer)
@@ -4680,6 +4699,7 @@ This function is part of the `orderless' completion style."
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
 (define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-toggle)
+(global-set-key (kbd "M-g a") 'rg-menu)
 (global-set-key (kbd "M-g M-a") 'occur-project)
 (global-set-key (kbd "M-g M-f") 'project-find-file)
 (global-set-key (kbd "M-y") 'icomplete-vertical-kill-ring-insert)
@@ -10388,7 +10408,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
                     :foreground "mint cream")
 (set-face-attribute 'aw-leading-char-face nil
                     :weight 'bold
-                    :foreground "green"
+                    :foreground "green yellow"
                     :height 170)
 
 (defun aw-real-move-window (window)
