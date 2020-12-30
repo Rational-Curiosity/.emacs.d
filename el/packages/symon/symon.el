@@ -827,7 +827,8 @@ while(1)                                                            \
 
 (defun symon--force-redisplay ()
   "Redisplay last display."
-  (unless (active-minibuffer-window)
+  (unless (or prefix-arg
+              (active-minibuffer-window))
     (let ((symon--force-redisplay t))
       (message "%s" (current-message)))))
 
