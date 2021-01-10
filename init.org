@@ -531,25 +531,32 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; create the autosave dir if necessary, since emacs won't.
 ;; with backup directory is not necessary
-(let ((backup-directory (expand-file-name "~/.emacs.d/backup/")))
-  (make-directory backup-directory t)
+(let ((saves-directory (expand-file-name "saves/" user-emacs-directory)))
+  (let ((backup-directory (concat saves-directory "backup/"))
+        (auto-save-directory (concat saves-directory "auto-save/"))
+        (auto-save-list-directory (concat saves-directory "auto-save/session/")))
+    (make-directory backup-directory t)
+    (make-directory auto-save-directory t)
+    (make-directory auto-save-list-directory t)
 
-  (setq undo-limit (eval-when-compile
-                     (* 1024 1024))
-        undo-outer-limit (eval-when-compile
-                           (* 30 1024 1024))
-        undo-strong-limit (eval-when-compile
-                            (* 30 1024 1024))
-        backup-directory-alist
-        `((".*" . ,backup-directory))
-        ;; auto-save-file-name-transforms
-        ;; '((".*" "~/.emacs.d/backup/" t))
-        ;; 10 input events #<file-name>#
-        auto-save-interval 10
-        ;; 10 seconds
-        auto-save-timeout 10
-        ;; create local .#<file-name> to avoid collisions
-        create-lockfiles nil))
+    (setq undo-limit (eval-when-compile
+                       (* 1024 1024))
+          undo-outer-limit (eval-when-compile
+                             (* 30 1024 1024))
+          undo-strong-limit (eval-when-compile
+                              (* 30 1024 1024))
+          backup-directory-alist
+          `((".*" . ,backup-directory))
+          auto-save-list-file-prefix auto-save-list-directory
+          auto-save-file-name-transforms
+          (nconc auto-save-file-name-transforms
+                 `((".*" ,auto-save-directory t)))
+          ;; 10 input events #<file-name>#
+          auto-save-interval 10
+          ;; 10 seconds
+          auto-save-timeout 10
+          ;; create local .#<file-name> to avoid collisions
+          create-lockfiles nil)))
 
 (defun buffer-reset-undo (&optional buffer)
   "Reset BUFFER undo information.
@@ -3376,6 +3383,12 @@ others."
                          (int-to-string (or opacity exwm-default-transparency)))
         (message "Buffer %s without window." (buffer-name buffer)))))
 
+  (defun transparent-frame (arg)
+    (interactive "P")
+    (unless arg
+      (setq arg 0))
+    (set-frame-parameter nil 'alpha `(,arg . ,arg)))
+
   (defun exwm-toggle-transparency ()
     (interactive)
     (if (= 1 exwm-default-transparency)
@@ -3424,80 +3437,79 @@ others."
     (require 'crm))
   (defun exwm-update-screens ()
     (interactive)
-    (when (null (member
-                 "arandr"
-                 (mapcar (lambda (pid)
-                           (cdr (assq 'comm (process-get-attrs pid '(comm)))))
-                         (list-system-processes))))
-      (let* ((monitors (exwm-xrandr-parse))
-             (names (hash-table-keys monitors)))
-        (if (called-interactively-p 'interactive)
-            (setq exwm-default-monitor-order
-                  (or (completing-read-multiple
-                       (concat
-                        "External monitor order (" crm-separator "): ")
-                       names
-                       nil t)
-                      exwm-default-monitor-order)))
-        (if (null exwm-default-monitor-order)
-            (setq exwm-default-monitor-order
-                  (list
-                   (cl-some (lambda (name)
-                              (if (gethash 'primary (gethash name monitors))
-                                  name))
-                            names))))
-        (let* ((names (cl-remove-if-not (lambda (name)
-                                          (member name names))
-                                        exwm-default-monitor-order))
-               (posx 0)
-               (gety-lambda
-                (lambda (name)
-                  (string-to-number
-                   (nth 1 (split-string
-                           (or
-                            (exwm-get-default-monitor-resolution name)
-                            (gethash 'max (gethash name monitors))) "x")))))
-               (ymax
-                (apply 'max
-                       (mapcar
-                        gety-lambda
-                        names)))
-               (args
-                (apply
-                 'nconc
-                 (mapcar
+    ;; when (null (member
+    ;;              "arandr"
+    ;;              (mapcar (lambda (pid)
+    ;;                        (cdr (assq 'comm (process-get-attrs pid '(comm)))))
+    ;;                      (list-system-processes))))
+    (let* ((monitors (exwm-xrandr-parse))
+           (names (hash-table-keys monitors)))
+      (when (called-interactively-p 'interactive)
+        (setq exwm-default-monitor-order
+              (or (completing-read-multiple
+                   (concat
+                    "External monitor order (" crm-separator "): ")
+                   names
+                   nil t)
+                  exwm-default-monitor-order)
+              exwm-randr-workspace-monitor-plist nil))
+      (when (null exwm-default-monitor-order)
+        (setq exwm-default-monitor-order
+              (list
+               (cl-some (lambda (name)
+                          (if (gethash 'primary (gethash name monitors))
+                              name))
+                        names))))
+      (let ((names (cl-remove-if-not (lambda (name)
+                                       (member name names))
+                                     exwm-default-monitor-order)))
+        (unless (equal (-slice exwm-randr-workspace-monitor-plist 1 nil 2) names)
+          (let* ((posx 0)
+                 (gety-lambda
                   (lambda (name)
-                    (let* ((monitor (gethash name monitors))
-                           (resolution
-                            (or
-                             (exwm-get-default-monitor-resolution name)
-                             (gethash 'max monitor))))
-                      (prog1
-                          (list "--output" name
-                                "--mode" resolution
-                                "--pos" (concat (number-to-string posx)
-                                                "x"
-                                                (number-to-string
-                                                 (- ymax (funcall gety-lambda name))))
-                                "--rotate" "normal")
-                        (setq posx (+ posx
-                                      (string-to-number
-                                       (nth 0 (split-string
-                                               (or
-                                                (exwm-get-default-monitor-resolution name)
-                                                (gethash 'max monitor)) "x"))))))))
-                  names))))
-          (apply 'call-process "xrandr" nil nil nil args)
-          (if exwm-randr-workspace-monitor-plist
-              (exwm-set-random-wallpaper exwm-default-wallpaper-folder "update"))
-          (setq exwm-randr-workspace-monitor-plist nil)
-          (let ((monitor-number -1))
-            (mapc (lambda (name)
-                    (setq exwm-randr-workspace-monitor-plist
-                          (nconc exwm-randr-workspace-monitor-plist
-                                 (list (cl-incf monitor-number) name))))
-                  names)
-            (setq exwm-workspace-number (1+ monitor-number)))))))
+                    (string-to-number
+                     (nth 1 (split-string
+                             (or
+                              (exwm-get-default-monitor-resolution name)
+                              (gethash 'max (gethash name monitors))) "x")))))
+                 (ymax (apply 'max (mapcar gety-lambda names)))
+                 (args
+                  (apply
+                   'nconc
+                   (mapcar
+                    (lambda (name)
+                      (let* ((monitor (gethash name monitors))
+                             (resolution
+                              (or
+                               (exwm-get-default-monitor-resolution name)
+                               (gethash 'max monitor))))
+                        (prog1
+                            (list "--output" name
+                                  "--mode" resolution
+                                  "--pos" (concat (number-to-string posx)
+                                                  "x"
+                                                  (number-to-string
+                                                   (- ymax (funcall gety-lambda name))))
+                                  "--rotate" "normal")
+                          (setq posx (+ posx
+                                        (string-to-number
+                                         (nth 0 (split-string
+                                                 (or
+                                                  (exwm-get-default-monitor-resolution name)
+                                                  (gethash 'max monitor)) "x"))))))))
+                    names))))
+            (message "Calling: xrandr %s" (mapconcat 'identity args " "))
+            (apply 'call-process "xrandr" nil nil nil args)
+            (exwm-set-random-wallpaper exwm-default-wallpaper-folder "update")
+            (when exwm-randr-workspace-monitor-plist
+              (setq exwm-randr-workspace-monitor-plist nil))
+            (let ((monitor-number -1))
+              (mapc (lambda (name)
+                      (setq exwm-randr-workspace-monitor-plist
+                            (nconc exwm-randr-workspace-monitor-plist
+                                   (list (cl-incf monitor-number) name))))
+                    names)
+              (setq exwm-workspace-number (1+ monitor-number))))))))
 
   (defun exwm-update-minibuffer-monitor (&optional workspace-or-screen)
     (interactive)
@@ -3922,7 +3934,10 @@ others."
             ;; windows
             ([?\s-f] . exwm-layout-toggle-fullscreen)
             ([?\s-s ?6] . exwm-display-buffer-cycle)
+            ([?\s-s ?7 ?7] . transparent-frame)
             ([?\s-s ?7 ?g] . exwm-gap-toggle)
+            ([?\s-s ?7 ?T] . exwm-toggle-transparency)
+            ([?\s-s ?7 ?t] . toggle-transparency)
             ([?\s-s ?7 ?m] . exwm-layout-toggle-mode-line)
             ([?\s-s ?7 ?f] . exwm-floating-toggle-floating)
             ;; ace-window
@@ -11336,6 +11351,25 @@ Switch the current window to the previous buffer."
 #+end_src
 
 ** Not always required
+*** /consult/
+
+#+begin_src elisp
+(with-eval-after-load 'consult
+  (setq consult-project-root-function
+        (lambda ()
+          (locate-dominating-file default-directory ".git/"))))
+(global-set-key (kbd "M-g f") 'consult-fdfind)
+(global-set-key (kbd "M-g e") 'consult-error)
+(global-set-key (kbd "M-g r") 'consult-ripgrep)
+(global-set-key (kbd "M-g O") 'consult-outline)
+(global-set-key (kbd "M-g o") 'consult-multi-occur)
+(global-set-key (kbd "M-g m") 'consult-mark)
+(global-set-key (kbd "M-g M") 'consult-global-mark)
+(global-set-key (kbd "M-g M-g") 'consult-kmacro)
+(global-set-key (kbd "C-x r x") 'consult-register)
+(global-set-key (kbd "C-x r b") 'consult-bookmark)
+#+end_src
+
 *** Language server protocol /lsp-mode/ or /eglot/                 :programming:
 
 #+begin_src elisp
