@@ -16,6 +16,7 @@
      bookmark+
      cmake-font-lock
      cmake-mode
+     consult
      cyphejor
      dash
      dash-functional
