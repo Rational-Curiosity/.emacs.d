@@ -508,6 +508,29 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
         (when
             ,processes-number-condition
           ,@body)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; With eval after load replacement ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar named-code-hash-table
+      (make-hash-table :test 'eq))
+
+(defmacro named-code-declare (name &rest body)
+  (declare (indent 1) (debug t))
+  (let ((fun (gethash (eval name) named-code-hash-table)))
+    (if fun
+        (if (eq fun t)
+            `(progn ,@body)
+          `(puthash ,name (lambda () (funcall (quote ,fun)) ,@body)
+                    named-code-hash-table))
+      `(puthash ,name (lambda () ,@body)
+                named-code-hash-table))))
+
+(defun named-code-eval (name)
+  (let ((fun (gethash name named-code-hash-table)))
+    (puthash name t named-code-hash-table)
+    (when fun
+      (funcall fun))))
 #+end_src
 
 ** Random functions
@@ -3383,12 +3406,6 @@ others."
                          (int-to-string (or opacity exwm-default-transparency)))
         (message "Buffer %s without window." (buffer-name buffer)))))
 
-  (defun transparent-frame (arg)
-    (interactive "P")
-    (unless arg
-      (setq arg 0))
-    (set-frame-parameter nil 'alpha `(,arg . ,arg)))
-
   (defun exwm-toggle-transparency ()
     (interactive)
     (if (= 1 exwm-default-transparency)
@@ -3934,7 +3951,7 @@ others."
             ;; windows
             ([?\s-f] . exwm-layout-toggle-fullscreen)
             ([?\s-s ?6] . exwm-display-buffer-cycle)
-            ([?\s-s ?7 ?7] . transparent-frame)
+            ([?\s-s ?7 ?7] . frame-transparency)
             ([?\s-s ?7 ?g] . exwm-gap-toggle)
             ([?\s-s ?7 ?T] . exwm-toggle-transparency)
             ([?\s-s ?7 ?t] . toggle-transparency)
@@ -4992,6 +5009,7 @@ If `case-replace' is nil, do not alter case of replacement text."
 
   (recentf-mode 1))
 #+end_src
+
 *** /savehist/
 
 #+begin_src elisp
@@ -7494,17 +7512,20 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;; Post prompt ;;
 ;;;;;;;;;;;;;;;;;
   (defun eshell-current-command-start ()
-    (setq eshell-current-command-start-time (current-time)))
+    (setq eshell-current-command-start-time (float-time)))
 
   (defun eshell-current-command-stop ()
     (when eshell-current-command-start-time
       (eshell-interactive-print
        (propertize
-        (format "\n<Exit code: %i  Elapsed time: %.3fs>"
-                eshell-last-command-status
-                (float-time
-                 (time-subtract (current-time)
-                                eshell-current-command-start-time)))
+        (format
+         "\n<Exit code: %i  Elapsed time: %s>"
+         eshell-last-command-status
+         (let ((seconds (- (float-time) eshell-current-command-start-time)))
+           (concat (format-seconds "%h:%.2m:%.2s" seconds)
+                   (let ((decimals (mod seconds 1)))
+                     (when (< 0 decimals)
+                       (substring (number-to-string decimals) 1))))))
         'font-lock-face '(:foreground "goldenrod1")))
       (setq eshell-current-command-start-time nil)))
 
@@ -7962,8 +7983,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (with-eval-after-load 'tex
     (add-hook 'TeX-mode-hook #'hs-minor-mode))
 
-  ;; (define-key hs-minor-mode-map (kbd "<C-tab>") #'hs-toggle-hiding)
-  )
+  (define-key hs-minor-mode-map (kbd "<C-tab>") #'hs-toggle-hiding))
 #+end_src
 
 *** /compile/
@@ -8134,7 +8154,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   ;;(global-ede-mode 1)
   ;; Unknown error
   ;; (ede-enable-generic-projects)
-  )
+  (named-code-eval 'ede-config))
 #+end_src
 
 *** /eldoc/
@@ -8479,7 +8499,6 @@ Improve default ia jump at point."
 (with-eval-after-load 'semantic
   (message "Importing speedbar-config")
   (require 'speedbar)
-  (require 'config-lib)
 
   ;; (require 'eieio)
   ;; (require 'eieio-speedbar)
@@ -11305,49 +11324,39 @@ Switch the current window to the previous buffer."
         ("S" . language-text-to-speak-stop)))
 #+end_src
 
-*** CANC /annotate/
-:PROPERTIES:
-:header-args:elisp: :tangle no
-:END:
+*** /annotate/
 
 #+begin_src elisp
-(require 'annotate)
-(setcar (cdr (assq 'annotate-mode minor-mode-alist)) "📓")
+(with-eval-after-load 'annotate
+  (setcar (cdr (assq 'annotate-mode minor-mode-alist)) "📓")
 
-(add-hook 'find-file-hook 'annotate-mode)
+  (when (boundp 'personal-notes-directory)
+    (setq annotate-file (expand-file-name
+                         ".annotations"
+                         personal-notes-directory)))
 
-(when (boundp 'personal-notes-directory)
-  (setq annotate-file (expand-file-name
-                       ".annotations"
-                       personal-notes-directory)))
+  (setq annotate-use-messages nil
+        annotate-annotation-column 80
+        annotate-annotation-max-size-not-place-new-line 10
+        annotate-blacklist-major-mode '(text-mode))
 
-(setq annotate-use-messages nil
-      annotate-annotation-column 80
-      annotate-annotation-max-size-not-place-new-line 10
-      annotate-blacklist-major-mode '(text-mode))
+  (defun annotate-refresh ()
+    (interactive)
+    (if (null annotate-mode)
+        (annotate-mode)
+      (annotate-with-inhibit-modification-hooks
+       (annotate-mode -1)
+       (annotate-mode 1))))
 
-(defun annotate-refresh ()
-  (interactive)
-  (if (null annotate-mode)
-      (annotate-mode)
-    (annotate-with-inhibit-modification-hooks
-     (annotate-mode -1)
-     (annotate-mode 1))))
+  (setcdr annotate-mode-map nil)
+  (define-key annotate-mode-map (kbd "C-c A a") 'annotate-annotate)
+  (define-key annotate-mode-map (kbd "C-c A s") 'annotate-show-annotation-summary)
+  (define-key annotate-mode-map (kbd "C-c A n") 'annotate-goto-next-annotation)
+  (define-key annotate-mode-map (kbd "C-c A p") 'annotate-goto-previous-annotation)
+  (define-key annotate-mode-map (kbd "C-c A r") 'annotate-refresh))
 
-(defun org-annotate-file-search (arg)
-  (interactive "P")
-  (if arg
-      (let ((org-annotate-file-add-search t))
-        (org-annotate-file))
-    (org-annotate-file)))
-
-(setcdr annotate-mode-map nil)
-(define-key annotate-mode-map (kbd "C-c A a") 'annotate-annotate)
-(define-key annotate-mode-map (kbd "C-c A s") 'annotate-show-annotation-summary)
-(define-key annotate-mode-map (kbd "C-c A n") 'annotate-goto-next-annotation)
-(define-key annotate-mode-map (kbd "C-c A p") 'annotate-goto-previous-annotation)
-(define-key annotate-mode-map (kbd "C-c A r") 'annotate-refresh)
-(global-set-key (kbd "C-c A f") 'org-annotate-file-search)
+;; (add-hook 'find-file-hook 'annotate-mode)
+(global-set-key (kbd "C-c A A") 'annotate-mode)
 #+end_src
 
 ** Not always required
@@ -11357,8 +11366,10 @@ Switch the current window to the previous buffer."
 (with-eval-after-load 'consult
   (setq consult-project-root-function
         (lambda ()
-          (locate-dominating-file default-directory ".git/"))))
-(global-set-key (kbd "M-g f") 'consult-fdfind)
+          (locate-dominating-file default-directory ".git/"))
+        consult-find-command
+        '("fdfind" "--color=never" "--full-path")))
+(global-set-key (kbd "M-g f") 'consult-find)
 (global-set-key (kbd "M-g e") 'consult-error)
 (global-set-key (kbd "M-g r") 'consult-ripgrep)
 (global-set-key (kbd "M-g O") 'consult-outline)
@@ -12802,6 +12813,13 @@ You can also customize this for each buffer, using something like
   ;; ;;;;;;;;; ;;
   ;; Functions ;;
   ;; ;;;;;;;;; ;;
+  (defun org-annotate-file-search (arg)
+    (interactive "P")
+    (if arg
+        (let ((org-annotate-file-add-search t))
+          (org-annotate-file))
+      (org-annotate-file)))
+
   (with-eval-after-load 'ob-tangle
     (defun org-byte-compile-tangle-file ()
       (when (derived-mode-p 'emacs-lisp-mode)
@@ -13266,9 +13284,8 @@ Throw an error when trying to set a property with an invalid name."
   (define-key org-mode-map (kbd "C-c C-v C-k") #'org-babel-remove-result)
   (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
   (define-key org-mode-map (kbd "M-s 7 k") #'org-toggle-link-display)
-
-  (require 'gitlab-api)
-  (require 'redmine-api))
+  (global-set-key (kbd "C-c A f") 'org-annotate-file-search)
+  (named-code-eval 'org-config))
 #+end_src
 
 *** /org-super-agenda/
@@ -13338,7 +13355,8 @@ Throw an error when trying to set a property with an invalid name."
           (:name "Hogar"
                  :tag "@home")
           (:name "Hábito"
-                 :habit t))))
+                 :habit t)))
+  (named-code-eval 'org-super-agenda-config))
 #+end_src
 
 *** /org-appt/
@@ -15117,6 +15135,8 @@ end note
   (unless (boundp 'completion-in-region-function)
     (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
     (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point)))
+
+(named-code-eval 'machine-config)
 #+end_src
 
 * Command line arguments
@@ -16568,6 +16588,7 @@ current `default-directory'."
                 (exwm-layout-unset-fullscreen id))
             (let ((exwm-gap-monitor 0))
               (exwm-randr-refresh))
+            (delete-other-windows)
             (exwm-layout-set-fullscreen id))))))
 
   (when (bug-check-function-bytecode
