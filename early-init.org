@@ -53,16 +53,16 @@
 ** Better control of garbage collection
 
 #+begin_src elisp
-(add-hook (if exwm-p
-              'exwm-init-hook
-           'emacs-startup-hook)
-          `(lambda ()
-             (setq gc-cons-percentage ,gc-cons-percentage
-                   gc-cons-threshold ,gc-cons-threshold))
-          t)
-(setq gc-cons-percentage 0.6
-      gc-cons-threshold (eval-when-compile
-                          (* 10 1024 1024)))
+;; (add-hook (if exwm-p
+;;               'exwm-init-hook
+;;            'emacs-startup-hook)
+;;           `(lambda ()
+;;              (setq gc-cons-percentage ,gc-cons-percentage
+;;                    gc-cons-threshold ,gc-cons-threshold))
+;;           t)
+;; (setq gc-cons-percentage 0.6
+;;       gc-cons-threshold (eval-when-compile
+;;                           (* 10 1024 1024)))
 
 ;; (defun gcmh-idle-garbage-collect-advice (orig-fun)
 ;;   (unless (or ;; cursor-in-echo-area
