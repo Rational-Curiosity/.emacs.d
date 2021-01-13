@@ -7120,10 +7120,14 @@ ARG - `C-u' differ with prompted file.
 ;;;;;;;;;;;;;;;;;;;;;;
   (defun eshell-send-chars-interactive-process ()
     (interactive)
-    (let ((char (read-key "Char (C-c exits): ")))
-      (while (not (char-equal ?\C-c char))
-        (process-send-string (eshell-interactive-process) (char-to-string char))
-        (setq char (read-key "Char (C-c exits): ")))))
+    (let ((process (eshell-interactive-process)))
+      (if process
+          (let ((char (read-key "Char (C-c exits): ")))
+            (while (and (not (char-equal ?\C-c char))
+                        (setq process (eshell-interactive-process)))
+              (process-send-string process (char-to-string char))
+              (setq char (read-key "Char (C-c exits): "))))
+        (message "Current buffer has no process"))))
 
   (defun start-process-stderr (name buffer program &rest program-args)
     "Start PROGRAM with PROGRAM-ARGS process NAME sending stdout to BUFFER.
@@ -12097,21 +12101,22 @@ Switch the current window to the previous buffer."
        "\\([^[:space:]]\\{3\\}\\)[^[:space:]][^[:space:]]+\\([^[:space:]]\\{2\\}\\)" "\\1…\\2"
        (let ((case-fold-search t))
          (replace-regexp-in-string
-          ,(concat "\\("
-                   (mapconcat 'identity
-                              '("al" "un" "uno" "una" "unos" "unas"
-                                "del"
-                                ;; conjunciones
-                                "y" "e" "o" "u"
-                                ;; prepositions
-                                "el" "la" "lo" "las" "los"
-                                "a" "ante" "bajo" "cabe" "con"
-                                "contra" "de" "desde" "durante"
-                                "en" "entre" "hacia" "hasta"
-                                "mediante" "para" "por" "según"
-                                "sin" "so" "sobre" "tras")
-                              "\\|")
-                   "\\)\\( \\|\\'\\)") " "
+          (eval-when-compile
+            (concat "\\("
+                    (mapconcat 'identity
+                               '("al" "un" "uno" "una" "unos" "unas"
+                                 "del"
+                                 ;; conjunciones
+                                 "y" "e" "o" "u"
+                                 ;; prepositions
+                                 "el" "la" "lo" "las" "los"
+                                 "a" "ante" "bajo" "cabe" "con"
+                                 "contra" "de" "desde" "durante"
+                                 "en" "entre" "hacia" "hasta"
+                                 "mediante" "para" "por" "según"
+                                 "sin" "so" "sobre" "tras")
+                               "\\|")
+                    "\\)\\( \\|\\'\\)")) " "
           (org-entry-get nil "ITEM") nil t)) t) t t) t t))
   (require 'org-clock)
   (setq org-duration-units '(("min" . 1)
@@ -12147,7 +12152,7 @@ Switch the current window to the previous buffer."
         org-default-priority ?H
         org-lowest-priority ?O
         ;; Clocking
-        org-clock-string-limit 25
+        org-clock-string-limit 45
         org-clock-in-resume t
         org-clock-persist t
         org-clock-clocked-in-display
@@ -13078,12 +13083,27 @@ SUFFIX - default .png"
            (name (file-name-nondirectory path-name)))
       (kill-new (concat "[[" path-name "][" name "]]"))))
 
-  (defun copy-buffer-file-name-and-line-org-link ()
+  (defun copy-buffer-file-name-line-org-link ()
     (interactive)
     (let* ((path-name (abbreviate-file-name buffer-file-name))
            (name (file-name-nondirectory path-name)))
       (kill-new (concat "[[" path-name "::"
                         (number-to-string (line-number-at-pos))
+                        "][" name "]]"))))
+
+  (defun copy-buffer-file-name-search-org-link ()
+    (interactive)
+    (let* ((path-name (abbreviate-file-name buffer-file-name))
+           (name (file-name-nondirectory path-name)))
+      (kill-new (concat "[[" path-name "::"
+                        (org-link-escape
+                         (string-trim-right
+                          (save-excursion
+                            (back-to-indentation)
+                            (buffer-substring-no-properties
+                             (point) (progn
+                                       (end-of-line)
+                                       (point))))))
                         "][" name "]]"))))
 
   (defun org-todo-prompt-date (&optional arg)
@@ -16733,6 +16753,48 @@ current `default-directory'."
                                             t))))
           (xcb:flush exwm--connection)
           (run-hooks 'exwm-randr-refresh-hook))))))
+#+end_src
+
+** /org/
+
+#+begin_src elisp
+(with-eval-after-load 'org-clock
+  (when (bug-check-function-bytecode
+         'org-clock-get-clock-string
+         "xCAIgy4AxQghxscDIcgJgxoACoQaAMmCGwDKI8cCIcvGzMjKIwMDCyS2g4I5AMvGzcjKI8cDIQsjhw==")
+    (defun org-clock-get-clock-string ()
+      "Form a clock-string, that will be shown in the mode line.
+If an effort estimate was defined for the current item, use
+01:30/01:50 format (clocked/estimated).
+If not, show simply the clocked time like 01:50."
+      (let* ((currently-clocked-time (floor (org-time-convert-to-integer
+                                             (org-time-since org-clock-start-time))
+                                            60))
+             (clocked-time (+ currently-clocked-time (or org-clock-total-time 0))))
+        (if org-clock-effort
+            (let* ((effort-in-minutes (org-duration-to-minutes org-clock-effort))
+                   (work-done-str
+                    (propertize (org-duration-from-minutes clocked-time)
+                                'face
+                                (if (and org-clock-task-overrun
+                                         (not org-clock-task-overrun-text))
+                                    'org-mode-line-clock-overrun
+                                  'org-mode-line-clock)))
+                   (effort-str (org-duration-from-minutes effort-in-minutes)))
+              (if (equal currently-clocked-time clocked-time)
+                  (format (propertize "[%s/%s %s]" 'face 'org-mode-line-clock)
+                          work-done-str effort-str org-clock-heading)
+                (format (propertize "[%s|%s/%s %s]" 'face 'org-mode-line-clock)
+                        (org-duration-from-minutes currently-clocked-time)
+                        work-done-str effort-str org-clock-heading)))
+          (if (equal currently-clocked-time clocked-time)
+              (format (propertize "[%s %s]" 'face 'org-mode-line-clock)
+                      (org-duration-from-minutes clocked-time)
+                      org-clock-heading)
+            (format (propertize "[%s|%s %s]" 'face 'org-mode-line-clock)
+                    (org-duration-from-minutes currently-clocked-time)
+                    (org-duration-from-minutes clocked-time)
+                    org-clock-heading)))))))
 #+end_src
 
 ** M-x with bindings help
