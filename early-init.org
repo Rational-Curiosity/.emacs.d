@@ -341,6 +341,14 @@ modified.
 ;; ]
 
 ;; [ transparency
+(defun frame-transparency (opacity)
+  (interactive "P")
+  (if opacity
+      (when (listp opacity)
+        (setq opacity 1))
+    (setq opacity 0))
+  (set-frame-parameter nil 'alpha `(,opacity . ,opacity)))
+
 (defun toggle-transparency ()
   (interactive)
   (let ((alpha (frame-parameter nil 'alpha)))
@@ -364,6 +372,7 @@ modified.
 (add-hook 'after-make-frame-functions 'unspecified-background)
 
 (global-set-key (kbd "M-s 6 t") #'cycle-themes)
+(global-set-key (kbd "M-s 7 7") #'frame-transparency)
 (global-set-key (kbd "M-s 7 t") #'toggle-transparency)
 #+end_src
 
