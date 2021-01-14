@@ -2465,7 +2465,7 @@ For more information, see the function `buffer-menu'."
   (or window (setq window (selected-window)))
   (cond
    ((with-selected-window window
-      (derived-mode-p 'prog-mode 'org-mode 'help-mode))
+      (derived-mode-p 'prog-mode 'org-mode 'help-mode 'compilation-mode))
     (let ((split-height-threshold nil)
           (split-width-threshold 140))
       (split-window-sensibly window)))
@@ -11380,7 +11380,9 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "M-g o") 'consult-multi-occur)
 (global-set-key (kbd "M-g m") 'consult-mark)
 (global-set-key (kbd "M-g M") 'consult-global-mark)
-(global-set-key (kbd "M-g M-g") 'consult-kmacro)
+(global-set-key (kbd "M-g M-g") 'consult-goto-line)
+(global-set-key (kbd "M-g M-l") 'consult-line)
+(global-set-key (kbd "M-g C-k") 'consult-kmacro)
 (global-set-key (kbd "C-x r x") 'consult-register)
 (global-set-key (kbd "C-x r b") 'consult-bookmark)
 #+end_src
@@ -12133,7 +12135,7 @@ Switch the current window to the previous buffer."
         ;;org-clock-in-switch-to-state "STARTED"
         org-clock-out-when-done t
         org-columns-default-format
-        "%51ITEM %8EFFORT(Estimate){:} %8CLOCKSUM(Clocked) %4TODO(State)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
+        "%49ITEM(Heading) %8EFFORT(Effort){:} %8CLOCKSUM(Clocked) %4TODO(Todo)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
         org-clock-into-drawer "LOGCLOCK"
         org-log-into-drawer "LOGSTATE"
         org-todo-keywords
