@@ -89,6 +89,15 @@
   (unless (member ".gz" jka-compr-load-suffixes)
     (push ".gz" jka-compr-load-suffixes)
     (jka-compr-update)))
+(defun find-library-name-advice (orig-fun library)
+  (condition-case err
+      (funcall orig-fun library)
+    (error (if (member ".gz" jka-compr-load-suffixes)
+               (signal (car err) (cdr err))
+             (push ".gz" jka-compr-load-suffixes)
+             (jka-compr-update)
+             (funcall orig-fun library)))))
+(advice-add 'find-library-name :around 'find-library-name-advice)
 
 (add-hook 'after-init-hook
           `(lambda ()
