@@ -650,7 +650,7 @@ No argument or nil as argument means do this for the current buffer."
 #+begin_src elisp
 ;; [ custom
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
-(load custom-file)
+(load (substring custom-file 0 -3))
 ;; ]
 #+end_src
 
@@ -13310,6 +13310,38 @@ Throw an error when trying to set a property with an invalid name."
   (named-code-eval 'org-config))
 #+end_src
 
+*** /ox-mediawiki/                                                    :markdown:
+
+#+begin_src elisp
+(with-eval-after-load 'ox-mediawiki
+  (defun org-mw-src-block (block contents info)
+    (concat
+     "<syntaxhighlight lang=\""
+     (org-element-property :language block)
+     "\">\n"
+     (org-element-property :value block)
+     "</syntaxhighlight>"))
+
+  (setcdr (assoc 'src-block (org-export-get-all-transcoders 'mw))
+          'org-mw-src-block))
+#+end_src
+
+*** /ox-textile/                                                      :markdown:
+
+#+begin_src elisp
+(with-eval-after-load 'ox-textile
+  (defun org-textile-src-block (block contents info)
+    (concat
+     "<pre><code class=\""
+     (org-element-property :language block)
+     "\">\n"
+     (org-element-property :value block)
+     "</code></pre>"))
+
+  (setcdr (assoc 'src-block (org-export-get-all-transcoders 'textile))
+          'org-textile-src-block))
+#+end_src
+
 *** /org-super-agenda/
 
 #+begin_example
@@ -13537,6 +13569,43 @@ If run interactively, get ENTRY from context."
         (org-noter)))
 
     (define-key org-brain-visualize-mode-map (kbd "\C-c n") 'org-brain-open-org-noter)))
+#+end_src
+
+*** /org-tree-slide/
+
+#+begin_src elisp
+(with-eval-after-load 'org-tree-slide
+  (defvar org-tree-slide-face-remapping nil)
+  (defun org-tree-slide-play ()
+    (org-show-all)
+    (setq-local
+     org-tree-slide-face-remapping face-remapping-alist
+     face-remapping-alist (let ((color "#00C598")
+                                (bg (face-attribute 'default :background)))
+                            `((default (:height 1.5) default)
+                              (header-line (:height 4.5) variable-pitch)
+                              (org-block-begin-line
+                               (:height 0.5 :foreground ,color :background ,color)
+                               org-block-begin-line)
+                              (org-block (:background "#D3FBD8") org-block)
+                              (org-block-end-line
+                               (:height 0.5 :foreground ,color :background ,color)
+                               org-block-end-line)
+                              (org-meta-line
+                               (:height 0.5 :foreground ,bg)
+                               org-meta-line)))))
+  (add-hook 'org-tree-slide-play-hook 'org-tree-slide-play)
+
+  (defun org-tree-slide-stop ()
+    (setq-local
+     face-remapping-alist org-tree-slide-face-remapping
+     org-tree-slide-face-remapping nil))
+  (add-hook 'org-tree-slide-stop-hook 'org-tree-slide-stop)
+
+  (setq org-tree-slide-breadcrumbs " / "
+        org-tree-slide-slide-in-brank-lines 7
+        org-tree-slide-slide-in-waiting 0.03
+        org-tree-slide-never-touch-face t))
 #+end_src
 
 *** TODO /rst/                                                        :markdown:

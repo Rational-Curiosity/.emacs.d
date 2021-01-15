@@ -77,10 +77,12 @@
      org-plus-contrib
      org-ql
      org-super-agenda
+     org-tree-slide
      ov
      ox-gfm
      ox-mediawiki
      ox-rst
+     ox-textile
      ox-twbs
      pcre2el
      peg
