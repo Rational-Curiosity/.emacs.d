@@ -3151,15 +3151,12 @@ others."
 * EXWM
 
 #+begin_src elisp
-(when exwm-p
+(with-eval-after-load 'exwm
   ;; Below are configurations for EXWM.
   (message "Importing exwm-startup-config")
   ;; Add paths (not required if EXWM is installed from GNU ELPA).
                                         ;(add-to-list 'load-path "/path/to/xelb/")
                                         ;(add-to-list 'load-path "/path/to/exwm/")
-
-  ;; Load EXWM.
-  (require 'exwm)
 
   ;; Fix problems with Ido (if you use it).
   ;; (require 'exwm-config)
@@ -3172,17 +3169,17 @@ others."
       (interactive)
       (message "Command `suspend-frame' is dangerous in EXWM.")))
 
-;;;;;;;;;;;
-;; Faces ;;
-;;;;;;;;;;;
+  ;; ;;;;; ;;
+  ;; Faces ;;
+  ;; ;;;;; ;;
   (defface exwm-record-face
     '((t :foreground "red2"))
     "Basic face used to highlight errors and to denote failure."
     :group 'exwm)
 
-;;;;;;;;;;;;;;;
-;; Variables ;;
-;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;; ;;
+  ;; Variables ;;
+  ;; ;;;;;;;;; ;;
   (defvar exwm-close-window-on-kill nil
     "EXWM close window when kill buffer.")
 
@@ -3235,7 +3232,7 @@ others."
     "EXWM recording text displayed while recording")
 
 ;;;;;;;;;;;;;;;
-;; Functions ;;
+  ;; Functions ;;
 ;;;;;;;;;;;;;;;
   (eval-and-compile
     (require 'xcb))
@@ -3820,15 +3817,15 @@ others."
   (advice-add 'select-frame :before 'exwm-unselected-window-advice)
   (advice-add 'select-window :before 'exwm-unselected-window-advice)
 
-;;;;;;;;;;;;;
-;; layouts ;;
-;;;;;;;;;;;;;
+  ;; ;;;;;;; ;;
+  ;; Layouts ;;
+  ;; ;;;;;;; ;;
 
 
 
-;;;;;;;;;;;;;;;;;;;;
-;; Customizations ;;
-;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;; ;;
+  ;; Customizations ;;
+  ;; ;;;;;;;;;;;;;; ;;
   (add-hook 'exwm-input-input-mode-change-hook
             'exwm-input-mode-change-color)
 
@@ -4431,9 +4428,9 @@ mode and header lines."
                                      'face 'helm-header))))))
         (when force (force-mode-line-update)))))
 
-;;;;;;;;;;
-;; Keys ;;
-;;;;;;;;;;
+  ;; ;;;; ;;
+  ;; Keys ;;
+  ;; ;;;; ;;
   (global-set-key (kbd "M-s 7 T") 'exwm-toggle-transparency))
 #+end_src
 
@@ -11372,7 +11369,8 @@ Switch the current window to the previous buffer."
         (lambda ()
           (locate-dominating-file default-directory ".git/"))
         consult-find-command
-        '("fdfind" "--color=never" "--full-path")))
+        '("fdfind" "--color=never" "--full-path")
+        consult--gc-threshold gc-cons-threshold))
 (global-set-key (kbd "M-g f") 'consult-find)
 (global-set-key (kbd "M-g e") 'consult-error)
 (global-set-key (kbd "M-g r") 'consult-ripgrep)
@@ -15230,70 +15228,6 @@ end note
 (named-code-eval 'machine-config)
 #+end_src
 
-* Command line arguments
-
-#+begin_src elisp
-;; Usage: emacs --exwm
-(defun argument--exwm (switch)
-  "Command line arg `--exwm'.  SWITCH ignored."
-  (exwm-enable))
-(add-to-list 'command-switch-alist '("--exwm" . argument--exwm))
-
-;; Usage: emacs --benchmark
-(defun argument--benchmark (switch)
-  "Command line arg `--benchmark'.  SWITCH ignored."
-  (switch-to-buffer "*Benchmarks*"))
-(add-to-list 'command-switch-alist '("--benchmark" . argument--benchmark))
-
-(defun argument--all (switch)
-  "Command line arg `--all'.  SWITCH ignored."
-  (require 'semantic)
-  (require 'ede)
-  (require 'cc-mode)
-  (require 'latex)
-  (require 'org)
-  (require 'yasnippet))
-(add-to-list 'command-switch-alist '("--all" . argument--all))
-(defun argument--agenda (switch)
-  "Command line arg `--agenda'.  SWITCH ignored."
-  (require 'org))
-(add-to-list 'command-switch-alist '("--agenda" . argument--agenda))
-(defun argument--edit-server (switch)
-  "Command line arg `--edit-server'.  SWITCH ignored."
-  (require 'edit-server)
-  (edit-server-start))
-(add-to-list 'command-switch-alist '("--edit-server" . argument--edit-server))
-;; Usage: emacs --diff file/dir1 file/dir2
-(defun argument--diff (switch)
-  "Command line arg `--diff'.  SWITCH ignored."
-  (let ((arg1 (pop command-line-args-left))
-        (arg2 (pop command-line-args-left))
-        (arg3 (pop command-line-args-left)))
-    (cond
-     ((and
-       (file-directory-p arg1)
-       (file-directory-p arg2))
-      (ediff-directories arg1 arg2 arg3))
-     ((and
-       (file-exists-p arg1)
-       (file-exists-p arg2))
-      (ediff-files arg1 arg2))
-     (t
-      (message "Files or directories required")))))
-(add-to-list 'command-switch-alist '("--diff" . argument--diff))
-;; Usage: emacs --debug-on-entry el-file func-name
-(defun argument--debug-on-entry (switch)
-  "Command line arg `--debug-on-entry'.  SWITCH ignored."
-  (let ((arg1 (pop command-line-args-left))
-        (arg2 (pop command-line-args-left)))
-    (eval `(with-eval-after-load ,arg1
-             (message "Debugging: %s::%s" ,arg1
-                      (debug-on-entry (intern ,arg2)))))))
-(add-to-list 'command-switch-alist '("--debug-on-entry" . argument--debug-on-entry))
-
-(put 'list-timers 'disabled nil)
-#+end_src
-
 * Bugs
 ** /gdb/
 
@@ -16655,6 +16589,129 @@ current `default-directory'."
             (run-hooks 'exwm-manage-finish-hook)))))))
 #+end_src
 
+** /xelb/
+
+#+begin_src elisp
+(with-eval-after-load 'xcb
+  (when (bug-check-function-bytecode
+         'xcb:-connection-filter
+         "xcYDIcciCBnIyQLKIgMiiUcCywHKBSO2AskDzCKEIgICywHMzSO2As4yGQLPAkdYhRgCAdBIidG3glMBCoNVANLTC4NLAAsggkwA1NXWBgfQzyMkiAyDXQDXgl4A2APZIskF2iLb3AYHBCKyA90CBCKDmQDFAgQisgEGBssB2t4GBgYIBgzfSNYGDtDPI0IGCEKJsgkjI7YC1gYGzyKyBgYGywHgBgYjtgWCFAIMg7UA4YK2AOID4yLP4wJfXNuJiQYHRwRXg84A5M7bIogKg+gA0uULg90ACyCC3gDU1dYGDNAGCiMkiAyD8ADXgvEA2AYI2SKyAtwGCQMisgLJBgnmIrIBxQEDIrIDAoNAAQYIywHm3gUGBwYJOYMrAQYJ1gYQ0AYOI0SCPAEGCUDnBgtB1gYS0AYQI0MiQiMjtgLWBggFIrIIBgjLAeAFI7YHghQCiduJiegE6SLQVYRpAc2yA+gE6iKyBMXJBgnrIgUisgIB7LeCygEMg4EB4YKCAeIGB+MisgHP4wJfXLIBBgZHAVeDnAHkztsiiO3JBgnrIu4GCd9IDIOvAdeCsAHYBgvvIiIisgKCygHtyQYJ6yLuBgnfSCEisgKJhNEBz7IBAYPxAQYHicsB8MkF8CLuBgjWBg/QBgsjBgsjQ6QjtgMKgwsC0vELgwACCyCCAQLU1dYGC9AGByMkiNYGBwIisge2BIiCLAAwiALLAczbI7YCyQPMIj+FVQICyQHKIkcBywHK1skGB8oiBggGCkdaIiO2AokDVYRQAvIGB/MiiLYC9AMhKYc=")
+    (defun xcb:-connection-filter (process message)
+      "Filter function for an X connection.
+
+Concurrency is disabled as it breaks the orders of errors, replies and events."
+      (let* ((connection (plist-get (process-plist process) 'connection))
+             ;; Temporarily disable GC here as typically it's about to do
+             ;; lots of marshaling/unmarshaling.
+             (cache (vconcat (slot-value connection 'message-cache) message))
+             (cache-length (length cache)))
+        (setf (slot-value connection 'message-cache) cache)
+        (unless (slot-value connection 'lock)
+          ;; Start parsing message
+          (setf (slot-value connection 'lock) t)
+          ;; Process error/reply/event
+          (catch 'break
+            (while (<= 32 (length cache))
+              (pcase (aref cache 0)
+                (0                          ;error
+                 (xcb:-log "Error received: %s" (substring cache 0 32))
+                 (let ((sequence (funcall (if xcb:lsb #'xcb:-unpack-u2-lsb
+                                            #'xcb:-unpack-u2)
+                                          cache 2))
+                       (plist (slot-value connection 'error-plist))
+                       struct)
+                   (setq sequence (xcb:-convert-sequence connection sequence))
+                   (when (plist-member plist sequence)
+                     (setq struct (plist-get plist sequence))
+                     (setf (slot-value connection 'error-plist)
+                           (plist-put plist sequence
+                                      (push `(,(aref cache 1) .
+                                              ,(substring cache 0 32))
+                                            struct))))
+                   (setq cache (substring cache 32))
+                   (setf (slot-value connection 'last-seen-sequence) sequence)))
+                (1                          ;reply
+                 (let* ((reply-words (funcall (if xcb:lsb #'xcb:-unpack-u4-lsb
+                                                #'xcb:-unpack-u4)
+                                              cache 4))
+                        (reply-length (+ 32 (* 4 reply-words)))
+                        struct sequence plist)
+                   (when (< (length cache) reply-length) ;too short, do next time
+                     (throw 'break nil))
+                   (xcb:-log "Reply received: %s" (substring cache 0 reply-length))
+                   (setq sequence (funcall (if xcb:lsb #'xcb:-unpack-u2-lsb
+                                             #'xcb:-unpack-u2)
+                                           cache 2)
+                         sequence (xcb:-convert-sequence connection sequence))
+                   (setq plist (slot-value connection 'reply-plist))
+                   (setq struct (plist-get plist sequence))
+                   (when struct
+                     (setf (slot-value connection 'reply-plist)
+                           (plist-put plist sequence
+                                      (if (symbolp struct)
+                                          ;; Single reply or
+                                          ;; first reply for multiple replies
+                                          (list struct
+                                                (substring cache 0 reply-length))
+                                        ;; Multiple replies
+                                        `(,(car struct) ,@(cdr struct)
+                                          ,(substring cache 0 reply-length))))))
+                   (setq cache (substring cache reply-length))
+                   (setf (slot-value connection 'last-seen-sequence) sequence)))
+                (x                          ;event
+                 (let (synthetic listener event-length)
+                   (when (/= 0 (logand x #x80)) ;synthetic event
+                     (setq synthetic t
+                           x (logand x #x7f))) ;low 7 bits is the event number
+                   (setq listener
+                         (plist-get (slot-value connection 'event-plist) x))
+                   (pcase listener
+                     (`xge
+                      (setq event-length (funcall (if xcb:lsb
+                                                      #'xcb:-unpack-u4-lsb
+                                                    #'xcb:-unpack-u4)
+                                                  cache 4)
+                            ;; event-length indicates additional words to the
+                            ;; first 32 bytes.
+                            event-length (+ 32 (* 4 event-length)))
+                      (when (< (length cache) event-length)
+                        ;; Too short.
+                        (throw 'break nil))
+                      (setq listener
+                            (lax-plist-get (slot-value connection 'event-plist)
+                                           (vector (aref cache 1)
+                                                   (funcall
+                                                    (if xcb:lsb
+                                                        #'xcb:-unpack-u2-lsb
+                                                      #'xcb:-unpack-u2)
+                                                    cache 8)))))
+                     (`xkb
+                      (setq listener
+                            (lax-plist-get (slot-value connection 'event-plist)
+                                           (vector (aref cache 1))))))
+                   ;; Conventional events are 32 bytes in size.
+                   (unless event-length
+                     (setq event-length 32))
+                   (when listener
+                     (with-slots (event-queue) connection
+                       (setf event-queue (nconc event-queue
+                                                `([,listener
+                                                   ,(substring cache 0
+                                                               event-length)
+                                                   ,synthetic])))))
+                   (xcb:-log "Event received: %s" (substring cache 0 event-length))
+                   (setq cache (substring cache event-length)))))))
+          (setf (slot-value connection 'lock) nil))
+        (unless (slot-value connection 'lock)
+          (with-slots (message-cache) connection
+            (let ((current-cache-length (length message-cache)))
+              (setf message-cache
+                    (substring message-cache (- cache-length (length cache))))
+              (when (/= current-cache-length cache-length)
+                (xcb:-connection-filter process []))))
+          (xcb:-process-events connection))))))
+#+end_src
+
 * Improvements
 ** /exwm/
 
@@ -16976,4 +17033,68 @@ position of the outside of the paren.  Otherwise return nil."
                (eq (car before) 1)
                (eq (car before) -1))
           before)))))
+#+end_src
+
+* Command line arguments
+
+#+begin_src elisp
+;; Usage: emacs --exwm
+(defun argument--exwm (switch)
+  "Command line arg `--exwm'.  SWITCH ignored."
+  (exwm-enable))
+(add-to-list 'command-switch-alist '("--exwm" . argument--exwm))
+
+;; Usage: emacs --benchmark
+(defun argument--benchmark (switch)
+  "Command line arg `--benchmark'.  SWITCH ignored."
+  (switch-to-buffer "*Benchmarks*"))
+(add-to-list 'command-switch-alist '("--benchmark" . argument--benchmark))
+
+(defun argument--all (switch)
+  "Command line arg `--all'.  SWITCH ignored."
+  (require 'semantic)
+  (require 'ede)
+  (require 'cc-mode)
+  (require 'latex)
+  (require 'org)
+  (require 'yasnippet))
+(add-to-list 'command-switch-alist '("--all" . argument--all))
+(defun argument--agenda (switch)
+  "Command line arg `--agenda'.  SWITCH ignored."
+  (require 'org))
+(add-to-list 'command-switch-alist '("--agenda" . argument--agenda))
+(defun argument--edit-server (switch)
+  "Command line arg `--edit-server'.  SWITCH ignored."
+  (require 'edit-server)
+  (edit-server-start))
+(add-to-list 'command-switch-alist '("--edit-server" . argument--edit-server))
+;; Usage: emacs --diff file/dir1 file/dir2
+(defun argument--diff (switch)
+  "Command line arg `--diff'.  SWITCH ignored."
+  (let ((arg1 (pop command-line-args-left))
+        (arg2 (pop command-line-args-left))
+        (arg3 (pop command-line-args-left)))
+    (cond
+     ((and
+       (file-directory-p arg1)
+       (file-directory-p arg2))
+      (ediff-directories arg1 arg2 arg3))
+     ((and
+       (file-exists-p arg1)
+       (file-exists-p arg2))
+      (ediff-files arg1 arg2))
+     (t
+      (message "Files or directories required")))))
+(add-to-list 'command-switch-alist '("--diff" . argument--diff))
+;; Usage: emacs --debug-on-entry el-file func-name
+(defun argument--debug-on-entry (switch)
+  "Command line arg `--debug-on-entry'.  SWITCH ignored."
+  (let ((arg1 (pop command-line-args-left))
+        (arg2 (pop command-line-args-left)))
+    (eval `(with-eval-after-load ,arg1
+             (message "Debugging: %s::%s" ,arg1
+                      (debug-on-entry (intern ,arg2)))))))
+(add-to-list 'command-switch-alist '("--debug-on-entry" . argument--debug-on-entry))
+
+(put 'list-timers 'disabled nil)
 #+end_src
