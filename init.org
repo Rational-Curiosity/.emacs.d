@@ -13603,7 +13603,9 @@ If run interactively, get ENTRY from context."
   (setq org-tree-slide-breadcrumbs " / "
         org-tree-slide-slide-in-brank-lines 7
         org-tree-slide-slide-in-waiting 0.03
-        org-tree-slide-never-touch-face t))
+        org-tree-slide-never-touch-face t
+        org-tree-slide-activate-message nil
+        org-tree-slide-deactivate-message nil))
 #+end_src
 
 *** TODO /rst/                                                        :markdown:
