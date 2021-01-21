@@ -55,6 +55,7 @@
      json-mode
      json-reformat
      json-snatcher
+     jsonrpc
      link-hint
      lua-mode
      lv
@@ -111,6 +112,7 @@
      vimish-fold
      virtualenvwrapper
      vlf
+     vterm
      web-mode
      websocket
      wgrep

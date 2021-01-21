@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --with-cairo --with-x-toolkit=no --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings CFLAGS='-O3 -mtune=native -march=native'
+./configure --with-json --with-cairo --with-x-toolkit=gtk3 --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --with-xwidgets CFLAGS='-O3 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -657,7 +657,7 @@ No argument or nil as argument means do this for the current buffer."
 * Personal config
 
 #+begin_src elisp
-(load (expand-file-name "config.el" user-emacs-directory) t)
+(load (expand-file-name "config" user-emacs-directory) t)
 #+end_src
 
 * Mode line
@@ -3753,7 +3753,10 @@ others."
              (start-process "urxvt" nil "urxvt"))
             ((executable-find "xterm")
              (message "Starting xterm")
-             (start-process "xterm" nil "xterm")))))
+             (start-process "xterm" nil "xterm"))
+            ((executable-find "st")
+             (message "Starting st")
+             (start-process "st" nil "st")))))
 
   (defun exwm-start-emacs (filepath)
     (interactive (list (buffer-file-name)))
@@ -3774,12 +3777,29 @@ others."
     (interactive "p")
     (if (and (derived-mode-p 'exwm-mode)
              (eq exwm--input-mode 'char-mode))
-        (let ((id (exwm--buffer->id (window-buffer))))
-          (exwm-input-grab-keyboard id)
-          (unwind-protect
-              (ace-window arg)
-            (exwm-input-release-keyboard id)))
+        (if (equal exwm-class-name "Emacs")
+            (exwm-input--fake-key last-input-event)
+          (let ((id (exwm--buffer->id (window-buffer))))
+            (exwm-input-grab-keyboard id)
+            (unwind-protect
+                (ace-window arg)
+              (exwm-input-release-keyboard id))))
       (ace-window arg)))
+
+  (defvar exwm-ctrl-space nil)
+  (defun exwm-ctrl-space (arg)
+    (interactive "P")
+    (if (null (derived-mode-p 'exwm-mode))
+        (set-mark-command arg)
+      (if exwm-ctrl-space
+          (call-process "xdotool" nil nil nil
+                        "keyup"
+                        "Shift_L")
+        (call-process "xdotool" nil nil nil
+                      "keydown"
+                      "--clearmodifiers"
+                      "Shift_L"))
+      (setq exwm-ctrl-space (null exwm-ctrl-space))))
 
   (defun exwm-shutdown (&optional arg)
     (interactive "P")
@@ -3807,13 +3827,18 @@ others."
 
   (defun exwm-selected-window-advice (&rest _args)
     (when (derived-mode-p 'exwm-mode)
-      (exwm-set-border-width 1)))
+      (exwm-set-border-width 2)))
   (advice-add 'select-frame :after 'exwm-selected-window-advice)
   (advice-add 'select-window :after 'exwm-selected-window-advice)
 
   (defun exwm-unselected-window-advice (&rest _args)
     (when (derived-mode-p 'exwm-mode)
-      (exwm-set-border-width 0)))
+      (exwm-set-border-width 0)
+      (when exwm-ctrl-space
+        (call-process "xdotool" nil nil nil
+                      "keyup"
+                      "Shift_L")
+        (setq exwm-ctrl-space nil))))
   (advice-add 'select-frame :before 'exwm-unselected-window-advice)
   (advice-add 'select-window :before 'exwm-unselected-window-advice)
 
@@ -3955,7 +3980,7 @@ others."
             ([?\s-s ?7 ?m] . exwm-layout-toggle-mode-line)
             ([?\s-s ?7 ?f] . exwm-floating-toggle-floating)
             ;; ace-window
-            ([?\s-o] . exwm-ace-window)
+            ([?\M-o] . exwm-ace-window)
             ;; Switch to minibuffer window
             ([?\s-s ?0] . switch-to-minibuffer-window)
             ;; switch buffer
@@ -3970,12 +3995,15 @@ others."
             ;; Execute command menu
             ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command))
             ;; shutdown computer
-            (,(kbd "<s-end>") . exwm-shutdown))))
+            (,(kbd "<s-end>") . exwm-shutdown)
+            ;; C-SPC trick
+            (,(kbd "C-SPC") . exwm-ctrl-space)
+            (,(kbd "C-S-SPC") . exwm-ctrl-space))))
 
   (with-eval-after-load 'exwm-manage
     (setq exwm-manage-configurations
           '(((member exwm-class-name
-                     '("Emacs" "st-256color" "Alacritty" "URxvt" "XTerm"))
+                     '("Emacs" "st-256color" "Alacritty" "URxvt" "XTerm" "nyxt"))
              char-mode t
              tiling-mode-line nil
              floating-mode-line nil)
@@ -4010,6 +4038,19 @@ others."
           ([?\M->] . [C-end])
           ([?\M-v] . [prior])
           ([?\C-v] . [next])
+          ;; shift movement
+          (,(kbd "C-S-b") . [S-left])
+          (,(kbd "M-S-b") . [C-S-left])
+          (,(kbd "C-S-f") . [S-right])
+          (,(kbd "M-S-f") . [C-S-right])
+          (,(kbd "C-S-p") . [S-up])
+          (,(kbd "C-S-n") . [S-down])
+          (,(kbd "C-S-a") . [S-home])
+          (,(kbd "M-S-<") . [C-S-home])
+          (,(kbd "C-S-e") . [S-end])
+          (,(kbd "M-S->") . [C-S-end])
+          (,(kbd "M-S-v") . [S-prior])
+          (,(kbd "C-S-v") . [S-next])
           ;; edition
           ([?\C-d] . [delete])
           ([?\M-d] . [C-delete])
@@ -6741,7 +6782,7 @@ By default insert it, with prefix display a message with it."
                 (delete-window))))))
     (message "File not found: %s" filepath)))
 
-(global-set-key (kbd "M-RET") 'vi-transfer-file)
+(global-set-key (kbd "M-S-RET") 'vi-transfer-file)
 #+end_src
 
 ** Not always required
@@ -11857,7 +11898,7 @@ Switch the current window to the previous buffer."
 
   (require 'org-table)
   (setq org-hide-emphasis-markers nil
-        org-hide-leading-stars t
+        org-hide-leading-stars nil
         org-priority-faces
         '((?A . "#C39BD3")
           (?B . "#AF7AC5")
@@ -11995,7 +12036,7 @@ Switch the current window to the previous buffer."
         org-startup-folded 'content
         org-startup-with-inline-images t
         org-pretty-entities t
-        org-use-property-inheritance t
+        org-use-property-inheritance nil
         org-use-sub-superscripts nil
         org-export-with-sub-superscripts '{}
         org-export-allow-bind-keywords nil
@@ -15049,6 +15090,13 @@ end note
 
 #+begin_src elisp
 (add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
+#+end_src
+
+*** /vterm/
+
+#+begin_src elisp
+(global-set-key (kbd "M-RET") 'vterm)
+(global-set-key (kbd "C-x 4 RET") 'vterm-other-window)
 #+end_src
 
 * Machine config
