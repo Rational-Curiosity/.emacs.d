@@ -588,6 +588,12 @@ No argument or nil as argument means do this for the current buffer."
   (with-current-buffer (if buffer (get-buffer buffer) (current-buffer))
     (setq buffer-undo-list nil)))
 
+(defun undo-all (arg)
+  (interactive "P")
+  (undo (length buffer-undo-list))
+  (when arg
+    (setq buffer-undo-list nil)))
+
 ;; (defun undo-advice (&optional arg)
 ;;   (recenter nil t))
 ;; (advice-add #'undo :after 'undo-advice)
@@ -1210,24 +1216,6 @@ mouse-3: Toggle minor modes"
   (when (display-graphic-p frame)
     (with-selected-frame frame
       (cond
-       ((member "Monaco" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Fira Code"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Fira Code Family"))
-       ((member "Fira Code" (font-family-list))
-        (set-face-attribute 'default nil
-                            :family "Fira Code"
-                            :height 90
-                            :foundry "unknown"
-                            :weight 'regular
-                            :slant 'normal
-                            :width 'normal)
-        (message "Monospace font: Fira Code Family"))
        ((member "Hack" (font-family-list))
         (set-face-attribute 'default nil
                             :family "Hack"
@@ -1237,6 +1225,24 @@ mouse-3: Toggle minor modes"
                             :slant 'normal
                             :width 'normal)
         (message "Monospace font: Hack Family"))
+       ((member "Monaco" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "Monaco"
+                            :height 90
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: Monaco Family"))
+       ((member "Fira Code" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "Fira Code"
+                            :height 90
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: Fira Code Family"))
        ((member "DejaVu Sans Mono" (font-family-list))
         (set-face-attribute 'default nil
                             :family "DejaVu Sans Mono"
@@ -3789,17 +3795,19 @@ others."
   (defvar exwm-ctrl-space nil)
   (defun exwm-ctrl-space (arg)
     (interactive "P")
-    (if (null (derived-mode-p 'exwm-mode))
-        (set-mark-command arg)
-      (if exwm-ctrl-space
-          (call-process "xdotool" nil nil nil
-                        "keyup"
-                        "Shift_L")
-        (call-process "xdotool" nil nil nil
-                      "keydown"
-                      "--clearmodifiers"
-                      "Shift_L"))
-      (setq exwm-ctrl-space (null exwm-ctrl-space))))
+    (if (derived-mode-p 'exwm-mode)
+        (progn
+          (if exwm-ctrl-space
+              (call-process "xdotool" nil nil nil
+                            "keyup"
+                            "Shift_L")
+            (call-process "xdotool" nil nil nil
+                          "keydown"
+                          "--clearmodifiers"
+                          "Shift_L"))
+          (setq exwm-ctrl-space (null exwm-ctrl-space)))
+      (setq this-command 'set-mark-command)
+      (set-mark-command arg)))
 
   (defun exwm-shutdown (&optional arg)
     (interactive "P")
@@ -4588,9 +4596,6 @@ This function is part of the `orderless' completion style."
 
 (set-face-attribute 'icomplete-first-match nil :foreground "#cafd32")
 
-(add-hook 'minibuffer-exit-hook
-          #'orderless-remove-transient-configuration)
-
 ;; Another functions override this variables, then
 ;; set every time enter minibuffer
 (setq
@@ -4645,17 +4650,19 @@ This function is part of the `orderless' completion style."
 (defun orderless-match-components-cycle ()
   "Components match regexp for the rest of the session."
   (interactive)
-  (cl-case (car orderless-transient-matching-styles)
-    ;; last in cycle
-    (orderless-flex
-     (orderless-remove-transient-configuration))
-    ;; middle in cycle
-    (orderless-regexp
-     (setq orderless-transient-matching-styles '(orderless-flex)))
-    ;; first in cycle
-    (otherwise
-     (setq orderless-transient-matching-styles '(orderless-regexp)
-           orderless-transient-style-dispatchers '(ignore))))
+  (cond
+   ;; first in cycle
+   ((equal orderless-matching-styles (default-value 'orderless-matching-styles))
+    (setq-local orderless-matching-styles '(orderless-regexp)
+                orderless-style-dispatchers nil))
+   ;; middle in cycle
+   ((equal orderless-matching-styles '(orderless-regexp))
+    (setq-local orderless-matching-styles '(orderless-flex)
+                orderless-style-dispatchers nil))
+   ;; last in cycle
+   ((equal orderless-matching-styles '(orderless-flex))
+    (setq-local orderless-matching-styles (default-value 'orderless-matching-styles)
+                orderless-style-dispatchers (default-value 'orderless-style-dispatchers))))
   (completion--flush-all-sorted-completions)
   (icomplete-pre-command-hook)
   (icomplete-post-command-hook))
@@ -11892,6 +11899,8 @@ Switch the current window to the previous buffer."
                       :underline nil
                       :overline "#A7A6AA") ;; :foreground "#388EFF" :background "#222210")
 
+  (set-face-attribute 'org-code nil
+                      :foreground "#dbdb95")
   (org-link-set-parameters
    "file"
    :face (lambda (path) (if (file-exists-p path) 'org-link 'org-warning)))
@@ -11922,7 +11931,7 @@ Switch the current window to the previous buffer."
           ("/" (italic :foreground "#FF8") italic)
           ("_" underline)
           ("=" org-verbatim verbatim)
-          ("~" (org-code :box t) org-code)
+          ("~" org-code)
           ("+" (:strike-through t)))
         ;; TODO keyword faces
         org-todo-keyword-faces
@@ -12174,7 +12183,7 @@ Switch the current window to the previous buffer."
         ;;org-clock-in-switch-to-state "STARTED"
         org-clock-out-when-done t
         org-columns-default-format
-        "%49ITEM(Heading) %8EFFORT(Effort){:} %8CLOCKSUM(Clocked) %4TODO(Todo)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
+        "%49ITEM(Heading) %8EFFORT(Effort){:} %8CLOCKSUM(Clocked) %4TODO(Stat)" ;; "%25ITEM %TODO %3PRIORITY %TAGS"
         org-clock-into-drawer "LOGCLOCK"
         org-log-into-drawer "LOGSTATE"
         org-todo-keywords
