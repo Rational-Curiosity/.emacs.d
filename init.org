@@ -11418,7 +11418,8 @@ Switch the current window to the previous buffer."
           (locate-dominating-file default-directory ".git/"))
         consult-find-command
         '("fdfind" "--color=never" "--full-path")
-        consult--gc-threshold gc-cons-threshold))
+        consult--gc-threshold gc-cons-threshold
+        consult-async-default-split nil))
 (global-set-key (kbd "M-g f") 'consult-find)
 (global-set-key (kbd "M-g e") 'consult-error)
 (global-set-key (kbd "M-g r") 'consult-ripgrep)
@@ -11426,6 +11427,8 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "M-g o") 'consult-multi-occur)
 (global-set-key (kbd "M-g m") 'consult-mark)
 (global-set-key (kbd "M-g M") 'consult-global-mark)
+(global-set-key (kbd "M-g i") 'consult-imenu)
+(global-set-key (kbd "M-g I") 'consult-project-imenu)
 (global-set-key (kbd "M-g M-g") 'consult-goto-line)
 (global-set-key (kbd "M-g M-l") 'consult-line)
 (global-set-key (kbd "M-g C-k") 'consult-kmacro)
@@ -12169,12 +12172,15 @@ Switch the current window to the previous buffer."
                     "\\)\\( \\|\\'\\)")) " "
           (org-entry-get nil "ITEM") nil t)) t) t t) t t))
   (require 'org-clock)
-  (setq org-duration-units '(("min" . 1)
-                             ("h" . 60)
-                             ("d" . 480)
-                             ("w" . 2400)
-                             ("m" . 9600)
-                             ("y" . 96000))
+  (setq org-duration-units
+        (eval-when-compile
+          (let ((value 60))
+            `(("min" . 1)
+              ("h" . ,value)
+              ("d" . ,(setq value (* value 6))) ;; 6 h per day
+              ("w" . ,(setq value (* value 5))) ;; 5 d per week
+              ("m" . ,(setq value (* value 4))) ;; 4 w per month
+              ("y" . ,(setq value (* value 10))))))
         org-effort-threshold 20
         org-enforce-todo-dependencies t
         ;; [ 'note Graba el tiempo y una nota cuando se realiza una tarea
@@ -15106,6 +15112,35 @@ end note
 #+begin_src elisp
 (global-set-key (kbd "M-RET") 'vterm)
 (global-set-key (kbd "C-x 4 RET") 'vterm-other-window)
+#+end_src
+
+*** /async/
+
+#+begin_src elisp
+(with-eval-after-load 'docker-utils
+  (when (bug-check-function-bytecode
+         'docker-utils-generic-action
+         "wCDBAYMbAAFAwgUFAyO2AolUsgEBQbICggMAtgLDIIc=")
+    (defun docker-utils-generic-action (action args)
+      (interactive (list (docker-utils-get-transient-action)
+                         (transient-args transient-current-command)))
+      (let ((items (docker-utils-get-marked-items-ids)))
+        (async-start
+         `(lambda ()
+            (load ,(locate-library "s"))
+            (load ,(locate-library "transient"))
+            (load ,(locate-library "dash"))
+            (load ,(locate-library "docker-core"))
+            (let ((pos (with-current-buffer "*Messages*"
+                         (point-max))))
+              (--each (quote ,items)
+                (docker-run-docker ,action ,args it))
+              (with-current-buffer "*Messages*"
+                (buffer-substring-no-properties pos (point-max)))))
+         `(lambda (result)
+            (message "Async {{{\n%s}}} " result)
+            (with-current-buffer ,(current-buffer)
+              (tablist-revert))))))))
 #+end_src
 
 * Machine config
