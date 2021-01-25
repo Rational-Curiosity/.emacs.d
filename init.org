@@ -7557,26 +7557,59 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                           emacs-version system-type system-configuration
                           system-configuration-options))
 
-;;;;;;;;;;;;;;;;;
-;; Post prompt ;;
-;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;; ;;
+  ;; Post prompt ;;
+  ;; ;;;;;;;;;;; ;;
+  (defvar eshell-play-sound-time-threshold 30)
+
   (defun eshell-current-command-start ()
     (setq eshell-current-command-start-time (float-time)))
 
   (defun eshell-current-command-stop ()
     (when eshell-current-command-start-time
-      (eshell-interactive-print
-       (propertize
-        (format
-         "\n<Exit code: %i  Elapsed time: %s>"
-         eshell-last-command-status
-         (let ((seconds (- (float-time) eshell-current-command-start-time)))
+      (let ((seconds (- (float-time) eshell-current-command-start-time)))
+        (setq eshell-current-command-start-time nil)
+        (eshell-interactive-print
+         (propertize
+          (format
+           "\n<Exit code: %i  Elapsed time: %s>"
+           eshell-last-command-status
            (concat (format-seconds "%h:%.2m:%.2s" seconds)
                    (let ((decimals (mod seconds 1)))
                      (when (< 0 decimals)
-                       (substring (number-to-string decimals) 1))))))
-        'font-lock-face '(:foreground "goldenrod1")))
-      (setq eshell-current-command-start-time nil)))
+                       (substring (number-to-string decimals) 1)))))
+          'font-lock-face '(:foreground "goldenrod1")))
+        (when (and eshell-play-sound-time-threshold
+                   (<= eshell-play-sound-time-threshold seconds))
+          (if (numberp eshell-last-command-status)
+              (cond
+               ((= 0 eshell-last-command-status)
+                (start-process "*aplay*" nil "aplay"
+                               (expand-file-name
+                                "cache/sounds/success-bells-major.wav"
+                                user-emacs-directory))
+                (let ((inhibit-message t))
+                  (message "Aplay success-bells-major")))
+               ((< 0 eshell-last-command-status)
+                (start-process "*aplay*" nil "aplay"
+                               (expand-file-name
+                                "cache/sounds/negative-beep.wav"
+                                user-emacs-directory))
+                (let ((inhibit-message t))
+                  (message "Aplay negative-beep")))
+               (t
+                (start-process "*aplay*" nil "aplay"
+                               (expand-file-name
+                                "cache/sounds/sonar.wav"
+                                user-emacs-directory))
+                (let ((inhibit-message t))
+                  (message "Aplay sonar"))))
+            (start-process "*aplay*" nil "aplay"
+                           (expand-file-name
+                            "cache/sounds/startup.wav"
+                            user-emacs-directory))
+            (let ((inhibit-message t))
+              (message "Aplay startup")))))))
 
   (defun eshell-current-command-time-track ()
     (add-hook 'eshell-pre-command-hook #'eshell-current-command-start nil t)
@@ -11417,7 +11450,7 @@ Switch the current window to the previous buffer."
         (lambda ()
           (locate-dominating-file default-directory ".git/"))
         consult-find-command
-        '("fdfind" "--color=never" "--full-path")
+        "fdfind --color=never --full-path"
         consult--gc-threshold gc-cons-threshold
         consult-async-default-split nil))
 (global-set-key (kbd "M-g f") 'consult-find)
@@ -11903,7 +11936,7 @@ Switch the current window to the previous buffer."
                       :overline "#A7A6AA") ;; :foreground "#388EFF" :background "#222210")
 
   (set-face-attribute 'org-code nil
-                      :foreground "#dbdb95")
+                      :foreground "#bbff95")
   (org-link-set-parameters
    "file"
    :face (lambda (path) (if (file-exists-p path) 'org-link 'org-warning)))
