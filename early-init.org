@@ -20,7 +20,7 @@
 * Early command line arguments
 
 #+begin_src elisp
-(defvar exwm-p (member "--exwm" command-line-args))
+(defvar exwm-p (if (member "--exwm" command-line-args) t nil))
 #+end_src
 
 * Performance
@@ -294,6 +294,8 @@ modified.
 (advice-add 'x-apply-session-resources :override 'ignore)
 
 ;; (fringe-mode '(4 . 4))
+(set-face-attribute 'fringe nil
+                    :background "#303030")
 (setq-default indicate-buffer-boundaries 'right)
 (defface visual-line-fringe-face
   '((t :foreground "gold1"))
