@@ -372,26 +372,28 @@ Otherwise return a list of files which regex match."
 ;;;;;;;;;;
 (defun bug-check-function-bytecode (function bytecode-base64 &optional inhibit-log)
   "Check if FUNCTION has BYTECODE-BASE64.  If INHIBIT-LOG is non-nil inhibit log when differs."
-  (let ((current-bytecode-base64
-         (condition-case nil
-             (base64-encode-string (aref (symbol-function function) 1) t)
-           (error
-            (unless inhibit-log
-              (message-color #("WARN missing function bytecode, maybe %s is a built-in function in 'C source code' or not bytecompiled"
-                               0 4 (face warning)) function))))))
-    (if (string-equal
-         current-bytecode-base64
-         bytecode-base64)
-        t
-      (unless inhibit-log
-        (message-color #("WARN bug fixed for different version of %s with b64 %s see %s"
-                         0 4 (face warning))
-                       (if (fboundp 'find-function-library)
-                           (find-function-library function)
-                         (symbol-name function))
-                       current-bytecode-base64
-                       load-file-name))
-      nil)))
+  (if (featurep 'comp)
+      t
+    (let ((current-bytecode-base64
+           (condition-case nil
+               (base64-encode-string (aref (symbol-function function) 1) t)
+             (error
+              (unless inhibit-log
+                (message-color #("WARN missing function bytecode, maybe %s is a built-in function in 'C source code' or not bytecompiled"
+                                 0 4 (face warning)) function))))))
+      (if (string-equal
+           current-bytecode-base64
+           bytecode-base64)
+          t
+        (unless inhibit-log
+          (message-color #("WARN bug fixed for different version of %s with b64 %s see %s"
+                           0 4 (face warning))
+                         (if (fboundp 'find-function-library)
+                             (find-function-library function)
+                           (symbol-name function))
+                         current-bytecode-base64
+                         load-file-name))
+        nil))))
 
 
 (require 'help-fns)
