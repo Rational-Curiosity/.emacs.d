@@ -20,6 +20,7 @@
      cyphejor
      dash
      dash-functional
+     deadgrep
      deferred
      docker
      docker-tramp
@@ -99,6 +100,7 @@
      rg
      rust-mode
      s
+     spinner
      stickyfunc-enhance
      string-inflection
      swap-regions

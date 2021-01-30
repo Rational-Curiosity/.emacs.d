@@ -193,26 +193,26 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
                     (split-string string "\n"))))
 ;; ]
 
-;; [ get current function name
+;; [ get current function name <nativecomp incompatible>
 ;; thanks to: https://emacs.stackexchange.com/a/2312
-(defun call-stack ()
-  "Return the current call stack frames."
-  (let ((frames)
-        (frame)
-        (index 5))
-    (while (setq frame (backtrace-frame index))
-      (push frame frames)
-      (cl-incf index))
-    (cl-delete-if-not 'car frames)))
+;; (defun call-stack ()
+;;   "Return the current call stack frames."
+;;   (let ((frames)
+;;         (frame)
+;;         (index 5))
+;;     (while (setq frame (backtrace-frame index))
+;;       (push frame frames)
+;;       (cl-incf index))
+;;     (cl-delete-if-not 'car frames)))
 
-(defmacro compile-time-function-name ()
-  "Get the name of calling function at expansion time."
-  (symbol-name
-   (cl-cadadr
-    (cl-caddr
-     (cl-find-if (lambda (frame)
-                (ignore-errors (equal (car (cl-caddr frame)) 'defalias)))
-              (reverse (call-stack)))))))
+;; (defmacro compile-time-function-name ()
+;;   "Get the name of calling function at expansion time."
+;;   (symbol-name
+;;    (cl-cadadr
+;;     (cl-caddr
+;;      (cl-find-if (lambda (frame)
+;;                 (ignore-errors (equal (car (cl-caddr frame)) 'defalias)))
+;;               (reverse (call-stack)))))))
 ;; ]
 
 ;; Converts calls to COMPOSE to lambda forms with everything written
@@ -2895,6 +2895,8 @@ ARG non-nil resize window to ARG height."
 ;; winner
 (require 'winner)
 (with-eval-after-load 'hydra
+  (eval-when-compile
+    (require 'hydra))
   (defhydra hydra-win (:foreign-keys warn)
     "WIN"
     ("C-<right>" (lambda () (interactive)
@@ -3175,14 +3177,6 @@ others."
       (interactive)
       (message "Command `suspend-frame' is dangerous in EXWM.")))
 
-  ;; ;;;;; ;;
-  ;; Faces ;;
-  ;; ;;;;; ;;
-  (defface exwm-record-face
-    '((t :foreground "red2"))
-    "Basic face used to highlight errors and to denote failure."
-    :group 'exwm)
-
   ;; ;;;;;;;;; ;;
   ;; Variables ;;
   ;; ;;;;;;;;; ;;
@@ -3194,6 +3188,9 @@ others."
 
   (defvar exwm-default-transparency 0.85
     "EXWM default transparency.")
+
+  (defvar exwm-char-mode-classes '("Emacs" "st-256color" "Alacritty" "URxvt" "XTerm" "nyxt")
+    "EXWM char mode classes")
 
   ;; example: export EXWM_MONITOR_ORDER="eDP-1 HDMI-1 DP-1"
   (defvar exwm-default-monitor-order
@@ -3234,12 +3231,12 @@ others."
   (defvar exwm-record-process nil
     "EXWM record process when recording.")
 
-  (defvar exwm-record-recording (propertize "⏺" 'face 'exwm-record-face)
+  (defvar exwm-record-recording (propertize "⏺" 'face '(:foreground "red2"))
     "EXWM recording text displayed while recording")
 
-;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;; ;;
   ;; Functions ;;
-;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;; ;;
   (eval-and-compile
     (require 'xcb))
   (defun exwm-set-border-color (color &optional buffer)
@@ -3250,7 +3247,8 @@ others."
           (make-instance 'xcb:ChangeWindowAttributes
                          :window id
                          :value-mask xcb:CW:BorderPixel
-                         :border-pixel (exwm--color->pixel color)))))
+                         :border-pixel (exwm--color->pixel color)))
+      (xcb:flush exwm--connection)))
 
   (defun exwm-set-border-width (border-width &optional buffer)
     "Set BUFFER border BORDER-WIDTH width."
@@ -3260,7 +3258,8 @@ others."
           (make-instance 'xcb:ConfigureWindow
                          :window id
                          :value-mask xcb:ConfigWindow:BorderWidth
-                         :border-width border-width))))
+                         :border-width border-width))
+      (xcb:flush exwm--connection)))
 
   (defvar exwm-gap-monitor 20)
   (defun exwm-gap-toggle ()
@@ -3408,6 +3407,34 @@ others."
                          (int-to-string window-id)
                          (int-to-string (or opacity exwm-default-transparency)))
         (message "Buffer %s without window." (buffer-name buffer)))))
+  ;; (add-to-list 'xcb:ewmh:-atoms '_NET_WM_WINDOW_OPACITY)
+  ;; (defvar xcb:Atom:_NET_WM_WINDOW_OPACITY nil)
+  ;; (defun exwm-set-window-transparency (buffer &optional opacity)
+  ;;   (interactive (list (current-buffer)
+  ;;                      (read-number "Opacity: " exwm-default-transparency)))
+  ;;   (let ((window-id (exwm--buffer->id buffer)))
+  ;;     (if window-id
+  ;;         (let* ((as-integer
+  ;;                 (round (* 4294967295
+  ;;                           (or opacity exwm-default-transparency))))
+  ;;                (as-char-array
+  ;;                 (cl-labels ((thunk (as-integer depth)
+  ;;                                    (if (= depth 4)
+  ;;                                        nil
+  ;;                                      (cons (% as-integer 256)
+  ;;                                            (thunk (/ as-integer 256)
+  ;;                                                   (1+ depth))))))
+  ;;                   (thunk as-integer 0))))
+  ;;           (xcb:+request exwm--connection
+  ;;               (make-instance xcb:ChangeProperty
+  ;;                              :mode xcb:PropMode:Replace
+  ;;                              :window window-id
+  ;;                              :property xcb:Atom:_NET_WM_WINDOW_OPACITY
+  ;;                              :type xcb:Atom:CARDINAL
+  ;;                              :format 32 :data-len 1
+  ;;                              :data as-char-array))
+  ;;           (xcb:flush exwm--connection))
+  ;;       (message "Buffer %s without window." (buffer-name buffer)))))
 
   (defun exwm-toggle-transparency ()
     (interactive)
@@ -3798,13 +3825,16 @@ others."
     (if (derived-mode-p 'exwm-mode)
         (progn
           (if exwm-ctrl-space
-              (call-process "xdotool" nil nil nil
-                            "keyup"
-                            "Shift_L")
+              (progn
+                (call-process "xdotool" nil nil nil
+                              "keyup"
+                              "Shift_L")
+                (message "EXWM Mark deactivated"))
             (call-process "xdotool" nil nil nil
                           "keydown"
                           "--clearmodifiers"
-                          "Shift_L"))
+                          "Shift_L")
+            (message "EXWM Mark set"))
           (setq exwm-ctrl-space (null exwm-ctrl-space)))
       (setq this-command 'set-mark-command)
       (set-mark-command arg)))
@@ -3828,20 +3858,32 @@ others."
                   'exwm-display-buffer-tiling-anticlockwise)
           (rotate-frame-clockwise)))))
 
-  (defun exwm-input-mode-change-color ()
+  (defun exwm-display-input-mode ()
+    (interactive)
     (cl-case exwm--input-mode
-      (line-mode (exwm-set-border-color "blue"))
-      (char-mode (exwm-set-border-color "red"))))
+      (line-mode
+       ;; (let (message-log-max)
+       ;;   (message "EXWM %s window in line-mode" (buffer-name)))
+       (exwm-set-border-color "blue")
+       )
+      (char-mode
+       ;; (let (message-log-max)
+       ;;   (message "EXWM %s window in char-mode" (buffer-name)))
+       (exwm-set-border-color "red")
+       )))
 
   (defun exwm-selected-window-advice (&rest _args)
     (when (derived-mode-p 'exwm-mode)
-      (exwm-set-border-width 2)))
+      (exwm-display-input-mode)
+      ;; (set-face-attribute 'window-divider (selected-frame) :foreground "red")
+      ))
   (advice-add 'select-frame :after 'exwm-selected-window-advice)
   (advice-add 'select-window :after 'exwm-selected-window-advice)
 
   (defun exwm-unselected-window-advice (&rest _args)
     (when (derived-mode-p 'exwm-mode)
-      (exwm-set-border-width 0)
+      (exwm-set-border-color "black")
+      ;; (set-face-attribute 'window-divider (selected-frame) :foreground "white")
       (when exwm-ctrl-space
         (call-process "xdotool" nil nil nil
                       "keyup"
@@ -3860,7 +3902,7 @@ others."
   ;; Customizations ;;
   ;; ;;;;;;;;;;;;;; ;;
   (add-hook 'exwm-input-input-mode-change-hook
-            'exwm-input-mode-change-color)
+            'exwm-display-input-mode)
 
   ;; display buffer rules
   (push '(exwm-display-buffer-condition
@@ -3968,9 +4010,7 @@ others."
                         (start-process "" nil "/usr/bin/slock")))
             ;; Toggle char-line modes
             ([?\s-q] . exwm-input-toggle-keyboard)
-            ([?\s-Q] . (lambda ()
-                         (interactive)
-                         (message "Actual input mode: %s" exwm--input-mode)))
+            ([?\s-Q] . exwm-display-input-mode)
             ;; Display datetime
             ([?\s-a] . display-time-mode)
             ;; Workspaces
@@ -3987,12 +4027,12 @@ others."
             ([?\s-s ?7 ?t] . toggle-transparency)
             ([?\s-s ?7 ?m] . exwm-layout-toggle-mode-line)
             ([?\s-s ?7 ?f] . exwm-floating-toggle-floating)
-            ;; ace-window
-            ([?\M-o] . exwm-ace-window)
             ;; Switch to minibuffer window
             ([?\s-s ?0] . switch-to-minibuffer-window)
             ;; switch buffer
             ([?\s-b] . switch-to-buffer)
+            ;; ace-window
+            ([?\s-o] . ace-window)
             ;; Bind lock screen
             (,(kbd "<s-escape>") . exwm-screensaver-lock)
             (,(kbd "<C-s-escape>") . exwm-screensaver-interrupt)
@@ -4003,15 +4043,18 @@ others."
             ;; Execute command menu
             ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command))
             ;; shutdown computer
-            (,(kbd "<s-end>") . exwm-shutdown)
-            ;; C-SPC trick
-            (,(kbd "C-SPC") . exwm-ctrl-space)
-            (,(kbd "C-S-SPC") . exwm-ctrl-space))))
+            (,(kbd "<s-end>") . exwm-shutdown))))
+
+  ;; ace-window
+  (define-key exwm-mode-map (kbd "M-o") 'exwm-ace-window)
+  ;; C-SPC trick
+  (define-key exwm-mode-map (kbd "C-SPC") 'exwm-ctrl-space)
+  (define-key exwm-mode-map (kbd "C-S-SPC") 'exwm-ctrl-space)
 
   (with-eval-after-load 'exwm-manage
     (setq exwm-manage-configurations
           '(((member exwm-class-name
-                     '("Emacs" "st-256color" "Alacritty" "URxvt" "XTerm" "nyxt"))
+                     exwm-char-mode-classes)
              char-mode t
              tiling-mode-line nil
              floating-mode-line nil)
@@ -4021,7 +4064,11 @@ others."
              tiling-mode-line nil
              floating-mode-line nil)
             (t tiling-mode-line nil
-               floating-mode-line nil))))
+               floating-mode-line nil)))
+
+    (defun exwm-manage-set-border ()
+      (exwm-set-border-width 2))
+    (add-hook 'exwm-manage-finish-hook 'exwm-manage-set-border))
 
   ;; To add a key binding only available in line-mode, simply define it in
   ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
@@ -4081,6 +4128,10 @@ others."
           ([?\C-w] . [?\C-x])
           ([?\M-w] . [?\C-c])
           ([?\C-y] . [?\C-v])
+          ;; shift cut/paste
+          (,(kbd "C-S-w") . [?\C-x])
+          (,(kbd "M-W") . [?\C-c])
+          (,(kbd "C-S-y") . [?\C-v])
           ;; search
           ([?\C-s] . [?\C-f])
           ;; files
@@ -4089,7 +4140,13 @@ others."
           (,(kbd "C-_") . [?\C-z])
           (,(kbd "M-_") . [?\C-y])
           ;; format
-          (,(kbd "M-SPC") . ,(kbd "C-S-i"))))
+          (,(kbd "M-SPC") . ,(kbd "C-S-i"))
+          ;; tabs
+          (,(kbd "C-x t 0") . [?\C-w])
+          (,(kbd "C-x t 2") . [?\C-t])
+          ;; escape keys
+          (,(kbd "C-c C-d") . [?\C-d])
+          (,(kbd "C-c C-e") . [?\C-e])))
 
   ;; You can hide the minibuffer and echo area when they're not used, by
   ;; uncommenting the following line.
@@ -4106,73 +4163,6 @@ others."
   ;; System tray
   (require 'exwm-systemtray)
   (exwm-systemtray-enable)
-
-  ;; System monitor
-  (eval-and-compile
-    (require 'symon))
-  ;; (defun message-advice (orig-fun format-string &rest args)
-  ;;   (if format-string
-  ;;       (apply orig-fun format-string args)))
-  ;; (advice-add #'message :around 'message-advice)
-
-  ;; (defvar symon--minibuffer-window
-  ;;   (minibuffer-window (car exwm-workspace--list)))
-  ;; (defun symon-message-trick (format-string &rest args)
-  ;;   (if (not (cdr exwm-workspace--list))
-  ;;       (apply #'message format-string args)
-  ;;     (if (null symon--minibuffer-window)
-  ;;         (setq symon--minibuffer-window
-  ;;               (minibuffer-window (car exwm-workspace--list))))
-  ;;     (with-selected-window symon--minibuffer-window
-  ;;       (delete-region (minibuffer-prompt-end) (point-max))
-  ;;       (insert (apply #'format-message format-string args)))))
-
-  (defvar symon--datetime-monitor-pulse nil)
-  (define-symon-monitor symon-current-datetime-monitor
-    :interval 10
-    :display (if (setq symon--datetime-monitor-pulse
-                       (null symon--datetime-monitor-pulse))
-                 (format-time-string "%e %b %H:%M.")
-               (format-time-string "%e %b %H:%M ")))
-
-  (define-symon-monitor symon-org-clock-in-monitor
-    :interval 10
-    :display (if (bound-and-true-p org-clock-mode-line-timer)
-                 org-mode-line-string))
-
-  (define-symon-monitor symon-venv-current-name-monitor
-    :interval 10
-    :display (if (and (boundp 'venv-current-name)
-                      venv-current-name
-                      (not (string-empty-p venv-current-name)))
-                 (concat "[" (propertize venv-current-name 'face 'mode-line-correct) "]")))
-
-  (define-symon-monitor symon-recording-monitor
-    :display (if (and exwm-record-process
-                      (eq 'run (process-status exwm-record-process)))
-                 exwm-record-recording))
-
-  (setcdr (last symon-monitors)
-          `(,(cond ((memq system-type '(gnu/linux cygwin))
-                    'symon-linux-battery-monitor)
-                   ((memq system-type '(darwin))
-                    'symon-darwin-battery-monitor)
-                   ((memq system-type '(windows-nt))
-                    'symon-windows-battery-monitor))
-            symon-current-datetime-monitor))
-
-  (push 'symon-org-clock-in-monitor symon-monitors)
-  (push 'symon-venv-current-name-monitor symon-monitors)
-  (push 'symon-recording-monitor symon-monitors)
-
-  (setq symon-refresh-rate 4
-        symon-sparkline-type 'bounded
-        symon-sparkline-thickness 1
-        symon-history-size 24
-        symon-sparkline-width 24
-        symon-total-spark-width 12)
-
-  (add-hook 'exwm-init-hook 'symon-mode 91)
 
   ;; Background
   (defvar exwm-timer-random-wallpaper nil
@@ -4480,7 +4470,9 @@ mode and header lines."
   ;; ;;;; ;;
   ;; Keys ;;
   ;; ;;;; ;;
-  (global-set-key (kbd "M-s 7 T") 'exwm-toggle-transparency))
+  (global-set-key (kbd "M-s 7 T") 'exwm-toggle-transparency)
+
+  (after-exwm-config))
 #+end_src
 
 * Internal packages
@@ -4594,7 +4586,10 @@ This function is part of the `orderless' completion style."
 ;; this file overides completion-category-defaults
 (require 'message)
 
-(set-face-attribute 'icomplete-first-match nil :foreground "#cafd32")
+(set-face-attribute 'icomplete-first-match nil
+                    :foreground "#cafd32"
+                    :weight 'unspecified
+                    :box t)
 
 ;; Another functions override this variables, then
 ;; set every time enter minibuffer
@@ -4636,9 +4631,6 @@ This function is part of the `orderless' completion style."
              projectile-generic-command "fd-find . -0 --type f --color=never"))
       ((executable-find "fd")
        (setq fd-dired-program "fd")))
-
-(with-eval-after-load 'rg
-  (rg-enable-default-bindings (kbd "M-g a")))
 
 ;; Functions
 (defun orderless-first-regexp (pattern index _total)
@@ -4776,7 +4768,6 @@ This function is part of the `orderless' completion style."
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
 (define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-toggle)
-(global-set-key (kbd "M-g a") 'rg-menu)
 (global-set-key (kbd "M-g M-a") 'occur-project)
 (global-set-key (kbd "M-g M-f") 'project-find-file)
 (global-set-key (kbd "M-y") 'icomplete-vertical-kill-ring-insert)
@@ -6581,7 +6572,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
         display-line-numbers-type 'visual)
 
   (defvar display-line-type-selected-last-buffer nil)
-  (defun display-line-type-by-selected (window-or-frame)
+  (defun display-line-type-by-selected (_window-or-frame)
     (when (buffer-live-p display-line-type-selected-last-buffer)
       (with-current-buffer display-line-type-selected-last-buffer
         (setq display-line-numbers t))
@@ -6592,6 +6583,94 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
         (setq display-line-numbers 'visual))
       (setq display-line-type-selected-last-buffer (current-buffer))))
   (add-hook 'window-selection-change-functions 'display-line-type-by-selected))
+#+end_src
+
+*** /symon/
+:LOGCLOCK:
+CLOCK: [2021-01-30 sáb 21:02]
+:END:
+
+#+begin_src elisp
+(eval-and-compile
+  (require 'symon))
+;; (defun message-advice (orig-fun format-string &rest args)
+;;   (if format-string
+;;       (apply orig-fun format-string args)))
+;; (advice-add #'message :around 'message-advice)
+
+;; (defvar symon--minibuffer-window
+;;   (minibuffer-window (car exwm-workspace--list)))
+;; (defun symon-message-trick (format-string &rest args)
+;;   (if (not (cdr exwm-workspace--list))
+;;       (apply #'message format-string args)
+;;     (if (null symon--minibuffer-window)
+;;         (setq symon--minibuffer-window
+;;               (minibuffer-window (car exwm-workspace--list))))
+;;     (with-selected-window symon--minibuffer-window
+;;       (delete-region (minibuffer-prompt-end) (point-max))
+;;       (insert (apply #'format-message format-string args)))))
+
+(defvar symon--datetime-monitor-pulse nil)
+(defun symon-custom-datetime ()
+  (if (setq symon--datetime-monitor-pulse
+            (null symon--datetime-monitor-pulse))
+      (concat
+       (format-time-string "%e %b %H")
+       (propertize ":"
+                   'face '(:foreground "green"))
+       (format-time-string "%M "))
+    (format-time-string "%e %b %H:%M ")))
+
+(defvar symon-custom-monitor-list
+  '(symon-custom-datetime))
+(define-symon-monitor symon-custom-monitor
+  :interval 10
+  :display (mapconcat 'funcall symon-custom-monitor-list " "))
+
+(setcdr (last symon-monitors)
+        `(,(cond ((memq system-type '(gnu/linux cygwin))
+                  'symon-linux-battery-monitor)
+                 ((memq system-type '(darwin))
+                  'symon-darwin-battery-monitor)
+                 ((memq system-type '(windows-nt))
+                  'symon-windows-battery-monitor))))
+(push 'symon-custom-monitor symon-monitors)
+
+(with-eval-after-load 'org-clock
+  (defun symon-custom-clock-in ()
+    (if org-clock-mode-line-timer
+        org-mode-line-string
+      ""))
+  (push 'symon-custom-clock-in symon-custom-monitor-list))
+
+(with-eval-after-load 'virtualenvwrapper
+  (defun symon-custom-virtualenv ()
+    (if (and venv-current-name
+             (not (string-empty-p venv-current-name)))
+        (concat "["
+                (propertize venv-current-name 'face 'mode-line-correct)
+                "]")
+      ""))
+  (push 'symon-custom-virtualenv symon-custom-monitor-list))
+
+(defun after-exwm-config ()
+  (defun symon-custom-recording ()
+    (if (and exwm-record-process
+                      (eq 'run (process-status exwm-record-process)))
+        exwm-record-recording
+      ""))
+  (push 'symon-custom-recording symon-custom-monitor-list))
+
+(setq symon-refresh-rate 4
+      symon-sparkline-type 'bounded
+      symon-sparkline-thickness 1
+      symon-history-size 24
+      symon-sparkline-width 24
+      symon-total-spark-width 13)
+
+(add-hook (if exwm-p
+              'exwm-init-hook
+            'emacs-startup-hook) 'symon-mode 91)
 #+end_src
 
 *** Language tools
@@ -7560,7 +7639,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   ;; ;;;;;;;;;;; ;;
   ;; Post prompt ;;
   ;; ;;;;;;;;;;; ;;
-  (defvar eshell-play-sound-time-threshold 30)
+  (defvar eshell-play-sound-time-threshold 20)
 
   (defun eshell-current-command-start ()
     (setq eshell-current-command-start-time (float-time)))
@@ -8236,7 +8315,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   ;;(global-ede-mode 1)
   ;; Unknown error
   ;; (ede-enable-generic-projects)
-  (named-code-eval 'ede-config))
+  (bound-and-eval 'after-ede-config))
 #+end_src
 
 *** /eldoc/
@@ -9301,9 +9380,9 @@ if __name__ == \"__main__\":
               (message "No more miss-spelled word!")
               (setq arg 0))))))
 
-;;;;;;;;;;
+  ;; ;;;; ;;
   ;; Keys ;;
-;;;;;;;;;;
+  ;; ;;;; ;;
   (define-key flyspell-mouse-map (kbd "<C-down-mouse-2>") #'flyspell-correct-word)
   (define-key flyspell-mouse-map (kbd "<C-mouse-2>") #'undefined)
   (define-key flyspell-mouse-map [down-mouse-2] nil)
@@ -9324,13 +9403,6 @@ if __name__ == \"__main__\":
         (define-key flyspell-mode-map (kbd "C-c i ,") #'helm-flyspell-correct))
     (define-key flyspell-mode-map (kbd "C-c i .") #'flyspell-correct-at-point)
     (define-key flyspell-mode-map (kbd "C-c i ,") #'flyspell-correct-word-before-point))
-
-  ;; Change mouse over help text
-  (let ((item (aref (aref (symbol-function 'make-flyspell-overlay) 2) 12)))
-    (if (and (stringp item)
-             (string-equal item "mouse-2: correct word at point"))
-        (aset (aref (symbol-function 'make-flyspell-overlay) 2)
-              12 "C-mouse-2: correct word at point")))
 
   ;;(fset 'flyspell-emacs-popup 'flyspell-emacs-popup-textual)
   (defhydra hydra-spell (:foreign-keys warn)
@@ -10525,9 +10597,10 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (set-face-attribute 'aw-leading-char-face nil
                     :weight 'bold
                     :foreground "green yellow"
-                    :height 170)
+                    :height 3.0 ;; integers sometimes hide char
+                    )
 
-(defun aw-real-move-window (window)
+(defun aw-move-deleting-window (window)
   "Real move the current buffer to WINDOW.
 Switch the current window to the previous buffer."
   (let ((buffer (current-buffer)))
@@ -10544,10 +10617,11 @@ Switch the current window to the previous buffer."
       '((?R aw-refresh "Refresh mode-line")
         (?X aw-delete-window "Delete Window")
         (?S aw-swap-window "Swap Windows")
-        (?M aw-real-move-window "Move Window")
+        (?D aw-move-deleting-window "Move Deleting Window")
+        (?M aw-move-window "Move Window")
         (?C aw-copy-window "Copy Window")
         (?J aw-switch-buffer-in-window "Select Buffer")
-        (?N aw-flip-window)
+        (?N aw-flip-window "Flip Window")
         (?U aw-switch-buffer-other-window "Switch Buffer Other Window")
         (?E aw-execute-command-other-window "Execute Command Other Window")
         (?F aw-split-window-fair "Split Fair Window")
@@ -10567,7 +10641,7 @@ Switch the current window to the previous buffer."
           (setq keys (delete (car dispatch) keys)))
         keys)
       aw-dispatch-always t
-      aw-minibuffer-flag t
+      aw-minibuffer-flag nil
       aw-background t)
 
 (defun aw-refresh ()
@@ -10575,10 +10649,10 @@ Switch the current window to the previous buffer."
   (aw-update)
   (force-mode-line-update t))
 
-(ace-window-display-mode)
+;; (ace-window-display-mode)
 
 (global-set-key (kbd "M-o") 'ace-window)
-(global-set-key (kbd "M-O") 'aw-refresh)
+;; (global-set-key (kbd "M-O") 'aw-refresh)
 #+end_src
 
 *** /hydra/
@@ -12188,7 +12262,7 @@ Switch the current window to the previous buffer."
        (let ((case-fold-search t))
          (replace-regexp-in-string
           (eval-when-compile
-            (concat "\\("
+            (concat "\\( \\|\\`\\)\\("
                     (mapconcat 'identity
                                '("al" "un" "uno" "una" "unos" "unas"
                                  "del"
@@ -13033,24 +13107,25 @@ You can also customize this for each buffer, using something like
     (interactive)
     (org-sort-entries nil ?f 'org-entry-to-key 'string<))
 
-  (defun org-af (&optional prefix suffix)
-    "Return filename counting blocks using this function.
-Filename returned has the format:
+;; <nativecomp incompatible>
+;;   (defun org-af (&optional prefix suffix)
+;;     "Return filename counting blocks using this function.
+;; Filename returned has the format:
 
-PREFIX block-number SUFFIX
+;; PREFIX block-number SUFFIX
 
-Example: doc-000012.png
+;; Example: doc-000012.png
 
-PREFIX - default buffer name without extension
-SUFFIX - default .png"
-    (let ((number 0)
-          (pre (or prefix (file-name-sans-extension (buffer-name))))
-          (suf (or suffix ".png")))
-      (save-excursion
-        (forward-line 1)
-        (while (re-search-forward (format "#\\+BEGIN_SRC.*%s" (compile-time-function-name)) nil t)
-          (cl-incf number)))
-      (concat pre (format "-%06d" number) suf)))
+;; PREFIX - default buffer name without extension
+;; SUFFIX - default .png"
+;;     (let ((number 0)
+;;           (pre (or prefix (file-name-sans-extension (buffer-name))))
+;;           (suf (or suffix ".png")))
+;;       (save-excursion
+;;         (forward-line 1)
+;;         (while (re-search-forward (format "#\\+BEGIN_SRC.*%s" (compile-time-function-name)) nil t)
+;;           (cl-incf number)))
+;;       (concat pre (format "-%06d" number) suf)))
 
   (defun org-archive-done-tasks (&optional scope)
     (interactive "P")
@@ -13394,7 +13469,7 @@ Throw an error when trying to set a property with an invalid name."
   (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
   (define-key org-mode-map (kbd "M-s 7 k") #'org-toggle-link-display)
   (global-set-key (kbd "C-c A f") 'org-annotate-file-search)
-  (named-code-eval 'org-config))
+  (bound-and-eval 'after-org-config))
 #+end_src
 
 *** /ox-mediawiki/                                                    :markdown:
@@ -13497,7 +13572,7 @@ Throw an error when trying to set a property with an invalid name."
                  :tag "@home")
           (:name "Hábito"
                  :habit t)))
-  (named-code-eval 'org-super-agenda-config))
+  (bound-and-eval 'after-org-super-agenda-config))
 #+end_src
 
 *** /org-appt/
@@ -15176,6 +15251,23 @@ end note
               (tablist-revert))))))))
 #+end_src
 
+*** /rg/
+
+#+begin_src elisp
+(global-set-key (kbd "M-g a") 'rg-menu)
+(with-eval-after-load 'rg
+  (rg-enable-default-bindings (kbd "M-g a")))
+#+end_src
+
+*** /deadgrep/
+
+#+begin_src elisp
+(global-set-key (kbd "M-g M-a") 'deadgrep)
+(with-eval-after-load 'deadgrep
+  (define-key deadgrep-edit-mode-map (kbd "C-c C-c") 'deadgrep-mode)
+  (define-key deadgrep-mode-map "e" 'deadgrep-edit-mode))
+#+end_src
+
 * Machine config
 
 #+begin_src elisp
@@ -15352,7 +15444,7 @@ end note
     (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
     (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point)))
 
-(named-code-eval 'machine-config)
+(bound-and-eval 'after-machine-config)
 #+end_src
 
 * Bugs
@@ -15361,6 +15453,39 @@ end note
 #+begin_src elisp
 (with-eval-after-load 'gud-config
   (add-hook 'gdb-mode-hook (lambda () (gud-basic-call "set print sevenbit-strings off"))))
+#+end_src
+
+** /flyspell/
+
+#+begin_src elisp
+(with-eval-after-load 'flyspell
+  ;; Change mouse hover help text
+  (when (bug-check-function-bytecode
+         'make-flyspell-overlay
+         "wwQExMXEJcYBxwUjiMYByAQjiMYBycUjiMYBysUjiMYBy8wjiM0IzgYHzyIiiMYBzwgjiALQPYNQAAk7g0UAxgHRCSOICjuDUADGAdIKI4iJhw==")
+    (defun make-flyspell-overlay (beg end face mouse-face)
+      "Allocate an overlay to highlight an incorrect word.
+BEG and END specify the range in the buffer of that word.
+FACE and MOUSE-FACE specify the `face' and `mouse-face' properties
+for the overlay."
+      (let ((overlay (make-overlay beg end nil t nil)))
+        (overlay-put overlay 'face face)
+        (overlay-put overlay 'mouse-face mouse-face)
+        (overlay-put overlay 'flyspell-overlay t)
+        (overlay-put overlay 'evaporate t)
+        (overlay-put overlay 'help-echo "C-mouse-2: correct word at point")
+        ;; If misspelled text has a 'keymap' property, let that remain in
+        ;; effect for the bindings that flyspell-mouse-map doesn't override.
+        (set-keymap-parent flyspell-mouse-map (get-char-property beg 'keymap))
+        (overlay-put overlay 'keymap flyspell-mouse-map)
+        (when (eq face 'flyspell-incorrect)
+          (and (stringp flyspell-before-incorrect-word-string)
+               (overlay-put overlay 'before-string
+                            flyspell-before-incorrect-word-string))
+          (and (stringp flyspell-after-incorrect-word-string)
+               (overlay-put overlay 'after-string
+                            flyspell-after-incorrect-word-string)))
+        overlay))))
 #+end_src
 
 ** /ace-window/
