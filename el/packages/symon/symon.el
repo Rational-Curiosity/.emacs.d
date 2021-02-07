@@ -277,8 +277,8 @@ Following keywords are supoprted in PLIST:
 :upper-bound (default: 0.0)
 
     lower bound of sparkline."
-  (let* ((symon-ring (gensym "symon--monitor-ring-"))
-         (symon-timer (gensym "symon--monitor-timer-"))
+  (let* ((symon-ring (make-symbol (concat (symbol-name name) "-ring")))
+         (symon-timer (make-symbol (concat (symbol-name name) "-timer")))
          (sparkline (plist-get plist :sparkline))
          (interval (or (plist-get plist :interval) 'symon-refresh-rate))
          (display (plist-get plist :display))
@@ -758,13 +758,16 @@ while(1)                                                            \
   (if msg
       (replace-regexp-in-string
        "[[:space:]]*\\'" ""
-       (let ((pos (cl-search symon--symon-message msg)))
-         (if pos
-             (substring msg 0 pos)
-           ;; (when (< (length symon--symon-message) (length msg))
-           ;;   (message-log "Symon msg: <%s>" symon--symon-message)
-           ;;   (message-log "Curr. msg: <%s>" msg))
-           msg)))
+       ;; (let ((pos (cl-search symon--symon-message msg)))
+       ;;   (if pos
+       ;;       (substring msg 0 pos)
+       ;;     ;; (when (< (length symon--symon-message) (length msg))
+       ;;     ;;   (message-log "Symon msg: <%s>" symon--symon-message)
+       ;;     ;;   (message-log "Curr. msg: <%s>" msg))
+       ;;     msg))
+       (if (string-match-p "🖥" msg)
+           (substring msg 0 (- -1 (length symon--symon-message)))
+         msg))
     ""))
 
 (defun symon--message-advice (orig-fun format-string &rest args)

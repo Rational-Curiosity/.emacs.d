@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --with-cairo --with-x-toolkit=gtk3 --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --with-xwidgets CFLAGS='-O3 -mtune=native -march=native'
+./configure --with-json --with-cairo --with-x-toolkit=gtk3 --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --with-xwidgets --with-nativecomp CFLAGS='-O3 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -372,8 +372,15 @@ Otherwise return a list of files which regex match."
 ;;;;;;;;;;
 (defun bug-check-function-bytecode (function bytecode-base64 &optional inhibit-log)
   "Check if FUNCTION has BYTECODE-BASE64.  If INHIBIT-LOG is non-nil inhibit log when differs."
-  (if (featurep 'comp)
-      t
+  (cond
+   ((null (fboundp function))
+    (unless inhibit-log
+      (message-color #("WARN function %s not defined"
+                       0 4 (face warning)) function))
+    nil)
+   ((featurep 'comp)
+    t)
+   (t
     (let ((current-bytecode-base64
            (condition-case nil
                (base64-encode-string (aref (symbol-function function) 1) t)
@@ -393,7 +400,7 @@ Otherwise return a list of files which regex match."
                            (symbol-name function))
                          current-bytecode-base64
                          load-file-name))
-        nil))))
+        nil)))))
 
 
 (require 'help-fns)
@@ -2142,15 +2149,17 @@ This function avoid error and insert character at the end."
                  (?« . ?»)
                  (?“ . ?”)))
         (char (read-char "Left delimiter: ")))
-   (save-excursion
-    (backward-up-list arg escape-strings no-syntax-crossing)
-    (save-excursion
-      (forward-sexp 1)
-      (delete-char -1)
-      (insert (or (alist-get char alist nil nil 'char-equal)
-                  char)))
-    (delete-char 1)
-    (insert char))))
+    (let ((pair (or (assoc char alist 'char-equal)
+                    (rassoc char alist)
+                    (cons char char))))
+      (save-excursion
+        (backward-up-list arg escape-strings no-syntax-crossing)
+        (save-excursion
+          (forward-sexp 1)
+          (delete-char -1)
+          (insert (cdr pair)))
+        (delete-char 1)
+        (insert (car pair))))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard macros ;;
@@ -2376,6 +2385,13 @@ This function avoid error and insert character at the end."
   (if frame
       (kill-buffers-from-file frame)
     (kill-buffer)))
+
+(defun kill-buffer-and-window (buffer)
+  (interactive (list (current-buffer)))
+  (let ((win (get-buffer-window buffer)))
+    (kill-buffer buffer)
+    (when (window-live-p win)
+      (delete-window win))))
 
 (defun buffers-with-window (&optional frame)
   "Get buffers with window in FRAME."
@@ -3115,6 +3131,7 @@ others."
 (global-set-key (kbd "C-c M-r") #'revert-buffer)
 (global-set-key (kbd "C-x C-c") 'save-buffers-kill-terminal-with-choice)
 (global-set-key (kbd "C-x k") 'kill-buffer-or-buffers-from-file)
+(global-set-key (kbd "C-x K") 'kill-buffer-and-window)
 
 (global-set-key (kbd "C-c b t") #'toggle-tool-bar-mode-from-frame)
 (global-set-key (kbd "C-c b m") #'toggle-menu-bar-mode-from-frame)
@@ -3808,7 +3825,7 @@ others."
           (t
            (message "File not found: %s" filepath))))
 
-  (defun exwm-ace-window (arg)
+  (defun exwm-ace-window-dwim (arg)
     (interactive "p")
     (if (and (derived-mode-p 'exwm-mode)
              (eq exwm--input-mode 'char-mode))
@@ -3820,6 +3837,28 @@ others."
                 (ace-window arg)
               (exwm-input-release-keyboard id))))
       (ace-window arg)))
+
+  (defun exwm-ace-window (arg)
+    (interactive "p")
+    (if (and (derived-mode-p 'exwm-mode)
+             (eq exwm--input-mode 'char-mode))
+        (let ((id (exwm--buffer->id (window-buffer))))
+          (exwm-input-grab-keyboard id)
+          (unwind-protect
+              (ace-window arg)
+            (exwm-input-release-keyboard id)))
+      (ace-window arg)))
+
+  (defun exwm-M-x ()
+    (interactive)
+    (if (and (derived-mode-p 'exwm-mode)
+             (eq exwm--input-mode 'char-mode))
+        (let ((id (exwm--buffer->id (window-buffer))))
+          (exwm-input-grab-keyboard id)
+          (unwind-protect
+              (call-interactively 'execute-extended-command)
+            (exwm-input-release-keyboard id)))
+      (call-interactively 'execute-extended-command)))
 
   (defvar exwm-ctrl-space nil)
   (defun exwm-ctrl-space (arg)
@@ -4034,7 +4073,7 @@ others."
             ;; switch buffer
             ([?\s-b] . switch-to-buffer)
             ;; ace-window
-            ([?\s-o] . ace-window)
+            ([?\s-o] . exwm-ace-window)
             ;; Bind lock screen
             (,(kbd "<s-escape>") . exwm-screensaver-lock)
             (,(kbd "<C-s-escape>") . exwm-screensaver-interrupt)
@@ -4043,12 +4082,12 @@ others."
             ;; Record audio and video
             (,(kbd "<S-s-print>") . exwm-record-toggle)
             ;; Execute command menu
-            ([?\s-x] . ,(if (featurep 'helm) 'helm-M-x 'execute-extended-command))
+            ([?\s-x] . exwm-M-x)
             ;; shutdown computer
             (,(kbd "<s-end>") . exwm-shutdown))))
 
   ;; ace-window
-  (define-key exwm-mode-map (kbd "M-o") 'exwm-ace-window)
+  (define-key exwm-mode-map (kbd "M-o") 'exwm-ace-window-dwim)
   ;; C-SPC trick
   (define-key exwm-mode-map (kbd "C-SPC") 'exwm-ctrl-space)
   (define-key exwm-mode-map (kbd "C-S-SPC") 'exwm-ctrl-space)
@@ -4298,7 +4337,8 @@ others."
           mini-frame-ignore-commands '(debugger-eval-expression
                                        objed-ipipe
                                        "edebug-eval-expression"
-                                       "exwm-workspace-"))
+                                       "exwm-workspace-")
+          mini-frame-standalone t)
 
     (defun mini-frame--resize-mini-frame (frame)
       (when (and (eq mini-frame-frame frame)
@@ -4354,15 +4394,15 @@ others."
     ;;               (cdr (window-text-pixel-size
     ;;                     (frame-selected-window mini-frame-frame))))))))))
     ;; (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice)
-    ;; ]
 
-    (defun mini-frame-toggle-resize ()
-      (interactive)
-      (if (setq mini-frame-resize (null mini-frame-resize))
-          (advice-remove 'icomplete-exhibit 'mini-frame-icomplete-exhibit-advice)
-        (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice))
-      (message "Custom mini frame resize: %s" (nu mini-frame-resize)))
-    (global-set-key (kbd "M-s 7 0") 'mini-frame-toggle-resize)
+    ;; (defun mini-frame-toggle-resize ()
+    ;;   (interactive)
+    ;;   (if (setq mini-frame-resize (null mini-frame-resize))
+    ;;       (advice-remove 'icomplete-exhibit 'mini-frame-icomplete-exhibit-advice)
+    ;;     (advice-add 'icomplete-exhibit :after 'mini-frame-icomplete-exhibit-advice))
+    ;;   (message "Custom mini frame resize: %s" (nu mini-frame-resize)))
+    ;; (global-set-key (kbd "M-s 7 0") 'mini-frame-toggle-resize)
+    ;; ]
 
 
     ;; only one minibuffer
@@ -4588,10 +4628,18 @@ This function is part of the `orderless' completion style."
 ;; this file overides completion-category-defaults
 (require 'message)
 
-(set-face-attribute 'icomplete-first-match nil
-                    :foreground "#cafd32"
-                    :weight 'unspecified
-                    :box t)
+(eval-and-when-daemon frame
+  (if (display-graphic-p frame)
+      (set-face-attribute 'icomplete-first-match nil
+                          :background 'unspecified
+                          :foreground 'unspecified
+                          :weight 'unspecified
+                          :box t)
+    (set-face-attribute 'icomplete-first-match nil
+                        :background "#404000"
+                        :foreground 'unspecified
+                        :weight 'unspecified
+                        :box 'unspecified)))
 
 ;; Another functions override this variables, then
 ;; set every time enter minibuffer
@@ -4648,15 +4696,23 @@ This function is part of the `orderless' completion style."
    ;; first in cycle
    ((equal orderless-matching-styles (default-value 'orderless-matching-styles))
     (setq-local orderless-matching-styles '(orderless-regexp)
-                orderless-style-dispatchers nil))
-   ;; middle in cycle
+                orderless-style-dispatchers nil)
+    (message "orderless-regexp"))
+   ;; second in cycle
    ((equal orderless-matching-styles '(orderless-regexp))
+    (setq-local orderless-matching-styles '(orderless-literal)
+                orderless-style-dispatchers nil)
+    (message "orderless-literal"))
+   ;; third in cycle
+   ((equal orderless-matching-styles '(orderless-literal))
     (setq-local orderless-matching-styles '(orderless-flex)
-                orderless-style-dispatchers nil))
+                orderless-style-dispatchers nil)
+    (message "orderless-flex"))
    ;; last in cycle
    ((equal orderless-matching-styles '(orderless-flex))
     (setq-local orderless-matching-styles (default-value 'orderless-matching-styles)
-                orderless-style-dispatchers (default-value 'orderless-style-dispatchers))))
+                orderless-style-dispatchers (default-value 'orderless-style-dispatchers))
+    (message "%s" (default-value 'orderless-matching-styles))))
   (completion--flush-all-sorted-completions)
   (icomplete-pre-command-hook)
   (icomplete-post-command-hook))
@@ -9185,122 +9241,6 @@ if __name__ == \"__main__\":
     (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode)
     (setq flymake-diagnostic-at-point-timer-delay 2.0))
 
-  ;; custom modeline
-  (when (bug-check-function-bytecode
-         'flymake--mode-line-format
-         "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UIAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYkEOoPOAQRAsgT5BAYOIrID+gT7/COyAgKEOgEK/T2ExwEKgzYB9gQh/gohWYI3Af2DxwGJ2N3/BgZHIvAF2tvi4yAGDOQCy4FAAAsix4FBAIFCAMrLBgghgUMAIoFEAIFFAIFGACYGI4jkAsuBQAAMIseBQQCBQgDKywYIIYFHACKBRACBRQCBRgAmBiOIAbaC3N2BSACBSQDd/wYRRyLwBhAjgUkA3YFKAAYTIvAGESMj3YFLAAsMI1CvCkOksgEEQbIFggcBgUwA6ALFiYkDOoP9AQOyAwKJQbIEorICAQFCsgECg/YBgU0AAUKyAQNBsgSC1gGJn7aEgU4AIkK2hyJChw==")
-    (defun flymake--mode-line-format ()
-      "Produce a pretty minor mode indicator."
-      (let* ((known (hash-table-keys flymake--backend-state))
-             (running (flymake-running-backends))
-             (disabled (flymake-disabled-backends))
-             (reported (flymake-reporting-backends))
-             (diags-by-type (make-hash-table))
-             (all-disabled (and disabled (null running)))
-             (some-waiting (cl-set-difference running reported)))
-        (maphash `(lambda (_b state)
-                    (mapc (lambda (diag)
-                            (push diag
-                                  (gethash (flymake--diag-type diag)
-                                           ,diags-by-type)))
-                          (flymake--backend-state-diags state)))
-                 flymake--backend-state)
-        `((:propertize "!"
-                       mouse-face mode-line-highlight
-                       help-echo
-                       ,(concat (format "%s known backends\n" (length known))
-                                (format "%s running\n" (length running))
-                                (format "%s disabled\n" (length disabled))
-                                "mouse-1: Display minor mode menu\n"
-                                "mouse-2: Show help for minor mode")
-                       keymap
-                       ,(let ((map (make-sparse-keymap)))
-                          (define-key map [mode-line down-mouse-1]
-                            flymake-menu)
-                          (define-key map [mode-line mouse-2]
-                            (lambda ()
-                              (interactive)
-                              (describe-function 'flymake-mode)))
-                          map))
-          ,@(pcase-let ((`(,ind ,face ,explain)
-                         (cond ((null known)
-                                '("?" mode-line "No known backends"))
-                               (some-waiting
-                                `("…" compilation-mode-line-run
-                                  ,(format "Waiting for %s running backend(s)"
-                                           (length some-waiting))))
-                               (all-disabled
-                                '("!" compilation-mode-line-run
-                                  "All backends disabled"))
-                               (t
-                                '(nil nil nil)))))
-              (when ind
-                `(((:propertize ,ind
-                                face ,face
-                                help-echo ,explain
-                                keymap
-                                ,(let ((map (make-sparse-keymap)))
-                                   (define-key map [mode-line mouse-1]
-                                     'flymake-switch-to-log-buffer)
-                                   map))))))
-          ,@(unless (or all-disabled
-                        (null known))
-              (cl-loop
-               with types = (hash-table-keys diags-by-type)
-               with _augmented = (cl-loop for extra in '(:error :warning)
-                                          do (cl-pushnew extra types
-                                                         :key #'flymake--severity))
-               for type in (cl-sort types #'> :key #'flymake--severity)
-               for diags = (gethash type diags-by-type)
-               for face = (flymake--lookup-type-property type
-                                                         'mode-line-face
-                                                         'compilation-error)
-               when (or diags
-                        (cond ((eq flymake-suppress-zero-counters t)
-                               nil)
-                              (flymake-suppress-zero-counters
-                               (>= (flymake--severity type)
-                                   (warning-numeric-level
-                                    flymake-suppress-zero-counters)))
-                              (t t)))
-               collect `(:propertize
-                         ,(format "%d" (length diags))
-                         face ,face
-                         mouse-face mode-line-highlight
-                         keymap
-                         ,(let ((map (make-sparse-keymap))
-                                (type type))
-                            (define-key map (vector 'mode-line
-                                                    mouse-wheel-down-event)
-                              `(lambda (event)
-                                 (interactive "e")
-                                 (with-selected-window (posn-window (event-start event))
-                                   (flymake-goto-prev-error 1 (list ,type) t))))
-                            (define-key map (vector 'mode-line
-                                                    mouse-wheel-up-event)
-                              `(lambda (event)
-                                 (interactive "e")
-                                 (with-selected-window (posn-window (event-start event))
-                                   (flymake-goto-next-error 1 (list ,type) t))))
-                            map)
-                         help-echo
-                         ,(concat (format "%s diagnostics of type %s\n"
-                                          (propertize (format "%d"
-                                                              (length diags))
-                                                      'face face)
-                                          (propertize (format "%s" type)
-                                                      'face face))
-                                  (format "%s/%s: previous/next of this type"
-                                          mouse-wheel-down-event
-                                          mouse-wheel-up-event)))
-               into forms
-               finally return
-               `((:propertize "{")
-                 ,@(cl-loop for (a . rest) on forms by #'cdr
-                            collect a when rest collect
-                            '(:propertize " "))
-                 (:propertize "}"))))))))
-
   (define-key flymake-mode-map (kbd "M-g n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g M-n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g p") #'flymake-goto-prev-error)
@@ -11526,7 +11466,7 @@ Switch the current window to the previous buffer."
         (lambda ()
           (locate-dominating-file default-directory ".git/"))
         consult-find-command
-        "fdfind --color=never --full-path"
+        "fdfind -H --color=never --full-path"
         consult--gc-threshold gc-cons-threshold
         consult-async-default-split nil))
 (global-set-key (kbd "M-g f") 'consult-find)
@@ -15227,6 +15167,8 @@ end note
 *** /async/
 
 #+begin_src elisp
+(async-bytecomp-package-mode)
+
 (with-eval-after-load 'docker-utils
   (when (bug-check-function-bytecode
          'docker-utils-generic-action
@@ -15933,7 +15875,10 @@ use in place of \"-ls\" as the final argument."
         (setq mode-line-process '(":%s"))))))
 #+end_src
 
-** /ido-completing-read+/
+** CANC /ido-completing-read+/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'ido-completing-read+
@@ -16967,6 +16912,308 @@ Concurrency is disabled as it breaks the orders of errors, replies and events."
 #+end_src
 
 * Improvements
+** /flymake/
+
+#+begin_src elisp
+(with-eval-after-load 'flymake
+  ;; custom modeline
+  (if (fboundp 'flymake--mode-line-title)
+      (defun flymake--mode-line-title ()
+        `(:propertize
+          "!"
+          mouse-face mode-line-highlight
+          help-echo
+          (lambda (&rest whatever)
+            (concat
+             (format "%s known backends\n" (hash-table-count flymake--backend-state))
+             (format "%s running\n" (length (flymake-running-backends)))
+             (format "%s disabled\n" (length (flymake-disabled-backends)))
+             "mouse-1: Display minor mode menu\n"
+             "mouse-2: Show help for minor mode"))
+          keymap
+          ,(let ((map (make-sparse-keymap)))
+             (define-key map [mode-line down-mouse-1]
+               flymake-menu)
+             (define-key map [mode-line mouse-2]
+               (lambda ()
+                 (interactive)
+                 (describe-function 'flymake-mode)))
+             map)))
+    (when (bug-check-function-bytecode
+           'flymake--mode-line-format
+           "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UIAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYkEOoPOAQRAsgT5BAYOIrID+gT7/COyAgKEOgEK/T2ExwEKgzYB9gQh/gohWYI3Af2DxwGJ2N3/BgZHIvAF2tvi4yAGDOQCy4FAAAsix4FBAIFCAMrLBgghgUMAIoFEAIFFAIFGACYGI4jkAsuBQAAMIseBQQCBQgDKywYIIYFHACKBRACBRQCBRgAmBiOIAbaC3N2BSACBSQDd/wYRRyLwBhAjgUkA3YFKAAYTIvAGESMj3YFLAAsMI1CvCkOksgEEQbIFggcBgUwA6ALFiYkDOoP9AQOyAwKJQbIEorICAQFCsgECg/YBgU0AAUKyAQNBsgSC1gGJn7aEgU4AIkK2hyJChw==")
+      (defun flymake--mode-line-format ()
+        "Produce a pretty minor mode indicator."
+        (let* ((known (hash-table-keys flymake--backend-state))
+               (running (flymake-running-backends))
+               (disabled (flymake-disabled-backends))
+               (reported (flymake-reporting-backends))
+               (diags-by-type (make-hash-table))
+               (all-disabled (and disabled (null running)))
+               (some-waiting (cl-set-difference running reported)))
+          (maphash `(lambda (_b state)
+                      (mapc (lambda (diag)
+                              (push diag
+                                    (gethash (flymake--diag-type diag)
+                                             ,diags-by-type)))
+                            (flymake--backend-state-diags state)))
+                   flymake--backend-state)
+          `((:propertize "!"
+                         mouse-face mode-line-highlight
+                         help-echo
+                         ,(concat (format "%s known backends\n" (length known))
+                                  (format "%s running\n" (length running))
+                                  (format "%s disabled\n" (length disabled))
+                                  "mouse-1: Display minor mode menu\n"
+                                  "mouse-2: Show help for minor mode")
+                         keymap
+                         ,(let ((map (make-sparse-keymap)))
+                            (define-key map [mode-line down-mouse-1]
+                              flymake-menu)
+                            (define-key map [mode-line mouse-2]
+                              (lambda ()
+                                (interactive)
+                                (describe-function 'flymake-mode)))
+                            map))
+            ,@(pcase-let ((`(,ind ,face ,explain)
+                           (cond ((null known)
+                                  '("?" mode-line "No known backends"))
+                                 (some-waiting
+                                  `("…" compilation-mode-line-run
+                                    ,(format "Waiting for %s running backend(s)"
+                                             (length some-waiting))))
+                                 (all-disabled
+                                  '("!" compilation-mode-line-run
+                                    "All backends disabled"))
+                                 (t
+                                  '(nil nil nil)))))
+                (when ind
+                  `(((:propertize ,ind
+                                  face ,face
+                                  help-echo ,explain
+                                  keymap
+                                  ,(let ((map (make-sparse-keymap)))
+                                     (define-key map [mode-line mouse-1]
+                                       'flymake-switch-to-log-buffer)
+                                     map))))))
+            ,@(unless (or all-disabled
+                          (null known))
+                (cl-loop
+                 with types = (hash-table-keys diags-by-type)
+                 with _augmented = (cl-loop for extra in '(:error :warning)
+                                            do (cl-pushnew extra types
+                                                           :key #'flymake--severity))
+                 for type in (cl-sort types #'> :key #'flymake--severity)
+                 for diags = (gethash type diags-by-type)
+                 for face = (flymake--lookup-type-property type
+                                                           'mode-line-face
+                                                           'compilation-error)
+                 when (or diags
+                          (cond ((eq flymake-suppress-zero-counters t)
+                                 nil)
+                                (flymake-suppress-zero-counters
+                                 (>= (flymake--severity type)
+                                     (warning-numeric-level
+                                      flymake-suppress-zero-counters)))
+                                (t t)))
+                 collect `(:propertize
+                           ,(format "%d" (length diags))
+                           face ,face
+                           mouse-face mode-line-highlight
+                           keymap
+                           ,(let ((map (make-sparse-keymap))
+                                  (type type))
+                              (define-key map (vector 'mode-line
+                                                      mouse-wheel-down-event)
+                                `(lambda (event)
+                                   (interactive "e")
+                                   (with-selected-window (posn-window (event-start event))
+                                     (flymake-goto-prev-error 1 (list ,type) t))))
+                              (define-key map (vector 'mode-line
+                                                      mouse-wheel-up-event)
+                                `(lambda (event)
+                                   (interactive "e")
+                                   (with-selected-window (posn-window (event-start event))
+                                     (flymake-goto-next-error 1 (list ,type) t))))
+                              map)
+                           help-echo
+                           ,(concat (format "%s diagnostics of type %s\n"
+                                            (propertize (format "%d"
+                                                                (length diags))
+                                                        'face face)
+                                            (propertize (format "%s" type)
+                                                        'face face))
+                                    (format "%s/%s: previous/next of this type"
+                                            mouse-wheel-down-event
+                                            mouse-wheel-up-event)))
+                 into forms
+                 finally return
+                 `((:propertize "{")
+                   ,@(cl-loop for (a . rest) on forms by #'cdr
+                              collect a when rest collect
+                              '(:propertize " "))
+                   (:propertize "}"))))))))))
+#+end_src
+
+** /icomplete/
+
+#+begin_src elisp
+(with-eval-after-load 'icomplete
+  (defun icomplete-completions (name candidates predicate require-match)
+    "Identify prospective candidates for minibuffer completion.
+
+The display is updated with each minibuffer keystroke during
+minibuffer completion.
+
+Prospective completion suffixes (if any) are displayed, bracketed by
+one of (), [], or {} pairs.  The choice of brackets is as follows:
+
+  (...) - a single prospect is identified and matching is enforced,
+  [...] - a single prospect is identified but matching is optional, or
+  {...} - multiple prospects, separated by commas, are indicated, and
+          further input is required to distinguish a single one.
+
+If there are multiple possibilities, `icomplete-separator' separates them.
+
+The displays for unambiguous matches have ` [Matched]' appended
+\(whether complete or not), or ` [No matches]', if no eligible
+matches exist."
+    (let* ((ignored-extension-re
+            (and minibuffer-completing-file-name
+                 icomplete-with-completion-tables
+                 completion-ignored-extensions
+                 (concat "\\(?:\\`\\.\\./\\|"
+                         (regexp-opt completion-ignored-extensions)
+                         "\\)\\'")))
+           (minibuffer-completion-table candidates)
+           (minibuffer-completion-predicate
+            (if ignored-extension-re
+                (lambda (cand)
+                  (and (not (string-match ignored-extension-re cand))
+                       (or (null predicate)
+                           (funcall predicate cand))))
+              predicate))
+           (md (completion--field-metadata (icomplete--field-beg)))
+           (comps (icomplete--sorted-completions))
+           (last (if (consp comps) (last comps)))
+           (base-size (cdr last))
+           (open-bracket (if require-match "(" "["))
+           (close-bracket (if require-match ")" "]")))
+      ;; `concat'/`mapconcat' is the slow part.
+      (if (not (consp comps))
+          (progn ;;(debug (format "Candidates=%S field=%S" candidates name))
+            (format " %sNo matches%s" open-bracket close-bracket))
+        (if last (setcdr last nil))
+        (let* ((most-try
+                (if (and base-size (> base-size 0))
+                    (completion-try-completion
+                     name candidates predicate (length name) md)
+                  ;; If the `comps' are 0-based, the result should be
+                  ;; the same with `comps'.
+                  (completion-try-completion
+                   name comps nil (length name) md)))
+               (most (if (consp most-try) (car most-try)
+                       (if most-try (car comps) "")))
+               ;; Compare name and most, so we can determine if name is
+               ;; a prefix of most, or something else.
+               (compare (compare-strings name nil nil
+                                         most nil nil completion-ignore-case))
+               (ellipsis (if (char-displayable-p ?…) "…" "..."))
+               (determ (unless (or (eq t compare) (eq t most-try)
+                                   (= (setq compare (1- (abs compare)))
+                                      (length most)))
+                         (concat open-bracket
+                                 (cond
+                                  ((= compare (length name))
+                                   ;; Typical case: name is a prefix.
+                                   (substring most compare))
+                                  ;; Don't bother truncating if it doesn't gain
+                                  ;; us at least 2 columns.
+                                  ((< compare (+ 2 (string-width ellipsis))) most)
+                                  (t (concat ellipsis (substring most compare))))
+                                 close-bracket)))
+               ;;"-prospects" - more than one candidate
+               (prospects-len (+ (string-width
+                                  (or determ (concat open-bracket close-bracket)))
+                                 (string-width icomplete-separator)
+                                 (+ 2 (string-width ellipsis)) ;; take {…} into account
+                                 (string-width (buffer-string))))
+               (prospects-max
+                ;; Max total length to use, including the minibuffer content.
+                (* (+ icomplete-prospects-height
+                      ;; If the minibuffer content already uses up more than
+                      ;; one line, increase the allowable space accordingly.
+                      (/ prospects-len (window-width)))
+                   (window-width)))
+               ;; Find the common prefix among `comps'.
+               ;; We can't use the optimization below because its assumptions
+               ;; aren't always true, e.g. when completion-cycling (bug#10850):
+               ;; (if (eq t (compare-strings (car comps) nil (length most)
+               ;;                          most nil nil completion-ignore-case))
+               ;;     ;; Common case.
+               ;;     (length most)
+               ;; Else, use try-completion.
+               (prefix (when icomplete-hide-common-prefix
+                         (try-completion "" comps)))
+               (prefix-len
+                (and (stringp prefix)
+                     ;; Only hide the prefix if the corresponding info
+                     ;; is already displayed via `most'.
+                     (string-prefix-p prefix most t)
+                     (length prefix))) ;;)
+               prospects comp limit)
+          (if (or (eq most-try t) (not (consp (cdr comps))))
+              (setq prospects nil)
+            (when (member name comps)
+              ;; NAME is complete but not unique.  This scenario poses
+              ;; following UI issues:
+              ;;
+              ;; - When `icomplete-hide-common-prefix' is non-nil, NAME
+              ;;   is stripped empty.  This would make the entry
+              ;;   inconspicuous.
+              ;;
+              ;; - Due to sorting of completions, NAME may not be the
+              ;;   first of the prospects and could be hidden deep in
+              ;;   the displayed string.
+              ;;
+              ;; - Because of `icomplete-prospects-height' , NAME may
+              ;;   not even be displayed to the user.
+              ;;
+              ;; To circumvent all the above problems, provide a visual
+              ;; cue to the user via an "empty string" in the try
+              ;; completion field.
+              (setq determ (concat open-bracket "" close-bracket)))
+            ;; Compute prospects for display.
+            (while (and comps (not limit))
+              (setq comp
+                    (if prefix-len (substring (car comps) prefix-len) (car comps))
+                    comps (cdr comps))
+              (setq prospects-len
+                    (+ (string-width comp)
+                       (string-width icomplete-separator)
+                       prospects-len))
+              (if (< prospects-len prospects-max)
+                  (push comp prospects)
+                (setq limit t))))
+          (setq prospects (nreverse prospects))
+          ;; Decorate first of the prospects.
+          (when prospects
+            (let ((first (copy-sequence (pop prospects))))
+              (add-face-text-property 0 (length first)                  ;; - ;; +
+                                      'icomplete-first-match nil first) ;; - ;; +
+              (push first prospects)))
+          ;; Restore the base-size info, since completion-all-sorted-completions
+          ;; is cached.
+          (if last (setcdr last base-size))
+          (if prospects
+              (concat determ
+                      "{"
+                      (mapconcat 'identity prospects icomplete-separator)
+                      (and limit (concat icomplete-separator ellipsis))
+                      "}")
+            (concat determ " [Matched]")))))))
+#+end_src
+
 ** /exwm/
 
 #+begin_src elisp
