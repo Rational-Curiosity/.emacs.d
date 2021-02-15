@@ -20,7 +20,13 @@
 * Early command line arguments
 
 #+begin_src elisp
-(defvar exwm-p (if (member "--exwm" command-line-args) t nil))
+(defvar exwm-p
+  (if (member "--exwm" command-line-args)
+      (progn
+        (defvar last-startup-hook 'exwm-init-hook)
+        t)
+    (defvar last-startup-hook 'emacs-startup-hook)
+    nil))
 #+end_src
 
 * Performance
@@ -235,26 +241,27 @@ modified.
 (advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
 
 (defun package-auto-install-remove ()
-            ;; install packages in list
-            (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
-              (if (cl-every #'identity list-of-boolean)
-                  (message "Nothing to install")
-                (progn
-                  (package-refresh-contents)
-                  (let ((list-of-uninstalled '()))
-                    (cl-mapc #'(lambda (a b)
-                                 (unless a
-                                   (set 'list-of-uninstalled (cons b list-of-uninstalled))))
-                             list-of-boolean package-selected-packages)
-                    (mapc #'package-install list-of-uninstalled)))))
-            ;; uninstall packages not in list
-            ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-            (package-autoremove))
+  (interactive)
+  ;; install packages in list
+  (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
+    (if (cl-every #'identity list-of-boolean)
+        (message "Nothing to install")
+      (progn
+        (package-refresh-contents)
+        (let ((list-of-uninstalled '()))
+          (cl-mapc #'(lambda (a b)
+                       (unless a
+                         (set 'list-of-uninstalled (cons b list-of-uninstalled))))
+                   list-of-boolean package-selected-packages)
+          (mapc #'package-install list-of-uninstalled)))))
+  ;; uninstall packages not in list
+  ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
+  (package-autoremove))
 
-(add-hook (if exwm-p
-              'exwm-init-hook
-            'emacs-startup-hook)
-          'package-auto-install-remove)
+;; (add-hook (if exwm-p
+;;               'exwm-init-hook
+;;             'emacs-startup-hook)
+;;           'package-auto-install-remove)
 
 (defun package-emacswiki-update ()
   (interactive)
