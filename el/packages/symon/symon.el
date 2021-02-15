@@ -766,7 +766,7 @@ while(1)                                                            \
        ;;     ;;   (message-log "Curr. msg: <%s>" msg))
        ;;     msg))
        (if (string-match-p "🖥" msg)
-           (substring msg 0 (- -1 (length symon--symon-message)))
+           (substring msg 0 (- (min (length msg) (1+ (length symon--symon-message)))))
          msg))
     ""))
 
