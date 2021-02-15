@@ -20,7 +20,6 @@
      cyphejor
      dash
      dash-functional
-     deadgrep
      deferred
      docker
      docker-tramp

@@ -714,10 +714,6 @@ No argument or nil as argument means do this for the current buffer."
   '((t :foreground "red4"))
   "Error" :group 'mode-line)
 
-(defface mode-line-outside-modified
-  '((t :foreground "#ffffff" :background "#c82829"))
-  "Outside modified" :group 'mode-line)
-
 (defface mode-line-modified
   '((t :foreground "Red" :weight bold))
   "Modified" :group 'mode-line)
@@ -730,37 +726,14 @@ No argument or nil as argument means do this for the current buffer."
   '((t :foreground "Green"))
   "Not modified" :group 'mode-line)
 
-(defface mode-line-coding-system
-  '((t :foreground "SaddleBrown"))
-  "Coding system" :group 'mode-line)
-
-(defface mode-line-eol
-  '((t  :foreground "DarkOliveGreen"))
-  "End of line" :group 'mode-line)
-
-(defface mode-line-percentage
-  '((t :foreground "DodgerBlue"))
-  "Percentage" :group 'mode-line)
-
-(defface mode-line-battery
-  '((t :foreground "DodgerBlue3"))
-  "Column number" :group 'mode-line)
-
-(defface mode-line-major-mode
-  '((t :foreground "DarkBlue" :weight ultra-bold))
-  "Major mode" :group 'mode-line)
-
 (defface mode-line-project-name
   '((t :foreground "SaddleBrown" :weight bold))
   "Project name" :group 'mode-line)
 
-(defface mode-line-abbrev-mode
-  '((t :foreground "light slate blue" :weight bold))
-  "Project name" :group 'mode-line)
-
 (with-eval-after-load 'abbrev
   (setcar (cdr (assq 'abbrev-mode minor-mode-alist))
-          (propertize "A" 'face 'mode-line-abbrev-mode)))
+          (propertize "A"
+                      'face '(:foreground "light slate blue" :weight bold))))
 (with-eval-after-load 'compile
   (setcar (cdr (assq 'compilation-shell-minor-mode minor-mode-alist)) "Cs")
   (setcar (cdr (assq 'compilation-minor-mode minor-mode-alist)) "Cp"))
@@ -864,13 +837,13 @@ mouse-3: Describe current input method"))
                  mouse-face mode-line-highlight))
    ,(propertize
      "%z"
-     'face 'mode-line-coding-system
+     'face '(:foreground "SaddleBrown")
      'help-echo 'mode-line-mule-info-help-echo
      'mouse-face 'mode-line-highlight
      'local-map mode-line-coding-system-map)
    (:propertize
     (:eval (mode-line-eol-desc))
-    face mode-line-eol))
+    face (:foreground "DarkOliveGreen")))
  ;; #     #
  ;; ##   ##  ####  #####  # ###### # ###### #####
  ;; # # # # #    # #    # # #      # #      #    #
@@ -883,7 +856,7 @@ mouse-3: Describe current input method"))
    (cond
     ((not (or (and (buffer-file-name) (file-remote-p buffer-file-name))
               (verify-visited-file-modtime (current-buffer))))
-     (propertize "M" 'face 'mode-line-outside-modified
+     (propertize "M" 'face '(:foreground "#ffffff" :background "#c82829")
                  'help-echo "Modified outside Emacs!\nRevert first!"))
     ((buffer-modified-p)
      (propertize (if buffer-read-only
@@ -919,7 +892,7 @@ mouse-3: Describe current input method"))
 mouse-1: Display Line and Column Mode Menu")
    (:propertize
     mode-line-percent-position
-    face mode-line-percentage
+    face (:foreground "DodgerBlue")
     local-map ,mode-line-column-line-number-mode-map
     mouse-face mode-line-highlight
     ;; XXX needs better description
@@ -945,7 +918,7 @@ mouse-1: Display Line and Column Mode Menu")))
    (list (propertize "%[" 'help-echo recursive-edit-help-echo)
          " "
          `(:propertize ("" mode-name)
-                       face mode-line-major-mode
+                       face (:foreground "DarkBlue" :weight ultra-bold)
                        help-echo "Major mode\n\
 mouse-1: Display major mode menu\n\
 mouse-2: Show help for major mode\n\
@@ -989,6 +962,9 @@ mouse-3: Toggle minor modes"
    mode-line-misc-info
    ;; mode-line-end-spaces
    ))
+
+(add-hook 'window-configuration-change-hook
+          'force-mode-line-buffer-identification)
 
 ;; [ mini-modeline options
 ;; (setq mini-modeline-truncate-p nil
@@ -1091,9 +1067,12 @@ mouse-3: Toggle minor modes"
          (substring string (- len/2))))
     string))
 
+(defun force-mode-line-buffer-identification ()
+  (setq mode-line-cached nil)
+  (mode-line-buffer-identification-shorten))
+
 (defun mode-line-buffer-identification-shorten ()
-  (let ((total-len (window-total-width))
-        (others-len (1+ (string-width
+  (let ((others-len (1+ (string-width
                          (format-mode-line '("%e"
                                              mode-line-position
                                              mode-line-mule-info
@@ -1104,43 +1083,43 @@ mouse-3: Toggle minor modes"
                                              mode-line-modes
                                              mode-line-misc-info
                                              ))))))
-    (let ((len (- total-len others-len)))
-      (if (equal mode-line-cached len)
-          mode-line-identification
-        (setq mode-line-cached len)
-        (let ((vc-name (or vc-mode ""))
-              (final-name (or (mode-line-abbreviate-file-name) (buffer-name))))
-          (if (< len (+ (string-width final-name) (string-width vc-name)))
-              (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
-                  (let ((dir-name (match-string 1 final-name))
-                        (base-name (match-string 2 final-name)))
-                    (if vc-mode
-                        (let ((result (abbrev-strings-try
-                                       len base-name dir-name vc-name)))
-                          (setq vc-name (car (cdr (cdr result)))
-                                len (- len (string-width vc-name))
-                                final-name (abbrev-string
-                                            len (concat
-                                                 (car (cdr result))
-                                                 (car result)))))
+    (if (equal mode-line-cached others-len)
+        mode-line-identification
+      (setq mode-line-cached others-len)
+      (let ((len (- (window-total-width) others-len))
+            (vc-name (or vc-mode ""))
+            (final-name (or (mode-line-abbreviate-file-name) (buffer-name))))
+        (if (< len (+ (string-width final-name) (string-width vc-name)))
+            (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
+                (let ((dir-name (match-string 1 final-name))
+                      (base-name (match-string 2 final-name)))
+                  (if vc-mode
                       (let ((result (abbrev-strings-try
-                                     len base-name dir-name)))
-                        (setq final-name (abbrev-string
+                                     len base-name dir-name vc-name)))
+                        (setq vc-name (car (cdr (cdr result)))
+                              len (- len (string-width vc-name))
+                              final-name (abbrev-string
                                           len (concat
                                                (car (cdr result))
-                                               (car result)))))))
-                (if vc-mode
-                    (let ((result (abbrev-strings-try len "" final-name vc-name)))
-                      (setq vc-name (car (cdr (cdr result)))
-                            len (- len (string-width vc-name))
-                            final-name (abbrev-string len (car (cdr result)))))
-                  (setq final-name (abbrev-string
-                                    len (abbrev-string-try len final-name)))))
-            (setq len (- len (string-width vc-name))))
-          (setq mode-line-identification
-                (concat
-                 (format (concat "%-" (int-to-string (max len 0)) "s") final-name)
-                 vc-name)))))))
+                                               (car result)))))
+                    (let ((result (abbrev-strings-try
+                                   len base-name dir-name)))
+                      (setq final-name (abbrev-string
+                                        len (concat
+                                             (car (cdr result))
+                                             (car result)))))))
+              (if vc-mode
+                  (let ((result (abbrev-strings-try len "" final-name vc-name)))
+                    (setq vc-name (car (cdr (cdr result)))
+                          len (- len (string-width vc-name))
+                          final-name (abbrev-string len (car (cdr result)))))
+                (setq final-name (abbrev-string
+                                  len (abbrev-string-try len final-name)))))
+          (setq len (- len (string-width vc-name))))
+        (setq mode-line-identification
+              (concat
+               (format (concat "%-" (int-to-string (max len 0)) "s") final-name)
+               vc-name))))))
 
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
@@ -2136,7 +2115,8 @@ This function avoid error and insert character at the end."
   (interactive "^p\nd\nd")
   (save-excursion
     (backward-up-list arg escape-strings no-syntax-crossing)
-    (delete-pair 1)))
+    (let ((delete-pair-blink-delay nil))
+      (delete-pair 1))))
 
 (defun surround-change-pair (&optional arg escape-strings no-syntax-crossing)
   (interactive "^p\nd\nd")
@@ -3577,7 +3557,7 @@ others."
                     names)
               (setq exwm-workspace-number (1+ monitor-number))))))))
 
-  (defun exwm-update-minibuffer-monitor (&optional workspace-or-screen)
+  (defun exwm-minibuffer-move-to-default-monitor (&optional workspace-or-screen)
     (interactive)
     (let ((minibuffer-pos
            (cl-some (lambda (frame)
@@ -3614,7 +3594,7 @@ others."
                                   minibuffer-pos)
                                  (exwm-workspace--workspace-from-frame-or-index
                                   workspace-or-screen))))))))
-  (add-hook 'exwm-init-hook 'exwm-update-minibuffer-monitor 91)
+  (add-hook 'exwm-init-hook 'exwm-minibuffer-move-to-default-monitor 91)
 
   (defun exwm-screen-count ()
     (let ((monitor-number 0))
@@ -6726,9 +6706,7 @@ CLOCK: [2021-01-30 sáb 21:02]
       symon-sparkline-width 24
       symon-total-spark-width 13)
 
-(add-hook (if exwm-p
-              'exwm-init-hook
-            'emacs-startup-hook) 'symon-mode 91)
+(add-hook last-startup-hook 'symon-mode 91)
 #+end_src
 
 *** Language tools
@@ -8073,102 +8051,105 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
 #+begin_src elisp
 (with-eval-after-load 'ispell
-  (message "Importing ispell-config")
+  (defun importing-ispell-config-advice ()
+    (message "Importing ispell config")
 
-  (let ((executable (file-name-nondirectory ispell-program-name)))
-    (cond
-     ((string-equal executable "aspell")
+    (let ((executable (file-name-nondirectory ispell-program-name)))
+      (cond
+       ((string-equal executable "aspell")
+        (setq ispell-personal-dictionary
+              (file-truename "~/.emacs.d/cache/aspell.spanish.pws"))
+        (add-to-list 'ispell-extra-args "--sug-mode=ultra"))
+       ((string-equal executable "hunspell")
+        (setenv "DICPATH" (file-truename "~/.emacs.d/cache/hunspell/"))
+        (add-to-list 'ispell-local-dictionary-alist `("es_ES"
+                                                      "[a-zA-ZáéíóúÁÉÍÓÚÑüÜ]"
+                                                      "[^a-zA-ZáéíóúÁÉÍÓÚÑüÜ]"
+                                                      "[']"
+                                                      t
+                                                      ("-d" "es_ES")
+                                                      nil
+                                                      utf-8))
+        (setq ispell-really-hunspell t
+              ispell-personal-dictionary
+              (file-truename "~/.emacs.d/cache/hunspell.spanish.pws")
+              ispell-current-dictionary "es_ES"
+              ispell-local-dictionary "es_ES"
+              ispell-dictionary "es_ES")
+        ;; Internal use
+        ;; (add-to-list 'ispell-hunspell-dict-paths-alist `("spanish" ,(file-truename "~/.emacs.d/cache/hunspell/es_ES.aff")))
+        )))
+    ;; [ Cycle languages
+    (require 'ring)
+    (defvar spell-lang-ring nil)
+    (let ((langs '("english" "spanish")))
+      (setq spell-lang-ring (make-ring (length langs)))
+      (dolist (elem langs) (ring-insert spell-lang-ring elem)))
+
+    (defun spell-change-dictionary (dictionary)
+      "Change dictionary file inserting DICTIONARY."
       (setq ispell-personal-dictionary
-            (file-truename "~/.emacs.d/cache/aspell.spanish.pws"))
-      (add-to-list 'ispell-extra-args "--sug-mode=ultra"))
-     ((string-equal executable "hunspell")
-      (setenv "DICPATH" (file-truename "~/.emacs.d/cache/hunspell/"))
-      (add-to-list 'ispell-local-dictionary-alist `("es_ES"
-                                                    "[a-zA-ZáéíóúÁÉÍÓÚÑüÜ]"
-                                                    "[^a-zA-ZáéíóúÁÉÍÓÚÑüÜ]"
-                                                    "[']"
-                                                    t
-                                                    ("-d" "es_ES")
-                                                    nil
-                                                    utf-8))
-      (setq ispell-really-hunspell t
-            ispell-personal-dictionary
-            (file-truename "~/.emacs.d/cache/hunspell.spanish.pws")
-            ispell-current-dictionary "es_ES"
-            ispell-local-dictionary "es_ES"
-            ispell-dictionary "es_ES")
-      ;; Internal use
-      ;; (add-to-list 'ispell-hunspell-dict-paths-alist `("spanish" ,(file-truename "~/.emacs.d/cache/hunspell/es_ES.aff")))
-      )))
-  ;; [ Cycle languages
-  (require 'ring)
-  (defvar spell-lang-ring nil)
-  (let ((langs '("english" "spanish")))
-    (setq spell-lang-ring (make-ring (length langs)))
-    (dolist (elem langs) (ring-insert spell-lang-ring elem)))
-
-  (defun spell-change-dictionary (dictionary)
-    "Change dictionary file inserting DICTIONARY."
-    (setq ispell-personal-dictionary
-          (cond
-           ((string-equal ispell-program-name "aspell")
-            (concat "~/.emacs.d/cache/aspell." dictionary ".pws"))
-           ((string-equal ispell-program-name "hunspell")
-            (concat "~/.emacs.d/cache/hunspell." dictionary ".pws"))))
-    (ispell-change-dictionary dictionary))
+            (cond
+             ((string-equal ispell-program-name "aspell")
+              (concat "~/.emacs.d/cache/aspell." dictionary ".pws"))
+             ((string-equal ispell-program-name "hunspell")
+              (concat "~/.emacs.d/cache/hunspell." dictionary ".pws"))))
+      (ispell-change-dictionary dictionary))
 
                                         ;(ispell-change-dictionary)
-  (defun cycle-ispell-languages ()
-    "Cycle languages in ring."
-    (interactive)
-    (let ((lang (ring-ref spell-lang-ring -1))
-          (dict ispell-current-dictionary))
-      (ring-insert spell-lang-ring lang)
-      (if (equal dict lang)
-          (let ((next-lang (ring-ref spell-lang-ring -1)))
-            (ring-insert spell-lang-ring next-lang)
-            (spell-change-dictionary next-lang))
-        (spell-change-dictionary lang))))
-  ;; ]
+    (defun cycle-ispell-languages ()
+      "Cycle languages in ring."
+      (interactive)
+      (let ((lang (ring-ref spell-lang-ring -1))
+            (dict ispell-current-dictionary))
+        (ring-insert spell-lang-ring lang)
+        (if (equal dict lang)
+            (let ((next-lang (ring-ref spell-lang-ring -1)))
+              (ring-insert spell-lang-ring next-lang)
+              (spell-change-dictionary next-lang))
+          (spell-change-dictionary lang))))
+    ;; ]
 
-  ;; Selecciona una opción incluso cuando picas fuera del popup
-  ;; (defun spell-emacs-popup-textual (event poss word)
-  ;;       "A textual spell popup menu."
-  ;;       (require 'popup)
-  ;;       (let* ((corrects (if spell-sort-corrections
-  ;;                            (sort (car (cdr (cdr poss))) 'string<)
-  ;;                          (car (cdr (cdr poss)))))
-  ;;              (cor-menu (if (consp corrects)
-  ;;                            (mapcar (lambda (correct)
-  ;;                                      (list correct correct))
-  ;;                                    corrects)
-  ;;                          '()))
-  ;;              (affix (car (cdr (cdr (cdr poss)))))
-  ;;              show-affix-info
-  ;;              (base-menu  (let ((save (if (and (consp affix) show-affix-info)
-  ;;                                          (list
-  ;;                                           (list (concat "Save affix: " (car affix))
-  ;;                                                 'save)
-  ;;                                           '("Accept (session)" session)
-  ;;                                           '("Accept (buffer)" buffer))
-  ;;                                        '(("Save word" save)
-  ;;                                          ("Accept (session)" session)
-  ;;                                          ("Accept (buffer)" buffer)))))
-  ;;                            (if (consp cor-menu)
-  ;;                                (append cor-menu (cons "" save))
-  ;;                              save)))
-  ;;              (menu (mapcar
-  ;;                     (lambda (arg) (if (consp arg) (car arg) arg))
-  ;;                     base-menu)))
-  ;;         (cadr (assoc (popup-menu* menu :scroll-bar t) base-menu))))
-  (defun spanish-dictionary ()
-    "Stablish spanish dictionary."
-    (interactive)
-    (spell-change-dictionary "spanish"))
-  (defun english-dictionary ()
-    "Stablish english dictionary."
-    (interactive)
-    (spell-change-dictionary "english")))
+    ;; Selecciona una opción incluso cuando picas fuera del popup
+    ;; (defun spell-emacs-popup-textual (event poss word)
+    ;;       "A textual spell popup menu."
+    ;;       (require 'popup)
+    ;;       (let* ((corrects (if spell-sort-corrections
+    ;;                            (sort (car (cdr (cdr poss))) 'string<)
+    ;;                          (car (cdr (cdr poss)))))
+    ;;              (cor-menu (if (consp corrects)
+    ;;                            (mapcar (lambda (correct)
+    ;;                                      (list correct correct))
+    ;;                                    corrects)
+    ;;                          '()))
+    ;;              (affix (car (cdr (cdr (cdr poss)))))
+    ;;              show-affix-info
+    ;;              (base-menu  (let ((save (if (and (consp affix) show-affix-info)
+    ;;                                          (list
+    ;;                                           (list (concat "Save affix: " (car affix))
+    ;;                                                 'save)
+    ;;                                           '("Accept (session)" session)
+    ;;                                           '("Accept (buffer)" buffer))
+    ;;                                        '(("Save word" save)
+    ;;                                          ("Accept (session)" session)
+    ;;                                          ("Accept (buffer)" buffer)))))
+    ;;                            (if (consp cor-menu)
+    ;;                                (append cor-menu (cons "" save))
+    ;;                              save)))
+    ;;              (menu (mapcar
+    ;;                     (lambda (arg) (if (consp arg) (car arg) arg))
+    ;;                     base-menu)))
+    ;;         (cadr (assoc (popup-menu* menu :scroll-bar t) base-menu))))
+    (defun spanish-dictionary ()
+      "Stablish spanish dictionary."
+      (interactive)
+      (spell-change-dictionary "spanish"))
+    (defun english-dictionary ()
+      "Stablish english dictionary."
+      (interactive)
+      (spell-change-dictionary "english"))
+    (advice-remove 'ispell-init-process 'importing-ispell-config-advice))
+  (advice-add 'ispell-init-process :before 'importing-ispell-config-advice))
 #+end_src
 
 *** /hideshow/
@@ -8859,9 +8840,7 @@ Improve default ia jump at point."
   (dolist (mode-map (list c-mode-map c++-mode-map))
     (define-key mode-map [C-M-tab] 'clang-format-region)
     (define-key mode-map [(shift return)] 'c-context-line-break)
-    (define-key mode-map (kbd "C-c c h") 'c-c++-header-guards)
-    (define-key mode-map (kbd "M-b") 'c-beginning-of-statement)
-    (define-key mode-map (kbd "M-b") 'c-end-of-statement))
+    (define-key mode-map (kbd "C-c c h") 'c-c++-header-guards))
   ;; (define-key c-mode-map (kbd "C-c c h") 'c-c++-header-guards)
   ;; (define-key c++-mode-map (kbd "C-c c h") 'c-c++-header-guards)
   ;; (define-key c-mode-map [(shift return)] 'c-context-line-break)
@@ -9266,99 +9245,102 @@ if __name__ == \"__main__\":
 ;; ]
 
 (with-eval-after-load 'flyspell
-  (message "Importing flyspell config")
+  (defun importing-flyspell-config-advice ()
+    (message "Importing flyspell config")
 
-  (setq flyspell-use-meta-tab nil)
-  (setq flyspell-mode-line-string "")
-;;;;;;;;;;;
-;; Faces ;;
-;;;;;;;;;;;
-  (set-face-attribute 'flyspell-incorrect nil
-                      :underline "red1")
-  (set-face-attribute 'flyspell-duplicate nil
-                      :underline "magenta")
+    (setq flyspell-use-meta-tab nil)
+    (setq flyspell-mode-line-string "")
+    ;; ;;;;; ;;
+    ;; Faces ;;
+    ;; ;;;;; ;;
+    (set-face-attribute 'flyspell-incorrect nil
+                        :underline "red1")
+    (set-face-attribute 'flyspell-duplicate nil
+                        :underline "magenta")
 
-;;;;;;;;;;;;;;;
-;; Functions ;;
-;;;;;;;;;;;;;;;
+    ;; ;;;;;;;;; ;;
+    ;; Functions ;;
+    ;; ;;;;;;;;; ;;
 
-  ;; move point to previous error
-  ;; based on code by hatschipuh at
-  ;; http://emacs.stackexchange.com/a/14912/2017
-  (defun flyspell-goto-previous-error (arg)
-    "Go to ARG previous spelling error."
-    (interactive "p")
-    (while (not (= 0 arg))
-      (let ((pos (point))
-            (min (point-min)))
-        (if (and (eq (current-buffer) flyspell-old-buffer-error)
-                 (eq pos flyspell-old-pos-error))
-            (progn
-              (if (= flyspell-old-pos-error min)
-                  ;; goto beginning of buffer
-                  (progn
-                    (message "Restarting from end of buffer")
-                    (goto-char (point-max)))
-                (backward-word 1))
-              (setq pos (point))))
-        ;; seek the next error
-        (while (and (> pos min)
-                    (let ((ovs (overlays-at pos))
-                          (r '()))
-                      (while (and (not r) (consp ovs))
-                        (if (flyspell-overlay-p (car ovs))
-                            (setq r t)
-                          (setq ovs (cdr ovs))))
-                      (not r)))
-          (backward-word 1)
-          (setq pos (point)))
-        ;; save the current location for next invocation
-        (setq arg (1- arg))
-        (setq flyspell-old-pos-error pos)
-        (setq flyspell-old-buffer-error (current-buffer))
-        (goto-char pos)
-        (if (= pos min)
-            (progn
-              (message "No more miss-spelled word!")
-              (setq arg 0))))))
+    ;; move point to previous error
+    ;; based on code by hatschipuh at
+    ;; http://emacs.stackexchange.com/a/14912/2017
+    (defun flyspell-goto-previous-error (arg)
+      "Go to ARG previous spelling error."
+      (interactive "p")
+      (while (not (= 0 arg))
+        (let ((pos (point))
+              (min (point-min)))
+          (if (and (eq (current-buffer) flyspell-old-buffer-error)
+                   (eq pos flyspell-old-pos-error))
+              (progn
+                (if (= flyspell-old-pos-error min)
+                    ;; goto beginning of buffer
+                    (progn
+                      (message "Restarting from end of buffer")
+                      (goto-char (point-max)))
+                  (backward-word 1))
+                (setq pos (point))))
+          ;; seek the next error
+          (while (and (> pos min)
+                      (let ((ovs (overlays-at pos))
+                            (r '()))
+                        (while (and (not r) (consp ovs))
+                          (if (flyspell-overlay-p (car ovs))
+                              (setq r t)
+                            (setq ovs (cdr ovs))))
+                        (not r)))
+            (backward-word 1)
+            (setq pos (point)))
+          ;; save the current location for next invocation
+          (setq arg (1- arg))
+          (setq flyspell-old-pos-error pos)
+          (setq flyspell-old-buffer-error (current-buffer))
+          (goto-char pos)
+          (if (= pos min)
+              (progn
+                (message "No more miss-spelled word!")
+                (setq arg 0))))))
 
-  ;; ;;;; ;;
-  ;; Keys ;;
-  ;; ;;;; ;;
-  (define-key flyspell-mouse-map (kbd "<C-down-mouse-2>") #'flyspell-correct-word)
-  (define-key flyspell-mouse-map (kbd "<C-mouse-2>") #'undefined)
-  (define-key flyspell-mouse-map [down-mouse-2] nil)
-  (define-key flyspell-mouse-map [mouse-2] nil)
-  (define-key flyspell-mode-map [?\C-c ?$] nil)
-  (define-key flyspell-mode-map flyspell-auto-correct-binding nil)
-  (define-key flyspell-mode-map [(control ?\,)] nil)
-  (define-key flyspell-mode-map [(control ?\.)] nil)
-  (define-key flyspell-mode-map (kbd "C-M-i") nil)
-  (define-key flyspell-mode-map (kbd "C-c i c") #'flyspell-buffer)
-  (define-key flyspell-mode-map (kbd "C-c i n") #'flyspell-goto-next-error)
-  (define-key flyspell-mode-map (kbd "C-c i p") #'flyspell-goto-previous-error)
-  (define-key flyspell-mode-map (kbd "C-c i a") #'flyspell-auto-correct-word)
-  (define-key flyspell-mode-map (kbd "C-c i A") #'flyspell-auto-correct-previous-word)
-  (if (load "helm-flyspell" t)
-      (progn
-        (define-key flyspell-mode-map (kbd "C-c i .") #'helm-flyspell-correct)
-        (define-key flyspell-mode-map (kbd "C-c i ,") #'helm-flyspell-correct))
-    (define-key flyspell-mode-map (kbd "C-c i .") #'flyspell-correct-at-point)
-    (define-key flyspell-mode-map (kbd "C-c i ,") #'flyspell-correct-word-before-point))
+    ;; ;;;; ;;
+    ;; Keys ;;
+    ;; ;;;; ;;
+    (define-key flyspell-mouse-map (kbd "<C-down-mouse-2>") #'flyspell-correct-word)
+    (define-key flyspell-mouse-map (kbd "<C-mouse-2>") #'undefined)
+    (define-key flyspell-mouse-map [down-mouse-2] nil)
+    (define-key flyspell-mouse-map [mouse-2] nil)
+    (define-key flyspell-mode-map [?\C-c ?$] nil)
+    (define-key flyspell-mode-map flyspell-auto-correct-binding nil)
+    (define-key flyspell-mode-map [(control ?\,)] nil)
+    (define-key flyspell-mode-map [(control ?\.)] nil)
+    (define-key flyspell-mode-map (kbd "C-M-i") nil)
+    (define-key flyspell-mode-map (kbd "C-c i c") #'flyspell-buffer)
+    (define-key flyspell-mode-map (kbd "C-c i n") #'flyspell-goto-next-error)
+    (define-key flyspell-mode-map (kbd "C-c i p") #'flyspell-goto-previous-error)
+    (define-key flyspell-mode-map (kbd "C-c i a") #'flyspell-auto-correct-word)
+    (define-key flyspell-mode-map (kbd "C-c i A") #'flyspell-auto-correct-previous-word)
+    (if (load "helm-flyspell" t)
+        (progn
+          (define-key flyspell-mode-map (kbd "C-c i .") #'helm-flyspell-correct)
+          (define-key flyspell-mode-map (kbd "C-c i ,") #'helm-flyspell-correct))
+      (define-key flyspell-mode-map (kbd "C-c i .") #'flyspell-correct-at-point)
+      (define-key flyspell-mode-map (kbd "C-c i ,") #'flyspell-correct-word-before-point))
 
-  ;;(fset 'flyspell-emacs-popup 'flyspell-emacs-popup-textual)
-  (defhydra hydra-spell (:foreign-keys warn)
-    "SPELL"
-    ("C-b" flyspell-buffer "buffer")
-    ("C-n" flyspell-goto-next-error "next")
-    ("C-p" flyspell-goto-previous-error "previous")
-    ("C-c" flyspell-correct-word-before-point "correct")
-    ("C-a" flyspell-auto-correct-word "auto")
-    ("M-q" nil "quit"))
-  (define-key flyspell-mode-map (kbd "C-c i m") 'hydra-spell/body)
-  (define-key flyspell-mode-map (kbd "C-c i >") 'cycle-ispell-languages)
-  (define-key flyspell-mode-map (kbd "C-c i s") 'spanish-dictionary)
-  (define-key flyspell-mode-map (kbd "C-c i e") 'english-dictionary))
+    ;;(fset 'flyspell-emacs-popup 'flyspell-emacs-popup-textual)
+    (defhydra hydra-spell (:foreign-keys warn)
+      "SPELL"
+      ("C-b" flyspell-buffer "buffer")
+      ("C-n" flyspell-goto-next-error "next")
+      ("C-p" flyspell-goto-previous-error "previous")
+      ("C-c" flyspell-correct-word-before-point "correct")
+      ("C-a" flyspell-auto-correct-word "auto")
+      ("M-q" nil "quit"))
+    (define-key flyspell-mode-map (kbd "C-c i m") 'hydra-spell/body)
+    (define-key flyspell-mode-map (kbd "C-c i >") 'cycle-ispell-languages)
+    (define-key flyspell-mode-map (kbd "C-c i s") 'spanish-dictionary)
+    (define-key flyspell-mode-map (kbd "C-c i e") 'english-dictionary)
+    (advice-remove 'flyspell-mode 'importing-flyspell-config-advice))
+  (advice-add 'flyspell-mode :before 'importing-flyspell-config-advice))
 #+end_src
 
 * External packages
@@ -11468,7 +11450,7 @@ Switch the current window to the previous buffer."
         consult-find-command
         "fdfind -H --color=never --full-path"
         consult--gc-threshold gc-cons-threshold
-        consult-async-default-split nil))
+        consult-async-default-split ","))
 (global-set-key (kbd "M-g f") 'consult-find)
 (global-set-key (kbd "M-g e") 'consult-error)
 (global-set-key (kbd "M-g r") 'consult-ripgrep)
@@ -11521,7 +11503,9 @@ Switch the current window to the previous buffer."
                                     '(eglot-xor-semantic
                                       (lambda ()
                                         (eldoc-mode -1)))
-                                    eglot-managed-mode-hook))))
+                                    eglot-managed-mode-hook))
+     (setcdr (last (assoc '(c++-mode c-mode) eglot-server-programs))
+             '("--init={\"clang\": {\"extraArgs\": [\"-std=c++17\"]}}"))))
   ('lsp-deferred
    ;; ;;; ;;
    ;; lsp ;;
@@ -14262,9 +14246,10 @@ If run interactively, get ENTRY from context."
       (interactive)
       (dolist (buffer (buffers-from-file))
         (with-current-buffer buffer
-          (setq mode-line-cached nil)
-          (vc-refresh-state))))
-    (advice-add 'magit-refresh :after 'vc-refresh-buffers)
+          (when vc-mode
+            (setq mode-line-cached nil)
+            (vc-refresh-state)))))
+    (add-hook 'magit-post-refresh-hook 'vc-refresh-buffers)
     (require 'magit-todos)
     (add-hook 'magit-mode-hook 'magit-todos-mode)
     (require 'multi-magit)
@@ -15200,10 +15185,22 @@ end note
 #+begin_src elisp
 (global-set-key (kbd "M-g a") 'rg-menu)
 (with-eval-after-load 'rg
-  (rg-enable-default-bindings (kbd "M-g a")))
+  (rg-enable-default-bindings (kbd "M-g a"))
+  (push '(rg-mode "\nFile: " "\n\n" "-*-"
+                  (lambda (arg)
+                    (re-search-forward hs-block-end-regexp nil t))
+                  nil) hs-special-modes-alist)
+  (defun rg-mode-hideshow-config ()
+    (setq-local comment-start "-*-"
+                comment-end "-*-")
+    (hs-minor-mode))
+  (add-hook 'rg-mode-hook 'rg-mode-hideshow-config))
 #+end_src
 
-*** /deadgrep/
+*** CANC /deadgrep/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (global-set-key (kbd "M-g M-a") 'deadgrep)
