@@ -11,9 +11,11 @@
 #+begin_src elisp
 (defun save-messages-buffer ()
   (with-current-buffer "*Messages*"
-    (write-region (point-min) (point-max)
-                  (expand-file-name "last-messages-buffer.txt"
-                                    user-emacs-directory))))
+    (set-buffer-file-coding-system 'raw-text)
+    (let ((coding-system-for-write 'no-conversion))
+      (write-region (point-min) (point-max)
+                    (expand-file-name "last-messages-buffer.txt"
+                                      user-emacs-directory)))))
 (add-hook 'kill-emacs-hook 'save-messages-buffer 92)
 #+end_src
 
