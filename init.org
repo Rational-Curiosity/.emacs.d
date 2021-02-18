@@ -1625,9 +1625,7 @@ prompt the user for a coding system."
        (start-process " *xkbcomp" nil
                       "xkbcomp" (concat "-I" xkb-path)
                       (concat xkb-path "/keymap/kbd_swap_ralt_ctrl")
-                      (getenv "DISPLAY")))))
-  (when (display-graphic-p)
-    (xkb-swap-ralt-ctrl)))
+                      (getenv "DISPLAY"))))))
 
 (defun swap-for-programming-keys (&optional arg)
   (interactive "P")
@@ -3157,6 +3155,12 @@ others."
 
 * EXWM
 
+Avoid /Ubuntu 20.04/ slow startup
+
+#+begin_src sh
+sudo apt-get remove --purge dbus-user-session
+#+end_src
+
 #+begin_src elisp
 (with-eval-after-load 'exwm
   ;; Below are configurations for EXWM.
@@ -3606,6 +3610,58 @@ others."
           (forward-line)))
       monitor-number))
 
+  (defun exwm-make-frame (&optional parameters)
+    (interactive)
+    (plist-put exwm-randr-workspace-monitor-plist
+               (exwm-workspace--count)
+               (plist-get exwm-randr-workspace-monitor-plist
+                          exwm-workspace-current-index))
+    (make-frame parameters))
+
+  (defun exwm-delete-frame (&optional frame force)
+    (interactive)
+    (when-let ((pos (cl-position (if frame
+                                     (with-selected-frame frame
+                                       exwm-workspace-current-index)
+                                   exwm-workspace-current-index)
+                                 exwm-randr-workspace-monitor-plist)))
+      (setq exwm-randr-workspace-monitor-plist
+            (nconc (cl-subseq exwm-randr-workspace-monitor-plist 0 pos)
+                   (mapcar
+                    (lambda (x) (if (numberp x) (1- x) x))
+                    (nthcdr (+ 2 pos) exwm-randr-workspace-monitor-plist)))))
+    (delete-frame frame force))
+
+  (defun exwm-randr-workspace-current-list ()
+    (let ((current (plist-get exwm-randr-workspace-monitor-plist
+                              exwm-workspace-current-index))
+          last-idx indexes)
+      (mapc (lambda (elt)
+              (when (equal elt current)
+                (push last-idx indexes))
+              (setq last-idx elt))
+            exwm-randr-workspace-monitor-plist)
+      indexes))
+
+  (defun exwm-randr-workspace-next ()
+    (interactive)
+    (when-let* ((workspaces (exwm-randr-workspace-current-list))
+                (pos (cl-position exwm-workspace-current-index workspaces)))
+      (let ((workspace (or (nth (1+ pos) workspaces)
+                           (car workspaces))))
+        (when (/= workspace exwm-workspace-current-index)
+          (exwm-workspace-switch workspace)))))
+
+  (defun exwm-randr-workspace-prev ()
+    (interactive)
+    (when-let* ((workspaces (exwm-randr-workspace-current-list))
+                (pos (cl-position exwm-workspace-current-index workspaces)))
+      (let ((workspace (if (= pos 0)
+                           (car (last workspaces))
+                         (nth (1- pos) workspaces))))
+        (when (/= workspace exwm-workspace-current-index)
+          (exwm-workspace-switch workspace)))))
+
   (defun exwm-workspace-index-plus (arg)
     (let* ((workspace-count (exwm-workspace--count))
            (remainer (% (+ arg exwm-workspace-current-index) workspace-count)))
@@ -3613,13 +3669,13 @@ others."
           (+ remainer workspace-count)
         remainer)))
 
-  (defun exwm-workspace-next ()
-    (interactive)
-    (exwm-workspace-switch (exwm-workspace-index-plus 1)))
+  (defun exwm-workspace-next (arg)
+    (interactive "p")
+    (exwm-workspace-switch (exwm-workspace-index-plus arg)))
 
-  (defun exwm-workspace-prev ()
-    (interactive)
-    (exwm-workspace-switch (exwm-workspace-index-plus -1)))
+  (defun exwm-workspace-prev (arg)
+    (interactive "p")
+    (exwm-workspace-switch (exwm-workspace-index-plus (- arg))))
 
   (defun exwm-randr-workspace-move (workspace monitor)
     (setq exwm-randr-workspace-monitor-plist
@@ -3862,10 +3918,13 @@ others."
 
   (defun exwm-shutdown (&optional arg)
     (interactive "P")
-    (add-hook 'kill-emacs-hook
-              (lambda ()
-                (call-process "systemctl" nil nil nil "poweroff")) t)
-    (save-buffers-kill-terminal-with-choice arg))
+    (let ((shutdown
+           (lambda ()
+             (call-process "systemctl" nil nil nil "poweroff"))))
+      (add-hook 'kill-emacs-hook shutdown t)
+      (unwind-protect
+          (save-buffers-kill-terminal-with-choice arg)
+        (remove-hook 'kill-emacs-hook shutdown))))
 
   (defun exwm-close-window-if-exwm-mode ()
     (when (and (derived-mode-p 'exwm-mode)
@@ -3885,12 +3944,12 @@ others."
       (line-mode
        ;; (let (message-log-max)
        ;;   (message "EXWM %s window in line-mode" (buffer-name)))
-       (exwm-set-border-color "blue")
+       (exwm-set-border-color "dark blue")
        )
       (char-mode
        ;; (let (message-log-max)
        ;;   (message "EXWM %s window in char-mode" (buffer-name)))
-       (exwm-set-border-color "red")
+       (exwm-set-border-color "magenta")
        )))
 
   (defun exwm-selected-window-advice (&rest _args)
@@ -3979,18 +4038,40 @@ others."
   (add-hook 'exwm-update-class-hook 'exwm-update-class-defaults)
 
   (defun exwm-update-title-defaults ()
-    (when (or (not exwm-instance-name)
-              (string-prefix-p "sun-awt-X11-" exwm-instance-name)
-              (string-equal "gimp" exwm-instance-name))
-      (exwm-workspace-rename-buffer exwm-title)))
+    (exwm-workspace-rename-buffer
+     (concat exwm-class-name ": " exwm-title)))
   (add-hook 'exwm-update-title-hook 'exwm-update-title-defaults)
 
+  (eval-when-compile (require 'icomplete-vertical))
+  (defun exwm-workspace-switch-with-titles ()
+    (interactive)
+    (let* ((titles (seq-map-indexed
+                    (lambda (frame idx)
+                      (concat
+                       (number-to-string idx) " - "
+                       (mapconcat 'buffer-name
+                                  (mapcar 'window-buffer (window-list frame))
+                                  " & ")))
+                    exwm-workspace--list))
+           (candidate
+            (icomplete-vertical-do
+                (:separator "\n" :height 20)
+              (completing-read "Select frame: " titles nil t))))
+      (exwm-workspace-switch (cl-position candidate titles :test 'string-equal))))
+
+  (global-set-key (kbd "<XF86PowerOff>") 'exwm-shutdown)
+  ;; ace-window
+  (define-key exwm-mode-map (kbd "M-o") 'exwm-ace-window-dwim)
+  ;; C-SPC trick
+  (define-key exwm-mode-map (kbd "C-SPC") 'exwm-ctrl-space)
+  (define-key exwm-mode-map (kbd "C-S-SPC") 'exwm-ctrl-space)
   (with-eval-after-load 'exwm-input
     ;; line-mode prefix keys
     (push ?\M-o exwm-input-prefix-keys)
+    (push ?\C-\  exwm-input-prefix-keys)
+    (push ?\C-\S-\  exwm-input-prefix-keys)
     (cl-pushnew 'XF86PowerOff exwm-input-prefix-keys)
 
-    (global-set-key (kbd "<XF86PowerOff>") 'exwm-shutdown)
     ;; Global keybindings can be defined with `exwm-input-global-keys'.
     ;; Here are a few examples:
     (setq exwm-input-global-keys
@@ -3999,7 +4080,7 @@ others."
             ;; Bind "s-r" to exit char-mode and fullscreen mode.
             ([?\s-r] . exwm-reset)
             ;; Bind "s-w" to switch workspace interactively.
-            ([?\s-w] . exwm-workspace-switch)
+            ([?\s-w] . exwm-workspace-switch-with-titles)
             ;; Bind "s-1" to "s-0" to switch to a workspace by its index.
             ([?\s-0] . (lambda ()
                          (interactive)
@@ -4035,8 +4116,12 @@ others."
             ;; Display datetime
             ([?\s-a] . display-time-mode)
             ;; Workspaces
-            ([?\s-n] . exwm-workspace-next)
-            ([?\s-p] . exwm-workspace-prev)
+            ([?\s-D] . exwm-delete-frame)
+            ([?\s-I] . exwm-make-frame)
+            ([?\s-n] . exwm-randr-workspace-next)
+            ([?\s-p] . exwm-randr-workspace-prev)
+            ([?\s-N] . exwm-workspace-next)
+            ([?\s-P] . exwm-workspace-prev)
             ([?\s-S] . exwm-workspace-swap)
             ([?\s-M] . exwm-randr-workspace-move-current)
             ;; windows
@@ -4066,12 +4151,6 @@ others."
             ;; shutdown computer
             (,(kbd "<s-end>") . exwm-shutdown))))
 
-  ;; ace-window
-  (define-key exwm-mode-map (kbd "M-o") 'exwm-ace-window-dwim)
-  ;; C-SPC trick
-  (define-key exwm-mode-map (kbd "C-SPC") 'exwm-ctrl-space)
-  (define-key exwm-mode-map (kbd "C-S-SPC") 'exwm-ctrl-space)
-
   (with-eval-after-load 'exwm-manage
     (setq exwm-manage-configurations
           '(((member exwm-class-name
@@ -4088,7 +4167,7 @@ others."
                floating-mode-line nil)))
 
     (defun exwm-manage-set-border ()
-      (exwm-set-border-width 2))
+      (exwm-set-border-width 1))
     (add-hook 'exwm-manage-finish-hook 'exwm-manage-set-border))
 
   ;; To add a key binding only available in line-mode, simply define it in
@@ -4317,7 +4396,8 @@ others."
           mini-frame-ignore-commands '(debugger-eval-expression
                                        objed-ipipe
                                        "edebug-eval-expression"
-                                       "exwm-workspace-")
+                                       ;; "exwm-workspace-"
+                                       )
           mini-frame-standalone t)
 
     (defun mini-frame--resize-mini-frame (frame)
@@ -4626,7 +4706,8 @@ This function is part of the `orderless' completion style."
 (setq
  ;; icomplete
  icomplete-prospects-height 4
- icomplete-separator " · "
+ icomplete-separator (propertize " ◊ "
+                                 'face '(:foreground "yellow"))
  ;; orderless
  orderless-matching-styles '(orderless-regexp orderless-flex)
  orderless-component-separator ",+"
