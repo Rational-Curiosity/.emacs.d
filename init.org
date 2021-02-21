@@ -4051,7 +4051,7 @@ sudo apt-get remove --purge dbus-user-session
                        (number-to-string idx) " - "
                        (mapconcat 'buffer-name
                                   (mapcar 'window-buffer (window-list frame))
-                                  " & ")))
+                                  (propertize " & " 'face '(:foreground "sky blue")))))
                     exwm-workspace--list))
            (candidate
             (icomplete-vertical-do
@@ -6704,9 +6704,9 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
   (add-hook 'window-selection-change-functions 'display-line-type-by-selected))
 #+end_src
 
-*** /symon/
-:LOGCLOCK:
-CLOCK: [2021-01-30 sáb 21:02]
+*** CANC /symon/
+:PROPERTIES:
+:header-args:elisp: :tangle no
 :END:
 
 #+begin_src elisp
@@ -12224,6 +12224,8 @@ Switch the current window to the previous buffer."
   (require 'ob-screen)
   (require 'ob-async)
 
+  (push (lambda () (require 'ob-screen))
+        ob-async-pre-execute-src-block-hook)
   (setq ob-async-no-async-languages-alist
         '("ipython")
         org-babel-default-header-args:python
