@@ -7778,32 +7778,32 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
           (if (numberp eshell-last-command-status)
               (cond
                ((= 0 eshell-last-command-status)
-                (start-process "*aplay*" nil "aplay"
-                               (expand-file-name
-                                "cache/sounds/success-bells-major.wav"
-                                user-emacs-directory))
-                (let ((inhibit-message t))
-                  (message "Aplay success-bells-major")))
+                (let ((filename (expand-file-name
+                                 "cache/sounds/success-bells-major.wav"
+                                 user-emacs-directory)))
+                  (if (file-exists-p filename)
+                      (start-process "*aplay*" nil "aplay" filename)
+                    (beep))))
                ((< 0 eshell-last-command-status)
-                (start-process "*aplay*" nil "aplay"
-                               (expand-file-name
+                (let ((filename (expand-file-name
                                 "cache/sounds/negative-beep.wav"
-                                user-emacs-directory))
-                (let ((inhibit-message t))
-                  (message "Aplay negative-beep")))
+                                user-emacs-directory)))
+                  (if (file-exists-p filename)
+                      (start-process "*aplay*" nil "aplay" filename)
+                    (beep))))
                (t
-                (start-process "*aplay*" nil "aplay"
-                               (expand-file-name
+                (let ((filename (expand-file-name
                                 "cache/sounds/sonar.wav"
-                                user-emacs-directory))
-                (let ((inhibit-message t))
-                  (message "Aplay sonar"))))
-            (start-process "*aplay*" nil "aplay"
-                           (expand-file-name
+                                user-emacs-directory)))
+                  (if (file-exists-p filename)
+                      (start-process "*aplay*" nil "aplay" filename)
+                    (beep)))))
+            (let ((filename (expand-file-name
                             "cache/sounds/startup.wav"
-                            user-emacs-directory))
-            (let ((inhibit-message t))
-              (message "Aplay startup")))))))
+                            user-emacs-directory)))
+                  (if (file-exists-p filename)
+                      (start-process "*aplay*" nil "aplay" filename)
+                    (beep))))))))
 
   (defun eshell-current-command-time-track ()
     (add-hook 'eshell-pre-command-hook #'eshell-current-command-start nil t)
