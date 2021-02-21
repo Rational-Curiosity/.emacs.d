@@ -4430,6 +4430,7 @@ sudo apt-get remove --purge dbus-user-session
                         (frame-selected-window mini-frame-frame))))))))))
 
     (add-hook 'exwm-init-hook 'mini-frame-mode 91)
+    (add-hook last-startup-hook 'symon-mode 91)
 
     ;; [ fix not resizing mini frame
     ;; (defun mini-frame-icomplete-exhibit-advice ()
@@ -6704,10 +6705,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
   (add-hook 'window-selection-change-functions 'display-line-type-by-selected))
 #+end_src
 
-*** CANC /symon/
-:PROPERTIES:
-:header-args:elisp: :tangle no
-:END:
+*** /symon/
 
 #+begin_src elisp
 (eval-and-compile
@@ -6787,7 +6785,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
       symon-sparkline-width 24
       symon-total-spark-width 13)
 
-(add-hook last-startup-hook 'symon-mode 91)
+;;(add-hook last-startup-hook 'symon-mode 91)
 #+end_src
 
 *** Language tools
