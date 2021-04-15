@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --with-cairo --with-x-toolkit=gtk3 --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --with-xwidgets --with-nativecomp CFLAGS='-O3 -mtune=native -march=native'
+./configure --with-json --with-cairo --with-x-toolkit=gtk3 --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --with-xwidgets --with-native-compilation CFLAGS='-O3 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -615,6 +615,16 @@ No argument or nil as argument means do this for the current buffer."
 * Miscellaneous
 
 #+begin_src elisp
+;; Inhibit dangerous functions
+(defun suspend-emacs (&rest _args)
+  (interactive)
+  (message "Command `suspend-emacs' is dangerous in EXWM and Tiling Window Managers."))
+
+(with-eval-after-load 'frame
+  (defun suspend-frame (&rest _args)
+    (interactive)
+    (message "Command `suspend-frame' is dangerous in EXWM and Tiling Window Managers.")))
+
 ;;;;;;;;;;;;;;;
 ;; Clipboard ;;
 ;;;;;;;;;;;;;;;
@@ -748,9 +758,9 @@ No argument or nil as argument means do this for the current buffer."
   (dolist (minor '(abbrev-mode yas-minor-mode company-mode caps-lock-show-mode))
     (let ((pos (cl-position-if (lambda (x) (eq minor (car x))) minor-mode-alist)))
       (when pos
-       (setcdr (last minor-mode-alist) (list (elt minor-mode-alist pos)))
-       (setq minor-mode-alist
-             (remove-nth-element pos minor-mode-alist))))))
+        (setcdr (last minor-mode-alist) (list (elt minor-mode-alist pos)))
+        (setq minor-mode-alist
+              (remove-nth-element pos minor-mode-alist))))))
 (dolist (package '("abbrev" "yasnippet" "company"))
   (with-eval-after-load package
     (mode-line-sort-minors)))
@@ -886,9 +896,9 @@ mouse-3: Describe current input method"))
     face (:foreground "#fe3" :weight bold))
    (:propertize
     ":%c "
-     local-map mode-line-column-line-number-mode-map
-     mouse-face mode-line-highlight
-     help-echo "Line number and Column number\n\
+    local-map mode-line-column-line-number-mode-map
+    mouse-face mode-line-highlight
+    help-echo "Line number and Column number\n\
 mouse-1: Display Line and Column Mode Menu")
    (:propertize
     mode-line-percent-position
@@ -900,11 +910,11 @@ mouse-1: Display Line and Column Mode Menu")
 mouse-1: Display Line and Column Mode Menu")
    (size-indication-mode
     ,(propertize
-        " %I"
-        'local-map mode-line-column-line-number-mode-map
-        'mouse-face 'mode-line-highlight
-        ;; XXX needs better description
-        'help-echo "Size indication mode\n\
+      " %I"
+      'local-map mode-line-column-line-number-mode-map
+      'mouse-face 'mode-line-highlight
+      ;; XXX needs better description
+      'help-echo "Size indication mode\n\
 mouse-1: Display Line and Column Mode Menu")))
  ;; #     #
  ;; ##   ##  ####  #####  ######  ####
@@ -946,25 +956,21 @@ mouse-3: Toggle minor modes"
  ;; #     # #    # #    # #         #       # #  # # #
  ;; #     # #    # #    # #         #       # #   ## #
  ;; #     #  ####  #####  ######    ####### # #    # ######
- mode-line-format  ;; -  without mini-modeline
- ;; mini-modeline-r-format  ;; +  with mimi-modeline
- `("%e"
-   mode-line-position
-   ;; mode-line-front-space  ;; display-graphic-p
-   mode-line-mule-info
-   mode-line-client
-   mode-line-modified
-   mode-line-remote
-   ;; mode-line-frame-identification
-   (:eval (mode-line-buffer-identification-shorten))  ;; - without mini-modeline
-   ;; (:eval (mini-modeline-buffer-identification-shorten))  ;; + with mini-modeline
-   mode-line-modes
-   mode-line-misc-info
-   ;; mode-line-end-spaces
-   ))
+ mode-line-format
+ '((:eval (mode-line-justified))))
+
+(defun force-mode-line-buffer-identification (&rest _args)
+  (setq mode-line-cached nil)
+  (force-mode-line-update))
 
 (add-hook 'window-configuration-change-hook
           'force-mode-line-buffer-identification)
+(if (boundp 'after-focus-change-function)
+    (add-function :after after-focus-change-function
+                  'force-mode-line-buffer-identification)
+  (add-hook 'focus-in-hook 'force-mode-line-buffer-identification)
+  (add-hook 'focus-out-hook 'force-mode-line-buffer-identification))
+(advice-add 'rename-buffer :after 'force-mode-line-buffer-identification)
 
 ;; [ mini-modeline options
 ;; (setq mini-modeline-truncate-p nil
@@ -972,15 +978,18 @@ mouse-3: Toggle minor modes"
 ;; (mini-modeline-mode t)  ;; + with mini-modeline
 ;; ]
 
+(defun project-root-directory (&optional dir)
+  (locate-dominating-file (or dir default-directory) ".git/"))
+
 (defun mode-line-abbreviate-file-name ()
   (when-let ((name (buffer-file-name)))
-    (let ((dominating-file (locate-dominating-file default-directory ".git/"))
+    (let ((dominating-file (project-root-directory))
           (abbrev-name (abbreviate-file-name name)))
       (if dominating-file
           (concat (propertize
                    (file-name-nondirectory
-                   (directory-file-name
-                    (file-name-directory dominating-file)))
+                    (directory-file-name
+                     (file-name-directory dominating-file)))
                    'face 'mode-line-project-name)
                   (substring abbrev-name (1- (length dominating-file))))
         abbrev-name))))
@@ -997,17 +1006,17 @@ mouse-3: Toggle minor modes"
   string)
 
 (defvar mode-line-filename-replacements
-  `(("test"     . ,(propertize "T" 'face 'hi-red-b))
-    ("config"   . ,(propertize "C" 'face 'hi-red-b))
-    ("class"    . ,(propertize "C" 'face 'hi-green-b))
-    ("object"   . ,(propertize "O" 'face 'hi-green-b))
-    ("api"      . ,(propertize "A" 'face 'hi-green-b))
-    ("util"     . ,(propertize "U" 'face 'hi-green-b))
-    ("bug"      . ,(propertize "B" 'face 'hi-green-b))
-    ("library"  . ,(propertize "L" 'face 'hi-green-b))
-    ("librarie" . ,(propertize "L" 'face 'hi-green-b))
-    ("invoice"  . ,(propertize "I" 'face 'hi-red-b))
-    ("resource" . ,(propertize "R" 'face 'hi-red-b)))
+  `(("test"     . ,(propertize "T" 'face 'hi-red-b 'help-echo "test"))
+    ("config"   . ,(propertize "C" 'face 'hi-red-b 'help-echo "config"))
+    ("class"    . ,(propertize "C" 'face 'hi-green-b 'help-echo "class"))
+    ("object"   . ,(propertize "O" 'face 'hi-green-b 'help-echo "object"))
+    ("api"      . ,(propertize "A" 'face 'hi-green-b 'help-echo "api"))
+    ("util"     . ,(propertize "U" 'face 'hi-green-b 'help-echo "util"))
+    ("bug"      . ,(propertize "B" 'face 'hi-green-b 'help-echo "bug"))
+    ("library"  . ,(propertize "L" 'face 'hi-green-b 'help-echo "library"))
+    ("librarie" . ,(propertize "L" 'face 'hi-green-b 'help-echo "librarie"))
+    ("invoice"  . ,(propertize "I" 'face 'hi-red-b 'help-echo "invoice"))
+    ("resource" . ,(propertize "R" 'face 'hi-red-b 'help-echo "resource")))
   "Mode line file name replacements")
 
 (defun abbrev-strings-try (len string &rest strings)
@@ -1031,14 +1040,14 @@ mouse-3: Toggle minor modes"
                          (let ((isubtext (substring istring
                                                     (match-beginning 2)
                                                     (match-end 2))))
-                         (propertize
-                          isubtext
-                          'face
-                          `(:weight bold :slant italic
-                                    :inherit ,(get-text-property 0 'face isubtext))
-                          'help-echo (substring istring
-                                                (match-beginning 1)
-                                                (match-end 1))))
+                           (propertize
+                            isubtext
+                            'face
+                            `(:weight bold :slant italic
+                                      :inherit ,(get-text-property 0 'face isubtext))
+                            'help-echo (substring istring
+                                                  (match-beginning 1)
+                                                  (match-end 1))))
                          (substring istring (match-end 1)))))))))
     (if (< 0 (setq len-strings (- len (apply '+ (mapcar 'string-width strings)))))
         (let ((len-list (length mode-line-filename-replacements))
@@ -1067,59 +1076,74 @@ mouse-3: Toggle minor modes"
          (substring string (- len/2))))
     string))
 
-(defun force-mode-line-buffer-identification ()
-  (setq mode-line-cached nil)
-  (mode-line-buffer-identification-shorten))
-
-(defun mode-line-buffer-identification-shorten ()
-  (let ((others-len (1+ (string-width
-                         (format-mode-line '("%e"
-                                             mode-line-position
-                                             mode-line-mule-info
-                                             mode-line-client
-                                             ;; always len = 1, 1+ above
-                                             ;; mode-line-modified
-                                             mode-line-remote
-                                             mode-line-modes
-                                             mode-line-misc-info
-                                             ))))))
-    (if (equal mode-line-cached others-len)
-        mode-line-identification
-      (setq mode-line-cached others-len)
-      (let ((len (- (window-total-width) others-len))
-            (vc-name (or vc-mode ""))
-            (final-name (or (mode-line-abbreviate-file-name) (buffer-name))))
-        (if (< len (+ (string-width final-name) (string-width vc-name)))
-            (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
-                (let ((dir-name (match-string 1 final-name))
-                      (base-name (match-string 2 final-name)))
-                  (if vc-mode
+(defun mode-line-justified ()
+  (let ((mode-line-pre-identification
+         (format-mode-line '("%e"
+                             mode-line-position
+                             ;; mode-line-front-space  ;; display-graphic-p
+                             mode-line-mule-info
+                             mode-line-client
+                             mode-line-modified
+                             mode-line-remote)))
+        (mode-line-post-identification
+         (format-mode-line '("%e"
+                             mode-line-modes
+                             mode-line-misc-info))))
+    (let* ((post-len (string-width mode-line-post-identification))
+           (others-len (+ (string-width mode-line-pre-identification)
+                          post-len
+                          1)))
+      (if (equal (car mode-line-cached) others-len)
+          (list (string-replace "%" "%%" mode-line-pre-identification)
+                (car mode-line-identification)
+                (propertize " "
+                            'display
+                            `((space :align-to (- (+ right right-fringe right-margin)
+                                                  ,(+ post-len (cdr mode-line-cached))))))
+                (cdr mode-line-identification)
+                (string-replace "%" "%%" mode-line-post-identification))
+        (let ((len (- (window-total-width) others-len))
+              (vc-name (or vc-mode ""))
+              (final-name (or (mode-line-abbreviate-file-name) (buffer-name))))
+          (if (< len (+ (string-width final-name) (string-width vc-name)))
+              (if (string-match "\\`\\(.*/\\)\\([^/]*\\)\\'" final-name)
+                  (let ((dir-name (match-string 1 final-name))
+                        (base-name (match-string 2 final-name)))
+                    (if vc-mode
+                        (let ((result (abbrev-strings-try
+                                       len base-name dir-name vc-name)))
+                          (setq vc-name (car (cdr (cdr result)))
+                                len (- len (string-width vc-name))
+                                final-name (abbrev-string
+                                            len (concat
+                                                 (car (cdr result))
+                                                 (car result)))))
                       (let ((result (abbrev-strings-try
-                                     len base-name dir-name vc-name)))
-                        (setq vc-name (car (cdr (cdr result)))
-                              len (- len (string-width vc-name))
-                              final-name (abbrev-string
+                                     len base-name dir-name)))
+                        (setq final-name (abbrev-string
                                           len (concat
                                                (car (cdr result))
-                                               (car result)))))
-                    (let ((result (abbrev-strings-try
-                                   len base-name dir-name)))
-                      (setq final-name (abbrev-string
-                                        len (concat
-                                             (car (cdr result))
-                                             (car result)))))))
-              (if vc-mode
-                  (let ((result (abbrev-strings-try len "" final-name vc-name)))
-                    (setq vc-name (car (cdr (cdr result)))
-                          len (- len (string-width vc-name))
-                          final-name (abbrev-string len (car (cdr result)))))
-                (setq final-name (abbrev-string
-                                  len (abbrev-string-try len final-name)))))
-          (setq len (- len (string-width vc-name))))
-        (setq mode-line-identification
-              (concat
-               (format (concat "%-" (int-to-string (max len 0)) "s") final-name)
-               vc-name))))))
+                                               (car result)))))))
+                (if vc-mode
+                    (let ((result (abbrev-strings-try len "" final-name vc-name)))
+                      (setq vc-name (car (cdr (cdr result)))
+                            len (- len (string-width vc-name))
+                            final-name (abbrev-string len (car (cdr result)))))
+                  (setq final-name (abbrev-string
+                                    len (abbrev-string-try len final-name))))))
+          (setq mode-line-identification
+                (cons
+                 (string-replace "%" "%%" final-name)
+                 (string-replace "%" "%%" vc-name))
+                mode-line-cached (cons others-len (string-width vc-name)))
+          (list (string-replace "%" "%%" mode-line-pre-identification)
+                (car mode-line-identification)
+                (propertize " "
+                            'display
+                            `((space :align-to (- (+ right right-fringe right-margin)
+                                                  ,(+ post-len (cdr mode-line-cached))))))
+                (cdr mode-line-identification)
+                (string-replace "%" "%%" mode-line-post-identification)))))))
 
 ;;;;;;;;;;;;;;;;
 ;; Projectile ;;
@@ -1174,10 +1198,17 @@ mouse-3: Toggle minor modes"
     (let ((name (buffer-file-name)))
       (if name
           (mode-line-perform-projectile-replacement (abbreviate-file-name name))))))
+#+end_src
 
-;;;;;;;;;;;;;;;;;;;;;
-;; Version control ;;
-;;;;;;;;;;;;;;;;;;;;;
+* Version control
+
+#+begin_src elisp
+;; (defun vc-refresh-state-when-vc-mode ()
+;;   (when vc-mode
+;;     (setq mode-line-cached nil)
+;;     (vc-refresh-state)))
+;; (add-hook 'after-revert-hook 'vc-refresh-state-when-vc-mode)
+
 (with-eval-after-load 'vc-hooks
   (defun vc-mode-line-advice (file &optional backend)
     "Colorize and abbrev `vc-mode'."
@@ -2213,7 +2244,8 @@ This function avoid error and insert character at the end."
       (goto-char (match-beginning 0))
       (mapc (lambda (ov)
               (overlay-put ov 'invisible nil))
-            (overlays-at (point))))))
+            (overlays-at (point)))
+      (message "Found next match of `%s'" this))))
 
 (defun previous-thing-like-this (this)
   (interactive (list
@@ -2244,7 +2276,8 @@ This function avoid error and insert character at the end."
       (goto-char (match-beginning 0))
       (mapc (lambda (ov)
               (overlay-put ov 'invisible nil))
-            (overlays-at (point))))))
+            (overlays-at (point)))
+      (message "Found previous match of `%s'" this))))
 
 ;;;;;;;;;;
 ;; Keys ;;
@@ -2476,6 +2509,19 @@ For more information, see the function `buffer-menu'."
                       'docker-container-mode))
     (let ((split-height-threshold 20))
       (split-window-sensibly window)))
+   (t
+    (split-window-sensibly window))))
+
+(defun split-window-mode-rigid (&optional window)
+  (or window (setq window (selected-window)))
+  (cond
+   ((with-selected-window window
+      (derived-mode-p 'prog-mode 'org-mode 'help-mode 'compilation-mode))
+    (split-window-right))
+   ((with-selected-window window
+      (derived-mode-p 'term-mode 'shell-mode 'eshell-mode
+                      'docker-container-mode))
+    (split-window-below))
    (t
     (split-window-sensibly window))))
 
@@ -3173,12 +3219,6 @@ sudo apt-get remove --purge dbus-user-session
   ;; (require 'exwm-config)
   ;; (exwm-config-ido)
   (require 'exwm-randr)
-
-  ;; Inhibit dangerous functions
-  (with-eval-after-load 'frame
-    (defun suspend-frame ()
-      (interactive)
-      (message "Command `suspend-frame' is dangerous in EXWM.")))
 
   ;; ;;;;;;;;; ;;
   ;; Variables ;;
@@ -4664,27 +4704,6 @@ mode and header lines."
 (require 'icomplete-vertical)
 (require 'completing-read-at-point)
 (require 'orderless)
-(when (bug-check-function-bytecode
-       'orderless-try-completion
-       "wAUFBSOJhA0AwYIqAIlBhCcAwgYGBgYGBiNAAUBQiQFHQrIBgioABQNChw==")
-  (defun orderless-try-completion (string table pred point &optional _metadata)
-    "Complete STRING to unique matching entry in TABLE.
-This uses `orderless-all-completions' to find matches for STRING
-in TABLE among entries satisfying PRED.  If there is only one
-match, it completes to that match.  If there are no matches, it
-returns nil.  In any other case it \"completes\" STRING to
-itself, without moving POINT.
-This function is part of the `orderless' completion style."
-    (let ((all (orderless-filter string table pred)))
-      (cond
-       ((null all) nil)
-       ((null (cdr all))
-        (let ((full (concat
-                     (car (orderless--prefix+pattern string table pred))
-                     (car all))))
-          (cons full (length full))))
-       (t
-        (completion-flex-try-completion string table pred point))))))
 
 ;; this file overides completion-category-defaults
 (require 'message)
@@ -5172,10 +5191,7 @@ If `case-replace' is nil, do not alter case of replacement text."
 (savehist-mode 1)
 #+end_src
 
-*** CANC /eww/
-:PROPERTIES:
-:header-args:elisp: :tangle no
-:END:
+*** /eww/
 
 #+begin_src elisp
 ;; Default eww key bindings
@@ -5221,28 +5237,37 @@ If `case-replace' is nil, do not alter case of replacement text."
 
 (require 'eww)
 
+(cond ((file-exists-p "~/Downloads")
+       (setq eww-download-directory "~/Downloads"))
+      ((file-exists-p "~/Descargas")
+       (setq eww-download-directory "~/Descargas")))
 (setq eww-search-prefix "https://www.google.com/search?q="
-      eww-download-directory "~/Descargas")
+      browse-url-secondary-browser-function 'eww-browse-url)
 
-(defun browse-url-browser-function-selection ()
-  (interactive)
-  (setq browse-url-browser-function
-        (intern
-         (completing-read
-          "Select function to open urls: "
-          (let (browsers)
-            (if (locate-library "w3") 'browse-url-w3)
-            (if (executable-find browse-url-xterm-program) (push 'browse-url-text-xterm browsers))
-            (if (executable-find browse-url-kde-program) (push 'browse-url-kde browsers))
-            (if (executable-find browse-url-conkeror-program) (push 'browse-url-conkeror browsers))
-            (if (executable-find browse-url-chrome-program) (push 'browse-url-chrome browsers))
-            (if (executable-find browse-url-chromium-program) (push 'browse-url-chromium browsers))
-            (if (executable-find browse-url-firefox-program) (push 'browse-url-firefox browsers))
-            (if (executable-find browse-url-mozilla-program) (push 'browse-url-mozilla browsers))
-            (push 'eww-browse-url browsers)
-            (push 'browse-url-default-browser browsers)
-            browsers)
-          nil t nil nil browse-url-browser-function))))
+(defun browse-url-browser-function-selection (arg)
+  (interactive "P")
+  (let ((selection
+         (intern
+          (completing-read
+           "Select function to open urls: "
+           (let (browsers)
+             (if (locate-library "w3") 'browse-url-w3)
+             (if (executable-find browse-url-xterm-program) (push 'browse-url-text-xterm browsers))
+             (if (executable-find browse-url-kde-program) (push 'browse-url-kde browsers))
+             (if (executable-find browse-url-conkeror-program) (push 'browse-url-conkeror browsers))
+             (if (executable-find browse-url-chrome-program) (push 'browse-url-chrome browsers))
+             (if (executable-find browse-url-chromium-program) (push 'browse-url-chromium browsers))
+             (if (executable-find browse-url-firefox-program) (push 'browse-url-firefox browsers))
+             (if (executable-find browse-url-mozilla-program) (push 'browse-url-mozilla browsers))
+             (push 'eww-browse-url browsers)
+             (push 'browse-url-default-browser browsers)
+             browsers)
+           nil t nil nil browse-url-browser-function))))
+    (if arg
+        (message "browse-url-secondary-browser-function setted to `%s'"
+                 (setq browse-url-secondary-browser-function selection))
+      (message "browse-url-browser-function setted to `%s'"
+               (setq browse-url-browser-function selection)))))
 
 (global-set-key (kbd "C-x W") 'browse-url-browser-function-selection)
 ;; Make the binding for `revert-buffer' do `eww-reload' in eww-mode
@@ -6567,15 +6592,26 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 *** /hl-line/
 
 #+begin_src elisp
-(require 'hl-line)
-(set-face-attribute 'hl-line nil
-                    :foreground 'unspecified
-                    :background "#000000"
-                    :overline 'unspecified
-                    :underline 'unspecified
-                    :box 'unspecified
-                    :inherit 'unspecified)
-(global-hl-line-mode 1)
+  (require 'hl-line)
+
+  ;; (set-face-attribute 'hl-line nil
+  ;;                     :foreground 'unspecified
+  ;;                     :background "#000000"
+  ;;                     :overline 'unspecified
+  ;;                     :underline 'unspecified
+  ;;                     :box 'unspecified
+  ;;                     :inherit 'unspecified)
+
+  (face-spec-set 'hl-line
+                 '((((background light))
+                    :inherit unspecified
+                    :background "#ffffff")  ; looks OK on tty (becomes cyan)
+                   (((background dark))
+                    :inherit unspecified
+                    :background "#000000")  ; looks OK on tty (becomes blue)
+                   ))
+
+  (global-hl-line-mode 1)
 #+end_src
 
 *** /whitespace/
@@ -6689,20 +6725,37 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
         display-line-numbers-width-start t
         ;; t is expensive
         display-line-numbers-grow-only nil
-        display-line-numbers-type 'visual)
+        ;; 'visual is very expensive
+        display-line-numbers-type t)
 
-  (defvar display-line-type-selected-last-buffer nil)
-  (defun display-line-type-by-selected (_window-or-frame)
-    (when (buffer-live-p display-line-type-selected-last-buffer)
-      (with-current-buffer display-line-type-selected-last-buffer
-        (setq display-line-numbers t))
-      (setq display-line-type-selected-last-buffer nil))
-    (when (and display-line-numbers-mode
-               (derived-mode-p 'prog-mode))
-      (unless (eq display-line-numbers 'visual)
-        (setq display-line-numbers 'visual))
-      (setq display-line-type-selected-last-buffer (current-buffer))))
-  (add-hook 'window-selection-change-functions 'display-line-type-by-selected))
+  ;; (defvar display-line-type-selected-last-buffer nil)
+  ;; (defun display-line-type-by-selected (_window-or-frame)
+  ;;   (when (buffer-live-p display-line-type-selected-last-buffer)
+  ;;     (with-current-buffer display-line-type-selected-last-buffer
+  ;;       (setq display-line-numbers t))
+  ;;     (setq display-line-type-selected-last-buffer nil))
+  ;;   (when (and display-line-numbers-mode
+  ;;              (derived-mode-p 'prog-mode))
+  ;;     (unless (eq display-line-numbers 'visual)
+  ;;       (setq display-line-numbers 'visual))
+  ;;     (setq display-line-type-selected-last-buffer (current-buffer))))
+  ;; (add-hook 'window-selection-change-functions 'display-line-type-by-selected)
+
+  (defun display-line-numbers-cycle ()
+    (interactive)
+    (cond ((null display-line-numbers)
+           (display-line-numbers-mode 1)
+           (message "Display line numbers absolute"))
+          ((eq display-line-numbers t)
+           (setq display-line-numbers 'relative)
+           (message "Display line numbers relative"))
+          ((eq display-line-numbers 'relative)
+           (setq display-line-numbers 'visual)
+           (message "Display line numbers visual"))
+          ((eq display-line-numbers 'visual)
+           (display-line-numbers-mode -1)
+           (message "Display line numbers disabled"))))
+  (global-set-key (kbd "C-c l") 'display-line-numbers-cycle))
 #+end_src
 
 *** /symon/
@@ -7009,7 +7062,6 @@ By default insert it, with prefix display a message with it."
 
 #+begin_src elisp
 (with-eval-after-load 'ediff
-  (require 'ediff)
   (add-hook 'ediff-after-quit-hook-internal 'winner-undo)
 
   (face-spec-set 'diff-refine-changed
@@ -7036,9 +7088,18 @@ By default insert it, with prefix display a message with it."
   (setq ediff-window-setup-function 'ediff-setup-windows-plain
         ediff-split-window-function 'split-window-horizontally
         ediff-diff-ok-lines-regexp
-        "^\\([0-9,]+[acd][0-9,]+
-?$\\|[<>] \\|---\\|.*Warning *:\\|.*No +newline\\|.*missing +newline\\|.*No +hay +ningún +carácter +de +nueva +línea +al +final +del +fichero\\|^
-?$\\)")
+        (eval-when-compile
+          (concat
+           "^\\("
+           "[0-9,]+[acd][0-9,]+\C-m?$"
+           "\\|[<>] "
+           "\\|---"
+           "\\|.*Warning *:"
+           "\\|.*No +newline"
+           "\\|.*missing +newline"
+           "\\|^\C-m?$"
+           "\\|.*No +hay +ning..?n +car..?cter +de +nueva +l..?nea +al +final +del"
+           "\\)")))
 
   (require 'vdiff)
   (defun diff-revert-buffer-with-file (&optional arg)
@@ -7092,7 +7153,9 @@ ARG - `C-u' differ with prompted file.
         (remove 'ansi-color-process-output comint-output-filter-functions))
 
   (add-hook 'shell-mode-hook
-            (lambda () (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t)))
+            (lambda ()
+              (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter
+                        nil t)))
   (setenv "TERM" "xterm-256color")
 ;;;;;;;;;;;;;
 ;; Filters ;;
@@ -7109,12 +7172,12 @@ ARG - `C-u' differ with prompted file.
 ;;;;;;;;;;;;;
   (setq-default dirtrack-list '("\033\\[00;34m\\([^\033]+\\)" 1 nil))
   (require 'comint)
-  (setq comint-scroll-to-bottom-on-input t  ; always insert at the bottom
-        comint-scroll-to-bottom-on-output t ; always add output at the bottom
-        comint-scroll-show-maximum-output t ; scroll to show max possible output
-        comint-completion-autolist t        ; show completion list when ambiguous
-        comint-input-ignoredups t           ; no duplicates in command history
-        comint-completion-addsuffix t       ; insert space/slash after file completion
+  (setq comint-scroll-to-bottom-on-input nil  ; always insert at the bottom
+        comint-scroll-to-bottom-on-output nil ; always add output at the bottom
+        comint-scroll-show-maximum-output nil ; scroll to show max possible output
+        comint-completion-autolist t          ; show completion list when ambiguous
+        comint-input-ignoredups t             ; no duplicates in command history
+        comint-completion-addsuffix t         ; insert space/slash after file completion
         )
   (add-hook 'shell-mode-hook #'ansi-color-for-comint-mode-on)
   (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
@@ -7312,6 +7375,7 @@ ARG - `C-u' differ with prompted file.
         (t
          (message "File not found: %s" filepath))))
 
+(eval-when-compile (require 'pcomplete))
 (with-eval-after-load 'esh-mode
   (message "Importing eshell config")
 
@@ -8265,7 +8329,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (define-key hs-minor-mode-map (kbd "<C-tab>") #'hs-toggle-hiding))
 #+end_src
 
-*** /compile/
+*** /compilation-mode/
 
 #+begin_src elisp
 (with-eval-after-load 'compile
@@ -8273,6 +8337,16 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (setq comint-scroll-to-bottom-on-output nil
         ;; compile-command "cbuild -g "
         compilation-scroll-output 'first-error)
+
+  (push '("\\([Ww]arnings?\\|WARNINGS?\\|[Ww]arn\\|WARN\\|[Dd]eprecated\\|DEPRECATED\\)"
+          (1 compilation-warning-face))
+        compilation-mode-font-lock-keywords)
+  (push '("\\([Ee]rrors?\\|ERRORS?\\|[Ee]xceptions?\\|EXCEPTIONS?\\|[Ee]rr\\|ERR\\|[Ff]ailed\\|FAILED\\|[Ff]ailure\\|FAILURE\\|[Ff]ails?\\|FAILS?\\)"
+          (1 compilation-error-face))
+        compilation-mode-font-lock-keywords)
+  (push '("\\_<\\(GET\\|HEAD\\|POST\\|PUT\\|DELETE\\|CONNECT\\|OPTIONS\\|TRACE\\|PATCH\\)\\_> [^ \t\r\n]*"
+          (0 compilation-info-face))
+        compilation-mode-font-lock-keywords)
 
   ;; (defun compilation-conditional-scroll-output ()
   ;;   (let ((name (buffer-name)))
@@ -8443,6 +8517,63 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (setq eldoc-minor-mode-string "")
   ;; (global-eldoc-mode -1)
   (global-set-key (kbd "C-h .") 'global-eldoc-mode))
+#+end_src
+
+*** /which-function-mode/
+
+#+begin_src elisp
+(with-eval-after-load 'which-func
+  (set-face-attribute 'which-func nil
+                      :foreground
+                      (face-attribute 'font-lock-function-name-face
+                                      :foreground))
+  (setq which-func-unknown "∅"
+        mode-line-misc-info
+        ;; We remove Which Function Mode from the mode line, because it's mostly
+        ;; invisible here anyway.
+        (assq-delete-all 'which-function-mode mode-line-misc-info)
+        which-func-format
+        `("["
+          (:propertize (:eval (string-replace
+                               "%" "%%"
+                               (or (gethash (selected-window) which-func-table)
+                                   which-func-unknown)))
+                       local-map ,which-func-keymap
+                       face which-func
+                       mouse-face mode-line-highlight
+                       help-echo "mouse-1: go to beginning\n\
+mouse-2: toggle rest visibility\n\
+mouse-3: go to end")
+          "]"))
+
+  (defun org-which-function ()
+    (when (eq major-mode 'org-mode)
+      (ignore-errors
+        (mapconcat 'identity (org-get-outline-path t t)
+                   " · "))))
+  (push 'org-which-function which-func-functions)
+
+  (defun which-func-header-line ()
+    (when (memq major-mode which-func-modes)
+      (add-to-list 'header-line-format
+                   '(which-function-mode which-func-format))))
+
+  (defun which-func-header-lines ()
+    (if which-function-mode
+        (progn
+          (add-hook 'find-file-hook 'which-func-header-line)
+          (dolist (buffer (buffers-from-file))
+            (with-current-buffer buffer
+              (which-func-header-line))))
+      (remove-hook 'find-file-hook 'which-func-header-line)
+      (dolist (buffer (buffers-from-file))
+        (with-current-buffer buffer
+          (when (memq major-mode which-func-modes)
+            (setq header-line-format
+                  (assq-delete-all 'which-function-mode
+                                   header-line-format)))))))
+  (add-hook 'which-function-mode-hook 'which-func-header-lines))
+(global-set-key (kbd "C-c f") 'which-function-mode)
 #+end_src
 
 *** /semantic/
@@ -8641,9 +8772,11 @@ Improve default ia jump at point."
 
 #+begin_src elisp
 (with-eval-after-load 'semantic
-  (message "Importing gud config")
 
+  (autoload 'pdb-dir "gud" nil t)
+  (autoload 'pdb-test-at-point "gud" nil t)
   (with-eval-after-load 'gud
+    (message "Importing gud config")
     ;; ;; (setq gud-gdb-command-name "gdb --annotate=3 --fullname")
 
     ;; ;; [ <color> Add color to the current GUD line (by google)
@@ -8673,17 +8806,34 @@ Improve default ia jump at point."
     ;; =================================
     ;; PDB configuration
     ;; =================================
-    (defun pdb-advice (orig-fun &rest args)
+    (defun pdb-dir (&optional dir)
+      (interactive)
       ;; don't change default directory
       (let ((gud-chdir-before-run nil)
             (default-directory
-              (if current-prefix-arg
-                  (read-directory-name "Default directory: " nil nil t)
-                (or (and (featurep 'projectile)
-                         (projectile-project-root))
-                    default-directory))))
-        (apply orig-fun args)))
-    (advice-add 'pdb :around 'pdb-advice)
+              (or dir
+                  (read-directory-name "Default directory: " nil nil t))))
+        (call-interactively 'pdb)))
+
+    (require 'which-func)
+    (defun pdb-test-at-point (arg)
+      (interactive "P")
+      (let* ((default-directory (project-root-directory))
+             (path (concat
+                    (replace-regexp-in-string
+                     (concat
+                      "^"
+                      (regexp-quote (expand-file-name default-directory)))
+                     "" (buffer-file-name) t)
+                    "::"
+                    (mapconcat 'identity (split-string (which-function) "\\.") "::"))))
+        (if arg
+            (kill-new path)
+          (let ((gud-chdir-before-run nil))
+            (pdb (concat
+                  "pytest --pdb "
+                  path))))))
+
     (setq gud-pdb-command-name "python -m pdb"))
   ;; =================================
   ;; GDB configuration
@@ -10600,7 +10750,7 @@ cancel the use of the current buffer (for special-purpose buffers)."
 (set-face-attribute 'aw-leading-char-face nil
                     :weight 'bold
                     :foreground "green yellow"
-                    :height 3.0 ;; integers sometimes hide char
+                    :height (if exwm-p 3.0 1.5) ;; integers sometimes hide char
                     )
 
 (defun aw-move-deleting-window (window)
@@ -10615,7 +10765,7 @@ Switch the current window to the previous buffer."
 (push " *which-key*" aw-ignored-buffers)
 (setq minor-mode-alist
       (assq-delete-all 'ace-window-mode minor-mode-alist)
-      aw-scope 'global
+      aw-scope 'visible
       aw-dispatch-alist
       '((?R aw-refresh "Refresh mode-line")
         (?X aw-delete-window "Delete Window")
@@ -11523,11 +11673,8 @@ Switch the current window to the previous buffer."
 
 #+begin_src elisp
 (with-eval-after-load 'consult
-  (setq consult-project-root-function
-        (lambda ()
-          (locate-dominating-file default-directory ".git/"))
-        consult-find-command
-        "fdfind -H --color=never --full-path"
+  (setq consult-project-root-function 'project-root-directory
+        consult-find-command "fdfind -H --color=never --full-path"
         consult--gc-threshold gc-cons-threshold
         consult-async-default-split ","))
 (global-set-key (kbd "M-g f") 'consult-find)
@@ -11584,7 +11731,13 @@ Switch the current window to the previous buffer."
                                         (eldoc-mode -1)))
                                     eglot-managed-mode-hook))
      (setcdr (last (assoc '(c++-mode c-mode) eglot-server-programs))
-             '("--init={\"clang\": {\"extraArgs\": [\"-std=c++17\"]}}"))))
+             '("--init={\"clang\": {\"extraArgs\": [\"-std=c++17\"]}}"))
+     (let ((filename
+            (expand-file-name
+             "~/.config/composer/vendor/felixfbecker/language-server/bin/php-language-server.php")))
+       (when (file-exists-p filename)
+         (setcar (last (assoc '(php-mode phps-mode) eglot-server-programs))
+                 filename)))))
   ('lsp-deferred
    ;; ;;; ;;
    ;; lsp ;;
@@ -11809,7 +11962,15 @@ Switch the current window to the previous buffer."
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
     (require 'dap-php))
-  (require 'php-config))
+  (setq php-mode-coding-style 'psr2
+        php-mode-use-php7-syntax-table t)
+
+  (c-mode)
+  (php-set-style "psr2")
+
+  ;; Keys
+  (define-key php-mode-map (kbd "M-b") nil)
+  (define-key php-mode-map (kbd "C-.") nil))
 #+end_src
 
 *** /minimap/
@@ -11952,7 +12113,7 @@ Switch the current window to the previous buffer."
 (setq org-replace-disputed-keys t)
 (unless (fboundp 'org-mode)
   (message "`org-mode' not found")
-  (autoload 'org-mode "org"))
+  (autoload 'org-mode "org" nil t))
 (with-eval-after-load 'org
   (message "Importing org-config")
   ;; Spell checker
@@ -12325,10 +12486,7 @@ Switch the current window to the previous buffer."
         org-clock-string-limit 45
         org-clock-in-resume t
         org-clock-persist t
-        org-clock-clocked-in-display
-        (if (featurep 'symon)
-            t ;; org don't document this value, it's a trick
-          'frame-title)
+        org-clock-clocked-in-display 'frame-title
         org-clock-heading-function 'org-abbrev-es-heading)
 
   (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
@@ -15133,37 +15291,57 @@ end note
      id))
 
   (setq elfeed-feeds
-        `(("https://e00-expansion.uecdn.es/rss/portada.xml" expansion es txt)
-          ("http://estaticos.elmundo.es/elmundo/rss/espana.xml" elmundo spain es txt)
-          ("http://estaticos.elmundo.es/elmundo/rss/internacional.xml" elmundo world es txt)
-          ("http://www.abc.es/rss/feeds/abc_EspanaEspana.xml" abc spain es txt)
-          ("http://www.abc.es/rss/feeds/abc_Internacional.xml" abc world es txt)
-          ("https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada" elpais spain es txt)
-          ("https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/internacional/portada" elpais world es txt)
-          ;; english
-          ("http://feeds.bbci.co.uk/news/rss.xml?edition=int" bbc world en txt)
-          ("https://www.theguardian.com/international/rss" theguardian world en txt)
-          ("https://rss.nytimes.com/services/xml/rss/nyt/World.xml" nytimes world en txt)
-          ;; science
-          ("http://rss.sciam.com/ScientificAmerican-Global" SA science en txt)
-          ("https://www.sciencenews.org/feed" sciencenews science en txt)
+        `(
+          ;; ("https://e00-expansion.uecdn.es/rss/portada.xml" expansion es txt)
+          ;; ("http://estaticos.elmundo.es/elmundo/rss/espana.xml" elmundo spain es txt)
+          ;; ("http://estaticos.elmundo.es/elmundo/rss/internacional.xml" elmundo world es txt)
+          ;; ("http://www.abc.es/rss/feeds/abc_EspanaEspana.xml" abc spain es txt)
+          ;; ("http://www.abc.es/rss/feeds/abc_Internacional.xml" abc world es txt)
+          ;; ("https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada" elpais spain es txt)
+          ;; ("https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/internacional/portada" elpais world es txt)
+          ;; [ english
+          ;; ("http://feeds.bbci.co.uk/news/rss.xml?edition=int" bbc world en txt)
+          ;; ("https://www.theguardian.com/international/rss" theguardian world en txt)
+          ;; ("https://rss.nytimes.com/services/xml/rss/nyt/World.xml" nytimes world en txt)
+          ;; ]
+          ;; [ science
+          ;; ("http://rss.sciam.com/ScientificAmerican-Global" SA science en txt)
+          ;; ("https://www.sciencenews.org/feed" sciencenews science en txt)
           ;; arxiv papers
-          ,@(mapcar (lambda (category)
-                      (list (concat "http://arxiv.org/rss/" (symbol-name category))
-                            'arxiv category 'en 'txt))
-                    '(astro-ph cond-mat cs econ eess gr-qc hep-ex hep-lat
-                               hep-ph hep-th math math-ph nlin nucl-ex nucl-th
-                               physics q-bio q-fin quant-ph stat))
-          ;; health
+          ;; ,@(mapcar (lambda (category)
+          ;;             (list (concat "http://arxiv.org/rss/" (symbol-name category))
+          ;;                   'arxiv category 'en 'txt))
+          ;;           '(astro-ph cond-mat cs econ eess gr-qc hep-ex hep-lat
+          ;;                      hep-ph hep-th math math-ph nlin nucl-ex nucl-th
+          ;;                      physics q-bio q-fin quant-ph stat))
+          ("http://arxiv.org/rss/math-ph" arxiv math en txt)
+          ("http://arxiv.org/rss/physics" arxiv physics en txt)
+          ("http://arxiv.org/rss/cs.AI" arxiv ai en txt)
+          ;; ]
+          ;; [ health
           ("https://www.who.int/rss-feeds/news-english.xml" oms health es txt)
+          ;; ]
           ;; podcast
-          ("https://podcasts.files.bbci.co.uk/p02pc9ny.rss" bbc en aud)
-          ("https://www.theguardian.com/news/series/todayinfocus/podcast.xml" theguardian en aud)
+          ;; ("https://podcasts.files.bbci.co.uk/p02pc9ny.rss" bbc en aud)
+          ;; ("https://www.theguardian.com/news/series/todayinfocus/podcast.xml" theguardian en aud)
           ;; images
           ("https://xkcd.com/atom.xml" xkcd en img)
           ;; video
           (,(elfeed-youtube-expand "UCHnyfMqiRRG1u-2MsSQLbXA") veritasium science en vid)
-          (,(elfeed-youtube-expand "UCW3iqZr2cQFYKdO9Kpa97Yw") utbh es vid))
+          ;; curiosity
+          ("http://www.iqscorner.com/feeds/posts/default?alt=rss" cur corner iq en txt)
+          ("http://importantquestionsabout.blogspot.com/feeds/posts/default?alt=rss" cur quest gk en txt)
+          ("https://www.reddit.com/r/IntelligenceQ/.rss" cur reddit iq en txt)
+          ("http://brainstormingbox.org/feed/" cur storm gk en txt)
+          ("https://deepmind.com/blog/feed/basic/" cur google ai en txt)
+          ("https://writings.stephenwolfram.com/feed/" cur wolfram math en txt)
+          ;; universities
+          ("https://www.sup.org/rss/?feed=economics" uni stanford economics en txt)
+          ("https://www.sup.org/rss/?feed=anthropology" uni stanford anthropology en txt)
+          ("https://www.sup.org/rss/?feed=philosophy" uni stanford philosophy en txt)
+          ("https://www.cam.ac.uk/news-feed-generator.rss?field_taxonomy_section_tid=All" uni cambridge en txt)
+          ("https://www.southampton.ac.uk/news/feeds/home-news-feed.page" uni southampton en txt)
+          )
         elfeed-db-directory (expand-file-name "elfeed" user-emacs-directory)
         elfeed-search-filter "@1-month-ago +unread"
         elfeed-search-date-format '("%Y-%m-%d %H:%M" 16 :left)
@@ -15234,31 +15412,6 @@ end note
 
 #+begin_src elisp
 (async-bytecomp-package-mode)
-
-(with-eval-after-load 'docker-utils
-  (when (bug-check-function-bytecode
-         'docker-utils-generic-action
-         "wCDBAYMbAAFAwgUFAyO2AolUsgEBQbICggMAtgLDIIc=")
-    (defun docker-utils-generic-action (action args)
-      (interactive (list (docker-utils-get-transient-action)
-                         (transient-args transient-current-command)))
-      (let ((items (docker-utils-get-marked-items-ids)))
-        (async-start
-         `(lambda ()
-            (load ,(locate-library "s"))
-            (load ,(locate-library "transient"))
-            (load ,(locate-library "dash"))
-            (load ,(locate-library "docker-core"))
-            (let ((pos (with-current-buffer "*Messages*"
-                         (point-max))))
-              (--each (quote ,items)
-                (docker-run-docker ,action ,args it))
-              (with-current-buffer "*Messages*"
-                (buffer-substring-no-properties pos (point-max)))))
-         `(lambda (result)
-            (message "Async {{{\n%s}}} " result)
-            (with-current-buffer ,(current-buffer)
-              (tablist-revert))))))))
 #+end_src
 
 *** /rg/
@@ -16989,6 +17142,33 @@ Concurrency is disabled as it breaks the orders of errors, replies and events."
           (xcb:-process-events connection))))))
 #+end_src
 
+** /orderless/
+
+#+begin_src elisp
+(with-eval-after-load 'orderless
+  (when (bug-check-function-bytecode
+         'orderless-try-completion
+         "wAUFBSOJhA0AwYIqAIlBhCcAwgYGBgYGBiNAAUBQiQFHQrIBgioABQNChw==")
+    (defun orderless-try-completion (string table pred point &optional _metadata)
+      "Complete STRING to unique matching entry in TABLE.
+This uses `orderless-all-completions' to find matches for STRING
+in TABLE among entries satisfying PRED.  If there is only one
+match, it completes to that match.  If there are no matches, it
+returns nil.  In any other case it \"completes\" STRING to
+itself, without moving POINT.
+This function is part of the `orderless' completion style."
+      (let ((all (orderless-filter string table pred)))
+        (cond
+         ((null all) nil)
+         ((null (cdr all))
+          (let ((full (concat
+                       (car (orderless--prefix+pattern string table pred))
+                       (car all))))
+            (cons full (length full))))
+         (t
+          (completion-flex-try-completion string table pred point)))))))
+#+end_src
+
 * Improvements
 ** /flymake/
 
@@ -16996,27 +17176,52 @@ Concurrency is disabled as it breaks the orders of errors, replies and events."
 (with-eval-after-load 'flymake
   ;; custom modeline
   (if (fboundp 'flymake--mode-line-title)
-      (defun flymake--mode-line-title ()
-        `(:propertize
-          "!"
-          mouse-face mode-line-highlight
-          help-echo
-          (lambda (&rest whatever)
-            (concat
-             (format "%s known backends\n" (hash-table-count flymake--backend-state))
-             (format "%s running\n" (length (flymake-running-backends)))
-             (format "%s disabled\n" (length (flymake-disabled-backends)))
-             "mouse-1: Display minor mode menu\n"
-             "mouse-2: Show help for minor mode"))
-          keymap
-          ,(let ((map (make-sparse-keymap)))
-             (define-key map [mode-line down-mouse-1]
-               flymake-menu)
-             (define-key map [mode-line mouse-2]
-               (lambda ()
-                 (interactive)
-                 (describe-function 'flymake-mode)))
-             map)))
+      (progn
+        (defun flymake--mode-line-title ()
+          `(:propertize
+            "!"
+            mouse-face mode-line-highlight
+            help-echo
+            (lambda (&rest whatever)
+              (concat
+               (format "%s known backends\n" (hash-table-count flymake--backend-state))
+               (format "%s running\n" (length (flymake-running-backends)))
+               (format "%s disabled\n" (length (flymake-disabled-backends)))
+               "mouse-1: Display minor mode menu\n"
+               "mouse-2: Show help for minor mode"))
+            keymap
+            ,(let ((map (make-sparse-keymap)))
+               (define-key map [mode-line down-mouse-1]
+                 flymake-menu)
+               (define-key map [mode-line mouse-2]
+                 (lambda ()
+                   (interactive)
+                   (describe-function 'flymake-mode)))
+               map)))
+        (defun flymake--mode-line-exception ()
+          "Helper for `flymake-mode-line-exception'."
+          (pcase-let* ((running) (reported)
+                       (`(,ind ,face ,explain)
+                        (cond ((zerop (hash-table-count flymake--backend-state))
+                               '("?" nil "No known backends"))
+                              ((cl-set-difference
+                                (setq running (flymake-running-backends))
+                                (setq reported (flymake-reporting-backends)))
+                               `("…" compilation-mode-line-run
+                                 ,(format "Waiting for %s running backend(s)"
+                                          (length (cl-set-difference running reported)))))
+                              ((and (flymake-disabled-backends) (null running))
+                               '("!" compilation-mode-line-run
+                                 "All backends disabled"))
+                              (t
+                               '(nil nil nil)))))
+            (when ind
+              `(:propertize ,ind face ,face
+                            help-echo ,explain
+                            keymap ,(let ((map (make-sparse-keymap)))
+                                      (define-key map [mode-line mouse-1]
+                                        'flymake-switch-to-log-buffer)
+                                      map))))))
     (when (bug-check-function-bytecode
            'flymake--mode-line-format
            "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UIAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYkEOoPOAQRAsgT5BAYOIrID+gT7/COyAgKEOgEK/T2ExwEKgzYB9gQh/gohWYI3Af2DxwGJ2N3/BgZHIvAF2tvi4yAGDOQCy4FAAAsix4FBAIFCAMrLBgghgUMAIoFEAIFFAIFGACYGI4jkAsuBQAAMIseBQQCBQgDKywYIIYFHACKBRACBRQCBRgAmBiOIAbaC3N2BSACBSQDd/wYRRyLwBhAjgUkA3YFKAAYTIvAGESMj3YFLAAsMI1CvCkOksgEEQbIFggcBgUwA6ALFiYkDOoP9AQOyAwKJQbIEorICAQFCsgECg/YBgU0AAUKyAQNBsgSC1gGJn7aEgU4AIkK2hyJChw==")
@@ -17502,6 +17707,67 @@ If not, show simply the clocked time like 01:50."
                     (org-duration-from-minutes currently-clocked-time)
                     (org-duration-from-minutes clocked-time)
                     org-clock-heading)))))))
+#+end_src
+
+** /docker/
+
+#+begin_src elisp
+;; (with-eval-after-load 'docker-utils
+;;   (when (bug-check-function-bytecode
+;;          'docker-utils-generic-action
+;;          "wCDBAYMbAAFAwgUFAyO2AolUsgEBQbICggMAtgLDIIc=")
+;;     (defun docker-utils-generic-action (action args)
+;;       (interactive (list (docker-utils-get-transient-action)
+;;                          (transient-args transient-current-command)))
+;;       (let ((items (docker-utils-get-marked-items-ids)))
+;;         (async-start
+;;          `(lambda ()
+;;             (load ,(locate-library "s"))
+;;             (load ,(locate-library "transient"))
+;;             (load ,(locate-library "dash"))
+;;             (load ,(locate-library "docker-core"))
+;;             (let ((pos (with-current-buffer "*Messages*"
+;;                          (point-max))))
+;;               (--each (quote ,items)
+;;                 (docker-run-docker ,action ,args it))
+;;               (with-current-buffer "*Messages*"
+;;                 (buffer-substring-no-properties pos (point-max)))))
+;;          `(lambda (result)
+;;             (message "Async {{{\n%s}}} " result)
+;;             (with-current-buffer ,(current-buffer)
+;;               (tablist-revert))))))))
+
+(with-eval-after-load 'docker-utils
+  (when (bug-check-function-bytecode
+         'docker-utils-generic-action
+         "wCDBAYMbAAFAwgUFAyO2AolUsgEBQbICggMAtgLDIIc=")
+    (setq docker-utils-generic-action-count 0)
+    (defun docker-utils-generic-action (action args)
+      (interactive (list (docker-utils-get-transient-action)
+                         (transient-args transient-current-command)))
+      (let ((buffer (current-buffer))
+            (items (docker-utils-get-marked-items-ids)))
+        (setq docker-utils-generic-action-count
+              (+ (length items)
+                 docker-utils-generic-action-count))
+        (--each items
+          (async-start
+           `(lambda ()
+              (load ,(locate-library "s"))
+              (load ,(locate-library "transient"))
+              (load ,(locate-library "dash"))
+              (load ,(locate-library "docker-core"))
+              (let ((pos (with-current-buffer "*Messages*"
+                           (point-max))))
+                (docker-run-docker ,action ,args ,it)
+                (with-current-buffer "*Messages*"
+                  (buffer-substring-no-properties pos (1- (point-max))))))
+           `(lambda (result)
+              (message "Async %s" result)
+              (cl-decf docker-utils-generic-action-count)
+              (when (= 0 docker-utils-generic-action-count)
+                (with-current-buffer ,buffer
+                  (tablist-revert))))))))))
 #+end_src
 
 ** M-x with bindings help
