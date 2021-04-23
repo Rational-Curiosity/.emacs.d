@@ -104,10 +104,10 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   (let ((emacs-el-directory (expand-file-name "el/" user-emacs-directory)))
     (save-some-buffers
      nil (lambda ()
-          (let ((file (buffer-file-name)))
-            (and file
-                 (string-match-p emacs-lisp-file-regexp file)
-                 (file-in-directory-p file emacs-el-directory)))))
+           (let ((file (buffer-file-name)))
+             (and file
+                  (string-match-p emacs-lisp-file-regexp file)
+                  (file-in-directory-p file emacs-el-directory)))))
     (force-mode-line-update)
     (with-current-buffer (get-buffer-create byte-compile-log-buffer)
       (setq default-directory (expand-file-name user-emacs-directory))
@@ -123,19 +123,33 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
               directory
               last-dir)
           (displaying-byte-compile-warnings
-           (dolist (file '(user-init-file early-init-file
-                           package-quickstart-file custom-file))
-             (when (and (boundp file)
-                        (setq file (symbol-value file))
-                        (file-exists-p file))
-               (cl-incf
-                (pcase (byte-recompile-file
-                        file force 0)
-                  ('no-byte-compile skip-count)
-                  ('t file-count)
-                  (_
-                   (message "Failed %s" file)
-                   fail-count)))))
+           (dolist (file
+                    (delete-dups
+                     (remove
+                      nil
+                      (mapcar
+                       (lambda (file)
+                         (if (stringp file)
+                             (if (file-exists-p file) file)
+                           (if (and (boundp file)
+                                    (setq file (symbol-value file))
+                                    (string-match emacs-lisp-file-regexp file)
+                                    (file-exists-p file))
+                               file)))
+                       `(user-init-file
+                         early-init-file
+                         ,(expand-file-name "init.el" user-emacs-directory)
+                         ,(expand-file-name "early-init.el" user-emacs-directory)
+                         ,(expand-file-name "config.el" user-emacs-directory)
+                         package-quickstart-file custom-file)))))
+             (cl-incf
+              (pcase (byte-recompile-file
+                      file force 0)
+                ('no-byte-compile skip-count)
+                ('t file-count)
+                (_
+                 (message "Failed initial file %s" file)
+                 fail-count))))
            (while directories
              (setq directory (car directories))
              ;; (message "Checking %s..." directory)
@@ -235,6 +249,14 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
 (defmacro bound-and-eval (func &rest args)
   "Ensures FUNC exist and eval with ARGS."
   (list 'and (list 'fboundp func) (list 'apply func (list 'quote args))))
+
+(defun bound-eval-and-unbound (func &rest args)
+  "Ensures FUNC exist and eval with ARGS."
+  (if (fboundp func)
+      (progn
+        (apply func args)
+        (fmakunbound func))
+    (message "Missing `%s' function" func)))
 
 ;; Return function that check bound before
 (defmacro lambda-bound-and-eval (func &rest args)
@@ -965,11 +987,6 @@ mouse-3: Toggle minor modes"
 
 (add-hook 'window-configuration-change-hook
           'force-mode-line-buffer-identification)
-(if (boundp 'after-focus-change-function)
-    (add-function :after after-focus-change-function
-                  'force-mode-line-buffer-identification)
-  (add-hook 'focus-in-hook 'force-mode-line-buffer-identification)
-  (add-hook 'focus-out-hook 'force-mode-line-buffer-identification))
 (advice-add 'rename-buffer :after 'force-mode-line-buffer-identification)
 
 ;; [ mini-modeline options
@@ -1091,14 +1108,13 @@ mouse-3: Toggle minor modes"
                              mode-line-misc-info))))
     (let* ((post-len (string-width mode-line-post-identification))
            (others-len (+ (string-width mode-line-pre-identification)
-                          post-len
-                          1)))
+                          post-len)))
       (if (equal (car mode-line-cached) others-len)
           (list (string-replace "%" "%%" mode-line-pre-identification)
                 (car mode-line-identification)
                 (propertize " "
                             'display
-                            `((space :align-to (- (+ right right-fringe right-margin)
+                            `((space :align-to (- (+ right right-fringe right-margin 1)
                                                   ,(+ post-len (cdr mode-line-cached))))))
                 (cdr mode-line-identification)
                 (string-replace "%" "%%" mode-line-post-identification))
@@ -1140,7 +1156,7 @@ mouse-3: Toggle minor modes"
                 (car mode-line-identification)
                 (propertize " "
                             'display
-                            `((space :align-to (- (+ right right-fringe right-margin)
+                            `((space :align-to (- (+ right right-fringe right-margin 1)
                                                   ,(+ post-len (cdr mode-line-cached))))))
                 (cdr mode-line-identification)
                 (string-replace "%" "%%" mode-line-post-identification)))))))
@@ -4615,7 +4631,8 @@ mode and header lines."
   ;; ;;;; ;;
   (global-set-key (kbd "M-s 7 T") 'exwm-toggle-transparency)
 
-  (after-exwm-config))
+  (after-exwm-config)
+  (fmakunbound 'after-exwm-config))
 #+end_src
 
 * Internal packages
@@ -8507,7 +8524,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   ;;(global-ede-mode 1)
   ;; Unknown error
   ;; (ede-enable-generic-projects)
-  (bound-and-eval 'after-ede-config))
+  (bound-eval-and-unbound 'after-ede-config))
 #+end_src
 
 *** /eldoc/
@@ -12118,9 +12135,9 @@ Switch the current window to the previous buffer."
   (message "Importing org-config")
   ;; Spell checker
   (add-hook 'org-mode-hook 'flyspell-mode)
-  (add-hook 'org-mode-hook
-            (defun org-mode-modify-syntax-entry<-and-continuation-lines ()
-              (modify-syntax-entry ?< "_" org-mode-syntax-table)))
+  ;; (add-hook 'org-mode-hook
+  ;;           (defun org-mode-modify-syntax-entry<-and-continuation-lines ()
+  ;;             (modify-syntax-entry ?< "_" org-mode-syntax-table)))
   ;; (plist-put org-format-latex-options :scale 1.) ;; default
 
   ;; ;;;;; ;;
@@ -12523,8 +12540,11 @@ Switch the current window to the previous buffer."
   ;; ;;;;;;;;;;;;;;; ;;
   (require 'ox-mediawiki)
   ;; Change dispatcher bind key because of conflict with markdown
-  (setcar (org-export-backend-menu (-first (lambda (b) (string-equal "mw" (symbol-name (org-export-backend-name b))))
-                                           org-export-registered-backends)) ?M)
+  (setcar (org-export-backend-menu 
+           (-first
+            (lambda (b)
+              (string-equal "mw" (symbol-name (org-export-backend-name b))))
+            org-export-registered-backends)) ?M)
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
   ;; Convert to reStructuredText ;;
@@ -13580,33 +13600,33 @@ Throw an error when trying to set a property with an invalid name."
   ;; ;;;;;;;;;;;;; ;;
   ;; Org templates ;;
   ;; ;;;;;;;;;;;;; ;;
-  (require 'org-tempo)
-  ;; [ Thanks to: https://gist.github.com/alphapapa/84ec3396442915ca277b
-  (require 's)
-  (defun org-read-structure-template ()
-    "Read org-mode structure template with completion.  Returns template string."
-    (let* ((templates (map 'list 'cdr org-structure-template-alist))
-           (template (completing-read "Template: " templates nil t)))
-      (car (rassoc template org-structure-template-alist))))
+  ;; (require 'org-tempo)
+  ;; ;; [ Thanks to: https://gist.github.com/alphapapa/84ec3396442915ca277b
+  ;; (require 's)
+  ;; (defun org-read-structure-template ()
+  ;;   "Read org-mode structure template with completion.  Returns template string."
+  ;;   (let* ((templates (map 'list 'cdr org-structure-template-alist))
+  ;;          (template (completing-read "Template: " templates nil t)))
+  ;;     (car (rassoc template org-structure-template-alist))))
 
-  (defun org-babel-insert-structure-template-or-enclose-region ()
-    "Insert structure block template.  When region is active, enclose region in block."
-    (interactive)
-    (let* ((template (org-read-structure-template))
-           (text ""))
-      (if (use-region-p)
-          (progn
-            (setq text (buffer-substring-no-properties (region-beginning) (region-end)))
-            (delete-region (region-beginning) (region-end))
-            (insert (concat "<" template))
-            (org-tempo-complete-tag)
-            (when (char-equal ?  (char-before (point)))
-              (forward-line)
-              (end-of-line))
-            (insert text))
-        (insert (concat "<" template))
-        (org-tempo-complete-tag))))
-  ;; ]
+  ;; (defun org-babel-insert-structure-template-or-enclose-region ()
+  ;;   "Insert structure block template.  When region is active, enclose region in block."
+  ;;   (interactive)
+  ;;   (let* ((template (org-read-structure-template))
+  ;;          (text ""))
+  ;;     (if (use-region-p)
+  ;;         (progn
+  ;;           (setq text (buffer-substring-no-properties (region-beginning) (region-end)))
+  ;;           (delete-region (region-beginning) (region-end))
+  ;;           (insert (concat "<" template))
+  ;;           (org-tempo-complete-tag)
+  ;;           (when (char-equal ?  (char-before (point)))
+  ;;             (forward-line)
+  ;;             (end-of-line))
+  ;;           (insert text))
+  ;;       (insert (concat "<" template))
+  ;;       (org-tempo-complete-tag))))
+  ;; ;; ]
   ;; ;;;; ;;
   ;; Keys ;;
   ;; ;;;; ;;
@@ -13634,7 +13654,7 @@ Throw an error when trying to set a property with an invalid name."
   (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
   (define-key org-mode-map (kbd "M-s 7 k") #'org-toggle-link-display)
   (global-set-key (kbd "C-c A f") 'org-annotate-file-search)
-  (bound-and-eval 'after-org-config))
+  (bound-eval-and-unbound 'after-org-config))
 #+end_src
 
 *** /ox-mediawiki/                                                    :markdown:
@@ -13650,7 +13670,121 @@ Throw an error when trying to set a property with an invalid name."
      "</syntaxhighlight>"))
 
   (setcdr (assoc 'src-block (org-export-get-all-transcoders 'mw))
-          'org-mw-src-block))
+          'org-mw-src-block)
+  (defun org-mw-headline (headline contents info)
+    (unless (org-element-property :footnote-section-p headline)
+      (let* ((level (org-export-get-relative-level headline info))
+
+             (title (org-export-data (org-element-property :title headline) info))
+
+             (todo (and (plist-get info :with-todo-keywords)
+                        (let ((todo (org-element-property :todo-keyword
+                                                          headline)))
+                          (and todo (concat (org-export-data todo info) " ")))))
+
+             (tags (and (plist-get info :with-tags)
+                        (let ((tag-list (org-export-get-tags headline info)))
+                          (and tag-list
+                               (format "     :%s:"
+                                       (mapconcat 'identity tag-list ":"))))))
+
+             (priority
+              (and (plist-get info :with-priority)
+                   (let ((char (org-element-property :priority headline)))
+                     (and char (format "[#%c] " char)))))
+
+             ;; Headline text without tags.
+             (heading (concat todo priority title))) ;; End of Let*
+        (if (= level 3)
+            (concat "\n<div class=\"mw-collapsible\" style=\"background-color: #DDEEFF; padding: 10px;\">\n"
+                    (make-string level ?=) " " heading tags " "
+                    (make-string level ?=) "\n\n" contents
+                    "\n</div>\n\n----\n\n")
+          (concat (make-string level ?=) " " heading tags " "
+                  (make-string level ?=) "\n\n" contents)))))
+
+  (defun org-mw-link (link contents info)
+    (let ((--link-org-files-as-html-maybe
+           (function
+            (lambda (raw-path info)
+              ;; Treat links to `file.org' as links to `file.html', if
+              ;; needed.  See `org-html-link-org-files-as-html'.
+              (cond
+               ((and org-html-link-org-files-as-html
+                     (string= ".org"
+                              (downcase (file-name-extension raw-path "."))))
+                (concat (file-name-sans-extension raw-path) "."
+                        (plist-get info :html-extension)))
+               (t raw-path)))))
+          (type (org-element-property :type link)))
+      (cond ((member type '("custom-id" "id"))
+             (let ((destination (org-export-resolve-id-link link info)))
+               (if (stringp destination)	; External file.
+                   (let ((path (funcall --link-org-files-as-html-maybe
+                                        destination info)))
+                     (if (not contents) (format "<%s>" path)
+                       (format "[%s](%s)" contents path)))
+                 (concat
+                  (and contents (concat contents " "))
+                  (format "(%s)"
+                          (format
+                           (org-export-translate "See section %s" :html info)
+                           (mapconcat 'number-to-string
+                                      (org-export-get-headline-number
+                                       destination info)
+                                      ".")))))))
+            ((org-export-inline-image-p link org-html-inline-image-rules)
+             (let ((path (let ((raw-path (org-element-property :path link)))
+                           (if (not (file-name-absolute-p raw-path)) raw-path
+                             (expand-file-name raw-path)))))
+               (format "![%s](%s)"
+                       (let ((caption (org-export-get-caption
+                                       (org-export-get-parent-element link))))
+                         (when caption (org-export-data caption info)))
+                       path)))
+            ((string= type "coderef")
+             (let ((ref (org-element-property :path link)))
+               (format (org-export-get-coderef-format ref contents)
+                       (org-export-resolve-coderef ref info))))
+            ((equal type "radio")
+             (let ((destination (org-export-resolve-radio-link link info)))
+               (org-export-data (org-element-contents destination) info)))
+            ((equal type "fuzzy")
+             (if (org-string-nw-p contents) contents
+               (concat "[[#" (replace-regexp-in-string
+                              "^\*+ *" ""
+                              (org-element-property :raw-link link)
+                              t)
+                       "]]")))
+            (t (let* ((raw-path (org-element-property :path link))
+                      (path (cond
+                             ((member type '("http" "https" "ftp"))
+                              (concat type ":" raw-path))
+                             ((equal type "file")
+                              ;; Treat links to ".org" files as ".html",
+                              ;; if needed.
+                              (setq raw-path
+                                    (funcall --link-org-files-as-html-maybe
+                                             raw-path info))
+                              ;; If file path is absolute, prepend it
+                              ;; with protocol component - "file://".
+                              (if (not (file-name-absolute-p raw-path)) raw-path
+                                (concat "file://" (expand-file-name raw-path))))
+                             (t raw-path))))
+                 (if (not contents) (format "%s" path)
+                   (format "[%s %s]" path
+                           (s-join " " (s-split "\n" contents)))))))))
+
+  (defun org-mw-separate-elements (tree backend info)
+    (org-element-map tree org-element-all-elements
+      (lambda (elem)
+        (unless (memq (org-element-type elem) '(org-data item))
+          (org-element-put-property
+           elem :post-blank
+           (let ((post-blank (org-element-property :post-blank elem)))
+             (if (not post-blank) 1 (max 1 post-blank)))))))
+    ;; Return updated tree.
+    tree))
 #+end_src
 
 *** /ox-textile/                                                      :markdown:
@@ -13737,7 +13871,7 @@ Throw an error when trying to set a property with an invalid name."
                  :tag "@home")
           (:name "Hábito"
                  :habit t)))
-  (bound-and-eval 'after-org-super-agenda-config))
+  (bound-eval-and-unbound 'after-org-super-agenda-config))
 #+end_src
 
 *** /org-appt/
@@ -13769,15 +13903,18 @@ Throw an error when trying to set a property with an invalid name."
   ;; t means refresh
   (defun org-appt-update (&rest args)
     (interactive (list nil))
-    (let (msg)
-      (let ((inhibit-message t)
-            (message-log-max nil))
-        (set 'msg (org-agenda-to-appt t)))
-      (let* ((nowtime (current-time))
-             (now-ms (nth 2 nowtime)))
-        (message (concat msg " at "
-                         (format-time-string "%Y-%m-%d %T" nowtime)
-                         (format ".%06d" now-ms))))))
+    (let* ((nowtime (current-time))
+           (now-ms (nth 2 nowtime)))
+      (message (concat
+                (let ((inhibit-message t)
+                      (message-log-max nil)
+                      (org-agenda-files (cl-remove-if-not
+                                         'file-exists-p
+                                         org-agenda-files)))
+                  (org-agenda-to-appt t))
+                " at "
+                (format-time-string "%Y-%m-%d %T" nowtime)
+                (format ".%06d" now-ms)))))
   (advice-add 'org-deadline :after #'org-appt-update)
   (advice-add 'org-schedule :after #'org-appt-update)
   (advice-add 'org-agenda-schedule :after #'org-appt-update)
@@ -14476,9 +14613,8 @@ If run interactively, get ENTRY from context."
 *** /magit/
 
 #+begin_src elisp
+(require 'multi-magit-autoloads)
 (with-eval-after-load 'magit
-  (require 'multi-magit-autoloads)
-
   (with-eval-after-load 'magit-mode
     ;; Refresh mode line branch
     (defun vc-refresh-buffers ()
@@ -15619,7 +15755,7 @@ end note
     (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
     (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point)))
 
-(bound-and-eval 'after-machine-config)
+(bound-eval-and-unbound 'after-machine-config)
 #+end_src
 
 * Bugs
