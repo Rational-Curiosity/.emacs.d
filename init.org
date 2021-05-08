@@ -4796,7 +4796,11 @@ mode and header lines."
                                  'face '(:foreground "steel blue"))
  ;; orderless
  orderless-matching-styles '(orderless-regexp orderless-flex)
- orderless-component-separator ",+"
+ orderless-component-separator (lambda (input)
+                                 (mapcar
+                                  (lambda (component)
+                                    (replace-regexp-in-string " +-- .*\\'" "" component t))
+                                  (split-string-and-unquote input ",+")))
  orderless-style-dispatchers nil)
 (defun icomplete--fido-mode-setup ()
   "Setup `fido-mode''s minibuffer."
