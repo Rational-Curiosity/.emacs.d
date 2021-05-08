@@ -4151,7 +4151,6 @@ sudo apt-get remove --purge dbus-user-session
      (concat exwm-class-name ": " exwm-title)))
   (add-hook 'exwm-update-title-hook 'exwm-update-title-defaults)
 
-  (eval-when-compile (require 'icomplete-vertical))
   (defun exwm-workspace-switch-with-titles ()
     (interactive)
     (let* ((titles (seq-map-indexed
@@ -4163,9 +4162,7 @@ sudo apt-get remove --purge dbus-user-session
                                   (propertize " & " 'face '(:foreground "sky blue")))))
                     exwm-workspace--list))
            (candidate
-            (icomplete-vertical-do
-                (:separator "\n" :height 20)
-              (completing-read "Select frame: " titles nil t))))
+            (completing-read "Select frame: " titles nil t)))
       (exwm-workspace-switch (cl-position candidate titles :test 'string-equal))))
 
   (global-set-key (kbd "<XF86PowerOff>") 'exwm-shutdown)
@@ -4771,7 +4768,6 @@ mode and header lines."
 ;;                   (completion--cache-all-sorted-completions beg end (cons comp all)))
 ;;          finally return all))))
 
-(require 'icomplete-vertical)
 (require 'completing-read-at-point)
 (require 'orderless)
 
@@ -4889,21 +4885,19 @@ mode and header lines."
           (if (active-minibuffer-window)
               (setq last-command 'yank)))
       (yank-pop arg)
-    (icomplete-vertical-do
-        (:separator 'dotted-line :height 20)
-      (let ((candidate
-             (completing-read
-              "Yank: "
-              (lambda (string pred action)
-                (if (eq action 'metadata)
-                    '(metadata (display-sort-function . identity)
-                               (cycle-sort-function . identity))
-                  (complete-with-action action kill-ring string pred)))
-              nil t)))
-        (when (and candidate (region-active-p))
-          ;; the currently highlighted section is to be replaced by the yank
-          (delete-region (region-beginning) (region-end)))
-        (insert candidate)))))
+    (let ((candidate
+           (completing-read
+            "Yank: "
+            (lambda (string pred action)
+              (if (eq action 'metadata)
+                  '(metadata (display-sort-function . identity)
+                             (cycle-sort-function . identity))
+                (complete-with-action action kill-ring string pred)))
+            nil t)))
+      (when (and candidate (region-active-p))
+        ;; the currently highlighted section is to be replaced by the yank
+        (delete-region (region-beginning) (region-end)))
+      (insert candidate))))
 
 (defun completing-read-advice (orig-fun prompt collection &optional
                                         predicate require-match initial-input
@@ -4975,15 +4969,12 @@ mode and header lines."
 (define-key icomplete-fido-mode-map (kbd "M-j") nil)
 (define-key icomplete-minibuffer-map (kbd "C-s") 'icomplete-forward-completions)
 (define-key icomplete-minibuffer-map (kbd "C-r") 'icomplete-backward-completions)
-(define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-toggle)
-(define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-toggle)
+(define-key icomplete-minibuffer-map (kbd "C-|") 'icomplete-vertical-mode)
+(define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-mode)
 (global-set-key (kbd "M-g M-a") 'occur-project)
 (global-set-key (kbd "M-g M-f") 'project-find-file)
-(global-set-key (kbd "M-y") 'icomplete-vertical-kill-ring-insert)
 (global-set-key (kbd "M-g f") 'fd-dired)
 (global-set-key (kbd "M-s O") 'multi-occur)
-(global-set-key (kbd "M-s M-o") 'noccur-project)
-(global-set-key (kbd "M-s C-o") 'noccur-dired)
 (global-set-key
  (kbd "<f12>")
  (lambda ()
@@ -17687,10 +17678,13 @@ matches exist."
           (if last (setcdr last base-size))
           (if prospects
               (concat determ
-                      "{"
-                      (mapconcat 'identity prospects icomplete-separator)
-                      (and limit (concat icomplete-separator ellipsis))
-                      "}")
+                      (if icomplete-vertical-mode " \n" (propertize "{ " 'face '(:foreground "steel blue"))) ;; - ;; +
+                      (mapconcat 'identity prospects (if icomplete-vertical-mode
+                                                         "\n"
+                                                       icomplete-separator))
+                      (unless icomplete-vertical-mode
+                        (concat (and limit (concat icomplete-separator ellipsis))
+                                (propertize " }" 'face '(:foreground "steel blue"))))) ;; - ;; +
             (concat determ " [Matched]")))))))
 #+end_src
 
