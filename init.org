@@ -1782,7 +1782,7 @@ prompt the user for a coding system."
       indent-tabs-mode nil
       c-basic-offset 4
       python-indent-offset 4
-      js-indent-level 4)
+      js-indent-level 2)
 
 (c-set-offset 'innamespace '0)
 (c-set-offset 'inextern-lang '0)
@@ -7649,21 +7649,20 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
     (eshell-key-alt-previous (- arg)))
 
   (with-eval-after-load 'em-hist
-    (when (bug-check-function-bytecode
-           'eshell-put-history
-           "AYQHAAiyAomDEADBAgQih8ICBCKH")
-      (defun eshell-put-history (input &optional ring at-beginning)
-        "Put a new input line into the history ring."
-        (unless ring (setq ring eshell-history-ring))
-        (if at-beginning
-            (if (or (ring-empty-p ring)
-                    (not (string-equal input (ring-ref eshell-history-ring -1))))
-                (ring-insert-at-beginning ring input))
+    ;;;; OVERRIDDEN
+    (defun eshell-put-history (input &optional ring at-beginning)
+      "Put a new input line into the history ring."
+      (unless ring (setq ring eshell-history-ring))
+      (if at-beginning
           (if (or (ring-empty-p ring)
-                  (not (string-equal input (ring-ref eshell-history-ring 0))))
-              (ring-insert ring input)))))
+                  (not (string-equal input (ring-ref eshell-history-ring -1))))
+              (ring-insert-at-beginning ring input))
+        (if (or (ring-empty-p ring)
+                (not (string-equal input (ring-ref eshell-history-ring 0))))
+            (ring-insert ring input))))
 
     ;; eshell-next-input call this
+    ;;;; OVERRIDDEN
     (defun eshell-previous-input (arg)
       "Cycle backwards through input history."
       (interactive "*p")
@@ -7727,9 +7726,10 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (defvar eshell-current-command-start-time nil)
   ;; Below I implement a "prompt number" section
   (defvar esh-prompt-num 0)
-  (add-hook 'eshell-mode-hook (lambda ()
-                                (set-default (make-local-variable 'esh-prompt-num) 0)
-                                (make-local-variable 'eshell-current-command-start-time)))
+  (add-hook 'eshell-mode-hook
+            (lambda ()
+              (set-default (make-local-variable 'esh-prompt-num) 0)
+              (make-local-variable 'eshell-current-command-start-time)))
 
   (defun esh-prompt-func ()
     "Build `eshell-prompt-function'."
@@ -8561,9 +8561,31 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
 #+begin_src elisp
 (with-eval-after-load 'eldoc
-  (setq eldoc-minor-mode-string "")
+  (defun eldoc-doc-buffer-toggle ()
+    (interactive)
+    (unless global-eldoc-mode
+      (global-eldoc-mode))
+    (let ((windows (get-buffer-window-list eldoc--doc-buffer)))
+      (if windows
+          (mapc 'delete-window windows)
+        (eldoc-doc-buffer))))
+
+  (defun display-buffer-eldoc-condition (buffer-name action)
+    (eq eldoc--doc-buffer (get-buffer buffer-name)))
+
+  (push '(display-buffer-eldoc-condition
+          display-buffer-at-bottom
+          (inhibit-same-window . t)
+          (window-height . fit-window-to-buffer))
+        display-buffer-alist)
+
+  (setq eldoc-minor-mode-string ""
+        eldoc-echo-area-prefer-doc-buffer t
+        eldoc-echo-area-use-multiline-p 3
+        eldoc-echo-area-display-truncation-message nil)
   ;; (global-eldoc-mode -1)
-  (global-set-key (kbd "C-h .") 'global-eldoc-mode))
+  (global-set-key (kbd "C-h .") 'eldoc-doc-buffer-toggle))
+(global-set-key (kbd "C-h :") 'global-eldoc-mode)
 #+end_src
 
 *** /which-function-mode/
@@ -8574,52 +8596,53 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                       :foreground
                       (face-attribute 'font-lock-function-name-face
                                       :foreground))
-  (setq which-func-unknown "∅"
-        mode-line-misc-info
-        ;; We remove Which Function Mode from the mode line, because it's mostly
-        ;; invisible here anyway.
-        (assq-delete-all 'which-function-mode mode-line-misc-info)
-        which-func-format
-        `("["
-          (:propertize (:eval (string-replace
-                               "%" "%%"
-                               (or (gethash (selected-window) which-func-table)
-                                   which-func-unknown)))
-                       local-map ,which-func-keymap
-                       face which-func
-                       mouse-face mode-line-highlight
-                       help-echo "mouse-1: go to beginning\n\
-mouse-2: toggle rest visibility\n\
-mouse-3: go to end")
-          "]"))
+;;   (setq which-func-unknown "∅"
+;;         mode-line-misc-info
+;;         ;; We remove Which Function Mode from the mode line, because it's mostly
+;;         ;; invisible here anyway.
+;;         (assq-delete-all 'which-function-mode mode-line-misc-info)
+;;         which-func-format
+;;         `("["
+;;           (:propertize (:eval (string-replace
+;;                                "%" "%%"
+;;                                (or (gethash (selected-window) which-func-table)
+;;                                    which-func-unknown)))
+;;                        local-map ,which-func-keymap
+;;                        face which-func
+;;                        mouse-face mode-line-highlight
+;;                        help-echo "mouse-1: go to beginning\n\
+;; mouse-2: toggle rest visibility\n\
+;; mouse-3: go to end")
+;;           "]"))
 
-  (defun org-which-function ()
-    (when (eq major-mode 'org-mode)
-      (ignore-errors
-        (mapconcat 'identity (org-get-outline-path t t)
-                   " · "))))
-  (push 'org-which-function which-func-functions)
+;;   (defun org-which-function ()
+;;     (when (eq major-mode 'org-mode)
+;;       (ignore-errors
+;;         (mapconcat 'identity (org-get-outline-path t t)
+;;                    " · "))))
+;;   (push 'org-which-function which-func-functions)
 
-  (defun which-func-header-line ()
-    (when (memq major-mode which-func-modes)
-      (add-to-list 'header-line-format
-                   '(which-function-mode which-func-format))))
+;;   (defun which-func-header-line ()
+;;     (when (memq major-mode which-func-modes)
+;;       (add-to-list 'header-line-format
+;;                    '(which-function-mode which-func-format))))
 
-  (defun which-func-header-lines ()
-    (if which-function-mode
-        (progn
-          (add-hook 'find-file-hook 'which-func-header-line)
-          (dolist (buffer (buffers-from-file))
-            (with-current-buffer buffer
-              (which-func-header-line))))
-      (remove-hook 'find-file-hook 'which-func-header-line)
-      (dolist (buffer (buffers-from-file))
-        (with-current-buffer buffer
-          (when (memq major-mode which-func-modes)
-            (setq header-line-format
-                  (assq-delete-all 'which-function-mode
-                                   header-line-format)))))))
-  (add-hook 'which-function-mode-hook 'which-func-header-lines))
+;;   (defun which-func-header-lines ()
+;;     (if which-function-mode
+;;         (progn
+;;           (add-hook 'find-file-hook 'which-func-header-line)
+;;           (dolist (buffer (buffers-from-file))
+;;             (with-current-buffer buffer
+;;               (which-func-header-line))))
+;;       (remove-hook 'find-file-hook 'which-func-header-line)
+;;       (dolist (buffer (buffers-from-file))
+;;         (with-current-buffer buffer
+;;           (when (memq major-mode which-func-modes)
+;;             (setq header-line-format
+;;                   (assq-delete-all 'which-function-mode
+;;                                    header-line-format)))))))
+;;   (add-hook 'which-function-mode-hook 'which-func-header-lines)
+  )
 (global-set-key (kbd "C-c f") 'which-function-mode)
 #+end_src
 
@@ -9244,11 +9267,14 @@ Improve default ia jump at point."
 
 (add-hook 'c-mode-hook   'c-c++-config)
 (add-hook 'c++-mode-hook 'c-c++-config)
+(add-hook 'c-mode-hook   'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
 #+end_src
 
 *** /python-mode/                                                  :programming:
 
 #+begin_src elisp
+(add-hook 'python-mode-hook 'eglot-ensure)
 (add-hook 'python-mode-hook (lambda ()
                               (setq forward-sexp-function nil)))
 (setq python-shell-interpreter (or (executable-find "~/bin/python-emacs")
@@ -9451,11 +9477,11 @@ if __name__ == \"__main__\":
   ;; (define-key python-mode-map (kbd "C-c d h")
   ;;   #'sphinx-build-html)
 
-  (define-key python-mode-map (kbd "C-c t d") #'python-doctest-to-message)
-  (define-key python-mode-map (kbd "C-c t t") #'python-timeit-to-message)
-  (define-key python-mode-map (kbd "C-c d h") #'sphinx-build-html)
-  (define-key python-mode-map (kbd "C-c a") #'python-nav-beginning-of-statement)
-  (define-key python-mode-map (kbd "C-c e") #'python-nav-end-of-statement)
+  (define-key python-mode-map (kbd "C-c p t d") #'python-doctest-to-message)
+  (define-key python-mode-map (kbd "C-c p t t") #'python-timeit-to-message)
+  (define-key python-mode-map (kbd "C-c p d h") #'sphinx-build-html)
+  (define-key python-mode-map (kbd "C-c p a") #'python-nav-beginning-of-statement)
+  (define-key python-mode-map (kbd "C-c p e") #'python-nav-end-of-statement)
   (define-key python-mode-map (kbd "M-s 7 v") #'toggle-python-version)
   ;;  (add-hook 'python-mode-hook #'detect-python-project-version)
   (with-eval-after-load 'dap-mode
@@ -9524,8 +9550,9 @@ if __name__ == \"__main__\":
   (defun importing-flyspell-config-advice ()
     (message "Importing flyspell config")
 
-    (setq flyspell-use-meta-tab nil)
-    (setq flyspell-mode-line-string "")
+    (setq flyspell-use-meta-tab nil
+          flyspell-mode-line-string ""
+          flyspell-use-mouse-3-for-menu t)
     ;; ;;;;; ;;
     ;; Faces ;;
     ;; ;;;;; ;;
@@ -9863,6 +9890,7 @@ if __name__ == \"__main__\":
           ("show"        "✓")
           ("text"        "ξ")
           ("tsv"         "↹")
+          ("typescript"  "TS")
           ("wdired"      "↯δ")
           ("web"         "ω")
           ("yaml"        "Ⲩ")
@@ -11692,12 +11720,10 @@ Switch the current window to the previous buffer."
 (with-eval-after-load 'annotate
   (setcar (cdr (assq 'annotate-mode minor-mode-alist)) "📓")
 
-  (when (boundp 'personal-notes-directory)
-    (setq annotate-file (expand-file-name
-                         ".annotations"
-                         personal-notes-directory)))
-
-  (setq annotate-use-messages nil
+  (setq annotate-file (expand-file-name
+                       ".annotations"
+                       "~/Prog/org")
+        annotate-use-messages nil
         annotate-annotation-column 80
         annotate-annotation-max-size-not-place-new-line 10
         annotate-blacklist-major-mode '(text-mode))
@@ -11727,9 +11753,12 @@ Switch the current window to the previous buffer."
 #+begin_src elisp
 (with-eval-after-load 'consult
   (setq consult-project-root-function 'project-root-directory
-        consult-find-command "fdfind -H --color=never --full-path"
+        consult-find-command "fdfind -H --color=never --full-path OPTS ARG"
+        consult-ripgrep-command
+        "rg --hidden --null --line-buffered --color=ansi --max-columns=1000 --no-heading --line-number OPTS . -e ARG"
         consult--gc-threshold gc-cons-threshold
         consult-async-default-split ","))
+(global-set-key (kbd "M-y") 'consult-yank-pop)
 (global-set-key (kbd "M-g f") 'consult-find)
 (global-set-key (kbd "M-g e") 'consult-error)
 (global-set-key (kbd "M-g r") 'consult-ripgrep)
@@ -11742,26 +11771,173 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "M-g M-g") 'consult-goto-line)
 (global-set-key (kbd "M-g M-l") 'consult-line)
 (global-set-key (kbd "M-g C-k") 'consult-kmacro)
+;; (global-set-key (kbd "C-x b") 'consult-buffer)
+;; (global-set-key (kbd "C-x 4 b") 'consult-buffer-other-window)
+;; (global-set-key (kbd "C-x 5 b") 'consult-buffer-other-frame)
 (global-set-key (kbd "C-x r x") 'consult-register)
 (global-set-key (kbd "C-x r b") 'consult-bookmark)
 #+end_src
 
-*** Language server protocol /lsp-mode/ or /eglot/                 :programming:
+*** Language server protocol /lsp-mode/                            :programming:
 
 #+begin_src elisp
-(defvar custom-lsp-startup-function 'eglot-ensure
-  "'eglot-ensure or 'lsp-deferred")
+(with-eval-after-load 'lsp-mode
+  (message "Importing lsp-config")
 
-(add-hook 'c-mode-hook   custom-lsp-startup-function)
-(add-hook 'c++-mode-hook custom-lsp-startup-function)
-(add-hook 'python-mode-hook custom-lsp-startup-function)
+  (add-hook 'lsp-after-open-hook #'lsp-enable-imenu)
+  (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
+  (when (fboundp 'lsp-origami-try-enable)
+    (add-hook 'lsp-after-open-hook #'lsp-origami-try-enable))
 
-(cl-case custom-lsp-startup-function
-  ('eglot-ensure
-   ;; ;;;;; ;;
-   ;; eglot ;;
-   ;; ;;;;; ;;
-   (with-eval-after-load 'eglot
+  (set-face-attribute 'lsp-face-highlight-read nil
+                      :inherit 'unspecified
+                      :underline t
+                      :weight 'bold
+                      :background 'unspecified)
+  (set-face-attribute 'lsp-face-highlight-write nil
+                      :inherit 'unspecified
+                      :underline t
+                      :weight 'bold
+                      :background 'unspecified)
+
+  (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
+        ;; performance
+        read-process-output-max (* 3 1024 1024)
+        lsp-completion-provider :capf
+        lsp-idle-delay 2.0
+        lsp-enable-file-watchers nil
+        lsp-file-watch-threshold 500
+        ;; snippet is slow
+        lsp-enable-snippet nil
+        ;; lsp log
+        lsp-log-io nil    ;; `(lsp-workspace-show-log)' Display the log buffer
+        lsp-log-max 1000  ;; Max lines in the log buffer
+        ;; lsp
+        lsp-keymap-prefix "s-l"
+        ;; flycheck option bug https://github.com/emacs-lsp/lsp-ui/issues/347
+        lsp-diagnostics-provider :flymake
+        lsp-modeline-code-actions-enable nil
+        lsp-modeline-diagnostics-enable nil
+        lsp-file-watch-ignored (cons "[/\\\\]tmp$"
+                                     lsp-file-watch-ignored)
+        ;; signature
+        lsp-signature-render-documentation nil
+        ;; headerline
+        lsp-headerline-breadcrumb-enable nil)
+
+  (if (null (require 'lsp-pyls nil 'noerror))
+      (message-color #("ERROR missing package `lsp-pyls'" 0 5 (face error)))
+    ;; lsp-pyls
+    ;; [ Fix https://github.com/palantir/python-language-server/issues/771
+    ;;   changing autopep8 for yapf
+    (setq lsp-pyls-plugins-autopep8-enabled nil
+          lsp-pyls-plugins-yapf-enabled t)
+    ;; ]
+    )
+
+  ;; [ lsp-ui
+  (if (require 'lsp-ui nil 'noerror)
+      (progn (add-hook 'lsp-mode-hook #'lsp-ui-mode)
+
+             (setq lsp-ui-doc-enable nil
+                   lsp-signature-auto-activate nil ;; <xor signature>
+                   lsp-ui-doc-include-signature t  ;; <xor signature>
+                   lsp-ui-doc-position 'top
+                   lsp-ui-doc-alignment 'frame
+                   lsp-ui-doc-max-height 10
+                   lsp-ui-doc-max-width 80
+                   ;; lsp-ui-sideline
+                   lsp-ui-sideline-delay 0.5
+                   lsp-ui-sideline-show-hover t)
+             (when (or (eq lsp-diagnostics-provider :flymake)
+                       (and (eq lsp-diagnostics-provider :auto)
+                            (not (locate-library "flycheck"))))
+               ;; not working with flymake
+               (setq lsp-ui-sideline-show-diagnostics nil))
+
+             (defun lsp-ui-or-xref-find-definitions ()
+               (interactive)
+               (let (result)
+                 (condition-case nil
+                     (setq result (call-interactively
+                                   'lsp-ui-peek-find-definitions))
+                   (error (call-interactively 'xref-find-definitions)))
+                 (if (and (stringp result)
+                          (string-equal "Not found" (substring result 0 9)))
+                     (call-interactively 'xref-find-definitions))))
+
+             (defun lsp-ui-or-xref-find-references ()
+               (interactive)
+               (let (result)
+                 (condition-case nil
+                     (setq result (call-interactively
+                                   'lsp-ui-peek-find-references))
+                   (error (call-interactively 'xref-find-references)))
+                 (if (and (stringp result)
+                          (string-equal "Not found" (substring result 0 9)))
+                     (call-interactively 'xref-find-references))))
+
+             (define-key lsp-ui-mode-map [remap xref-find-definitions]
+               'lsp-ui-or-xref-find-definitions)
+             (define-key lsp-ui-mode-map [remap xref-find-references]
+               'lsp-ui-or-xref-find-references))
+
+    (defun lsp-or-xref-find-definition ()
+      (interactive)
+      (let (result)
+        (condition-case nil
+            (setq result (call-interactively 'lsp-find-definition))
+          (error (call-interactively 'xref-find-definitions)))
+        (if (and (stringp result)
+                 (string-equal "Not found" (substring result 0 9)))
+            (call-interactively 'xref-find-definitions))))
+
+    (defun lsp-or-xref-find-references ()
+      (interactive)
+      (let (result)
+        (condition-case nil
+            (setq result (call-interactively 'lsp-find-references))
+          (error (call-interactively 'xref-find-references)))
+        (if (and (stringp result)
+                 (string-equal "Not found" (substring result 0 9)))
+            (call-interactively 'xref-find-references))))
+
+    (define-key lsp-mode-map [remap xref-find-definitions]
+      'lsp-or-xref-find-definition)
+    (define-key lsp-mode-map [remap xref-find-references]
+      'lsp-or-xref-find-references))
+  ;; ]
+
+  ;; [ company-lsp -- not supported by lsp-mode
+  ;; (when (and (featurep 'company)
+  ;;            (load "company-lsp" t))
+  ;;   (push 'company-lsp company-backends)
+  ;;   (setq company-lsp-cache-candidates 'auto))
+  ;; ]
+
+  ;; [ dap-mode
+  (when (locate-library "dap-mode")
+    (defun dap-enable-which-key-integration ()
+      (apply
+       #'which-key-add-major-mode-key-based-replacements
+       major-mode
+       (lsp--prepend-prefix
+        (list "d" "debugging"
+              "d m" "dap hydra menu"
+              "d d" "start dap debugging"
+              "d t" "toggle dap tooltip mode"))))
+    (add-hook 'lsp-mode-hook #'dap-enable-which-key-integration)
+    (define-key lsp-command-map (kbd "d m") #'dap-hydra)
+    (define-key lsp-command-map (kbd "d d") #'dap-debug)
+    (define-key lsp-command-map (kbd "d t") #'dap-tooltip-mode))
+  ;; ]
+  )
+#+end_src
+
+*** Language server protocol /eglot/                               :programming:
+
+#+begin_src elisp
+(with-eval-after-load 'eglot
      (message "Importing eglot-config")
 
      (defun eglot-xor-semantic ()
@@ -11780,8 +11956,9 @@ Switch the current window to the previous buffer."
            eglot-ignored-server-capabilites '(:documentHighlightProvider)
            eglot-managed-mode-hook (nconc
                                     '(eglot-xor-semantic
-                                      (lambda ()
-                                        (eldoc-mode -1)))
+                                      ;; (lambda ()
+                                      ;;   (eldoc-mode -1))
+                                      )
                                     eglot-managed-mode-hook))
      (setcdr (last (assoc '(c++-mode c-mode) eglot-server-programs))
              '("--init={\"clang\": {\"extraArgs\": [\"-std=c++17\"]}}"))
@@ -11790,181 +11967,7 @@ Switch the current window to the previous buffer."
              "~/.config/composer/vendor/felixfbecker/language-server/bin/php-language-server.php")))
        (when (file-exists-p filename)
          (setcar (last (assoc '(php-mode phps-mode) eglot-server-programs))
-                 filename)))))
-  ('lsp-deferred
-   ;; ;;; ;;
-   ;; lsp ;;
-   ;; ;;; ;;
-   (with-eval-after-load 'lsp-mode
-     (message "Importing lsp-config")
-
-     (add-hook 'lsp-after-open-hook #'lsp-enable-imenu)
-     (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
-     (when (fboundp 'lsp-origami-try-enable)
-       (add-hook 'lsp-after-open-hook #'lsp-origami-try-enable))
-
-     (set-face-attribute 'lsp-face-highlight-read nil
-                         :inherit 'unspecified
-                         :underline t
-                         :weight 'bold
-                         :background 'unspecified)
-     (set-face-attribute 'lsp-face-highlight-write nil
-                         :inherit 'unspecified
-                         :underline t
-                         :weight 'bold
-                         :background 'unspecified)
-
-     (when (bug-check-function-bytecode
-            'lsp-mode-line
-            "wCCJgxcAwcLDAyLExcYDAyO2glCCHgDBx8jJyiNQhw==")
-       (require 'subr-x)
-       (defun lsp-mode-line ()
-         "Construct the mode line text."
-         (if-let (workspaces (lsp-workspaces))
-             (string-join (--map (format "[%s]" (lsp--workspace-print it))
-                                 workspaces))
-           (propertize "[Disconnected]" 'face 'warning))))
-
-     (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
-           ;; performance
-           read-process-output-max (* 3 1024 1024)
-           lsp-completion-provider :capf
-           lsp-idle-delay 2.0
-           lsp-enable-file-watchers nil
-           lsp-file-watch-threshold 500
-           ;; snippet is slow
-           lsp-enable-snippet nil
-           ;; lsp log
-           lsp-log-io nil    ;; `(lsp-workspace-show-log)' Display the log buffer
-           lsp-log-max 1000  ;; Max lines in the log buffer
-           ;; lsp
-           lsp-keymap-prefix "s-l"
-           ;; flycheck option bug https://github.com/emacs-lsp/lsp-ui/issues/347
-           lsp-diagnostics-provider :flymake
-           lsp-modeline-code-actions-enable nil
-           lsp-modeline-diagnostics-enable nil
-           lsp-file-watch-ignored (cons "[/\\\\]tmp$"
-                                        lsp-file-watch-ignored)
-           ;; signature
-           lsp-signature-render-documentation nil)
-
-     (if (null (require 'lsp-pyls nil 'noerror))
-         (message-color #("ERROR missing package `lsp-pyls'" 0 5 (face error)))
-       ;; lsp-pyls
-       ;; [ Fix https://github.com/palantir/python-language-server/issues/771
-       ;;   changing autopep8 for yapf
-       (setq lsp-pyls-plugins-autopep8-enabled nil
-             lsp-pyls-plugins-yapf-enabled t)
-       ;; ]
-       )
-
-     ;; [ lsp-ui
-     (if (require 'lsp-ui nil 'noerror)
-         (progn (add-hook 'lsp-mode-hook #'lsp-ui-mode)
-
-                (setq lsp-ui-doc-enable nil
-                      lsp-signature-auto-activate nil ;; <xor signature>
-                      lsp-ui-doc-include-signature t  ;; <xor signature>
-                      lsp-ui-doc-position 'top
-                      lsp-ui-doc-alignment 'frame
-                      lsp-ui-doc-max-height 10
-                      lsp-ui-doc-max-width 80
-                      ;; lsp-ui-sideline
-                      lsp-ui-sideline-delay 0.5
-                      lsp-ui-sideline-show-hover t)
-                (when (or (eq lsp-diagnostics-provider :flymake)
-                          (and (eq lsp-diagnostics-provider :auto)
-                               (not (locate-library "flycheck"))))
-                  ;; not working with flymake
-                  (setq lsp-ui-sideline-show-diagnostics nil))
-
-                (defun lsp-ui-or-xref-find-definitions ()
-                  (interactive)
-                  (let (result)
-                    (condition-case nil
-                        (setq result (call-interactively
-                                      'lsp-ui-peek-find-definitions))
-                      (error (call-interactively 'xref-find-definitions)))
-                    (if (and (stringp result)
-                             (string-equal "Not found" (substring result 0 9)))
-                        (call-interactively 'xref-find-definitions))))
-
-                (defun lsp-ui-or-xref-find-references ()
-                  (interactive)
-                  (let (result)
-                    (condition-case nil
-                        (setq result (call-interactively
-                                      'lsp-ui-peek-find-references))
-                      (error (call-interactively 'xref-find-references)))
-                    (if (and (stringp result)
-                             (string-equal "Not found" (substring result 0 9)))
-                        (call-interactively 'xref-find-references))))
-
-                (define-key lsp-ui-mode-map [remap xref-find-definitions]
-                  'lsp-ui-or-xref-find-definitions)
-                (define-key lsp-ui-mode-map [remap xref-find-references]
-                  'lsp-ui-or-xref-find-references))
-
-       (defun lsp-or-xref-find-definition ()
-         (interactive)
-         (let (result)
-           (condition-case nil
-               (setq result (call-interactively 'lsp-find-definition))
-             (error (call-interactively 'xref-find-definitions)))
-           (if (and (stringp result)
-                    (string-equal "Not found" (substring result 0 9)))
-               (call-interactively 'xref-find-definitions))))
-
-       (defun lsp-or-xref-find-references ()
-         (interactive)
-         (let (result)
-           (condition-case nil
-               (setq result (call-interactively 'lsp-find-references))
-             (error (call-interactively 'xref-find-references)))
-           (if (and (stringp result)
-                    (string-equal "Not found" (substring result 0 9)))
-               (call-interactively 'xref-find-references))))
-
-       (define-key lsp-mode-map [remap xref-find-definitions]
-         'lsp-or-xref-find-definition)
-       (define-key lsp-mode-map [remap xref-find-references]
-         'lsp-or-xref-find-references))
-     ;; ]
-
-     ;; [ company-lsp -- not supported by lsp-mode
-     ;; (when (and (featurep 'company)
-     ;;            (load "company-lsp" t))
-     ;;   (push 'company-lsp company-backends)
-     ;;   (setq company-lsp-cache-candidates 'auto))
-     ;; ]
-
-     ;; [ dap-mode
-     (when (locate-library "dap-mode")
-       (defun dap-enable-which-key-integration ()
-         (apply
-          #'which-key-add-major-mode-key-based-replacements
-          major-mode
-          (lsp--prepend-prefix
-           (list "d" "debugging"
-                 "d m" "dap hydra menu"
-                 "d d" "start dap debugging"
-                 "d t" "toggle dap tooltip mode"))))
-       (add-hook 'lsp-mode-hook #'dap-enable-which-key-integration)
-       (define-key lsp-command-map (kbd "d m") #'dap-hydra)
-       (define-key lsp-command-map (kbd "d d") #'dap-debug)
-       (define-key lsp-command-map (kbd "d t") #'dap-tooltip-mode))
-     ;; ]
-     )
-   ;; dap
-   (with-eval-after-load 'dap-mode
-     (message "Importing dap-config")
-
-     (setq dap-python-terminal "xterm -e "
-           dap-auto-configure-features nil
-           ;; or '(sessions locals breakpoints expressions)
-           )
-
-     (dap-ui-mode))))
+                 filename))))
 #+end_src
 
 *** /rust/                                                         :programming:
@@ -11976,31 +11979,33 @@ Switch the current window to the previous buffer."
   (setq rustic-lsp-client 'eglot))
 (with-eval-after-load 'rust-mode
   (message "Importing rust-mode config")
-  (add-hook 'rust-mode-hook custom-lsp-startup-function))
+  (add-hook 'rust-mode-hook 'eglot-ensure))
 #+end_src
 
 *** /java/                                                         :programming:
 
 #+begin_src elisp
-(add-hook 'java-mode-hook (lambda ()
-                            (if (eq custom-lsp-startup-function 'lsp-deferred)
-                                (when (require 'lsp-java nil t)
-                                  (lsp-deferred))
-                              (eglot-ensure))))
-(defun load-once-java-stuff ()
-  (with-eval-after-load 'dap-mode
-    (require 'dap-java))
-  (remove-hook 'java-mode-hook 'load-once-java-stuff))
-(add-hook 'java-mode-hook 'load-once-java-stuff)
+;; [ eglot
+(add-hook 'java-mode-hook 'eglot-ensure)
+;; ]
+;; [ lsp-mode
+;; (add-hook 'java-mode-hook (lambda ()
+;;                             (when (require 'lsp-java nil t)
+;;                               (lsp-deferred))))
+;; (defun load-once-java-stuff ()
+;;   (with-eval-after-load 'dap-mode
+;;     (require 'dap-java))
+;;   (remove-hook 'java-mode-hook 'load-once-java-stuff))
+;; (add-hook 'java-mode-hook 'load-once-java-stuff)
+;; ]
 #+end_src
 
 *** /javascript/                                                   :programming:
 
 #+begin_src elisp
 (defun language-server-protocol-js-cond ()
-  (unless (or (derived-mode-p 'ein:ipynb-mode)
-              (derived-mode-p 'json-mode))
-    (funcall custom-lsp-startup-function)))
+  (unless (derived-mode-p 'ein:ipynb-mode)
+    (eglot-ensure)))
 (add-hook 'js-mode-hook #'language-server-protocol-js-cond)
 (with-eval-after-load 'js
   (with-eval-after-load 'dap-mode
@@ -12008,10 +12013,22 @@ Switch the current window to the previous buffer."
     (dap-firefox-setup)))
 #+end_src
 
+*** /typescript/                                                   :programming:
+
+#+begin_src elisp
+(setcar (rassoc 'typescript-mode auto-mode-alist) "\\.tsx?\\'")
+(add-hook 'typescript-mode-hook 'lsp-deferred)
+(with-eval-after-load 'typescript-mode
+  (with-eval-after-load 'dap-mode
+    (require 'dap-firefox)
+    (dap-firefox-setup))
+  (setq typescript-indent-level 2))
+#+end_src
+
 *** /php/                                                          :programming:
 
 #+begin_src elisp
-(add-hook 'php-mode-hook custom-lsp-startup-function)
+(add-hook 'php-mode-hook 'eglot-ensure)
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
     (require 'dap-php))
@@ -12358,6 +12375,7 @@ Switch the current window to the previous buffer."
   ;; Modules ;;
   ;; ;;;;;;; ;;
 
+  (add-to-list 'org-modules 'org-id)
   (add-to-list 'org-modules 'org-habit)
   (add-to-list 'org-modules 'org-mouse)
 
@@ -12371,6 +12389,7 @@ Switch the current window to the previous buffer."
   ;; ;;;;;;;;;;;;;;; ;;
   (setq org-hide-block-startup t
         org-link-descriptive nil ;; nil display the full links
+        org-id-link-to-org-use-id 'use-existing
         org-replace-disputed-keys t
         org-startup-folded 'content
         org-startup-with-inline-images t
@@ -12442,14 +12461,11 @@ Switch the current window to the previous buffer."
   (setq ob-async-no-async-languages-alist
         '("ipython")
         org-babel-default-header-args:python
-        '((:results . "output")
-          (:exports . "results"))
+        '((:results . "output"))
         org-babel-default-header-args:sh
-        '((:results . "output")
-          (:exports . "results"))
+        '((:results . "output"))
         org-babel-default-header-args:bash
-        '((:results . "output")
-          (:exports . "results")))
+        '((:results . "output")))
 
   ;; Activated by default
   ;; (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
@@ -13010,40 +13026,12 @@ blockquote {
          ;; [ No se debería modificar
          ;; org-html-style-default
          ;; "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\" />"
-         )
-
-  (defcustom org-html-mathjax-options
-    '((path  "js/MathJax.js")
-      (scale "100")
-      (align "center")
-      (indent "2em")
-      (mathml nil))
-    "Options for MathJax setup.
-
-path        The path where to find MathJax
-scale       Scaling for the HTML-CSS backend, usually between 100 and 133
-align       How to align display math: left, center, or right
-indent      If align is not center, how far from the left/right side?
-mathml      Should a MathML player be used if available?
-            This is faster and reduces bandwidth use, but currently
-            sometimes has lower spacing quality.  Therefore, the default is
-            nil.  When browsers get better, this switch can be flipped.
-
-You can also customize this for each buffer, using something like
-
-,#+MATHJAX: scale:\"133\" align:\"right\" mathml:t path:\"/MathJax/\""
-    :group 'org-export-html
-    :type '(list :greedy t
-                 (list :tag "path   (the path from where to load MathJax.js)"
-                       (const :format "       " path) (string))
-                 (list :tag "scale  (scaling for the displayed math)"
-                       (const :format "       " scale) (string))
-                 (list :tag "align  (alignment of displayed equations)"
-                       (const :format "       " align) (string))
-                 (list :tag "indent (indentation with left or right alignment)"
-                       (const :format "       " indent) (string))
-                 (list :tag "mathml (should MathML display be used is possible)"
-                       (const :format "       " mathml) (boolean))))
+         org-html-mathjax-options
+         '((path  "js/MathJax.js")
+           (scale "100")
+           (align "center")
+           (indent "2em")
+           (mathml nil)))
 
   ;; Definen =verbatim= y ~code~ en html
   (eval-after-load 'ox-html
@@ -13087,31 +13075,36 @@ You can also customize this for each buffer, using something like
   ;; ;;  (let ((org-agenda-skip-function 'org-agenda-skip-work))
   ;;   (cfw:open-org-calendar))
   ;; ;;)
-  (require 'org-agenda-property)
   ;; (cl-loop for folder in
   ;;          `("~/var/Dropbox/Orgzly"
   ;;            ,(concat "~/Prog/org/" (getenv "JOB_FOLDER"))
   ;;            "~/Prog/org")
   ;;          when (file-exists-p folder)
   ;;          return folder)
+  (require 'org-expiry)
+  (org-expiry-insinuate)
 
   (when (boundp 'personal-notes-directory)
-    (setq org-directory personal-notes-directory
-          org-default-notes-file (expand-file-name
-                                  ".notes.org"
-                                  org-directory)
-          org-agenda-files (cl-remove-if-not
-                            'file-exists-p
-                            `("~/var/Dropbox/Orgzly/"
-                              ,(expand-file-name
-                                "agenda"
-                                org-directory))) ;; reset in config.el
-          org-annotate-file-storage-file (expand-file-name
-                                          ".org-annotate-file.org"
-                                          org-directory))
-    (make-directory org-directory t))
+    (setq ))
 
-  (setq org-annotate-file-always-open nil
+  (require 'org-agenda-property)
+  (setq org-directory "~/Prog/org/"
+        org-agenda-files (let ((files
+                                (cl-remove-if-not
+                                 'file-exists-p
+                                 `("~/var/Dropbox/Orgzly/"
+                                   ,(expand-file-name "agenda" org-directory)))))
+                           (if (boundp 'personal-notes-directory)
+                               (cons personal-notes-directory
+                                     files)
+                             files))
+        org-default-notes-file (expand-file-name
+                                ".notes.org"
+                                org-directory)
+        org-annotate-file-storage-file (expand-file-name
+                                        ".org-annotate-file.org"
+                                        org-directory)
+        org-annotate-file-always-open nil
         org-annotate-file-add-search nil
         ;; <property>
         org-agenda-property-list '("REQUIRED")
@@ -13199,6 +13192,7 @@ You can also customize this for each buffer, using something like
                          ))))))
           ;;("u" "[u]nscheduled tasks" tags "-SCHEDULED={.+}/!+TODO|+NEXT|+STARTED|+WAITING|+HOLD")
           ))
+  (make-directory org-directory t)
 
   ;; ;;;;;;;;; ;;
   ;; Functions ;;
@@ -13708,38 +13702,6 @@ Throw an error when trying to set a property with an invalid name."
 
   (setcdr (assoc 'src-block (org-export-get-all-transcoders 'mw))
           'org-mw-src-block)
-  (defun org-mw-headline (headline contents info)
-    (unless (org-element-property :footnote-section-p headline)
-      (let* ((level (org-export-get-relative-level headline info))
-
-             (title (org-export-data (org-element-property :title headline) info))
-
-             (todo (and (plist-get info :with-todo-keywords)
-                        (let ((todo (org-element-property :todo-keyword
-                                                          headline)))
-                          (and todo (concat (org-export-data todo info) " ")))))
-
-             (tags (and (plist-get info :with-tags)
-                        (let ((tag-list (org-export-get-tags headline info)))
-                          (and tag-list
-                               (format "     :%s:"
-                                       (mapconcat 'identity tag-list ":"))))))
-
-             (priority
-              (and (plist-get info :with-priority)
-                   (let ((char (org-element-property :priority headline)))
-                     (and char (format "[#%c] " char)))))
-
-             ;; Headline text without tags.
-             (heading (concat todo priority title))) ;; End of Let*
-        (if (= level 3)
-            (concat "\n<div class=\"mw-collapsible\" style=\"background-color: #DDEEFF; padding: 10px;\">\n"
-                    (make-string level ?=) " " heading tags " "
-                    (make-string level ?=) "\n\n" contents
-                    "\n</div>\n\n----\n\n")
-          (concat (make-string level ?=) " " heading tags " "
-                  (make-string level ?=) "\n\n" contents)))))
-
   (defun org-mw-link (link contents info)
     (let ((--link-org-files-as-html-maybe
            (function
@@ -13901,7 +13863,7 @@ Throw an error when trying to set a property with an invalid name."
           (:name "Administración"
                  :tag "@admin")
           (:name "Mejora"
-                 :tag "@improvement")
+                 :file-path "Ethos.org")
           (:name "Trabajo"
                  :tag "@job")
           (:name "Hogar"
@@ -14026,12 +13988,6 @@ separate appointment."
 #+begin_src elisp
 (with-eval-after-load 'org-brain
   (message "Importing org-brain-config")
-
-  (when (boundp 'personal-notes-directory)
-    (setq org-brain-path (expand-file-name
-                          "brain"
-                          personal-notes-directory))
-    (make-directory org-brain-path t))
 
   (setq org-id-track-globally t
         ;; <only headlines entries>
@@ -15157,7 +15113,10 @@ nil."
 (with-eval-after-load 'web-mode
   (message "Importing web-config")
 
-  (setq web-mode-enable-auto-indentation nil))
+  (setq web-mode-enable-auto-indentation nil
+        web-mode-code-indent-offset 2
+        web-mode-markup-indent-offset 2
+        web-mode-css-indent-offset 2))
 #+end_src
 
 *** /plantuml-mode/
@@ -15384,7 +15343,16 @@ end note
 
   (setq edit-server-url-major-mode-alist
         '(("github\\.com" . markdown-mode)
-          ("gitlab\\."    . markdown-mode))))
+          ("gitlab\\."    . markdown-mode)))
+
+  (defun edit-server-header-line ()
+    (setq header-line-format
+          (substitute-command-keys
+           "Commit: `\\[edit-server-done]'  Save: `\\[edit-server-save]'  \
+Abort: `\\[edit-server-abort]'")))
+  (add-hook 'edit-server-edit-mode-hook 'edit-server-header-line)
+
+  (define-key edit-server-edit-mode-map (kbd "C-c C-k") 'edit-server-abort))
 #+end_src
 
 *** /emms/
@@ -15394,18 +15362,49 @@ end note
   (message "Importing emms-config")
 
   (require 'emms-setup)
-  (emms-all)
+  (emms-minimalistic)
   (emms-default-players)
 
+  (require 'emms-source-file)
+  (require 'emms-volume)
+  
+  (setq emms-source-file-default-directory
+        (cl-some (lambda (f)
+                   (and (file-exists-p f)
+                        f))
+                 '("~/Music"
+                   "~/Música"))
+        emms-volume-change-function 'emms-volume-pulse-change
+        emms-volume-pulse-sink 1)
+
+  (require 'emms-player-mplayer)
+  (push "-novideo" emms-player-mplayer-parameters)
+  (push "-novideo" emms-player-mplayer-playlist-parameters)
+
+  (require 'emms-cache)
+  (emms-cache-enable)
+
+  (require 'emms-playlist-mode)
+  (global-set-key (kbd "C-c e l") 'emms)
   (global-set-key (kbd "C-c e P") 'emms-pause)
   (global-set-key (kbd "C-c e s") 'emms-stop)
-  (global-set-key (kbd "C-c e p") 'emms-previous)
+  (global-set-key (kbd "C-c e f") 'emms-show)
+  (global-set-key (kbd "C-c e r") 'emms-random)
   (global-set-key (kbd "C-c e n") 'emms-next)
+  (global-set-key (kbd "C-c e p") 'emms-previous)
+  (global-set-key (kbd "C-c e <") 'emms-seek-backward)
+  (global-set-key (kbd "C-c e >") 'emms-seek-forward)
+  (global-set-key (kbd "C-c e +") 'emms-volume-raise)
+  (global-set-key (kbd "C-c e -") 'emms-volume-lower)
+  (global-set-key (kbd "C-c e RET") 'emms-start)
 
   (global-set-key (kbd "<XF86AudioPlay>") 'emms-pause)
   (global-set-key (kbd "<XF86AudioStop>") 'emms-stop)
   (global-set-key (kbd "<XF86AudioPrev>") 'emms-previous)
   (global-set-key (kbd "<XF86AudioNext>") 'emms-next))
+(global-set-key (kbd "C-c e B") 'emms-smart-browse)
+(global-set-key (kbd "C-c e b") 'emms-browser)
+(global-set-key (kbd "C-c e a") 'emms-add-directory)
 #+end_src
 
 *** /elfeed/
@@ -15791,9 +15790,7 @@ PS1=$PS1'\[$(vterm_prompt_end)\]'
     (path-style-windows-to-linux (apply orig-fun args)))
   (require 'ffap)
   (advice-add 'ffap-string-at-point :around #'ffap-string-at-point-advice)
-  (global-set-key (kbd "C-v") 'yank)
-  ;; Python
-  (setq python-shell-interpreter "python3")))
+  (global-set-key (kbd "C-v") 'yank)))
 
 (when (locate-library "helm")
   (define-key global-map [remap find-file] 'helm-find-files)
@@ -15823,7 +15820,10 @@ PS1=$PS1'\[$(vterm_prompt_end)\]'
   (add-hook 'gdb-mode-hook (lambda () (gud-basic-call "set print sevenbit-strings off"))))
 #+end_src
 
-** /flyspell/
+** CANC /flyspell/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'flyspell
@@ -15860,47 +15860,45 @@ for the overlay."
 
 #+begin_src elisp
 (with-eval-after-load 'ace-window
-  (when (bug-check-function-bytecode
-         'aw-update
-         "xInFGBkaxsfIIAsiySIrhw==")
-    (defun aw-update ()
-      "Update ace-window-path window parameter for all windows.
+  ;;;; OVERRIDDEN
+  (defun aw-update ()
+    "Update ace-window-path window parameter for all windows.
 
 Ensure all windows are labeled so the user can select a specific
 one, even from the set of windows typically ignored when making a
 window list."
-      (unless prefix-arg        ;; +
-        (let (;; (aw-ignore-on) ;; -
-              (aw-ignore-current)
-              (ignore-window-parameters t))
-          (avy-traverse
-           (avy-tree (aw-window-list) aw-keys)
-           (lambda (path leaf)
-             (set-window-parameter
-              leaf 'ace-window-path
-              (propertize
-               (apply #'string (reverse path))
-               'face 'aw-mode-line-face)))))))))
+    (unless prefix-arg        ;; +
+      (let (;; (aw-ignore-on) ;; -
+            (aw-ignore-current)
+            (ignore-window-parameters t))
+        (avy-traverse
+         (avy-tree (aw-window-list) aw-keys)
+         (lambda (path leaf)
+           (set-window-parameter
+            leaf 'ace-window-path
+            (propertize
+             (apply #'string (reverse path))
+             'face 'aw-mode-line-face))))))))
 #+end_src
 
-** /comint-bug/
+** /comint/
 
 #+begin_src elisp
 (with-eval-after-load 'comint
-  (when (bug-check-function-bytecode
-         'comint-term-environment
-         "wsAhgxYACIMWAMPECSLFw8bHICJFh8jDyccgIkSH")
-
-    (defun comint-term-environment ()
-      (if (and (boundp 'system-uses-terminfo) system-uses-terminfo)
-          (list (format "TERM=%s" comint-terminfo-terminal)
-                "TERMCAP="
-                (format "COLUMNS=%d" (window-width-without-margin)))
-        (list "TERM=emacs"
-              (format "TERMCAP=emacs:co#%d:tc=unknown:" (window-width-without-margin)))))))
+  ;;;; OVERRIDDEN
+  (defun comint-term-environment ()
+    (if (and (boundp 'system-uses-terminfo) system-uses-terminfo)
+        (list (format "TERM=%s" comint-terminfo-terminal)
+              "TERMCAP="
+              (format "COLUMNS=%d" (window-width-without-margin)))
+      (list "TERM=emacs"
+            (format "TERMCAP=emacs:co#%d:tc=unknown:" (window-width-without-margin))))))
 #+end_src
 
-** /ellocate/
+** CANC /ellocate/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'ellocate
@@ -15973,89 +15971,84 @@ file under the current directory."
 
 #+begin_src elisp
 (with-eval-after-load 'em-cmpl
-  (when (bug-check-function-bytecode
-         'eshell-complete-parse-arguments
-         "CIMRAAmDEQDDxCGIxcbHIojIIIrJIIhgKcdDyokKyz6DNwDMzQUGByOIAwVVgzMAyn+IyCCyBc4yRADKzwUGByKyAzCJsgKDfACJQNA+g2EAiUFAVLIEzwQGBiKyAoJ8AIlA0T2DcwDSIIjFxsciiIJ8AMPEIYjFxsciiNMFU9Qig40Aw8QhiMXGxyKIA4kGBleDqADTAdUig6EAAwFDpIiJVLIBgo4AiAJBsgMBRwNHVYS5ANbXIYgB2MoCg9wAAkA6g9EAAkBA2T2D0QABsgECQbIDAVSyAoK8AImD7QCJVAWbsgWJVAYGm7IGtgMBRwNHVYT7ANbaIYgBgyMBBIYEAWBTZnrbPYMjAQRThhIBYFNm3D2EIwEB3UOkiAJgQ6SI3t8DIgNChw==")
-    (defun eshell-complete-parse-arguments ()
-      "Parse the command line arguments for `pcomplete-argument'."
-      (when (and eshell-no-completion-during-jobs
-                 (eshell-interactive-process))
+  ;;;; OVERRIDDEN
+  (defun eshell-complete-parse-arguments ()
+    "Parse the command line arguments for `pcomplete-argument'."
+    (when (and eshell-no-completion-during-jobs
+               (eshell-interactive-process))
+      ;; (insert-and-inherit "\t") ;; -
+      (throw 'pcompleted t))
+    (let ((end (point-marker))
+          (begin (save-excursion (eshell-bol) (point)))
+          (posns (list t))
+          args delim)
+      (when (memq this-command '(pcomplete-expand
+                                 pcomplete-expand-and-complete))
+        (run-hook-with-args 'eshell-expand-input-functions begin end)
+        (if (= begin end)
+            (end-of-line))
+        (setq end (point-marker)))
+      (if (setq delim
+                (catch 'eshell-incomplete
+                  (ignore
+                   (setq args (eshell-parse-arguments begin end)))))
+          (cond ((memq (car delim) '(?\{ ?\<))
+                 (setq begin (1+ (cadr delim))
+                       args (eshell-parse-arguments begin end)))
+                ((eq (car delim) ?\()
+                 (eshell-complete-lisp-symbol)
+                 (throw 'pcompleted t))
+                (t
+                 ;; (insert-and-inherit "\t") ;; -
+                 (throw 'pcompleted t))))
+      (when (get-text-property (1- end) 'comment)
         ;; (insert-and-inherit "\t") ;; -
         (throw 'pcompleted t))
-      (let ((end (point-marker))
-            (begin (save-excursion (eshell-bol) (point)))
-            (posns (list t))
-            args delim)
-        (when (memq this-command '(pcomplete-expand
-                                   pcomplete-expand-and-complete))
-          (run-hook-with-args 'eshell-expand-input-functions begin end)
-          (if (= begin end)
-              (end-of-line))
-          (setq end (point-marker)))
-        (if (setq delim
-                  (catch 'eshell-incomplete
-                    (ignore
-                     (setq args (eshell-parse-arguments begin end)))))
-            (cond ((memq (car delim) '(?\{ ?\<))
-                   (setq begin (1+ (cadr delim))
-                         args (eshell-parse-arguments begin end)))
-                  ((eq (car delim) ?\()
-                   (eshell-complete-lisp-symbol)
-                   (throw 'pcompleted t))
-                  (t
-                   ;; (insert-and-inherit "\t") ;; -
-                   (throw 'pcompleted t))))
-        (when (get-text-property (1- end) 'comment)
-          ;; (insert-and-inherit "\t") ;; -
-          (throw 'pcompleted t))
-        (let ((pos begin))
-          (while (< pos end)
-            (if (get-text-property pos 'arg-begin)
-                (nconc posns (list pos)))
-            (setq pos (1+ pos))))
-        (setq posns (cdr posns))
-        (cl-assert (= (length args) (length posns)))
-        (let ((a args)
-              (i 0)
-              l)
-          (while a
-            (if (and (consp (car a))
-                     (eq (caar a) 'eshell-operator))
-                (setq l i))
-            (setq a (cdr a) i (1+ i)))
-          (and l
-               (setq args (nthcdr (1+ l) args)
-                     posns (nthcdr (1+ l) posns))))
-        (cl-assert (= (length args) (length posns)))
-        (when (and args (eq (char-syntax (char-before end)) ? )
-                   (not (eq (char-before (1- end)) ?\\)))
-          (nconc args (list ""))
-          (nconc posns (list (point))))
-        (cons (mapcar
-               (function
-                (lambda (arg)
-                  (let ((val
-                         (if (listp arg)
-                             (let ((result
-                                    (eshell-do-eval
-                                     (list 'eshell-commands arg) t)))
-                               (cl-assert (eq (car result) 'quote))
-                               (cadr result))
-                           arg)))
-                    (if (numberp val)
-                        (setq val (number-to-string val)))
-                    (or val ""))))
-               args)
-              posns)))))
+      (let ((pos begin))
+        (while (< pos end)
+          (if (get-text-property pos 'arg-begin)
+              (nconc posns (list pos)))
+          (setq pos (1+ pos))))
+      (setq posns (cdr posns))
+      (cl-assert (= (length args) (length posns)))
+      (let ((a args)
+            (i 0)
+            l)
+        (while a
+          (if (and (consp (car a))
+                   (eq (caar a) 'eshell-operator))
+              (setq l i))
+          (setq a (cdr a) i (1+ i)))
+        (and l
+             (setq args (nthcdr (1+ l) args)
+                   posns (nthcdr (1+ l) posns))))
+      (cl-assert (= (length args) (length posns)))
+      (when (and args (eq (char-syntax (char-before end)) ? )
+                 (not (eq (char-before (1- end)) ?\\)))
+        (nconc args (list ""))
+        (nconc posns (list (point))))
+      (cons (mapcar
+             (lambda (arg)
+               (let ((val
+                      (if (listp arg)
+                          (let ((result
+                                 (eshell-do-eval
+                                  (list 'eshell-commands arg) t)))
+                            (cl-assert (eq (car result) 'quote))
+                            (cadr result))
+                        arg)))
+                 (if (numberp val)
+                     (setq val (number-to-string val)))
+                 (or val "")))
+             args)
+            posns))))
 
 (cl-eval-when 'compile
   (require 'esh-util)) ;; eshell-condition-case
 (with-eval-after-load 'esh-mode
-  (when (bug-check-function-bytecode
-         'eshell-send-input
-         "CIUGAAE/xokZGomFFADHCCHIPT8/hVUBiYQiAGALWYMoAGRiiIIzAMkEIQtiiMoBIbYCAYRDAAyDPwCJhEMAy8whiImDawDNCyGIDIRWAA0OJVWDYgABP4VVAc4IzyKCVQHQCA0OJSOCVQELYFWDdwDR0iGCVQHT1DEMAdUxywDWC2BTIrIB19gLYFMjiNkLYFMiiYXEAM0LIYjWDQ4lUyKyAtHaIYjbMr8A09wCIYO5AN0CIYiCvgDeAgQiiDCFxADfILIBMDCCUwEwxmRiiOAgFeAgFiXgIBYmYBYn4CATigtiiG6G8ADP4dMCIrIBKYiJP4X9ANHSIYhkYrYC0dIhiOLj0yKyAYJTAcZkYojgIBXgIBYl4CAWJmAWJ+AgE4oLYohuhjABz+HTAiKyASmIiT+FPQHR0iGIZGK2AuQBIc9Q4dMCIrYC0dIhiMoCIbIBsgEqhw==")
-    (defun eshell-send-input (&optional use-region queue-p no-newline)
-      "Send the input received to Eshell for parsing and processing.
+  ;;;; OVERRIDDEN
+  (defun eshell-send-input (&optional use-region queue-p no-newline)
+    "Send the input received to Eshell for parsing and processing.
 After `eshell-last-output-end', sends all text from that marker to
 point as input.  Before that marker, calls `eshell-get-old-input' to
 retrieve old input, copies it to the end of the buffer, and sends it.
@@ -16069,234 +16062,230 @@ input is processed immediately.
 
 If NO-NEWLINE is non-nil, the input is sent without an implied final
 newline."
-      (interactive "P")
-      ;; Note that the input string does not include its terminal newline.
-      (let ((proc-running-p (and (eshell-interactive-process)
-                                 (not queue-p)))
-            (inhibit-point-motion-hooks t)
-            (inhibit-modification-hooks t))
-        (unless (and proc-running-p
-                     (not (eq (process-status
-                               (eshell-interactive-process))
-                              'run)))
-          (if (or proc-running-p
-                  (>= (point) eshell-last-output-end))
-              (goto-char (point-max))
-            (let ((copy (eshell-get-old-input use-region)))
-              (goto-char eshell-last-output-end)
-              (insert-and-inherit copy)))
-          (unless (or no-newline
-                      (and eshell-send-direct-to-subprocesses
-                           proc-running-p))
-            (insert-before-markers-and-inherit ?\n))
-          (if proc-running-p
+    (interactive "P")
+    ;; Note that the input string does not include its terminal newline.
+    (let ((proc-running-p (and (eshell-interactive-process)
+                               (not queue-p)))
+          (inhibit-point-motion-hooks t)
+          (inhibit-modification-hooks t))
+      (unless (and proc-running-p
+                   (not (eq (process-status
+                             (eshell-interactive-process))
+                            'run)))
+        (if (or proc-running-p
+                (>= (point) eshell-last-output-end))
+            (goto-char (point-max))
+          (let ((copy (eshell-get-old-input use-region)))
+            (goto-char eshell-last-output-end)
+            (insert-and-inherit copy)))
+        (unless (or no-newline
+                    (and eshell-send-direct-to-subprocesses
+                         proc-running-p))
+          (insert-before-markers-and-inherit ?\n))
+        (if proc-running-p
+            (progn
+              (eshell-update-markers eshell-last-output-end)
+              (if (or eshell-send-direct-to-subprocesses
+                      (= eshell-last-input-start eshell-last-input-end))
+                  (unless no-newline
+                    (process-send-string (eshell-interactive-process) "\n"))
+                (process-send-region (eshell-interactive-process)
+                                     eshell-last-input-start
+                                     eshell-last-input-end)))
+          (run-hooks 'eshell-input-filter-functions))) ;; +
+      (if (= eshell-last-output-end (point))
+          (run-hooks 'eshell-post-command-hook)
+        (let (input)
+          (eshell-condition-case err
               (progn
-                (eshell-update-markers eshell-last-output-end)
-                (if (or eshell-send-direct-to-subprocesses
-                        (= eshell-last-input-start eshell-last-input-end))
-                    (unless no-newline
-                      (process-send-string (eshell-interactive-process) "\n"))
-                  (process-send-region (eshell-interactive-process)
-                                       eshell-last-input-start
-                                       eshell-last-input-end)
-                  (run-hooks 'eshell-input-filter-functions))) ;; +
-            (if (= eshell-last-output-end (point))
-                (run-hooks 'eshell-post-command-hook)
-              (let (input)
-                (eshell-condition-case err
-                    (progn
-                      (setq input (buffer-substring-no-properties
-                                   eshell-last-output-end (1- (point))))
-                      (run-hook-with-args 'eshell-expand-input-functions
-                                          eshell-last-output-end (1- (point)))
-                      (let ((cmd (eshell-parse-command-input
-                                  eshell-last-output-end (1- (point)))))
-                        (when cmd
-                          (eshell-update-markers eshell-last-output-end)
-                          (setq input (buffer-substring-no-properties
-                                       eshell-last-input-start
-                                       (1- eshell-last-input-end)))
-                          (run-hooks 'eshell-input-filter-functions)
-                          (and (catch 'eshell-terminal
-                                 (ignore
-                                  (if (eshell-invoke-directly cmd)
-                                      (eval cmd)
-                                    (eshell-eval-command cmd input))))
-                               (eshell-life-is-too-much)))))
-                  (quit
-                   (eshell-reset t)
-                   (run-hooks 'eshell-post-command-hook)
-                   (signal 'quit nil))
-                  (error
-                   (eshell-reset t)
-                   (eshell-interactive-print
-                    (concat (error-message-string err) "\n"))
-                   (run-hooks 'eshell-post-command-hook)
-                   (insert-and-inherit input)))))))))))
+                (setq input (buffer-substring-no-properties
+                             eshell-last-output-end (1- (point))))
+                (run-hook-with-args 'eshell-expand-input-functions
+                                    eshell-last-output-end (1- (point)))
+                (let ((cmd (eshell-parse-command-input
+                            eshell-last-output-end (1- (point)))))
+                  (when cmd
+                    (eshell-update-markers eshell-last-output-end)
+                    (setq input (buffer-substring-no-properties
+                                 eshell-last-input-start
+                                 (1- eshell-last-input-end)))
+                    (run-hooks 'eshell-input-filter-functions)
+                    (and (catch 'eshell-terminal
+                           (ignore
+                            (if (eshell-invoke-directly cmd)
+                                (eval cmd)
+                              (eshell-eval-command cmd input))))
+                         (eshell-life-is-too-much)))))
+            (quit
+             (eshell-reset t)
+             (run-hooks 'eshell-post-command-hook)
+             (signal 'quit nil))
+            (error
+             (eshell-reset t)
+             (eshell-interactive-print
+              (concat (error-message-string err) "\n"))
+             (run-hooks 'eshell-post-command-hook)
+             (insert-and-inherit input))))))))
 
 (with-eval-after-load 'em-term
-  (when (bug-check-function-bytecode
-         'eshell-exec-visual
-         "xRjGAUACQSKJQMfIA0EFQSLJygIisgEhy8zNBCHMUSFwcs4CIYjPIIjQwiGICRLQwyGIiRPRAgWJxQYHJYjSAiGJg1UA0wEh1D2DVQDVAdYiiIJZANfYIYiI2SCIDINlANrbIYgqtgXFhw==")
-    ;; thanks to: https://gist.github.com/ralt/a36288cd748ce185b26237e6b85b27bb
-    (defun eshell-exec-visual (&rest args)
-      "Run the specified PROGRAM in a terminal emulation buffer.
+  ;;;; OVERRIDDEN
+  (defun eshell-exec-visual (&rest args)
+    "Run the specified PROGRAM in a terminal emulation buffer.
  ARGS are passed to the program.  At the moment, no piping of input is
  allowed."
-      (let* (eshell-interpreter-alist
-             (original-args args)
-             (interp (eshell-find-interpreter (car args) (cdr args)))
-             (in-ssh-tramp (and (tramp-tramp-file-p default-directory)
-                                (equal (tramp-file-name-method
-                                        (tramp-dissect-file-name default-directory))
-                                       "ssh")))
-             (program (if in-ssh-tramp
-                          "ssh"
-                        (car interp)))
-             (args (if in-ssh-tramp
-                       (let ((dir-name (tramp-dissect-file-name default-directory)))
-                         (eshell-flatten-list
-                          (list
-                           "-t"
-                           (tramp-file-name-host dir-name)
-                           (format
-                            "export TERM=xterm-256color; cd %s; exec %s"
-                            (tramp-file-name-localname dir-name)
-                            (string-join
-                             (append
-                              (list (tramp-file-name-localname (tramp-dissect-file-name (car interp))))
-                              (cdr args))
-                             " ")))))
-                     (eshell-flatten-list
-                      (eshell-stringify-list (append (cdr interp)
-                                                     (cdr args))))))
-             (term-buf
-              (generate-new-buffer
-               (concat "*"
-                       (if in-ssh-tramp
-                           (format "%s %s" default-directory (string-join original-args " "))
-                         (file-name-nondirectory program))
-                       "*")))
-             (eshell-buf (current-buffer)))
-        (save-current-buffer
-          (switch-to-buffer term-buf)
-          (term-mode)
-          (set (make-local-variable 'term-term-name) eshell-term-name)
-          (make-local-variable 'eshell-parent-buffer)
-          (setq eshell-parent-buffer eshell-buf)
-          (term-exec term-buf program program nil args)
-          (let ((proc (get-buffer-process term-buf)))
-            (if (and proc (eq 'run (process-status proc)))
-                (set-process-sentinel proc 'eshell-term-sentinel)
-              (error "Failed to invoke visual command")))
-          (term-char-mode)
-          (if eshell-escape-control-x
-              (term-set-escape-char ?\C-x))))
-      nil)))
+    (let* (eshell-interpreter-alist
+           (original-args args)
+           (interp (eshell-find-interpreter (car args) (cdr args)))
+           (in-ssh-tramp (and (tramp-tramp-file-p default-directory)
+                              (equal (tramp-file-name-method
+                                      (tramp-dissect-file-name default-directory))
+                                     "ssh")))
+           (program (if in-ssh-tramp
+                        "ssh"
+                      (car interp)))
+           (args (if in-ssh-tramp
+                     (let ((dir-name (tramp-dissect-file-name default-directory)))
+                       (eshell-flatten-list
+                        (list
+                         "-t"
+                         (tramp-file-name-host dir-name)
+                         (format
+                          "export TERM=xterm-256color; cd %s; exec %s"
+                          (tramp-file-name-localname dir-name)
+                          (string-join
+                           (append
+                            (list (tramp-file-name-localname (tramp-dissect-file-name (car interp))))
+                            (cdr args))
+                           " ")))))
+                   (eshell-flatten-list
+                    (eshell-stringify-list (append (cdr interp)
+                                                   (cdr args))))))
+           (term-buf
+            (generate-new-buffer
+             (concat "*"
+                     (if in-ssh-tramp
+                         (format "%s %s" default-directory (string-join original-args " "))
+                       (file-name-nondirectory program))
+                     "*")))
+           (eshell-buf (current-buffer)))
+      (save-current-buffer
+        (switch-to-buffer term-buf)
+        (term-mode)
+        (set (make-local-variable 'term-term-name) eshell-term-name)
+        (make-local-variable 'eshell-parent-buffer)
+        (setq eshell-parent-buffer eshell-buf)
+        (term-exec term-buf program program nil args)
+        (let ((proc (get-buffer-process term-buf)))
+          (if (and proc (eq 'run (process-status proc)))
+              (set-process-sentinel proc 'eshell-term-sentinel)
+            (error "Failed to invoke visual command")))
+        (term-char-mode)
+        (if eshell-escape-control-x
+            (term-set-escape-char ?\C-x))))
+    nil))
 #+end_src
 
 ** /find-dired/
 
 #+begin_src elisp
 (with-eval-after-load 'find-dired
-  (when (bug-check-function-bytecode
-         'find-dired
-         "CBjGxwMhIbICyAIhhBQAycoDIojLzM0hIYjOcCGJg1IAzwEh0D2DMQDR0tMhIYNMANQxRADVASGI1tchiNgBITCCSACIglIAiIJSAMnZ2iAiiIh+iNsgiNwR3SCIARKJEwzeAt+Yg20A34J5AODhIeIE4uDjIeKwBuTlDUAig5EA5ufo1w1AIuDpIQ5AJIKTAA1AUrIB6gHrUHAiiOwCDUEiiO0g7gHvICKI8AHx8iOI8wEhtgL09SGI9hY19PchiPj5+gQLRUUWN/v8IYPWAPwgiILhAPT9IYgK/iBCQxY99P8hiA5BFj/cEYFDAAKBRACxA4hggUMAAoFFALEDiIFGAAFgIrYC9hHOcCGBRwABgUgAIoiBSQABgUoAIoiBSwABIWBwk7YCgUwAiRZCKYc=")
-    (defun find-dired (dir args)
-      "Run `find' and go into Dired mode on a buffer of the output.
+  ;;;; OVERRIDDEN
+  (defun find-dired (dir args)
+  "Run `find' and go into Dired mode on a buffer of the output.
 The command run (after changing into DIR) is essentially
 
     find . \\( ARGS \\) -ls
 
 except that the car of the variable `find-ls-option' specifies what to
-use in place of \"-ls\" as the final argument."
-      (interactive (list (read-directory-name "Run find in directory: " nil "" t)
-                         (read-string "Run find (with args): " find-args
-                                      '(find-args-history . 1))))
-      (let ((dired-buffers dired-buffers))
-        ;; Expand DIR ("" means default-directory), and make sure it has a
-        ;; trailing slash.
-        (setq dir (file-name-as-directory (expand-file-name dir)))
-        ;; Check that it's really a directory.
-        (or (file-directory-p dir)
-            (error "find-dired needs a directory: %s" dir))
-        (pop-to-buffer-same-window (get-buffer-create "*Find*"))
+use in place of \"-ls\" as the final argument.
 
-        ;; See if there's still a `find' running, and offer to kill
-        ;; it first, if it is.
-        (let ((find (get-buffer-process (current-buffer))))
-          (when find
-            (if (or (not (eq (process-status find) 'run))
-                    (yes-or-no-p
-                     (format-message "A `find' process is running; kill it? ")))
-                (condition-case nil
-                    (progn
-                      (interrupt-process find)
-                      (sit-for 1)
-                      (delete-process find))
-                  (error nil))
-              (error "Cannot have two processes in `%s' at once" (buffer-name)))))
+Collect output in the \"*Find*\" buffer.  To kill the job before
+it finishes, type \\[kill-find]."
+  (interactive (list (read-directory-name "Run find in directory: " nil "" t)
+                     (read-string "Run find (with args): " find-args
+                                  '(find-args-history . 1))))
+  (let ((dired-buffers dired-buffers))
+    ;; Expand DIR ("" means default-directory), and make sure it has a
+    ;; trailing slash.
+    (setq dir (file-name-as-directory (expand-file-name dir)))
+    ;; Check that it's really a directory.
+    (or (file-directory-p dir)
+        (error "find-dired needs a directory: %s" dir))
+    (pop-to-buffer-same-window (get-buffer-create "*Find*"))
 
-        (widen)
-        (kill-all-local-variables)
-        (setq buffer-read-only nil)
-        (erase-buffer)
-        (setq default-directory dir
-              find-args args              ; save for next interactive call
-              args (concat find-program " . ! -readable -prune -o "
-                           (if (string= args "")
-                               ""
-                             (concat
-                              (shell-quote-argument "(")
-                              " " args " "
-                              (shell-quote-argument ")")
-                              " "))
-                           (if (string-match "\\`\\(.*\\) {} \\(\\\\;\\|\\+\\)\\'"
-                                             (car find-ls-option))
-                               (format "%s %s %s"
-                                       (match-string 1 (car find-ls-option))
-                                       (shell-quote-argument "{}")
-                                       find-exec-terminator)
-                             (car find-ls-option))))
-        ;; Start the find process.
-        (shell-command (concat args "&") (current-buffer))
-        ;; The next statement will bomb in classic dired (no optional arg allowed)
-        (dired-mode dir (cdr find-ls-option))
-        (let ((map (make-sparse-keymap)))
-          (set-keymap-parent map (current-local-map))
-          (define-key map "\C-c\C-k" 'kill-find)
-          (use-local-map map))
-        (make-local-variable 'dired-sort-inhibit)
-        (setq dired-sort-inhibit t)
-        (set (make-local-variable 'revert-buffer-function)
-             `(lambda (ignore-auto noconfirm)
-                (find-dired ,dir ,find-args)))
-        ;; Set subdir-alist so that Tree Dired will work:
-        (if (fboundp 'dired-simple-subdir-alist)
-            ;; will work even with nested dired format (dired-nstd.el,v 1.15
-            ;; and later)
-            (dired-simple-subdir-alist)
-          ;; else we have an ancient tree dired (or classic dired, where
-          ;; this does no harm)
-          (set (make-local-variable 'dired-subdir-alist)
-               (list (cons default-directory (point-min-marker)))))
-        (set (make-local-variable 'dired-subdir-switches) find-ls-subdir-switches)
-        (setq buffer-read-only nil)
-        ;; Subdir headlerline must come first because the first marker in
-        ;; subdir-alist points there.
-        (insert "  " dir ":\n")
-        ;; Make second line a ``find'' line in analogy to the ``total'' or
-        ;; ``wildcard'' line.
-        (let ((point (point)))
-          (insert "  " args "\n")
-          (dired-insert-set-properties point (point)))
-        (setq buffer-read-only t)
-        (let ((proc (get-buffer-process (current-buffer))))
-          (set-process-filter proc (function find-dired-filter))
-          (set-process-sentinel proc (function find-dired-sentinel))
-          ;; Initialize the process marker; it is used by the filter.
-          (move-marker (process-mark proc) (point) (current-buffer)))
-        (setq mode-line-process '(":%s"))))))
+    ;; See if there's still a `find' running, and offer to kill
+    ;; it first, if it is.
+    (let ((find (get-buffer-process (current-buffer))))
+      (when find
+        (if (or (not (eq (process-status find) 'run))
+                (yes-or-no-p
+                 (format-message "A `find' process is running; kill it? ")))
+            (condition-case nil
+                (progn
+                  (interrupt-process find)
+                  (sit-for 1)
+                  (delete-process find))
+              (error nil))
+          (error "Cannot have two processes in `%s' at once" (buffer-name)))))
+
+    (widen)
+    (kill-all-local-variables)
+    (setq buffer-read-only nil)
+    (erase-buffer)
+    (setq default-directory dir
+          find-args args              ; save for next interactive call
+          args (concat find-program " . ! -readable -prune -o "
+                       (if (string= args "")
+                           ""
+                         (concat
+                          (shell-quote-argument "(")
+                          " " args " "
+                          (shell-quote-argument ")")
+                          " "))
+                       (if (string-match "\\`\\(.*\\) {} \\(\\\\;\\|\\+\\)\\'"
+                                         (car find-ls-option))
+                           (format "%s %s %s"
+                                   (match-string 1 (car find-ls-option))
+                                   (shell-quote-argument "{}")
+                                   find-exec-terminator)
+                         (car find-ls-option))))
+    ;; Start the find process.
+    (shell-command (concat args "&") (current-buffer))
+    (dired-mode dir (cdr find-ls-option))
+    (let ((map (make-sparse-keymap)))
+      (set-keymap-parent map (current-local-map))
+      (define-key map "\C-c\C-k" 'kill-find)
+      (use-local-map map))
+    (setq-local dired-sort-inhibit t)
+    (setq-local revert-buffer-function
+                `(lambda (ignore-auto noconfirm)
+                   (find-dired ,dir ,find-args)))
+    ;; Set subdir-alist so that Tree Dired will work:
+    (if (fboundp 'dired-simple-subdir-alist)
+        ;; will work even with nested dired format (dired-nstd.el,v 1.15
+        ;; and later)
+        (dired-simple-subdir-alist)
+      ;; else we have an ancient tree dired (or classic dired, where
+      ;; this does no harm)
+      (setq-local dired-subdir-alist
+                  (list (cons default-directory (point-min-marker)))))
+    (setq-local dired-subdir-switches find-ls-subdir-switches)
+    (setq buffer-read-only nil)
+    ;; Subdir headlerline must come first because the first marker in
+    ;; subdir-alist points there.
+    (insert "  " dir ":\n")
+    ;; Make second line a ``find'' line in analogy to the ``total'' or
+    ;; ``wildcard'' line.
+    (let ((point (point)))
+      (insert "  " args "\n")
+      (dired-insert-set-properties point (point)))
+    (setq buffer-read-only t)
+    (let ((proc (get-buffer-process (current-buffer))))
+      (set-process-filter proc #'find-dired-filter)
+      (set-process-sentinel proc #'find-dired-sentinel)
+      ;; Initialize the process marker; it is used by the filter.
+      (move-marker (process-mark proc) (point) (current-buffer)))
+    (setq mode-line-process '(":%s")))))
 #+end_src
 
 ** CANC /ido-completing-read+/
@@ -16599,19 +16588,20 @@ completion for them."
 
 #+begin_src elisp
 (with-eval-after-load 'ox-odt
-  (when (bug-check-function-bytecode
-         'org-odt-verbatim
-         "wMHCw8QGB4k7gxYAxcYDAyO2goIeAMcBQUADIraCISOH")
-    (defun org-odt-verbatim (verbatim contents info)
-      "Transcode a VERBATIM object from Org to ODT.
+  ;;;; OVERRIDDEN
+  (defun org-odt-verbatim (verbatim contents info)
+    "Transcode a VERBATIM object from Org to ODT.
 CONTENTS is nil.  INFO is a plist used as a communication
 channel."
-      (format "<text:span text:style-name=\"%s\">%s</text:span>"
-              "OrgVerbatim" (org-odt--encode-plain-text
-                             (org-element-property :value verbatim))))))
+    (format "<text:span text:style-name=\"%s\">%s</text:span>"
+            "OrgVerbatim" (org-odt--encode-plain-text
+                           (org-element-property :value verbatim)))))
 #+end_src
 
-** /posframe/
+** CANC /posframe/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'posframe
@@ -16916,7 +16906,10 @@ You can use `posframe-delete-all' to delete all posframes."
           posframe)))))
 #+end_src
 
-** /simple/
+** CANC /simple/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'simple
@@ -16976,43 +16969,41 @@ to get different commands to edit and resubmit."
 (with-eval-after-load 'virtualenvwrapper
   (eval-when-compile
     (require 'virtualenvwrapper))
-  (when (bug-check-function-bytecode
-         'venv-mkvirtualenv-using
-         "xiCICIMNAMfIIYIOAAkaCzuDHADJygshIYIdAAwdCoUlAMsKUB4gDiGDMQAOIYI1AMzNIUOJHiHOHiKJHiODtQAOI0AeJM/QIA4kIoNTANHSIYjT1CGI1Q4l1g4g1g0OJLAGIYgLPIOBAA0OJFCJHiYLnYN7AAuIgoAADiYLQhMpDA4nHigeKdcOJCGI2A4qIYjZjtPaIYgr29whg6YA3d4OJFAhiCkOIlQWIg4jQYkWI4RBACrX3w4hIUAhLIc=")
-    (defun venv-mkvirtualenv-using (interpreter &rest names)
-      "Create new virtualenvs NAMES using INTERPRETER. If venv-location
+  ;;;; OVERRIDDEN
+  (defun venv-mkvirtualenv-using (interpreter &rest names)
+    "Create new virtualenvs NAMES using INTERPRETER. If venv-location
 is a single directory, the new virtualenvs are made there; if it
 is a list of directories, the new virtualenvs are made in the
 current `default-directory'."
-      (interactive '(nil))
-      (venv--check-executable)
-      (let* ((interpreter (if (or current-prefix-arg
-                                  (null interpreter))
-                              (read-string "Python executable: ")
-                            interpreter))
-             (parent-dir (if (stringp venv-location)
-                             (file-name-as-directory
-                              (expand-file-name venv-location))
-                           default-directory))
-             (python-exe-arg (when interpreter
-                               (concat "--python=" interpreter)))
-             (names (if names names
-                      (list (read-from-minibuffer "New virtualenv: ")))))
-        ;; map over all the envs we want to make
-        (--each names
-          ;; error if this env already exists
-          (when (-contains? (venv-get-candidates) it)
-            (error "A virtualenv with this name already exists!"))
-          (run-hooks 'venv-premkvirtualenv-hook)
-          (shell-command (concat venv-virtualenv-command " " python-exe-arg " " parent-dir it))
-          (when (listp venv-location)
-            (add-to-list 'venv-location (concat parent-dir it)))
-          (venv-with-virtualenv it
-                                (run-hooks 'venv-postmkvirtualenv-hook))
-          (when (called-interactively-p 'interactive)
-            (message (concat "Created virtualenv: " it))))
-        ;; workon the last venv we made
-        (venv-workon (car (last names)))))))
+    (interactive '(nil))
+    (venv--check-executable)
+    (let* ((interpreter (if (or current-prefix-arg
+                                (null interpreter))
+                            (read-string "Python executable: ")
+                          interpreter))
+           (parent-dir (if (stringp venv-location)
+                           (file-name-as-directory
+                            (expand-file-name venv-location))
+                         default-directory))
+           (python-exe-arg (when interpreter
+                             (concat "--python=" interpreter)))
+           (names (if names names
+                    (list (read-from-minibuffer "New virtualenv: ")))))
+      ;; map over all the envs we want to make
+      (--each names
+        ;; error if this env already exists
+        (when (-contains? (venv-get-candidates) it)
+          (error "A virtualenv with this name already exists!"))
+        (run-hooks 'venv-premkvirtualenv-hook)
+        (shell-command (concat venv-virtualenv-command " " python-exe-arg " " parent-dir it))
+        (when (listp venv-location)
+          (add-to-list 'venv-location (concat parent-dir it)))
+        (venv-with-virtualenv it
+                              (run-hooks 'venv-postmkvirtualenv-hook))
+        (when (called-interactively-p 'interactive)
+          (message (concat "Created virtualenv: " it))))
+      ;; workon the last venv we made
+      (venv-workon (car (last names))))))
 #+end_src
 
 ** /whitespace/
@@ -17339,27 +17330,58 @@ Concurrency is disabled as it breaks the orders of errors, replies and events."
 
 #+begin_src elisp
 (with-eval-after-load 'orderless
-  (when (bug-check-function-bytecode
-         'orderless-try-completion
-         "wAUFBSOJhA0AwYIqAIlBhCcAwgYGBgYGBiNAAUBQiQFHQrIBgioABQNChw==")
-    (defun orderless-try-completion (string table pred point &optional _metadata)
-      "Complete STRING to unique matching entry in TABLE.
+;;;; OVERRIDDEN
+  (defun orderless-try-completion (string table pred point &optional _metadata)
+    "Complete STRING to unique matching entry in TABLE.
 This uses `orderless-all-completions' to find matches for STRING
 in TABLE among entries satisfying PRED.  If there is only one
 match, it completes to that match.  If there are no matches, it
 returns nil.  In any other case it \"completes\" STRING to
 itself, without moving POINT.
 This function is part of the `orderless' completion style."
-      (let ((all (orderless-filter string table pred)))
-        (cond
-         ((null all) nil)
-         ((null (cdr all))
-          (let ((full (concat
-                       (car (orderless--prefix+pattern string table pred))
-                       (car all))))
-            (cons full (length full))))
-         (t
-          (completion-flex-try-completion string table pred point)))))))
+    (let ((all (orderless-filter string table pred)))
+      (cond
+       ((null all) nil)
+       ((null (cdr all))
+        (let ((full (concat
+                     (car (orderless--prefix+pattern string table pred))
+                     (car all))))
+          (cons full (length full))))
+       (t
+        (completion-flex-try-completion string table pred point))))))
+#+end_src
+
+** /emms/
+
+#+begin_src elisp
+(with-eval-after-load 'emms-volume-pulse
+;;;; OVERRIDDEN
+  (defun emms-volume--pulse-get-volume ()
+    "Return `emms-volume-pulse-sink' volume."
+    (let ((sink-number-p (numberp emms-volume-pulse-sink))
+          (output
+           (shell-command-to-string
+            (concat "LC_ALL=C pactl list sinks" "|"
+                    "grep -E -e 'Sink' -e 'Name' -e '^[^a-zA-Z]*Volume'"))))
+      (string-to-number
+       (car
+        (reverse
+         (funcall
+          (if sink-number-p #'assq #'assoc)
+          emms-volume-pulse-sink
+          (mapcar (if sink-number-p 'identity 'cdr)
+                  (cl-loop while
+                           (string-match
+                            (mapconcat #'identity
+                                       '(".*Sink[ \t]+\\#\\([0-9]+\\)"
+                                         ".*Name:[ \t]\\([^\n]+\\)"
+                                         ".*Volume:.*?\\([0-9]+\\)%.*\n?")
+                                       "\n")
+                            output)
+                           collect (list (string-to-number (match-string 1 output))
+                                         (match-string 2 output)
+                                         (match-string 3 output))
+                           do (setq output (replace-match "" nil nil output)))))))))))
 #+end_src
 
 * Improvements
@@ -17966,92 +17988,93 @@ If not, show simply the clocked time like 01:50."
                   (tablist-revert))))))))))
 #+end_src
 
-** M-x with bindings help
+** CANC M-x with bindings help
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'simple
-  (when (bug-check-function-bytecode
-         'read-extended-command
-         "wcJDicPExcbHBgcGByLIIskkoIjDxMrGxwUhyyLJJI7MzQKiIojOCM89gzEA0IJdAAg6g0EACEDRPYNBANKCXQAIOoNUAAhAqINUANPUCEAigl0ACKiFXQDT1Agi1VDW19jC2SYGKYc=")
-    (defun read-extended-command ()
-      "Read command name to invoke in `execute-extended-command'."
-      (let ((map (current-local-map)))
-        (minibuffer-with-setup-hook
-            (lambda ()
-              (add-hook 'post-self-insert-hook
-                        (lambda ()
-                          (setq execute-extended-command--last-typed
-                                (minibuffer-contents)))
-                        nil 'local)
-              (set (make-local-variable 'minibuffer-default-add-function)
-                   (lambda ()
-                     ;; Get a command name at point in the original buffer
-                     ;; to propose it after M-n.
-                     (with-current-buffer (window-buffer (minibuffer-selected-window))
-                       (and (commandp (function-called-at-point))
-                            (format "%S" (function-called-at-point)))))))
-          ;; Read a string, completing from and restricting to the set of
-          ;; all defined commands.  Don't provide any initial input.
-          ;; Save the command read on the extended-command history list.
-          (completing-read
-           (concat (cond
-                    ((eq current-prefix-arg '-) "- ")
-                    ((and (consp current-prefix-arg)
-                          (eq (car current-prefix-arg) 4)) "C-u ")
-                    ((and (consp current-prefix-arg)
-                          (integerp (car current-prefix-arg)))
-                     (format "%d " (car current-prefix-arg)))
-                    ((integerp current-prefix-arg)
-                     (format "%d " current-prefix-arg)))
-                   ;; This isn't strictly correct if `execute-extended-command'
-                   ;; is bound to anything else (e.g. [menu]).
-                   ;; It could use (key-description (this-single-command-keys)),
-                   ;; but actually a prompt other than "M-x" would be confusing,
-                   ;; because "M-x" is a well-known prompt to read a command
-                   ;; and it serves as a shorthand for "Extended command: ".
-                   "M-x ")
-           `(lambda (string pred action)
-              (cond
-               ((eq action 'metadata)
-                '(metadata
-                  (annotation-function
-                   .
-                   (lambda (proxy)
-                     (when-let ((key-list (where-is-internal
-                                           (intern proxy)
-                                           (quote ,map))))
-                       (concat
-                        (make-string (max 2 (- 45 (length proxy))) ? )
-                        (mapconcat
-                         (lambda (binding)
-                           (if (and (stringp binding)
-                                    (null (string-empty-p binding)))
-                               (concat "`"
-                                   (propertize (if (< 18 (length binding))
-                                                   (concat
-                                                    (substring binding 0 15)
-                                                    "...")
-                                                 binding)
-                                               'face 'italic)
-                                   "'")
-                             ""))
-                         (mapcar 'key-description
-                                 (delete nil
-                                         (list
-                                          (car key-list)
-                                          (cadr key-list))))
-                         " ")
-                        (if (cddr key-list) " ...")))))))
-               (t (let ((pred
-                         (if (memq action '(nil t))
-                             ;; Exclude obsolete commands from completions.
-                             `(lambda (sym)
-                                (and (funcall (quote ,pred) sym)
-                                     (or (equal string (symbol-name sym))
-                                         (not (get sym 'byte-obsolete-info)))))
-                           pred)))
-                    (complete-with-action action obarray string pred)))))
-           #'commandp t nil 'extended-command-history))))))
+  ;;;; OVERRIDDEN
+  (defun read-extended-command ()
+    "Read command name to invoke in `execute-extended-command'."
+    (let ((map (current-local-map)))
+      (minibuffer-with-setup-hook
+          (lambda ()
+            (add-hook 'post-self-insert-hook
+                      (lambda ()
+                        (setq execute-extended-command--last-typed
+                              (minibuffer-contents)))
+                      nil 'local)
+            (set (make-local-variable 'minibuffer-default-add-function)
+                 (lambda ()
+                   ;; Get a command name at point in the original buffer
+                   ;; to propose it after M-n.
+                   (with-current-buffer (window-buffer (minibuffer-selected-window))
+                     (and (commandp (function-called-at-point))
+                          (format "%S" (function-called-at-point)))))))
+        ;; Read a string, completing from and restricting to the set of
+        ;; all defined commands.  Don't provide any initial input.
+        ;; Save the command read on the extended-command history list.
+        (completing-read
+         (concat (cond
+                  ((eq current-prefix-arg '-) "- ")
+                  ((and (consp current-prefix-arg)
+                        (eq (car current-prefix-arg) 4)) "C-u ")
+                  ((and (consp current-prefix-arg)
+                        (integerp (car current-prefix-arg)))
+                   (format "%d " (car current-prefix-arg)))
+                  ((integerp current-prefix-arg)
+                   (format "%d " current-prefix-arg)))
+                 ;; This isn't strictly correct if `execute-extended-command'
+                 ;; is bound to anything else (e.g. [menu]).
+                 ;; It could use (key-description (this-single-command-keys)),
+                 ;; but actually a prompt other than "M-x" would be confusing,
+                 ;; because "M-x" is a well-known prompt to read a command
+                 ;; and it serves as a shorthand for "Extended command: ".
+                 "M-x ")
+         `(lambda (string pred action)
+            (cond
+             ((eq action 'metadata)
+              '(metadata
+                (annotation-function
+                 .
+                 (lambda (proxy)
+                   (when-let ((key-list (where-is-internal
+                                         (intern proxy)
+                                         (quote ,map))))
+                     (concat
+                      (make-string (max 2 (- 45 (length proxy))) ? )
+                      (mapconcat
+                       (lambda (binding)
+                         (if (and (stringp binding)
+                                  (null (string-empty-p binding)))
+                             (concat "`"
+                                     (propertize (if (< 18 (length binding))
+                                                     (concat
+                                                      (substring binding 0 15)
+                                                      "...")
+                                                   binding)
+                                                 'face 'italic)
+                                     "'")
+                           ""))
+                       (mapcar 'key-description
+                               (delete nil
+                                       (list
+                                        (car key-list)
+                                        (cadr key-list))))
+                       " ")
+                      (if (cddr key-list) " ...")))))))
+             (t (let ((pred
+                       (if (memq action '(nil t))
+                           ;; Exclude obsolete commands from completions.
+                           `(lambda (sym)
+                              (and (funcall (quote ,pred) sym)
+                                   (or (equal string (symbol-name sym))
+                                       (not (get sym 'byte-obsolete-info)))))
+                         pred)))
+                  (complete-with-action action obarray string pred)))))
+         #'commandp t nil 'extended-command-history)))))
 #+end_src
 
 ** CANC Show paren at cursor
