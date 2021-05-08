@@ -2120,38 +2120,39 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 ;(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
 
-(defun minibuffer-try-pre ()
-  "By default typing out of input area raise an error.
-This function avoid error and insert character at the end."
-  (when (memq this-command '(self-insert-command
-                             y-or-n-p-insert-y
-                             y-or-n-p-insert-n))
-    (setq this-command
-          `(lambda () (interactive)
-             (setq this-command (quote ,this-command))
-             (condition-case-unless-debug _
-                 (call-interactively (quote ,this-command))
-               (text-read-only (goto-char (point-max))
-                               ,(cl-case this-command
-                                  (self-insert-command
-                                   '(self-insert-command
-                                     (prefix-numeric-value current-prefix-arg)
-                                     last-command-event))
-                                  (otherwise
-                                   (list this-command))))
-               ((beginning-of-buffer
-                 end-of-buffer)
-                (goto-char (point-max)))
-               (end-of-buffer (goto-char (point-max))))))))
+;; [ Allow typing out of input area
+;; (defun minibuffer-try-pre ()
+;;   "By default typing out of input area raise an error.
+;; This function avoid error and insert character at the end."
+;;   (when (memq this-command '(self-insert-command
+;;                              y-or-n-p-insert-y
+;;                              y-or-n-p-insert-n))
+;;     (setq this-command
+;;           `(lambda () (interactive)
+;;              (setq this-command (quote ,this-command))
+;;              (condition-case-unless-debug _
+;;                  (call-interactively (quote ,this-command))
+;;                (text-read-only (goto-char (point-max))
+;;                                ,(cl-case this-command
+;;                                   (self-insert-command
+;;                                    '(self-insert-command
+;;                                      (prefix-numeric-value current-prefix-arg)
+;;                                      last-command-event))
+;;                                   (otherwise
+;;                                    (list this-command))))
+;;                ((beginning-of-buffer
+;;                  end-of-buffer)
+;;                 (goto-char (point-max)))
+;;                (end-of-buffer (goto-char (point-max))))))))
 
-(defun minibuffer-try-add-hooks ()
-  (add-hook 'pre-command-hook 'minibuffer-try-pre))
-(defun minibuffer-try-remove-hooks ()
-  (remove-hook 'pre-command-hook 'minibuffer-try-pre))
+;; (defun minibuffer-try-add-hooks ()
+;;   (add-hook 'pre-command-hook 'minibuffer-try-pre))
+;; (defun minibuffer-try-remove-hooks ()
+;;   (remove-hook 'pre-command-hook 'minibuffer-try-pre))
 
-(add-hook 'minibuffer-setup-hook 'minibuffer-try-add-hooks)
-(add-hook 'minibuffer-exit-hook 'minibuffer-try-remove-hooks)
-
+;; (add-hook 'minibuffer-setup-hook 'minibuffer-try-add-hooks)
+;; (add-hook 'minibuffer-exit-hook 'minibuffer-try-remove-hooks)
+;; ]
 ;;;;;;;;;;;;;;;
 ;; Kill ring ;;
 ;;;;;;;;;;;;;;;
