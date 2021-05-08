@@ -1466,13 +1466,14 @@ mouse-3: Toggle minor modes"
                      utf8-hash-table))))
 
 (setq echo-keystrokes 0.5
-      ;; jit-lock-defer-time 0
-      ;; jit-lock-context-time 0.5
-      ;; ;; when idle fontifies portions not yet displayed
-      ;; jit-lock-stealth-time 10
+      jit-lock-defer-time 0.05
+      ;; when idle fontifies portions not yet displayed
+      jit-lock-stealth-time 1
       ;; jit-lock-stealth-nice 0.5
       ;; jit-lock-stealth-load 50
       ;; jit-lock-chunk-size 100
+      ;; fontification of non modified but context lines
+      ;; jit-lock-context-time 0.5
       column-number-mode t
       isearch-lazy-count t
       isearch-allow-scroll 'unlimited
