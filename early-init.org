@@ -11,16 +11,196 @@
 #+begin_src elisp
 (defun save-messages-buffer ()
   (with-current-buffer "*Messages*"
-    (write-region (point-min) (point-max)
-                  (expand-file-name "last-messages-buffer.txt"
-                                    user-emacs-directory))))
+    (set-buffer-file-coding-system 'raw-text)
+    (let ((coding-system-for-write 'no-conversion))
+      (write-region (point-min) (point-max)
+                    (expand-file-name "last-messages-buffer.txt"
+                                      user-emacs-directory)))))
 (add-hook 'kill-emacs-hook 'save-messages-buffer 92)
 #+end_src
 
 * Early command line arguments
 
 #+begin_src elisp
-(defvar exwm-p (member "--exwm" command-line-args))
+(defvar exwm-p
+  (if (member "--exwm" command-line-args)
+      (progn
+        (defvar last-startup-hook 'exwm-init-hook)
+        t)
+    (defvar last-startup-hook 'emacs-startup-hook)
+    nil))
+#+end_src
+
+* Performance
+** Benchmark startup advising ~require~
+
+#+begin_src elisp
+(when (member "--benchmark" command-line-args)
+  (defvar benchmark-last-time (current-time))
+  (defvar benchmark-last-feature "early-init")
+  (defvar benchmark-buffer (generate-new-buffer "*Benchmarks*"))
+  (require 'time-date)
+  (defun benchmark-require-advice (orig-fun feature &optional filename noerror)
+    (let* ((time (float-time (time-since benchmark-last-time)))
+           (initial-time (current-time))
+           (result (funcall orig-fun feature filename noerror))
+           (require-time (float-time (time-since initial-time))))
+      (with-current-buffer benchmark-buffer
+        (insert (format "%fs  between `%s' and `%s'\n%fs  loading `%s'\n"
+                        time benchmark-last-feature feature
+                        require-time feature)))
+      (setq benchmark-last-time (current-time)
+            benchmark-last-feature feature)
+      result))
+  (advice-add 'require :around 'benchmark-require-advice)
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (advice-remove 'require 'benchmark-require-advice))))
+#+end_src
+
+** Better control of garbage collection
+
+#+begin_src elisp
+;; (add-hook (if exwm-p
+;;               'exwm-init-hook
+;;            'emacs-startup-hook)
+;;           `(lambda ()
+;;              (setq gc-cons-percentage ,gc-cons-percentage
+;;                    gc-cons-threshold ,gc-cons-threshold))
+;;           t)
+;; (setq gc-cons-percentage 0.6
+;;       gc-cons-threshold (eval-when-compile
+;;                           (* 10 1024 1024)))
+
+;; (defun gcmh-idle-garbage-collect-advice (orig-fun)
+;;   (unless (or ;; cursor-in-echo-area
+;;            prefix-arg
+;;            (< 0 (length (this-single-command-keys)))
+;;            (active-minibuffer-window))
+;;     (funcall orig-fun)))
+;; (advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
+
+(add-hook 'after-init-hook
+          (lambda ()
+            (defun post-gc-truncate-buffers ()
+              (comint-truncate-buffers "^\\*EGLOT (.*) \\(stderr\\|output\\)\\*$" t))
+            (add-hook 'post-gc-hook 'post-gc-truncate-buffers)))
+#+end_src
+
+** Don't handle file names before init or while require
+
+#+begin_src elisp
+(setq jka-compr-load-suffixes nil)
+(jka-compr-update)
+(defun jka-enable-gz ()
+  (interactive)
+  (unless (member ".gz" jka-compr-load-suffixes)
+    (push ".gz" jka-compr-load-suffixes)
+    (jka-compr-update)))
+(defun find-library-name-advice (orig-fun library)
+  (condition-case err
+      (funcall orig-fun library)
+    (error (if (member ".gz" jka-compr-load-suffixes)
+               (signal (car err) (cdr err))
+             (push ".gz" jka-compr-load-suffixes)
+             (jka-compr-update)
+             (funcall orig-fun library)))))
+(advice-add 'find-library-name :around 'find-library-name-advice)
+
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
+(setq file-name-handler-alist nil)
+
+(defun avoid-file-handler-require-advice (orig-fun &rest args)
+  (let (file-name-handler-alist)
+    (apply orig-fun args)))
+(advice-add #'require :around 'avoid-file-handler-require-advice)
+#+end_src
+
+** Long lines performance
+
+#+begin_src elisp
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)
+(global-so-long-mode 1)
+#+end_src
+
+** Fast pager
+
+#+begin_src elisp
+(defvar-local fast-pager-column-goal 0)
+
+(defun fast-pager-store-column ()
+  (if (not (memq last-command '(fast-pager-page-down fast-pager-page-up fast-pager-row-up fast-pager-row-down)))
+      (setq fast-pager-column-goal (current-column))))
+
+(defun fast-pager-restore-column ()
+  (move-to-column fast-pager-column-goal))
+
+(defun fast-line-move (lines)
+  (unless (line-move-1 lines t)
+    (if (> lines 0)
+        (goto-char (point-max))
+        (goto-char (point-min)))))
+
+(defun fast-pager-scroll-screen (lines)
+  (save-excursion
+    (goto-char (window-start))
+    (fast-line-move lines)
+    (set-window-start (selected-window) (point)))
+  (fast-line-move lines))
+
+(defun fast-pager-page-down ()
+  (interactive)
+  (fast-pager-store-column)
+  (if (pos-visible-in-window-p (point-max))
+      (goto-char (point-max))
+      (fast-pager-scroll-screen (- (1- (window-height))
+                                 next-screen-context-lines)))
+  (fast-pager-restore-column))
+
+(defun fast-pager-page-up ()
+  (interactive)
+  (fast-pager-store-column)
+  (if (pos-visible-in-window-p (point-min))
+      (goto-char (point-min))
+      (fast-pager-scroll-screen (- next-screen-context-lines
+                                 (1- (window-height))))
+      (fast-pager-restore-column)))
+
+(defun fast-pager-row-up ()
+  (interactive)
+  (fast-pager-store-column)
+  (save-excursion
+    (goto-char (window-start))
+    (fast-line-move -1)
+    (set-window-start (selected-window) (point)))
+  (while (save-excursion
+           (fast-line-move (+ scroll-margin 2))
+           (>= (point) (window-end)))
+    (fast-line-move -1))
+  (fast-pager-restore-column))
+
+(defun fast-pager-row-down ()
+  (interactive)
+  (fast-pager-store-column)
+  (save-excursion
+    (goto-char (window-start))
+    (fast-line-move 1)
+    (set-window-start (selected-window) (point)))
+  (while (save-excursion
+           (fast-line-move (- 0 scroll-margin))
+           (< (point) (window-start)))
+    (fast-line-move 1))
+  (fast-pager-restore-column))
+
+(global-set-key [remap scroll-up-command] 'fast-pager-page-down)
+(global-set-key [remap scroll-down-command] 'fast-pager-page-up)
+(global-set-key (kbd "<S-up>") 'fast-pager-row-up)
+(global-set-key (kbd "C-S-p") 'fast-pager-row-up)
+(global-set-key (kbd "<S-down>") 'fast-pager-row-down)
+(global-set-key (kbd "C-S-n") 'fast-pager-row-down)
 #+end_src
 
 * Package management
@@ -40,16 +220,16 @@ modified.
 ;; (add-to-list 'package-archives '("ELPA" . "http://tromey.com/elpa/"))
 ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 
-(let* ((protocol (if (and (memq system-type '(windows-nt ms-dos))
-                          (not (gnutls-available-p)))
-                     "http"
-                   "https"))
-       (repos '(("org"          . "://orgmode.org/elpa/")
-                ("melpa"        . "://melpa.org/packages/")
-                ("melpa-stable" . "://stable.melpa.org/packages/")
-                ;; package name conflict: `project'
-                ;; ("marmalade"    . "://marmalade-repo.org/packages/")
-                ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
+(let ((protocol (if (and (memq system-type '(windows-nt ms-dos))
+                         (not (gnutls-available-p)))
+                    "http"
+                  "https"))
+      (repos '(("org"          . "://orgmode.org/elpa/")
+               ("melpa"        . "://melpa.org/packages/")
+               ("melpa-stable" . "://stable.melpa.org/packages/")
+               ;; package name conflict: `project'
+               ;; ("marmalade"    . "://marmalade-repo.org/packages/")
+               ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
   (mapc (lambda (p)
           (add-to-list
            'package-archives
@@ -63,26 +243,45 @@ modified.
 (advice-add 'package--save-selected-packages :around #'package--save-selected-packages-advice)
 
 (defun package-auto-install-remove ()
-            ;; install packages in list
-            (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
-              (if (cl-every #'identity list-of-boolean)
-                  (message "Nothing to install")
-                (progn
-                  (package-refresh-contents)
-                  (let ((list-of-uninstalled '()))
-                    (cl-mapc #'(lambda (a b)
-                                 (unless a
-                                   (set 'list-of-uninstalled (cons b list-of-uninstalled))))
-                             list-of-boolean package-selected-packages)
-                    (mapc #'package-install list-of-uninstalled)))))
-            ;; uninstall packages not in list
-            ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
-            (package-autoremove))
+  (interactive)
+  ;; install packages in list
+  (let ((list-of-boolean (mapcar #'package-installed-p package-selected-packages)))
+    (if (cl-every #'identity list-of-boolean)
+        (message "Nothing to install")
+      (progn
+        (package-refresh-contents)
+        (let ((list-of-uninstalled '()))
+          (cl-mapc #'(lambda (a b)
+                       (unless a
+                         (set 'list-of-uninstalled (cons b list-of-uninstalled))))
+                   list-of-boolean package-selected-packages)
+          (mapc #'package-install list-of-uninstalled)))))
+  ;; uninstall packages not in list
+  (mapc (lambda (pkg)
+          (package-delete (cadr (assq pkg package-alist))))
+        (cl-set-difference package-activated-list package-selected-packages))
+  (package-autoremove))
 
-(add-hook (if exwm-p
-              'exwm-init-hook
-            'emacs-startup-hook)
-          'package-auto-install-remove)
+(defun package-require-all ()
+  (interactive)
+  (start-process "emacs-require-all" nil "setsid" "emacs" "--eval=\
+(progn
+  (mapcar
+   (lambda (feature-str)
+     (ignore-errors
+       (message \"Requiring feature `%s'\" feature-str)
+       (with-temp-buffer
+         (require (intern feature-str) nil t))))
+   (split-string
+    (shell-command-to-string
+     \"rg -NI --no-heading --color never \\\"\\\\(provide '([^\\\$%\\\\)]*)\\\\)\\\" -or '$1' ~/.emacs.d/elpa\")
+     \"\\n\" t))
+  (message \"All features required\"))"))
+
+;; (add-hook (if exwm-p
+;;               'exwm-init-hook
+;;             'emacs-startup-hook)
+;;           'package-auto-install-remove)
 
 (defun package-emacswiki-update ()
   (interactive)
@@ -110,78 +309,6 @@ modified.
   (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
 #+end_src
 
-* Better control of garbage collection
-
-#+begin_src elisp
-(add-hook (if exwm-p
-              'exwm-init-hook
-           'emacs-startup-hook)
-          `(lambda ()
-             (setq gc-cons-percentage ,gc-cons-percentage
-                   gc-cons-threshold ,gc-cons-threshold))
-          t)
-(setq gc-cons-percentage 0.6
-      gc-cons-threshold (eval-when-compile
-                          (* 10 1024 1024)))
-
-;; (defun gcmh-idle-garbage-collect-advice (orig-fun)
-;;   (unless (or ;; cursor-in-echo-area
-;;            prefix-arg
-;;            (< 0 (length (this-single-command-keys)))
-;;            (active-minibuffer-window))
-;;     (funcall orig-fun)))
-;; (advice-add 'gcmh-idle-garbage-collect :around 'gcmh-idle-garbage-collect-advice)
-
-(add-hook 'after-init-hook
-          (lambda ()
-            (defun post-gc-truncate-buffers ()
-              (comint-truncate-buffers "^\\*EGLOT (.*) \\(stderr\\|output\\)\\*$" t))
-            (add-hook 'post-gc-hook 'post-gc-truncate-buffers)))
-#+end_src
-
-* Don't handle file names before init
-
-#+begin_src elisp
-(add-hook 'after-init-hook
-          `(lambda ()
-             (setq file-name-handler-alist (quote ,file-name-handler-alist))))
-(setq file-name-handler-alist nil)
-#+end_src
-
-* Long lines performance
-
-#+begin_src elisp
-(setq-default bidi-paragraph-direction 'left-to-right)
-(setq bidi-inhibit-bpa t)
-(global-so-long-mode 1)
-#+end_src
-
-* Benchmark startup advising ~require~
-
-#+begin_src elisp
-(when (getenv "BENCHMARK")
-  (defvar benchmark-last-time (current-time))
-  (defvar benchmark-last-feature "early-init")
-  (defvar benchmark-buffer (generate-new-buffer "*Benchmarks*"))
-  (require 'time-date)
-  (defun benchmark-require-advice (orig-fun feature &optional filename noerror)
-    (let* ((time (float-time (time-since benchmark-last-time)))
-           (initial-time (current-time))
-           (result (funcall orig-fun feature filename noerror))
-           (require-time (float-time (time-since initial-time))))
-      (with-current-buffer benchmark-buffer
-        (insert (format "%fs  between `%s' and `%s'\n%fs  loading `%s'\n"
-                        time benchmark-last-feature feature
-                        require-time feature)))
-      (setq benchmark-last-time (current-time)
-            benchmark-last-feature feature)
-      result))
-  (advice-add 'require :around 'benchmark-require-advice)
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (advice-remove 'require 'benchmark-require-advice))))
-#+end_src
-
 * Frame configuration previous GUI activation
 
 #+begin_src elisp
@@ -190,8 +317,12 @@ modified.
 (scroll-bar-mode -1)
 ;; display hover help text in the echo area
 (tooltip-mode -1)
+(modify-all-frames-parameters '((vertical-scroll-bars . nil)))
+(advice-add 'x-apply-session-resources :override 'ignore)
 
 ;; (fringe-mode '(4 . 4))
+(set-face-attribute 'fringe nil
+                    :background "#303030")
 (setq-default indicate-buffer-boundaries 'right)
 (defface visual-line-fringe-face
   '((t :foreground "gold1"))
@@ -208,9 +339,27 @@ modified.
 #+begin_src elisp
 ;; (set 'custom-enabled-themes 'wheatgrass)
 (load-theme 'misterioso t)
-(set-face-attribute 'mode-line nil :background "#003445")
-(with-eval-after-load 'which-func
-  (set-face-attribute 'which-func nil :foreground "#a040bb"))
+;; (face-attribute 'mode-line nil :background "#003445")
+(add-to-list 'default-frame-alist '(cursor-color . "sky blue"))
+(face-spec-set 'show-paren-match
+               '((((class color) (background light))
+                  :background "turquoise")
+                 (((class color) (background dark))
+                  :background "steelblue4")
+                 (((background dark) (min-colors 4))
+                  :background "grey50")
+                 (((background light) (min-colors 4))
+                  :background "gray")
+                 (t
+                  :inherit underline)))
+(face-spec-set 'error
+               '((default :weight bold)
+                 (((class color) (min-colors 88) (background light)) :foreground "Red1")
+                 (((class color) (min-colors 88) (background dark))  :foreground "magenta2")
+                 (((class color) (min-colors 16) (background light)) :foreground "Red1")
+                 (((class color) (min-colors 16) (background dark))  :foreground "magenta2")
+                 (((class color) (min-colors 8)) :foreground "red")
+                 (t :inverse-video t)))
 
 ;; (require 'cursor-chg)  ; Load this library
 ;; (change-cursor-mode 1) ; On for overwrite/read-only/input mode
@@ -218,7 +367,7 @@ modified.
 ;; (setq curchg-idle-cursor-type 'hbar
 ;;       curchg-default-cursor-type 'bar
 ;;       curchg-overwrite/read-only-cursor-type 'box)
-(add-to-list 'default-frame-alist '(cursor-color . "red"))
+
 ;; [ Cycle themes
 (require 'ring)
 (defvar theme-ring nil)
@@ -236,18 +385,26 @@ modified.
 ;; ]
 
 ;; [ transparency
+(defun frame-transparency (opacity)
+  (interactive "P")
+  (if opacity
+      (when (listp opacity)
+        (setq opacity 1))
+    (setq opacity 0))
+  (set-frame-parameter nil 'alpha `(,opacity . ,opacity)))
+
 (defun toggle-transparency ()
-   (interactive)
-   (let ((alpha (frame-parameter nil 'alpha)))
-     (set-frame-parameter
-      nil 'alpha
-      (if (eql (cond ((numberp alpha) alpha)
-                     ((numberp (cdr alpha)) (cdr alpha))
-                     ;; Also handle undocumented (<active> <inactive>) form.
-                     ((numberp (cadr alpha)) (cadr alpha)))
-               100)
-          '(90 . 75) '(100 . 100)))))
-(add-to-list 'default-frame-alist '(alpha . (90 . 75)))
+  (interactive)
+  (let ((alpha (frame-parameter nil 'alpha)))
+    (set-frame-parameter
+     nil 'alpha
+     (if (eql (cond ((numberp alpha) alpha)
+                    ((numberp (cdr alpha)) (cdr alpha))
+                    ;; Also handle undocumented (<active> <inactive>) form.
+                    ((numberp (cadr alpha)) (cadr alpha)))
+              80)
+         '(100 . 100) '(90 . 80)))))
+(add-to-list 'default-frame-alist '(alpha . (90 . 80)))
 ;; (set-frame-parameter (selected-frame) 'alpha '(90 . 75))
 ;; ]
 
@@ -259,6 +416,7 @@ modified.
 (add-hook 'after-make-frame-functions 'unspecified-background)
 
 (global-set-key (kbd "M-s 6 t") #'cycle-themes)
+(global-set-key (kbd "M-s 7 7") #'frame-transparency)
 (global-set-key (kbd "M-s 7 t") #'toggle-transparency)
 #+end_src
 

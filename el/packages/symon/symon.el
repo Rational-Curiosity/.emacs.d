@@ -277,27 +277,28 @@ Following keywords are supoprted in PLIST:
 :upper-bound (default: 0.0)
 
     lower bound of sparkline."
-  (let* ((cell (make-vector 2 nil))
+  (let* ((symon-ring (make-symbol (concat (symbol-name name) "-ring")))
+         (symon-timer (make-symbol (concat (symbol-name name) "-timer")))
          (sparkline (plist-get plist :sparkline))
          (interval (or (plist-get plist :interval) 'symon-refresh-rate))
          (display (plist-get plist :display))
          (update-fn
           `(lambda ()
-             (ring-insert (aref ,cell 0) ,(plist-get plist :fetch))))
+             (ring-insert ,symon-ring ,(plist-get plist :fetch))))
          (setup-fn
           `(lambda ()
-             (aset ,cell 0 (symon--make-history-ring))
-             (aset ,cell 1 (run-with-timer 0 ,interval ,update-fn))
+             (setq ,symon-ring (symon--make-history-ring))
+             (setq ,symon-timer (run-with-timer 0 ,interval ,update-fn))
              ,(plist-get plist :setup)
              (funcall ,update-fn)))
          (cleanup-fn
           `(lambda ()
-             (cancel-timer (aref ,cell 1))
+             (cancel-timer ,symon-timer)
              ,(plist-get plist :cleanup)))
          (display-fn
           (if display `(lambda () ,display)
             `(lambda ()
-               (let* ((lst (ring-elements (aref ,cell 0)))
+               (let* ((lst (ring-elements ,symon-ring))
                       (val (car lst)))
                  (concat ,(plist-get plist :index)
                          (if (not (numberp val)) "N/A"
@@ -314,6 +315,8 @@ Following keywords are supoprted in PLIST:
                                    (setq sparkline
                                          (symon--convert-sparkline-to-xpm sparkline)))
                                  (propertize " " 'display sparkline))))))))))
+    `(defvar ,symon-ring nil)
+    `(defvar ,symon-timer nil)
     `(put ',name 'symon-monitor (vector ,setup-fn ,cleanup-fn ,display-fn))))
 
 ;;   + process management
@@ -661,7 +664,7 @@ while(1)                                                            \
 (defvar symon--display-fns    nil)      ; List[List[Fn]]
 (defvar symon--active-page    -1)
 (defvar symon--total-page-num nil)
-(defvar symon--timer-objects  nil)
+(defvar symon--timer-object  nil)
 
 (defvar symon--force-redisplay nil)
 (defvar symon--symon-message "")
@@ -688,8 +691,8 @@ while(1)                                                            \
                               (lambda (l) (mapcar (lambda (m) (aref m 2)) l))
                               monitors)
           symon--total-page-num (length symon-monitors)
-          symon--timer-objects
-          (list (run-with-timer 0 symon-refresh-rate 'symon--next-frame)))
+          symon--timer-object
+          (run-with-timer 0 symon-refresh-rate 'symon--next-frame))
     (advice-add #'current-message :around #'symon--current-message-advice)
     (advice-add #'message :around #'symon--message-advice)
 
@@ -703,7 +706,7 @@ while(1)                                                            \
 (defun symon--cleanup ()
   (remove-hook 'kill-emacs-hook 'symon--cleanup)
   (remove-hook 'post-command-hook 'symon--force-redisplay)
-  (mapc 'cancel-timer symon--timer-objects)
+  (cancel-timer symon--timer-object)
   (mapc 'funcall symon--cleanup-fns)
   (if (boundp 'after-focus-change-function)
       (remove-function after-focus-change-function 'symon-clean-echo-area)
@@ -755,13 +758,16 @@ while(1)                                                            \
   (if msg
       (replace-regexp-in-string
        "[[:space:]]*\\'" ""
-       (let ((pos (cl-search symon--symon-message msg)))
-         (if pos
-             (substring msg 0 pos)
-           ;; (when (< (length symon--symon-message) (length msg))
-           ;;   (message-log "Symon msg: <%s>" symon--symon-message)
-           ;;   (message-log "Curr. msg: <%s>" msg))
-           msg)))
+       ;; (let ((pos (cl-search symon--symon-message msg)))
+       ;;   (if pos
+       ;;       (substring msg 0 pos)
+       ;;     ;; (when (< (length symon--symon-message) (length msg))
+       ;;     ;;   (message-log "Symon msg: <%s>" symon--symon-message)
+       ;;     ;;   (message-log "Curr. msg: <%s>" msg))
+       ;;     msg))
+       (if (string-match-p "🖥" msg)
+           (substring msg 0 (- (min (length msg) (1+ (length symon--symon-message)))))
+         msg))
     ""))
 
 (defun symon--message-advice (orig-fun format-string &rest args)
@@ -827,7 +833,8 @@ while(1)                                                            \
 
 (defun symon--force-redisplay ()
   "Redisplay last display."
-  (unless (active-minibuffer-window)
+  (unless (or prefix-arg
+              (active-minibuffer-window))
     (let ((symon--force-redisplay t))
       (message "%s" (current-message)))))
 

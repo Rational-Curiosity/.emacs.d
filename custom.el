@@ -7,18 +7,16 @@
    '("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
    '(ace-window
-     anaphora
      annotate
      async
      auctex
      avy
      bash-completion
-     bookmark+
      cmake-font-lock
      cmake-mode
+     consult
      cyphejor
      dash
-     dash-functional
      deferred
      docker
      docker-tramp
@@ -29,7 +27,6 @@
      eldoc
      elfeed
      emms
-     exec-path-from-shell
      expand-region
      exwm
      f
@@ -45,17 +42,17 @@
      guess-language
      haskell-mode
      hide-comnt
-     hl-line+
      hl-todo
      ht
      htmlize
      hydra
-     icomplete-vertical
      imenu-anywhere
      json-mode
      json-reformat
      json-snatcher
+     jsonrpc
      link-hint
+     lsp-mode
      lua-mode
      lv
      magit
@@ -67,7 +64,6 @@
      mini-frame
      minimap
      multiple-cursors
-     noccur
      ob-async
      orderless
      org
@@ -75,15 +71,14 @@
      org-brain
      org-noter
      org-plus-contrib
-     org-ql
      org-super-agenda
-     ov
+     org-tree-slide
      ox-gfm
      ox-mediawiki
      ox-rst
+     ox-textile
      ox-twbs
      pcre2el
-     peg
      php-mode
      plantuml-mode
      polymode
@@ -96,6 +91,7 @@
      rg
      rust-mode
      s
+     spinner
      stickyfunc-enhance
      string-inflection
      swap-regions
@@ -104,11 +100,13 @@
      transient
      transpose-frame
      ts
+     typescript-mode
      undo-propose
      vdiff
      vimish-fold
      virtualenvwrapper
      vlf
+     vterm
      web-mode
      websocket
      wgrep
@@ -121,7 +119,10 @@
      xterm-color
      yaml-mode
      yasnippet
-     yasnippet-snippets)))
+     yasnippet-snippets))
+ '(safe-local-variable-values
+   '((org-babel-noweb-wrap-end . "»")
+     (org-babel-noweb-wrap-start . "«"))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
