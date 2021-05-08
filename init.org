@@ -2912,9 +2912,9 @@ ARG non-nil resize window to ARG height."
                               (1- factor)))
                    horizontal)))
 
+(setq max-mini-window-height 0.7)
+
 ;; autoresize
-(setq resize-mini-windows t
-      max-mini-window-height 0.7)
 (defvar-local window-autoresize-size nil)
 
 (defun window-autoresize (window)
@@ -3245,6 +3245,7 @@ others."
 (global-set-key (kbd "C-c w =") 'window-resize-equal)
 (global-set-key (kbd "C-c w +") 'window-resize-delta)
 (global-set-key (kbd "C-c w *") 'window-resize-factor)
+(global-set-key (kbd "C-c w .") 'fit-window-to-buffer)
 (global-set-key (kbd "C-c w t") #'transpose-frame)
 (global-set-key (kbd "C-c w h") #'flop-frame)
 (global-set-key (kbd "C-c w v") #'flip-frame)
