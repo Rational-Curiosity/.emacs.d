@@ -4916,37 +4916,6 @@ mode and header lines."
 (with-eval-after-load 'crm
   (advice-add 'completing-read-multiple :around 'completing-read-advice))
 
-(if (null (require 'noccur nil 'noerror)) ;; noccur--find-files noccur-project
-    (message-color #("ERROR missing package `noccur'"
-                     0 5 (face error)))
-  (when (bug-check-function-bytecode
-         'noccur--find-files
-         "wyCDCQDEggoAxRjGxwgJIxrIyQohyiIqhw==")
-    (require 'pcre2el) ;; rxt-elisp-to-pcre
-    (if (executable-find "rg")
-        (defun noccur--find-files (regexp)
-          (split-string (shell-command-to-string
-                         (concat
-                          "rg --no-heading --color=never -lH \""
-                          (rxt-elisp-to-pcre regexp) "\""))
-                        "\n" t))
-      (defun noccur--find-files (regexp)
-        (let* ((listing-command (if (noccur--within-git-repository-p)
-                                    "git ls-files -z"
-                                  "find . -type f -print0"))
-               (command (format "%s | xargs -0 grep -l \"%s\""
-                                listing-command
-                                (rxt-elisp-to-pcre regexp))))
-          (split-string (shell-command-to-string command) "\n")))))
-
-  (defun occur-project (regexp &optional nlines)
-    (interactive (occur-read-primary-args))
-    (noccur-project regexp nlines
-                        (if (require 'projectile nil 'noerror)
-                            (projectile-ensure-project
-                             (projectile-project-root))
-                          (cdr (project-current))))))
-
 
 ;; Keys
 (with-eval-after-load 'simple
@@ -6784,7 +6753,6 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 
 #+begin_src elisp
 ;; [ expensive
-(require 'display-line-numbers)
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 ;; ]
 (with-eval-after-load 'display-line-numbers
