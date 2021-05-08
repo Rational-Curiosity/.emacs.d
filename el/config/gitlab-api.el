@@ -56,11 +56,7 @@
            :encoding 'utf-8
            :headers (list (cons "Private-Token" gitlab-api-token))
            :params params
-           :parser (lambda ()
-                     (decode-coding-region (point-min) (point-max) 'utf-8)
-                     (utf8-fix-wrong-ascii (point-min) (point-max))
-                     (utf8-fix-wrong-latin (point-min) (point-max))
-                     (json-read))
+           :parser 'json-read
            :sync t))
 
 (defun gitlab-api-data (resource &optional method params)
