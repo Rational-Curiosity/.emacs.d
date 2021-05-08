@@ -262,6 +262,22 @@ modified.
         (cl-set-difference package-activated-list package-selected-packages))
   (package-autoremove))
 
+(defun package-require-all ()
+  (interactive)
+  (start-process "emacs-require-all" nil "setsid" "emacs" "--eval=\
+(progn
+  (mapcar
+   (lambda (feature-str)
+     (ignore-errors
+       (message \"Requiring feature `%s'\" feature-str)
+       (with-temp-buffer
+         (require (intern feature-str) nil t))))
+   (split-string
+    (shell-command-to-string
+     \"rg -NI --no-heading --color never \\\"\\\\(provide '([^\\\$%\\\\)]*)\\\\)\\\" -or '$1' ~/.emacs.d/elpa\")
+     \"\\n\" t))
+  (message \"All features required\"))"))
+
 ;; (add-hook (if exwm-p
 ;;               'exwm-init-hook
 ;;             'emacs-startup-hook)
