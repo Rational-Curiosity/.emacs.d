@@ -257,7 +257,9 @@ modified.
                    list-of-boolean package-selected-packages)
           (mapc #'package-install list-of-uninstalled)))))
   ;; uninstall packages not in list
-  ;;(mapc #'package-delete (set-difference package-activated-list package-selected-packages))
+  (mapc (lambda (pkg)
+          (package-delete (cadr (assq pkg package-alist))))
+        (cl-set-difference package-activated-list package-selected-packages))
   (package-autoremove))
 
 ;; (add-hook (if exwm-p

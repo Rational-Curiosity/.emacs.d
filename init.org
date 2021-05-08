@@ -5061,6 +5061,13 @@ mode and header lines."
                     :box '(:line-width -1 :color "CadetBlue" :style nil))
 #+end_src
 
+*** /bookmark/
+
+#+begin_src elisp
+(setq bookmark-default-file (expand-file-name "cache/bookmarks"
+                                              user-emacs-directory))
+#+end_src
+
 *** /rect/
 
 #+begin_src elisp
@@ -11335,11 +11342,12 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "<C-tab>") 'hs-or-vimish-toggle)
 #+end_src
 
-*** /bookmark+/
+*** CANC /bookmark+/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
-(setq bookmark-default-file "~/.emacs.d/cache/bookmarks")
-
 (require 'bookmark+)
 
 (setq bmkp-auto-light-when-jump 'all-in-buffer
