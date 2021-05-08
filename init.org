@@ -250,14 +250,6 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
   "Ensures FUNC exist and eval with ARGS."
   (list 'and (list 'fboundp func) (list 'apply func (list 'quote args))))
 
-(defun bound-eval-and-unbound (func &rest args)
-  "Ensures FUNC exist and eval with ARGS."
-  (if (fboundp func)
-      (progn
-        (apply func args)
-        (fmakunbound func))
-    (message "Missing `%s' function" func)))
-
 ;; Return function that check bound before
 (defmacro lambda-bound-and-eval (func &rest args)
   "Return lambda that ensures FUNC exist and eval with ARGS."
@@ -397,7 +389,7 @@ Otherwise return a list of files which regex match."
   (cond
    ((null (fboundp function))
     (unless inhibit-log
-      (message-color #("WARN function %s not defined"
+      (message-color #("WARN function `%s' not defined"
                        0 4 (face warning)) function))
     nil)
    ((featurep 'comp)
@@ -457,6 +449,44 @@ When called from lisp, FUNCTION may also be a function object."
 ;; escape special characters
 ;; (let ((print-escape-newlines t))
 ;;   (prin1-to-string "..."))
+
+(defun bug-ediff-defun-at-point ()
+  (interactive)
+  (let* ((defnA (thing-at-point 'defun))
+         (posnA (string-match "(\\(defun\\|cl-defun\\) \\([-_a-zA-Z0-9]+\\)" defnA))
+         (nameA (match-string 2 defnA))
+         (library (find-lisp-object-file-name (intern nameA) 'defun))
+         (orig-bufnA (buffer-name)))
+    (unless library
+      (user-error "Library containing `%s' not found" nameA))
+    (find-file (find-library-name library))
+    (goto-char (point-min))
+    (search-forward (concat "defun " nameA))
+    (let* ((defnB (thing-at-point 'defun))
+           (posnB (string-match "(\\(defun\\|cl-defun\\) \\([-_a-zA-Z0-9]+\\)" defnB))
+           (bufnA (concat "*bug-ediff A [" orig-bufnA "]*"))
+           (bufnB (concat "*bug-ediff B [" (buffer-name) "]*")))
+      (switch-to-buffer bufnA)
+      (emacs-lisp-mode)
+      (insert (replace-regexp-in-string "\t" "        " (substring defnA posnA)))
+      (goto-char (point-min))
+      (setq defnA (thing-at-point 'defun))
+      (erase-buffer)
+      (insert defnA)
+      (unless (bolp)
+        (insert "\n"))
+      (indent-region (point-min) (point-max))
+      (switch-to-buffer bufnB)
+      (emacs-lisp-mode)
+      (insert (replace-regexp-in-string "\t" "        " (substring defnB posnB)))
+      (goto-char (point-min))
+      (setq defnB (thing-at-point 'defun))
+      (erase-buffer)
+      (insert defnB)
+      (unless (bolp)
+        (insert "\n"))
+      (indent-region (point-min) (point-max))
+      (ediff-buffers bufnA bufnB))))
 
 ;;;;;;;;;;;;
 ;; Errors ;;
@@ -562,6 +592,25 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
     (puthash name t named-code-hash-table)
     (when fun
       (funcall fun))))
+
+(defmacro map-append (map key value)
+  `(let ((item-list (assoc ,key ,map)))
+     (if item-list
+         (setcdr (last item-list) (list ,value))
+       (setq ,map (cons (list ,key ,value) ,map)))))
+
+(defun eval-after-config (key &rest args)
+  "Ensures FUNC exist and eval with ARGS."
+  (when config-p
+    (if (boundp 'after-config-functions)
+        (let ((count 0))
+          (dolist (fun (assoc-default key after-config-functions))
+            (apply fun args)
+            (cl-incf count))
+          (message "Called `%s' %i functions" key count)
+          (assoc-delete-all key after-config-functions))
+      (message-color #("WARN Missing `after-config-functions' variable"
+                       0 4 (face warning))))))
 #+end_src
 
 ** Random functions
@@ -704,7 +753,8 @@ No argument or nil as argument means do this for the current buffer."
 * Personal config
 
 #+begin_src elisp
-(load (expand-file-name "config" user-emacs-directory) t)
+(defvar config-p
+  (load (expand-file-name "config" user-emacs-directory) t))
 #+end_src
 
 * Mode line
@@ -8531,7 +8581,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   ;;(global-ede-mode 1)
   ;; Unknown error
   ;; (ede-enable-generic-projects)
-  (bound-eval-and-unbound 'after-ede-config))
+  (eval-after-config 'after-ede-config))
 #+end_src
 
 *** /eldoc/
@@ -13662,7 +13712,7 @@ Throw an error when trying to set a property with an invalid name."
   (define-key org-mode-map (kbd "C-c C-x D") #'org-archive-done-tasks)
   (define-key org-mode-map (kbd "M-s 7 k") #'org-toggle-link-display)
   (global-set-key (kbd "C-c A f") 'org-annotate-file-search)
-  (bound-eval-and-unbound 'after-org-config))
+  (eval-after-config 'after-org-config))
 #+end_src
 
 *** /ox-mediawiki/                                                    :markdown:
@@ -13879,7 +13929,7 @@ Throw an error when trying to set a property with an invalid name."
                  :tag "@home")
           (:name "Hábito"
                  :habit t)))
-  (bound-eval-and-unbound 'after-org-super-agenda-config))
+  (eval-after-config 'after-org-super-agenda-config))
 #+end_src
 
 *** /org-appt/
@@ -15763,7 +15813,7 @@ end note
     (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
     (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point)))
 
-(bound-eval-and-unbound 'after-machine-config)
+(eval-after-config 'after-machine-config)
 #+end_src
 
 * Bugs
