@@ -7180,6 +7180,13 @@ ARG - `C-u' differ with prompted file.
 (global-set-key (kbd "C-c d b") 'vdiff-buffers)
 #+end_src
 
+*** /term/
+
+#+begin_src elisp
+(with-eval-after-load 'term
+  (setq term-prompt-regexp "^"))
+#+end_src
+
 *** /shell/
 
 #+begin_src elisp
@@ -15569,8 +15576,28 @@ end note
 
 *** /vterm/
 
+Añadir a =.bashrc= después de la asignación del prompt ~PS1~:
+
+#+begin_src bash
+vterm_printf(){
+    if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
+        # Tell tmux to pass the escape sequences through
+        printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+    elif [ "${TERM%%-*}" = "screen" ]; then
+        # GNU screen (screen, screen-256color, screen-256color-bce)
+        printf "\eP\e]%s\007\e\\" "$1"
+    else
+        printf "\e]%s\e\\" "$1"
+    fi
+}
+vterm_prompt_end(){
+    vterm_printf "51;A$(whoami)@$(hostname):$(pwd)"
+}
+PS1=$PS1'\[$(vterm_prompt_end)\]'
+#+end_src
+
 #+begin_src elisp
-(global-set-key (kbd "M-RET") 'vterm)
+(global-set-key (kbd "C-M-<return>") 'vterm)
 (global-set-key (kbd "C-x 4 RET") 'vterm-other-window)
 #+end_src
 
