@@ -27,14 +27,15 @@
   (request (concat redmine-api-url-base resource ".json")
            :type (or method "GET")
            :encoding 'utf-8
-           :headers (list (cons "X-Redmine-API-Key" redmine-api-token))
+           :headers (list (cons "X-Redmine-API-Key" redmine-api-token)
+                          '("Accept-Charset" . "utf-8"))
            :params params
+           :parser 'json-read
            ;; :parser (lambda ()
            ;;           (decode-coding-region (point-min) (point-max) 'utf-8)
            ;;           (utf8-fix-wrong-ascii (point-min) (point-max))
            ;;           (utf8-fix-wrong-latin (point-min) (point-max))
            ;;           (json-read))
-           :parser 'json-read
            :sync t))
 
 (defun redmine-api-data (resource &optional method params)
@@ -108,13 +109,14 @@
     (_ project-name)))
 
 (defun redmine-api--format-field (field value indent)
-  (concat indent (format "%-9s  %s" (concat ":" field ":")
-                         (if (stringp value)
-                             (replace-regexp-in-string
-                              "\r?\n"
-                              (concat indent (format "%-9s " (concat ":" field "+:")))
-                              value t t)
-                           value))))
+  (concat indent
+          (format "%-9s  %s" (concat ":" field ":")
+                  (if (stringp value)
+                      (replace-regexp-in-string
+                       "\r?\n"
+                       (concat indent (format "%-9s " (concat ":" field "+:")))
+                       value t t)
+                    value))))
 
 (defun redmine-api--convert-to-org (data keys &optional level resource)
   (or level (setq level 1))
@@ -123,12 +125,12 @@
                "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
                (or (assoc-default 'web_url data) resource) t))
         (project (assoc-keys '(project name) data)))
-    (let ((entry (format "%s %s %-64s  :%s:%s:"
+    (let* ((status-name (assoc-keys '(status name) data))
+           (entry (format "%s %s %-64s  :%s:"
                          (make-string level ?*)
-                         (redmine-api--convert-state (assoc-keys '(status name) data) type)
+                         (redmine-api--convert-state status-name type)
                          (assoc-default 'subject data)
-                         type
-                         (redmine-api--abbrev-project-name project))))
+                         status-name)))
       (setq entry (concat entry indent ":PROPERTIES:"
                           (and resource (concat indent ":RESOURCE:     " resource))
                           (and resource (concat indent ":ORIGIN:       "
@@ -154,6 +156,20 @@
                                                         (symbol-name key))
                                                       value indent)))))))
       (concat entry indent ":END:\n\n"))))
+
+(defun redmine-api-issues-from-version (version-id)
+  (assoc-default
+   'issues
+   (request-response-data
+    (request (concat redmine-api-url-base
+                     "/issues.json?fixed_version_id="
+                     version-id)
+      :type "GET"
+      :encoding 'utf-8
+      :headers (list (cons "X-Redmine-API-Key" redmine-api-token))
+      :parser 'json-read
+      :sync t))))
+
 
 ;;;;;;;;;
 ;; Org ;;
@@ -273,28 +289,28 @@
                  "^.*/\\([a-zA-Z0-9_-]\\{3\\}\\)[a-zA-Z0-9_-]*/[^/]*$" "\\1"
                  (or (assoc-default "ORIGIN" properties)
                      (assoc-default "RESOURCE" properties)) t))
-          (resource (redmine-api--fill-template (cdr (assoc "RESOURCE" properties)) properties))
-          (resource-datas (cdr (assoc 'issue (redmine-api-data resource "GET")))))
-      (if redmine-api-debug (mapc (lambda (prop) (message "    %s" prop)) resource-datas))
-      (message "%s %s %s: %i properties" "GET" resource nil (length resource-datas))
-      (mapc (lambda (property)
-              (let* ((name (downcase (car property)))
-                     (value (cdr property))
-                     (resource-data (if (string-match-p "\\." name)
-                                        (assoc-keys (mapcar 'intern (split-string name "\\."))
-                                                    resource-datas)
-                                      (cdr (assoc (intern name) resource-datas)))))
-                (when resource-data
-                  (let ((data (replace-regexp-in-string
-                               "\r" ""
-                               (if (stringp resource-data)
-                                   resource-data
-                                 (format "%s" resource-data)) t t)))
-                    (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
-                      (org-entry-put-multiline-property nil name data)
-                      (pcase name
-                        ("status.name" (org-entry-put nil "TODO" (redmine-api--convert-state data type)))))))))
-            properties))))
+          (resource (redmine-api--fill-template (cdr (assoc "RESOURCE" properties)) properties)))
+      (let ((resource-datas (cdr (assoc 'issue (redmine-api-data resource "GET")))))
+        (if redmine-api-debug (mapc (lambda (prop) (message "    %s" prop)) resource-datas))
+        (message "%s %s %s: %i properties" "GET" resource nil (length resource-datas))
+        (mapc (lambda (property)
+                (let* ((name (downcase (car property)))
+                       (value (cdr property))
+                       (resource-data (if (string-match-p "\\." name)
+                                          (assoc-keys (mapcar 'intern (split-string name "\\."))
+                                                      resource-datas)
+                                        (cdr (assoc (intern name) resource-datas)))))
+                  (when resource-data
+                    (let ((data (replace-regexp-in-string
+                                 "\r" ""
+                                 (if (stringp resource-data)
+                                     resource-data
+                                   (format "%s" resource-data)) t t)))
+                      (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
+                        (org-entry-put-multiline-property nil name data)
+                        (pcase name
+                          ("status.name" (org-entry-put nil "TODO" (redmine-api--convert-state data type)))))))))
+              properties)))))
 
 
 (provide 'redmine-api)

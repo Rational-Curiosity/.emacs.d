@@ -26,6 +26,7 @@
      ein
      eldoc
      elfeed
+     embark
      emms
      expand-region
      exwm
@@ -95,10 +96,13 @@
      stickyfunc-enhance
      string-inflection
      swap-regions
+     syslog-mode
      tablist
      thingatpt+
      transient
      transpose-frame
+     tree-sitter
+     tree-sitter-langs
      ts
      typescript-mode
      undo-propose
