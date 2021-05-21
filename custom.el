@@ -125,7 +125,8 @@
      yasnippet
      yasnippet-snippets))
  '(safe-local-variable-values
-   '((org-babel-noweb-wrap-end . "»")
+   '((org-confirm-babel-evaluate)
+     (org-babel-noweb-wrap-end . "»")
      (org-babel-noweb-wrap-start . "«"))))
 
 (custom-set-faces

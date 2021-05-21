@@ -646,26 +646,26 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
                  "nmcli" "--ask" "--colors" "no" "-t" "-w" "0" "connection"
                  up-down name))
 
-(defun icomplete-vertical-kill-ring-insert (&optional arg)
-  "Insert item from kill-ring, selected with completion."
-  (interactive "*p")
-  (if (or (eq last-command 'yank)
-          (if (active-minibuffer-window)
-              (setq last-command 'yank)))
-      (yank-pop arg)
-    (let ((candidate
-           (completing-read
-            "Yank: "
-            (lambda (string pred action)
-              (if (eq action 'metadata)
-                  '(metadata (display-sort-function . identity)
-                             (cycle-sort-function . identity))
-                (complete-with-action action kill-ring string pred)))
-            nil t)))
-      (when (and candidate (region-active-p))
-        ;; the currently highlighted section is to be replaced by the yank
-        (delete-region (region-beginning) (region-end)))
-      (insert candidate))))
+;; (defun icomplete-vertical-kill-ring-insert (&optional arg)
+;;   "Insert item from kill-ring, selected with completion."
+;;   (interactive "*p")
+;;   (if (or (eq last-command 'yank)
+;;           (if (active-minibuffer-window)
+;;               (setq last-command 'yank)))
+;;       (yank-pop arg)
+;;     (let ((candidate
+;;            (completing-read
+;;             "Yank: "
+;;             (lambda (string pred action)
+;;               (if (eq action 'metadata)
+;;                   '(metadata (display-sort-function . identity)
+;;                              (cycle-sort-function . identity))
+;;                 (complete-with-action action kill-ring string pred)))
+;;             nil t)))
+;;       (when (and candidate (region-active-p))
+;;         ;; the currently highlighted section is to be replaced by the yank
+;;         (delete-region (region-beginning) (region-end)))
+;;       (insert candidate))))
 #+end_src
 
 * Backup and Undo
@@ -1524,7 +1524,7 @@ mouse-3: Toggle minor modes"
       column-number-mode t
       isearch-lazy-count t
       isearch-allow-scroll 'unlimited
-      max-mini-window-height 0.7
+      max-mini-window-height 0.55
       ;; kill-ring
       kill-do-not-save-duplicates t
       ;; mark-ring
@@ -1888,7 +1888,8 @@ prompt the user for a coding system."
 ;;;;;;;;;;;;;;;;;
 ;; Copy things ;;
 ;;;;;;;;;;;;;;;;;
-(setq yank-excluded-properties t)
+(setq yank-excluded-properties t
+      yank-from-kill-ring-rotate t)
 
 (defun duplicate-region (arg beg end &optional orig)
   "Duplicates ARG times region from BEG to END."
@@ -2202,15 +2203,15 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;
 ;; Kill ring ;;
 ;;;;;;;;;;;;;;;
-(defun kill-ring-insert ()
-  (interactive)
-  (let ((to_insert (completing-read "Yank: "
-                                    (cl-delete-duplicates kill-ring :test #'equal)
-                                    nil t)))
-    (when (and to_insert (region-active-p))
-      ;; the currently highlighted section is to be replaced by the yank
-      (delete-region (region-beginning) (region-end)))
-    (insert to_insert)))
+;; (defun kill-ring-insert ()
+;;   (interactive)
+;;   (let ((to_insert (completing-read "Yank: "
+;;                                     (cl-delete-duplicates kill-ring :test #'equal)
+;;                                     nil t)))
+;;     (when (and to_insert (region-active-p))
+;;       ;; the currently highlighted section is to be replaced by the yank
+;;       (delete-region (region-beginning) (region-end)))
+;;     (insert to_insert)))
 
 ;;;;;;;;;;;;
 ;; Cycles ;;
@@ -4731,13 +4732,13 @@ mode and header lines."
 * Completions
 
 #+begin_src elisp
+(defun inhibit-mode-line ()
+  (setq mode-line-format nil))
+
+(add-hook 'completion-list-mode-hook 'inhibit-mode-line)
+
 (setq completion-cycle-threshold 3
       completion-show-help nil)
-
-(add-to-list 'display-buffer-alist
-             '("\\`\\*Completions\\*\\'"
-               nil
-               (window-parameters (mode-line-format . none))))
 
 (with-eval-after-load 'simple
   (define-key minibuffer-local-shell-command-map (kbd "M-v")
@@ -4783,6 +4784,7 @@ mode and header lines."
 *** /repeat-mode/
 
 #+begin_src elisp
+(setq repeat-exit-timeout 3)
 (repeat-mode)
 #+end_src
 
@@ -5162,18 +5164,18 @@ If `case-replace' is nil, do not alter case of replacement text."
   (interactive "P")
   (require 'recentf)
   (--> recentf-list
-       (mapcar #'substring-no-properties it)
-       (mapcar #'abbreviate-file-name it)
-       (cl-remove-duplicates it :test #'string-equal)
-       (let ((minibuffer-completing-file-name t))
-         (completing-read
-          "Recent Files: "
-          `(lambda (string pred action)
-             (if (eq action 'metadata)
-                 '(metadata (category . file))
-               (complete-with-action action ,(quote it) string pred)))
-          nil t))
-       (if arg (find-file-other-window it) (find-file it))))
+    (mapcar #'substring-no-properties it)
+    (mapcar #'abbreviate-file-name it)
+    (cl-remove-duplicates it :test #'string-equal)
+    (let ((minibuffer-completing-file-name t))
+      (completing-read
+       "Recent Files: "
+       (lambda (string pred action)
+         (if (eq action 'metadata)
+             '(metadata (category . file))
+           (complete-with-action action it string pred)))
+       nil t))
+    (if arg (find-file-other-window it) (find-file it))))
 (global-set-key "\C-x\ \C-r" 'completing-recentf-find-file)
 
 (with-eval-after-load 'recentf
@@ -6624,26 +6626,27 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 *** /hl-line/
 
 #+begin_src elisp
-  (require 'hl-line)
+(require 'hl-line)
 
-  ;; (set-face-attribute 'hl-line nil
-  ;;                     :foreground 'unspecified
-  ;;                     :background "#000000"
-  ;;                     :overline 'unspecified
-  ;;                     :underline 'unspecified
-  ;;                     :box 'unspecified
-  ;;                     :inherit 'unspecified)
+;; (set-face-attribute 'hl-line nil
+;;                     :foreground 'unspecified
+;;                     :background "#000000"
+;;                     :overline 'unspecified
+;;                     :underline 'unspecified
+;;                     :box 'unspecified
+;;                     :inherit 'unspecified)
 
-  (face-spec-set 'hl-line
-                 '((((background light))
-                    :inherit unspecified
-                    :background "#ffffff")  ; looks OK on tty (becomes cyan)
-                   (((background dark))
-                    :inherit unspecified
-                    :background "#000000")  ; looks OK on tty (becomes blue)
-                   ))
+(face-spec-set 'hl-line
+               '((((background light))
+                  :inherit unspecified
+                  :background "#ffffff")  ; looks OK on tty (becomes cyan)
+                 (((background dark))
+                  :inherit unspecified
+                  :background "#000000")  ; looks OK on tty (becomes blue)
+                 ))
+(setq hl-line-face 'underline)
 
-  (global-hl-line-mode 1)
+(global-hl-line-mode 1)
 #+end_src
 
 *** /whitespace/
@@ -11076,9 +11079,9 @@ Switch the current window to the previous buffer."
 (define-key minibuffer-local-completion-map (kbd "M-Z")
   'avy-completions-word-or-subword-1)
 
-(define-key completion-in-region-mode-map (kbd "M-g t")
+(define-key completion-in-region-mode-map (kbd "C-M-z")
   'avy-completions-timer)
-(define-key minibuffer-local-completion-map (kbd "M-g t")
+(define-key minibuffer-local-completion-map (kbd "C-M-z")
   'avy-completions-timer)
 
 (define-key completion-in-region-mode-map (kbd "M-g w")
@@ -11100,7 +11103,7 @@ Switch the current window to the previous buffer."
                                avy-goto-char))
 (global-set-key (kbd "M-g C") (avy-prefix-all-windows
                                avy-goto-char-2))
-(global-set-key (kbd "M-g t") (avy-prefix-all-windows
+(global-set-key (kbd "C-M-z") (avy-prefix-all-windows
                                avy-goto-char-timer))
 (global-set-key (kbd "M-g s") (avy-prefix-all-windows
                                avy-goto-symbol-1))
@@ -12648,8 +12651,12 @@ Switch the current window to the previous buffer."
         org-babel-min-lines-for-block-output 2
         org-babel-sh-command "bash"
         org-babel-python-command "python3"
-        ;; No pregunta al usuario antes de evaluar un bloque de código
+        ;; inhibit any future confirmation requests
         org-confirm-babel-evaluate nil
+        ;; no code will be evaluated as part of the export, no header arguments
+        ;; will be obeyed. To evaluate insert at the beginning of the file:
+        ;; # -*- org-confirm-babel-evaluate: t -*-
+        org-export-babel-evaluate nil
         org-src-fontify-natively t
         org-src-tab-acts-natively t
         org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar")
@@ -16181,10 +16188,10 @@ Amend MODE-LINE to the mode line for the duration of the selection."
                                                   (lambda (_path _leaf))
                                                 #'aw--lead-overlay)
                                               #'avy--remove-leading-chars)))
-                          (if (memq res '(exit abort))
-                              (setq aw-action nil)
-                            (or (cdr res)
-                                start-window)))
+                          (if (listp res)
+                              (or (cdr res)
+                                  start-window)
+                            (setq aw-action nil)))
                      (aw--done))))))
     (if aw-action
         (funcall aw-action window)
@@ -17706,6 +17713,33 @@ This function is part of the `orderless' completion style."
 #+end_src
 
 * Improvements
+** Completions
+
+#+begin_src elisp
+;;;; OVERRIDDEN
+(require 'dash)
+(defun completion-metadata-get (metadata prop)
+  (or (cdr (assq prop metadata))
+      (when (eq prop 'display-sort-function)
+        (when-let ((history (minibuffer-history-value)))
+          `(lambda (completions)
+             (let* ((common 
+                     (let (result)
+                       (mapc
+                        (lambda (candidate)
+                          (when-let ((it (car (member candidate completions))))
+                            (add-face-text-property
+                              0 (length it)
+                              '(:background "#473B54") nil it)
+                            (push
+                             it
+                             result)))
+                        (quote ,history))
+                       (nreverse result)))
+                    (rest (-difference completions common)))
+               (nconc common (sort rest 'string-lessp))))))))
+#+end_src
+
 ** /flymake/
 
 #+begin_src elisp
@@ -17874,10 +17908,14 @@ This function is part of the `orderless' completion style."
                    (:propertize "}"))))))))))
 #+end_src
 
-** /icomplete/
+** CANC /icomplete/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'icomplete
+;;;; OVERRIDDEN
   (defun icomplete-completions (name candidates predicate require-match)
     "Identify prospective candidates for minibuffer completion.
 
