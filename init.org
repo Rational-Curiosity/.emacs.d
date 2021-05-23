@@ -6644,7 +6644,17 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
                   :inherit unspecified
                   :background "#000000")  ; looks OK on tty (becomes blue)
                  ))
-(setq hl-line-face 'underline)
+
+(defface underline-white
+  '((((supports :underline t))
+     :underline "white")
+    (((supports :weight bold))
+     :weight bold)
+    (t :underline "white"))
+  "Basic underlined face."
+  :group 'basic-faces)
+
+(setq hl-line-face 'underline-white)
 
 (global-hl-line-mode 1)
 #+end_src
@@ -9515,12 +9525,13 @@ if __name__ == \"__main__\":
 
   (when (require 'flymake-diagnostic-at-point nil 'noerror)
     (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode)
-    (setq flymake-diagnostic-at-point-timer-delay 2.0))
+    (setq flymake-diagnostic-at-point-timer-delay flymake-no-changes-timeout))
 
   (define-key flymake-mode-map (kbd "M-g n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g M-n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g p") #'flymake-goto-prev-error)
   (define-key flymake-mode-map (kbd "M-g M-p") #'flymake-goto-prev-error)
+  (define-key flymake-mode-map (kbd "M-c ! l") #'flymake-show-diagnostics-buffer)
   (define-key flymake-mode-map (kbd "C-c ! c") #'flymake-start))
 #+end_src
 
