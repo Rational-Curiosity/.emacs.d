@@ -1,7 +1,34 @@
 ;;; completing-read-at-point.el --- completion-at-point with completing-read
 
 ;;; Commentary:
+;; TAB (translated from <tab>) runs the command minibuffer-complete
+;; (found in minibuffer-local-must-match-map), which is an interactive
+;; native compiled Lisp function in ‘minibuffer.el’.
 
+;; It is bound to TAB, <menu-bar> <minibuf> <tab>.
+
+;; (minibuffer-complete)
+
+;; Complete the minibuffer contents as far as possible.
+;; Return nil if there is no valid completion, else t.
+;; If no characters can be completed, display a list of possible completions.
+;; If you repeat this command after it displayed such a list,
+;; scroll the window of possible completions.
+
+
+
+;; TAB (translated from <tab>) runs the command completion-at-point
+;; (found in completion-in-region-mode-map), which is an interactive
+;; native compiled Lisp function in ‘minibuffer.el’.
+
+;; It is bound to TAB.
+
+;; (completion-at-point)
+
+;;   Probably introduced at or before Emacs version 23.2.
+
+;; Perform completion on the text around point.
+;; The completion method is determined by ‘completion-at-point-functions’.
 ;; Usage:
 
 ;;
@@ -28,8 +55,9 @@
   (if (or crap-completion-in-region
           (window-minibuffer-p))
       (with-no-warnings
-        (funcall crap-previous-completion-in-region-function
-                 start end collection predicate))
+        (let ((completion-in-region-function
+               crap-previous-completion-in-region-function))
+          (completion-in-region start end collection predicate)))
     (setq completion-extra-properties
           (plist-put completion-extra-properties :exit-function
                      `(lambda (proxy status)))

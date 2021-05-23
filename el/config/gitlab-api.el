@@ -57,6 +57,11 @@
            :headers (list (cons "Private-Token" gitlab-api-token))
            :params params
            :parser 'json-read
+           ;; :parser (lambda ()
+           ;;           (decode-coding-region (point-min) (point-max) 'utf-8)
+           ;;           (utf8-fix-wrong-ascii (point-min) (point-max))
+           ;;           (utf8-fix-wrong-latin (point-min) (point-max))
+           ;;           (json-read))
            :sync t))
 
 (defun gitlab-api-data (resource &optional method params)
@@ -190,14 +195,16 @@
     (_ project-name)))
 
 (defun gitlab-api--format-field (field value indent)
-  (concat indent (format "%-9s  %s" (concat ":" field ":")
-                         (if (stringp value)
-                             (replace-regexp-in-string "\r?\n"
-                                                       (concat
-                                                        indent
-                                                        (format "%-9s " (concat ":" field "+:")))
-                                                       value t)
-                           value))))
+  (concat
+   indent (format "%-9s  %s" (concat ":" field ":")
+                  (if (stringp value)
+                      (replace-regexp-in-string
+                       "\r?\n"
+                       (concat
+                        indent
+                        (format "%-9s " (concat ":" field "+:")))
+                       value t)
+                    value))))
 
 (defun gitlab-api--convert-to-org (data keys &optional level resource)
   (or level (setq level 1))
@@ -227,7 +234,7 @@
             (when value
               (setq entry (concat
                            entry
-                           (redmine-api--format-field (if (eq key 'id)
+                           (gitlab-api--format-field (if (eq key 'id)
                                                           "id_"
                                                         (symbol-name key))
                                                       value indent)))))))
@@ -396,51 +403,6 @@
                                '(("scope" . "all")
                                  ("state" . "all"))))
     "/projects/{project_id}/merge_requests/{iid}" level)))
-
-(defun gitlab-api-org-get-from-redmine-id (level &optional redmine-id property)
-  (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
-                     (completing-read "Redmine issue id: "
-                                      (mapcar
-                                       (lambda (str-or-url) (replace-regexp-in-string "^https?://.*/" "" str-or-url))
-                                       (remove
-                                        nil
-                                        (mapcar
-                                         (lambda (key) (org-entry-get nil key))
-                                         '("ORIGIN" "BUG_IN"))))))
-               ;; "p\nMRedmine issue id: "
-               )
-  (or level (setq level (1+ (org-outline-level))))
-  (setq redmine-id (if (and (stringp redmine-id) (not (string-empty-p redmine-id)))
-                       redmine-id
-                     (replace-regexp-in-string "^https?://.*/" "" (org-entry-get nil (or property "ORIGIN")))))
-  (let* ((issues (gitlab-api-data-all-pages
-                  "/issues" "GET"
-                  `(("scope" . "all")
-                    ("state" . "all")
-                    ("search" . ,(concat
-                                  "\""
-                                  redmine-id
-                                  "\""))
-                    ("in" . "description"))))
-         (result (concat
-                  (gitlab-api-org-convert issues "/projects/{project_id}/issues/{iid}" level)
-                  (mapconcat (lambda (issue)
-                               (let ((issue-id (concat "#" (int-to-string (cdr (assoc 'iid issue))))))
-                                 (gitlab-api-org-convert
-                                  (gitlab-api-data-all-pages
-                                   (concat "/projects/" (int-to-string (cdr (assoc 'project_id issue))) "/merge_requests")
-                                   "GET"
-                                   `(("scope" . "all")
-                                     ("state" . "all")
-                                     ("search" . ,(concat "\"" issue-id "\"")) ("in" . "description")))
-                                  "/projects/{project_id}/merge_requests/{iid}" level nil
-                                  (lambda (data)
-                                    (string-match-p (concat issue-id "\\([ \t\n]\\|$\\)") (cdr (assoc 'description data)))))))
-                             issues
-                             ""))))
-    (if (called-interactively-p 'any)
-        (insert result)
-      result)))
 
 (defun gitlab-api-org-update-entry-at-point ()
   (interactive)

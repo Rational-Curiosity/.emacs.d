@@ -256,10 +256,11 @@ modified.
                          (set 'list-of-uninstalled (cons b list-of-uninstalled))))
                    list-of-boolean package-selected-packages)
           (mapc #'package-install list-of-uninstalled)))))
-  ;; uninstall packages not in list
-  (mapc (lambda (pkg)
-          (package-delete (cadr (assq pkg package-alist))))
-        (cl-set-difference package-activated-list package-selected-packages))
+  ;; [ uninstall packages not in list
+  ;; (mapc (lambda (pkg)
+  ;;         (package-delete (cadr (assq pkg package-alist))))
+  ;;       (cl-set-difference package-activated-list package-selected-packages))
+  ;; ]
   (package-autoremove))
 
 (defun package-require-all ()

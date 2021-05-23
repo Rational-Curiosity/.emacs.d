@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --with-cairo --with-x-toolkit=gtk3 --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --with-xwidgets --with-native-compilation CFLAGS='-O3 -mtune=native -march=native'
+./configure --with-json --with-cairo --without-x-toolkit --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --without-xwidgets --with-native-compilation CFLAGS='-O3 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -452,18 +452,23 @@ When called from lisp, FUNCTION may also be a function object."
 
 (defun bug-ediff-defun-at-point ()
   (interactive)
-  (let* ((defnA (thing-at-point 'defun))
-         (posnA (string-match "(\\(defun\\|cl-defun\\) \\([-_a-zA-Z0-9]+\\)" defnA))
-         (nameA (match-string 2 defnA))
-         (library (find-lisp-object-file-name (intern nameA) 'defun))
+  (let* ((defnA (or (thing-at-point 'defun)
+                    (user-error "Not function at point")))
+         (posnA (string-match
+                 "(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) \\([-_a-zA-Z0-9]+\\)"
+                 defnA))
+         (nameA (or (match-string 2 defnA)
+                    (user-error "Not name of function at point")))
+         (library (or (find-lisp-object-file-name (intern nameA) 'defun)
+                      (user-error "Library containing `%s' not found" nameA)))
          (orig-bufnA (buffer-name)))
-    (unless library
-      (user-error "Library containing `%s' not found" nameA))
     (find-file (find-library-name library))
     (goto-char (point-min))
     (search-forward (concat "defun " nameA))
     (let* ((defnB (thing-at-point 'defun))
-           (posnB (string-match "(\\(defun\\|cl-defun\\) \\([-_a-zA-Z0-9]+\\)" defnB))
+           (posnB (string-match
+                   "(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) [-_a-zA-Z0-9]+"
+                   defnB))
            (bufnA (concat "*bug-ediff A [" orig-bufnA "]*"))
            (bufnB (concat "*bug-ediff B [" (buffer-name) "]*")))
       (switch-to-buffer bufnA)
@@ -476,6 +481,7 @@ When called from lisp, FUNCTION may also be a function object."
       (unless (bolp)
         (insert "\n"))
       (indent-region (point-min) (point-max))
+      (set-buffer-modified-p nil)
       (switch-to-buffer bufnB)
       (emacs-lisp-mode)
       (insert (replace-regexp-in-string "\t" "        " (substring defnB posnB)))
@@ -486,6 +492,7 @@ When called from lisp, FUNCTION may also be a function object."
       (unless (bolp)
         (insert "\n"))
       (indent-region (point-min) (point-max))
+      (set-buffer-modified-p nil)
       (ediff-buffers bufnA bufnB))))
 
 ;;;;;;;;;;;;
@@ -624,6 +631,41 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 (defun random-goto-char ()
   (interactive)
   (goto-char (random (- (point-max) (point-min)))))
+
+(defun nmcli-connect-vpn (up-down name)
+  (interactive
+   (list
+    (completing-read "Choose up/down(up): " '("up" "down") nil t nil nil "up")
+    (completing-read "Choose VPN:"
+                     (split-string
+                      (shell-command-to-string
+                       "nmcli --colors no -t -f name connection")
+                      "\n" t)
+                     nil t)))
+  (start-process "*nmcli connect vpn*" " *nmcli connect vpn*"
+                 "nmcli" "--ask" "--colors" "no" "-t" "-w" "0" "connection"
+                 up-down name))
+
+;; (defun icomplete-vertical-kill-ring-insert (&optional arg)
+;;   "Insert item from kill-ring, selected with completion."
+;;   (interactive "*p")
+;;   (if (or (eq last-command 'yank)
+;;           (if (active-minibuffer-window)
+;;               (setq last-command 'yank)))
+;;       (yank-pop arg)
+;;     (let ((candidate
+;;            (completing-read
+;;             "Yank: "
+;;             (lambda (string pred action)
+;;               (if (eq action 'metadata)
+;;                   '(metadata (display-sort-function . identity)
+;;                              (cycle-sort-function . identity))
+;;                 (complete-with-action action kill-ring string pred)))
+;;             nil t)))
+;;       (when (and candidate (region-active-p))
+;;         ;; the currently highlighted section is to be replaced by the yank
+;;         (delete-region (region-beginning) (region-end)))
+;;       (insert candidate))))
 #+end_src
 
 * Backup and Undo
@@ -681,6 +723,7 @@ No argument or nil as argument means do this for the current buffer."
   (when (eq last-command 'undo)
     (setq this-command 'undo)))
 (advice-add #'recenter-top-bottom :after 'allow-undoing-advice)
+(global-set-key (kbd "C-/") 'undo-redo)
 #+end_src
 
 * Miscellaneous
@@ -1036,6 +1079,10 @@ mouse-3: Toggle minor modes"
   (force-mode-line-update))
 
 (add-hook 'window-configuration-change-hook
+          'force-mode-line-buffer-identification)
+(add-hook 'after-save-hook
+          'force-mode-line-buffer-identification)
+(add-hook 'after-revert-hook
           'force-mode-line-buffer-identification)
 (advice-add 'rename-buffer :after 'force-mode-line-buffer-identification)
 
@@ -1477,8 +1524,7 @@ mouse-3: Toggle minor modes"
       column-number-mode t
       isearch-lazy-count t
       isearch-allow-scroll 'unlimited
-      completion-cycle-threshold 3
-      completion-show-help nil
+      max-mini-window-height 0.55
       ;; kill-ring
       kill-do-not-save-duplicates t
       ;; mark-ring
@@ -1842,7 +1888,8 @@ prompt the user for a coding system."
 ;;;;;;;;;;;;;;;;;
 ;; Copy things ;;
 ;;;;;;;;;;;;;;;;;
-(setq yank-excluded-properties t)
+(setq yank-excluded-properties t
+      yank-from-kill-ring-rotate t)
 
 (defun duplicate-region (arg beg end &optional orig)
   "Duplicates ARG times region from BEG to END."
@@ -2156,15 +2203,15 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;
 ;; Kill ring ;;
 ;;;;;;;;;;;;;;;
-(defun kill-ring-insert ()
-  (interactive)
-  (let ((to_insert (completing-read "Yank: "
-                                    (cl-delete-duplicates kill-ring :test #'equal)
-                                    nil t)))
-    (when (and to_insert (region-active-p))
-      ;; the currently highlighted section is to be replaced by the yank
-      (delete-region (region-beginning) (region-end)))
-    (insert to_insert)))
+;; (defun kill-ring-insert ()
+;;   (interactive)
+;;   (let ((to_insert (completing-read "Yank: "
+;;                                     (cl-delete-duplicates kill-ring :test #'equal)
+;;                                     nil t)))
+;;     (when (and to_insert (region-active-p))
+;;       ;; the currently highlighted section is to be replaced by the yank
+;;       (delete-region (region-beginning) (region-end)))
+;;     (insert to_insert)))
 
 ;;;;;;;;;;;;
 ;; Cycles ;;
@@ -2260,92 +2307,92 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Next-Previous thing like this ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'thing-cmds)
-(defvar thgcmd--last-like-this nil)
+;; (require 'thing-cmds)
+;; (defvar thgcmd--last-like-this nil)
 
-(defun buffer-substring-no-properties-thing (thing)
-  (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag)
-                           thgcmd-use-nearest-thing-flag))
-         (bds         (if use-near-p
-                          (tap-bounds-of-thing-nearest-point
-                           (intern thing))
-                        (thgcmd-bounds-of-thing-at-point
-                         (intern thing))))
-         (start       (car bds))
-         (end         (cdr bds)))
-    (cond ((and start  end)
-           (buffer-substring-no-properties start end))
-          (t
-           (message "No `%s' %s point"
-                    thing (if use-near-p 'near 'at))
-           (setq deactivate-mark  nil)
-           nil))))
+;; (defun buffer-substring-no-properties-thing (thing)
+;;   (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag)
+;;                            thgcmd-use-nearest-thing-flag))
+;;          (bds         (if use-near-p
+;;                           (tap-bounds-of-thing-nearest-point
+;;                            (intern thing))
+;;                         (thgcmd-bounds-of-thing-at-point
+;;                          (intern thing))))
+;;          (start       (car bds))
+;;          (end         (cdr bds)))
+;;     (cond ((and start  end)
+;;            (buffer-substring-no-properties start end))
+;;           (t
+;;            (message "No `%s' %s point"
+;;                     thing (if use-near-p 'near 'at))
+;;            (setq deactivate-mark  nil)
+;;            nil))))
 
-(defun next-thing-like-this (this)
-  (interactive (list
-                (cond
-                 ((and current-prefix-arg
-                       thgcmd--last-like-this)
-                  thgcmd--last-like-this)
-                 ((memq last-command '(next-thing-like-this
-                                       previous-thing-like-this))
-                  (buffer-substring-no-properties-thing
-                   (symbol-name thgcmd-last-thing-type)))
-                 (t
-                  (buffer-substring-no-properties-thing
-                   (let* ((icicle-sort-function  nil)
-                          (def (symbol-name thgcmd-last-thing-type))
-                          (thing
-                           (completing-read
-                            (concat "Thing (" def "): ")
-                            (thgcmd-things-alist) nil t nil nil
-                            def)))
-                     (setq thgcmd-last-thing-type  (intern thing))
-                     thing))))))
-  (when this
-    (setq thgcmd--last-like-this this)
-    (if (re-search-forward "\\_>" nil t)
-        (goto-char (1- (match-end 0))))
-    (if (null (re-search-forward (format "\\_<%s\\_>"
-                                         (regexp-quote this)) nil t))
-        (message "No next match")
-      (goto-char (match-beginning 0))
-      (mapc (lambda (ov)
-              (overlay-put ov 'invisible nil))
-            (overlays-at (point)))
-      (message "Found next match of `%s'" this))))
+;; (defun next-thing-like-this (this)
+;;   (interactive (list
+;;                 (cond
+;;                  ((and current-prefix-arg
+;;                        thgcmd--last-like-this)
+;;                   thgcmd--last-like-this)
+;;                  ((memq last-command '(next-thing-like-this
+;;                                        previous-thing-like-this))
+;;                   (buffer-substring-no-properties-thing
+;;                    (symbol-name thgcmd-last-thing-type)))
+;;                  (t
+;;                   (buffer-substring-no-properties-thing
+;;                    (let* ((icicle-sort-function  nil)
+;;                           (def (symbol-name thgcmd-last-thing-type))
+;;                           (thing
+;;                            (completing-read
+;;                             (concat "Thing (" def "): ")
+;;                             (thgcmd-things-alist) nil t nil nil
+;;                             def)))
+;;                      (setq thgcmd-last-thing-type  (intern thing))
+;;                      thing))))))
+;;   (when this
+;;     (setq thgcmd--last-like-this this)
+;;     (if (re-search-forward "\\_>" nil t)
+;;         (goto-char (1- (match-end 0))))
+;;     (if (null (re-search-forward (format "\\_<%s\\_>"
+;;                                          (regexp-quote this)) nil t))
+;;         (message "No next match of `%s'" this)
+;;       (goto-char (match-beginning 0))
+;;       (mapc (lambda (ov)
+;;               (overlay-put ov 'invisible nil))
+;;             (overlays-at (point)))
+;;       (message "Found next match of `%s'" this))))
 
-(defun previous-thing-like-this (this)
-  (interactive (list
-                (cond
-                 ((and current-prefix-arg
-                       thgcmd--last-like-this)
-                  thgcmd--last-like-this)
-                 ((memq last-command '(next-thing-like-this
-                                       previous-thing-like-this))
-                  (buffer-substring-no-properties-thing
-                   (symbol-name thgcmd-last-thing-type)))
-                 (t
-                  (buffer-substring-no-properties-thing
-                   (let* ((icicle-sort-function  nil)
-                          (def (symbol-name thgcmd-last-thing-type))
-                          (thing
-                           (completing-read
-                            (concat "Thing (" def "): ")
-                            (thgcmd-things-alist) nil t nil nil
-                            def)))
-                     (setq thgcmd-last-thing-type  (intern thing))
-                     thing))))))
-  (when this
-    (setq thgcmd--last-like-this this)
-    (if (null (re-search-backward (format "\\_<%s\\_>"
-                                          (regexp-quote this)) nil t))
-        (message "No previous match")
-      (goto-char (match-beginning 0))
-      (mapc (lambda (ov)
-              (overlay-put ov 'invisible nil))
-            (overlays-at (point)))
-      (message "Found previous match of `%s'" this))))
+;; (defun previous-thing-like-this (this)
+;;   (interactive (list
+;;                 (cond
+;;                  ((and current-prefix-arg
+;;                        thgcmd--last-like-this)
+;;                   thgcmd--last-like-this)
+;;                  ((memq last-command '(next-thing-like-this
+;;                                        previous-thing-like-this))
+;;                   (buffer-substring-no-properties-thing
+;;                    (symbol-name thgcmd-last-thing-type)))
+;;                  (t
+;;                   (buffer-substring-no-properties-thing
+;;                    (let* ((icicle-sort-function  nil)
+;;                           (def (symbol-name thgcmd-last-thing-type))
+;;                           (thing
+;;                            (completing-read
+;;                             (concat "Thing (" def "): ")
+;;                             (thgcmd-things-alist) nil t nil nil
+;;                             def)))
+;;                      (setq thgcmd-last-thing-type  (intern thing))
+;;                      thing))))))
+;;   (when this
+;;     (setq thgcmd--last-like-this this)
+;;     (if (null (re-search-backward (format "\\_<%s\\_>"
+;;                                           (regexp-quote this)) nil t))
+;;         (message "No previous match of `%s'" this)
+;;       (goto-char (match-beginning 0))
+;;       (mapc (lambda (ov)
+;;               (overlay-put ov 'invisible nil))
+;;             (overlays-at (point)))
+;;       (message "Found previous match of `%s'" this))))
 
 ;;;;;;;;;;
 ;; Keys ;;
@@ -2354,8 +2401,8 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
 (global-set-key (kbd "C-x <C-tab>") #'align-regexp)
-(global-set-key (kbd "C-:") 'next-thing-like-this)
-(global-set-key (kbd "C-;") 'previous-thing-like-this)
+;; (global-set-key (kbd "C-:") 'next-thing-like-this)
+;; (global-set-key (kbd "C-;") 'previous-thing-like-this)
 (global-set-key (kbd "C-(") 'surround-change-pair)
 (global-set-key (kbd "C-)") 'surround-delete-pair)
 (global-set-key (kbd "C-M-(") 'blink-matching-open)
@@ -2608,6 +2655,7 @@ For more information, see the function `buffer-menu'."
       ;; ]
       ;; Dangerous, annoying scroll holding next-line
       ;; fast-but-imprecise-scrolling t
+      redisplay-skip-fontification-on-input t
       ;; mouse-wheel-progressive-speed nil
       ;; > 100 Never recenter point
       ;; scroll-conservatively 101
@@ -2736,14 +2784,16 @@ For more information, see the function `buffer-menu'."
 ;;   (pulse-momentary-highlight-region (window-start window)
 ;;                                     (window-end window)))
 
-(defun display-buffer-if-not-showed (orig-fun buffer-or-name &rest args)
-  "Advice ORIG-FUN with args BUFFER-OR-NAME and ARGS.
-Don't show on windows buffers currently showed."
-  (let ((window (get-buffer-window buffer-or-name 0)))
-    (if (windowp window)
-        window
-      (apply orig-fun buffer-or-name args))))
-(advice-add 'display-buffer :around #'display-buffer-if-not-showed)
+;; [ Conflict with *Completions* buffer
+;; (defun display-buffer-if-not-showed (orig-fun buffer-or-name &rest args)
+;;   "Advice ORIG-FUN with args BUFFER-OR-NAME and ARGS.
+;; Don't show on windows buffers currently showed."
+;;   (let ((window (get-buffer-window buffer-or-name 0)))
+;;     (if (windowp window)
+;;         window
+;;       (apply orig-fun buffer-or-name args))))
+;; (advice-add 'display-buffer :around #'display-buffer-if-not-showed)
+;; ]
 
 ;; Thanks to: https://superuser.com/questions/132225/how-to-get-back-to-an-active-minibuffer-prompt-in-emacs-without-the-mouse
 (defun switch-to-minibuffer-window ()
@@ -2912,8 +2962,6 @@ ARG non-nil resize window to ARG height."
                               (1- factor)))
                    horizontal)))
 
-(setq max-mini-window-height 0.7)
-
 ;; autoresize
 (defvar-local window-autoresize-size nil)
 
@@ -2993,13 +3041,6 @@ ARG non-nil resize window to ARG height."
       (toggle-truncate-lines -1))
     (when global-visual-line-mode
       (visual-line-mode 1))))
-
-(with-eval-after-load 'simple
-  (setq minor-mode-alist (assq-delete-all 'visual-line-mode minor-mode-alist))
-
-  ;; slow performance
-  ;; (global-visual-line-mode 1)
-  (add-hook 'minibuffer-setup-hook 'visual-line-mode))
 ;; ]
 
 ;; winner
@@ -3037,6 +3078,14 @@ ARG non-nil resize window to ARG height."
     ("C-n" winner-redo "redo")
     ("M-q" nil "quit"))
   (global-set-key (kbd "C-c w m") 'hydra-win/body))
+
+(define-key winner-mode-map [(control c) left] nil)
+(define-key winner-mode-map [(control c) right] nil)
+(define-key winner-mode-map (kbd "C-c w -") #'winner-undo)
+(define-key winner-mode-map (kbd "<s-f11>") #'winner-undo)
+(define-key winner-mode-map (kbd "C-c w _") #'winner-redo)
+(define-key winner-mode-map (kbd "<s-f12>") #'winner-redo)
+
 (global-set-key (kbd "M-s 0") 'switch-to-minibuffer-window)
 (global-set-key (kbd "M-s 7 w") 'toggle-continuation-lines)
 (global-set-key (kbd "M-s 7 v") #'visual-line-mode)
@@ -3234,12 +3283,6 @@ others."
 ;; (global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
 
 
-(define-key winner-mode-map [(control c) left] nil)
-(define-key winner-mode-map [(control c) right] nil)
-(define-key winner-mode-map (kbd "C-c w -") #'winner-undo)
-(define-key winner-mode-map (kbd "<s-f11>") #'winner-undo)
-(define-key winner-mode-map (kbd "C-c w _") #'winner-redo)
-(define-key winner-mode-map (kbd "<s-f12>") #'winner-redo)
 (global-set-key (kbd "<s-f10>") #'window-configuration-to-register)
 (global-set-key (kbd "<s-f9>") #'jump-to-register)
 (global-set-key (kbd "C-c w =") 'window-resize-equal)
@@ -3266,6 +3309,7 @@ others."
 (global-set-key (kbd "C-c w C-h") 'window-resize-height)
 (global-set-key (kbd "C-c w C-w") 'window-resize-width)
 (global-set-key (kbd "C-c w S") 'balance-windows-area)
+(global-set-key (kbd "C-x 5 r") (lambda () (interactive) (redraw-frame)))
 #+end_src
 
 * EXWM
@@ -4685,9 +4729,69 @@ mode and header lines."
   (fmakunbound 'after-exwm-config))
 #+end_src
 
+* Completions
+
+#+begin_src elisp
+(defun inhibit-mode-line ()
+  (setq mode-line-format nil))
+
+(add-hook 'completion-list-mode-hook 'inhibit-mode-line)
+
+(setq completion-cycle-threshold 3
+      completion-show-help nil)
+
+(with-eval-after-load 'simple
+  (define-key minibuffer-local-shell-command-map (kbd "M-v")
+    'switch-to-completions)
+  (define-key read-expression-map (kbd "M-v") 'switch-to-completions))
+
+(define-key completion-in-region-mode-map (kbd "M-v")
+  'switch-to-completions)
+(define-key minibuffer-local-completion-map (kbd "M-v")
+  'switch-to-completions)
+#+end_src
+
+* CANC Completing at point
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
+
+#+begin_src elisp
+(defun completing-read-advice (orig-fun prompt collection &optional
+                                        predicate require-match initial-input
+                                        hist def inherit-input-method)
+  (funcall orig-fun (propertize prompt
+                                'face
+                                (cl-case require-match
+                                  (nil 'hi-green-b)
+                                  (t 'hi-red-b)
+                                  (confirm 'hi-magenta-b)
+                                  (confirm-after-completion 'hi-magenta-b)
+                                  (otherwise 'hi-yellow-b)))
+           collection predicate require-match initial-input
+           hist def inherit-input-method))
+(advice-add 'completing-read :around 'completing-read-advice)
+(with-eval-after-load 'crm
+  (advice-add 'completing-read-multiple :around 'completing-read-advice))
+
+(require 'completing-read-at-point)
+(completing-read-at-point-mode)
+
+#+end_src
+
 * Internal packages
 ** Always required
-*** /fido/
+*** /repeat-mode/
+
+#+begin_src elisp
+(setq repeat-exit-timeout 3)
+(repeat-mode)
+#+end_src
+
+*** CANC /fido/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 ;; sudo apt install fd-find
@@ -4767,13 +4871,6 @@ mode and header lines."
 ;;                   and return
 ;;                   (completion--cache-all-sorted-completions beg end (cons comp all)))
 ;;          finally return all))))
-
-(require 'completing-read-at-point)
-(require 'orderless)
-
-;; this file overides completion-category-defaults
-(require 'message)
-
 (eval-and-when-daemon frame
   (if (display-graphic-p frame)
       (set-face-attribute 'icomplete-first-match nil
@@ -4786,6 +4883,12 @@ mode and header lines."
                         :foreground 'unspecified
                         :weight 'unspecified
                         :box 'unspecified)))
+(with-eval-after-load 'simple
+  (setq minor-mode-alist (assq-delete-all 'visual-line-mode minor-mode-alist))
+
+  ;; slow performance
+  ;; (global-visual-line-mode 1)
+  (add-hook 'minibuffer-setup-hook 'visual-line-mode))
 
 ;; Another functions override this variables, then
 ;; set every time enter minibuffer
@@ -4793,15 +4896,8 @@ mode and header lines."
  ;; icomplete
  icomplete-prospects-height 4
  icomplete-separator (propertize " ◊ "
-                                 'face '(:foreground "steel blue"))
- ;; orderless
- orderless-matching-styles '(orderless-regexp orderless-flex)
- orderless-component-separator (lambda (input)
-                                 (mapcar
-                                  (lambda (component)
-                                    (replace-regexp-in-string " +-- .*\\'" "" component t))
-                                  (split-string-and-unquote input ",+")))
- orderless-style-dispatchers nil)
+                                 'face '(:foreground "steel blue")))
+
 (defun icomplete--fido-mode-setup ()
   "Setup `fido-mode''s minibuffer."
   (when (and icomplete-mode (icomplete-simple-completing-p))
@@ -4824,114 +4920,7 @@ mode and header lines."
     ;; ]
     ))
 
-(cond ((executable-find "fdfind")
-       (setq fd-dired-program "fdfind"
-             projectile-generic-command "fdfind . -0 --type f --color=never"))
-      ((executable-find "fd-find")
-       (setq fd-dired-program "fd-find"
-             projectile-generic-command "fd-find . -0 --type f --color=never"))
-      ((executable-find "fd")
-       (setq fd-dired-program "fd")))
-
-;; Functions
-(defun orderless-first-regexp (pattern index _total)
-  (if (= index 0) 'orderless-regexp))
-
-(defun orderless-first-literal (pattern index _total)
-  (if (= index 0) 'orderless-literal))
-
-(defun orderless-match-components-cycle ()
-  "Components match regexp for the rest of the session."
-  (interactive)
-  (cond
-   ;; first in cycle
-   ((equal orderless-matching-styles (default-value 'orderless-matching-styles))
-    (setq-local orderless-matching-styles '(orderless-regexp)
-                orderless-style-dispatchers nil)
-    (message "orderless-regexp"))
-   ;; second in cycle
-   ((equal orderless-matching-styles '(orderless-regexp))
-    (setq-local orderless-matching-styles '(orderless-literal)
-                orderless-style-dispatchers nil)
-    (message "orderless-literal"))
-   ;; third in cycle
-   ((equal orderless-matching-styles '(orderless-literal))
-    (setq-local orderless-matching-styles '(orderless-flex)
-                orderless-style-dispatchers nil)
-    (message "orderless-flex"))
-   ;; last in cycle
-   ((equal orderless-matching-styles '(orderless-flex))
-    (setq-local orderless-matching-styles (default-value 'orderless-matching-styles)
-                orderless-style-dispatchers (default-value 'orderless-style-dispatchers))
-    (message "%s" (default-value 'orderless-matching-styles))))
-  (completion--flush-all-sorted-completions)
-  (icomplete-pre-command-hook)
-  (icomplete-post-command-hook))
-
-(defun nmcli-connect-vpn (up-down name)
-  (interactive
-   (list
-    (completing-read "Choose up/down(up): " '("up" "down") nil t nil nil "up")
-    (completing-read "Choose VPN:"
-                     (split-string
-                      (shell-command-to-string
-                       "nmcli --colors no -t -f name connection")
-                      "\n" t)
-                     nil t)))
-  (start-process "*nmcli connect vpn*" " *nmcli connect vpn*"
-                 "nmcli" "--ask" "--colors" "no" "-t" "-w" "0" "connection"
-                 up-down name))
-
-(defun icomplete-vertical-kill-ring-insert (&optional arg)
-  "Insert item from kill-ring, selected with completion."
-  (interactive "*p")
-  (if (or (eq last-command 'yank)
-          (if (active-minibuffer-window)
-              (setq last-command 'yank)))
-      (yank-pop arg)
-    (let ((candidate
-           (completing-read
-            "Yank: "
-            (lambda (string pred action)
-              (if (eq action 'metadata)
-                  '(metadata (display-sort-function . identity)
-                             (cycle-sort-function . identity))
-                (complete-with-action action kill-ring string pred)))
-            nil t)))
-      (when (and candidate (region-active-p))
-        ;; the currently highlighted section is to be replaced by the yank
-        (delete-region (region-beginning) (region-end)))
-      (insert candidate))))
-
-(defun completing-read-advice (orig-fun prompt collection &optional
-                                        predicate require-match initial-input
-                                        hist def inherit-input-method)
-  (funcall orig-fun (propertize prompt
-                                'face
-                                (cl-case require-match
-                                  (nil 'hi-green-b)
-                                  (t 'hi-red-b)
-                                  (confirm 'hi-magenta-b)
-                                  (confirm-after-completion 'hi-magenta-b)
-                                  (otherwise 'hi-yellow-b)))
-           collection predicate require-match initial-input
-           hist def inherit-input-method))
-(advice-add 'completing-read :around 'completing-read-advice)
-(with-eval-after-load 'crm
-  (advice-add 'completing-read-multiple :around 'completing-read-advice))
-
-
 ;; Keys
-(with-eval-after-load 'simple
-  (define-key minibuffer-local-shell-command-map (kbd "M-v")
-    'switch-to-completions)
-  (define-key read-expression-map (kbd "M-v") 'switch-to-completions))
-
-(define-key minibuffer-local-completion-map (kbd "C-v")
-  'orderless-match-components-cycle)
-(define-key minibuffer-local-completion-map (kbd "M-v")
-  'switch-to-completions)
-
 (define-key icomplete-minibuffer-map (kbd "C-k") 'icomplete-fido-kill)
 (define-key icomplete-minibuffer-map (kbd "C-d") 'icomplete-fido-delete-char)
 (define-key icomplete-minibuffer-map (kbd "RET") 'icomplete-fido-ret)
@@ -4946,7 +4935,6 @@ mode and header lines."
 (define-key icomplete-fido-mode-map (kbd "C-|") 'icomplete-vertical-mode)
 (global-set-key (kbd "M-g M-a") 'occur-project)
 (global-set-key (kbd "M-g M-f") 'project-find-file)
-(global-set-key (kbd "M-g f") 'fd-dired)
 (global-set-key (kbd "M-s O") 'multi-occur)
 (global-set-key
  (kbd "<f12>")
@@ -4955,7 +4943,6 @@ mode and header lines."
    (message "log: %s" (list completion-cycling minibuffer-default))))
 
 (fido-mode)
-(completing-read-at-point-mode)
 #+end_src
 
 *** Caps modes
@@ -5172,18 +5159,24 @@ If `case-replace' is nil, do not alter case of replacement text."
 *** /recentf/
 
 #+begin_src elisp
-(defun icomplete-recentf-find-file (arg)
+(defun completing-recentf-find-file (arg)
   "Show a list of recent files."
   (interactive "P")
   (require 'recentf)
   (--> recentf-list
-       (mapcar #'substring-no-properties it)
-       (mapcar #'abbreviate-file-name it)
-       (cl-remove-duplicates it :test #'string-equal)
-       (let ((minibuffer-completing-file-name t))
-         (completing-read "Recent Files: " it nil t))
-       (if arg (find-file-other-window it) (find-file it))))
-(global-set-key "\C-x\ \C-r" 'icomplete-recentf-find-file)
+    (mapcar #'substring-no-properties it)
+    (mapcar #'abbreviate-file-name it)
+    (cl-remove-duplicates it :test #'string-equal)
+    (let ((minibuffer-completing-file-name t))
+      (completing-read
+       "Recent Files: "
+       (lambda (string pred action)
+         (if (eq action 'metadata)
+             '(metadata (category . file))
+           (complete-with-action action it string pred)))
+       nil t))
+    (if arg (find-file-other-window it) (find-file it))))
+(global-set-key "\C-x\ \C-r" 'completing-recentf-find-file)
 
 (with-eval-after-load 'recentf
   (recentf-cleanup)
@@ -6633,26 +6626,37 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 *** /hl-line/
 
 #+begin_src elisp
-  (require 'hl-line)
+(require 'hl-line)
 
-  ;; (set-face-attribute 'hl-line nil
-  ;;                     :foreground 'unspecified
-  ;;                     :background "#000000"
-  ;;                     :overline 'unspecified
-  ;;                     :underline 'unspecified
-  ;;                     :box 'unspecified
-  ;;                     :inherit 'unspecified)
+;; (set-face-attribute 'hl-line nil
+;;                     :foreground 'unspecified
+;;                     :background "#000000"
+;;                     :overline 'unspecified
+;;                     :underline 'unspecified
+;;                     :box 'unspecified
+;;                     :inherit 'unspecified)
 
-  (face-spec-set 'hl-line
-                 '((((background light))
-                    :inherit unspecified
-                    :background "#ffffff")  ; looks OK on tty (becomes cyan)
-                   (((background dark))
-                    :inherit unspecified
-                    :background "#000000")  ; looks OK on tty (becomes blue)
-                   ))
+(face-spec-set 'hl-line
+               '((((background light))
+                  :inherit unspecified
+                  :background "#ffffff")  ; looks OK on tty (becomes cyan)
+                 (((background dark))
+                  :inherit unspecified
+                  :background "#000000")  ; looks OK on tty (becomes blue)
+                 ))
 
-  (global-hl-line-mode 1)
+(defface underline-white
+  '((((supports :underline t))
+     :underline "white")
+    (((supports :weight bold))
+     :weight bold)
+    (t :underline "white"))
+  "Basic underlined face."
+  :group 'basic-faces)
+
+(setq hl-line-face 'underline-white)
+
+(global-hl-line-mode 1)
 #+end_src
 
 *** /whitespace/
@@ -6766,20 +6770,20 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
         ;; t is expensive
         display-line-numbers-grow-only nil
         ;; 'visual is very expensive
-        display-line-numbers-type t)
+        display-line-numbers-type 'relative)
 
-  ;; (defvar display-line-type-selected-last-buffer nil)
-  ;; (defun display-line-type-by-selected (_window-or-frame)
-  ;;   (when (buffer-live-p display-line-type-selected-last-buffer)
-  ;;     (with-current-buffer display-line-type-selected-last-buffer
-  ;;       (setq display-line-numbers t))
-  ;;     (setq display-line-type-selected-last-buffer nil))
-  ;;   (when (and display-line-numbers-mode
-  ;;              (derived-mode-p 'prog-mode))
-  ;;     (unless (eq display-line-numbers 'visual)
-  ;;       (setq display-line-numbers 'visual))
-  ;;     (setq display-line-type-selected-last-buffer (current-buffer))))
-  ;; (add-hook 'window-selection-change-functions 'display-line-type-by-selected)
+  (defvar display-line-type-selected-last-buffer nil)
+  (defun display-line-type-by-selected (_window-or-frame)
+    (when (buffer-live-p display-line-type-selected-last-buffer)
+      (with-current-buffer display-line-type-selected-last-buffer
+        (setq display-line-numbers t))
+      (setq display-line-type-selected-last-buffer nil))
+    (when (and display-line-numbers-mode
+               (derived-mode-p 'prog-mode))
+      (unless (eq display-line-numbers display-line-numbers-type)
+        (setq display-line-numbers display-line-numbers-type))
+      (setq display-line-type-selected-last-buffer (current-buffer))))
+  (add-hook 'window-selection-change-functions 'display-line-type-by-selected)
 
   (defun display-line-numbers-cycle ()
     (interactive)
@@ -8386,13 +8390,13 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
         compilation-scroll-output 'first-error)
 
   (push '("\\_<\\([A-Za-z]*[Ww]arnings?\\|WARNINGS?\\|[Ww]arn\\|WARN\\|[Dd]eprecated\\|DEPRECATED\\)\\_>"
-          (1 compilation-warning-face))
+          1 compilation-warning-face)
         compilation-mode-font-lock-keywords)
-  (push '("\\_<\\([A-Za-z]*[Ee]rrors?\\|ERRORS?\\|[A-Za-z]*[Ee]xceptions?\\|EXCEPTIONS?\\|\\(std\\)?[Ee]rr\\(no\\)?\\|\\(STD\\)?ERR\\(NO\\)?\\|[Ff]ailed\\|FAILED\\|[Ff]ailures?\\|FAILURES?\\|[Ff]ails?\\|FAILS?\\)\\_>"
-          (1 compilation-error-face))
+  (push '("\\_<\\([A-Za-z]*[Ee]rrors?\\|ERRORS?\\|[A-Za-z]*[Ee]xceptions?\\|EXCEPTIONS?\\|\\(std\\)?[Ee]rr\\(no\\)?\\|\\(STD\\)?ERR\\(NO\\)?\\|[Nn]ot?\\|NOT?\\|[Ff]ailed\\|FAILED\\|[Ff]ailures?\\|FAILURES?\\|[Ff]ails?\\|FAILS?\\)\\_>"
+          1 compilation-error-face)
         compilation-mode-font-lock-keywords)
   (push '("\\_<\\(GET\\|HEAD\\|POST\\|PUT\\|DELETE\\|CONNECT\\|OPTIONS\\|TRACE\\|PATCH\\)\\_> [^ \t\r\n]*"
-          (0 compilation-info-face))
+          0 compilation-info-face)
         compilation-mode-font-lock-keywords)
 
   ;; (defun compilation-conditional-scroll-output ()
@@ -8561,23 +8565,24 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
 #+begin_src elisp
 (with-eval-after-load 'eldoc
+  (defun display-buffer-eldoc-condition (buffer-name action)
+    (eq eldoc--doc-buffer (get-buffer buffer-name)))
+
   (defun eldoc-doc-buffer-toggle ()
     (interactive)
     (unless global-eldoc-mode
       (global-eldoc-mode))
-    (let ((windows (get-buffer-window-list eldoc--doc-buffer)))
-      (if windows
-          (mapc 'delete-window windows)
-        (eldoc-doc-buffer))))
-
-  (defun display-buffer-eldoc-condition (buffer-name action)
-    (eq eldoc--doc-buffer (get-buffer buffer-name)))
-
-  (push '(display-buffer-eldoc-condition
-          display-buffer-at-bottom
-          (inhibit-same-window . t)
-          (window-height . fit-window-to-buffer))
-        display-buffer-alist)
+    (if eldoc--doc-buffer
+        (let ((windows (get-buffer-window-list eldoc--doc-buffer)))
+          (if windows
+              (mapc 'delete-window windows)
+            (let ((display-buffer-alist
+                   '(((lambda (&rest _args) t)
+                      display-buffer-at-bottom
+                      (inhibit-same-window . t)
+                      (window-height . fit-window-to-buffer)))))
+              (eldoc-doc-buffer))))
+      (message "Eldoc not ready. Wait or call `eldoc'.")))
 
   (setq eldoc-minor-mode-string ""
         eldoc-echo-area-prefer-doc-buffer t
@@ -9520,12 +9525,13 @@ if __name__ == \"__main__\":
 
   (when (require 'flymake-diagnostic-at-point nil 'noerror)
     (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode)
-    (setq flymake-diagnostic-at-point-timer-delay 2.0))
+    (setq flymake-diagnostic-at-point-timer-delay flymake-no-changes-timeout))
 
   (define-key flymake-mode-map (kbd "M-g n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g M-n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g p") #'flymake-goto-prev-error)
   (define-key flymake-mode-map (kbd "M-g M-p") #'flymake-goto-prev-error)
+  (define-key flymake-mode-map (kbd "M-c ! l") #'flymake-show-diagnostics-buffer)
   (define-key flymake-mode-map (kbd "C-c ! c") #'flymake-start))
 #+end_src
 
@@ -9648,6 +9654,80 @@ if __name__ == \"__main__\":
 
 * External packages
 ** Always required
+*** /orderless/
+
+#+begin_src elisp
+(require 'orderless)
+;; this file overides completion-category-defaults
+(require 'message)
+
+(setq orderless-matching-styles '(orderless-regexp orderless-flex)
+      ;; consult integration
+      orderless-component-separator (lambda (input)
+                                      (mapcar
+                                       (lambda (component)
+                                         (replace-regexp-in-string " +-- .*\\'" "" component t))
+                                       (split-string-and-unquote input ",+")))
+      orderless-style-dispatchers nil
+      completion-styles '(orderless)
+      completion-flex-nospace nil
+      completion-category-defaults nil
+      completion-ignore-case t
+      read-buffer-completion-ignore-case t
+      read-file-name-completion-ignore-case t)
+
+(defun orderless-first-regexp (pattern index _total)
+  (if (= index 0) 'orderless-regexp))
+
+(defun orderless-first-literal (pattern index _total)
+  (if (= index 0) 'orderless-literal))
+
+(defun orderless-match-reset ()
+  (unless (or completion-in-region-mode
+              (eq orderless-matching-styles '(orderless-regexp orderless-flex)))
+    (setq orderless-matching-styles '(orderless-regexp orderless-flex))))
+(add-hook 'completion-in-region-mode-hook 'orderless-match-reset)
+(add-hook 'minibuffer-exit-hook 'orderless-match-reset)
+
+(defun orderless-match-components-cycle ()
+  "Components match regexp for the rest of the session."
+  (interactive)
+  (cond
+   ;; first in cycle
+   ((equal orderless-matching-styles '(orderless-regexp orderless-flex))
+    (setq orderless-matching-styles '(orderless-regexp)
+          orderless-style-dispatchers nil)
+    (message "orderless-regexp"))
+   ;; second in cycle
+   ((equal orderless-matching-styles '(orderless-regexp))
+    (setq orderless-matching-styles '(orderless-literal))
+    (message "orderless-literal"))
+   ;; third in cycle
+   ((equal orderless-matching-styles '(orderless-literal))
+    (setq orderless-matching-styles '(orderless-flex))
+    (message "orderless-flex"))
+   ;; last in cycle
+   ((equal orderless-matching-styles '(orderless-flex))
+    (setq orderless-matching-styles '(orderless-regexp orderless-flex))
+    (message "orderless-regexp orderless-flex")))
+  (when icomplete-mode
+    (completion--flush-all-sorted-completions)
+    (icomplete-pre-command-hook)
+    (icomplete-post-command-hook)))
+
+(define-key minibuffer-local-completion-map (kbd "C-v")
+  'orderless-match-components-cycle)
+(define-key completion-in-region-mode-map (kbd "C-v")
+  'orderless-match-components-cycle)
+#+end_src
+
+*** /tree-sitter/
+
+#+begin_src elisp
+(require 'tree-sitter)
+(require 'tree-sitter-langs)
+#+end_src
+
 *** CANC /helm/
 :PROPERTIES:
 :header-args:elisp: :tangle no
@@ -10951,31 +11031,105 @@ Switch the current window to the previous buffer."
      (interactive "p")
      (let ((current-prefix-arg nil)
            (avy-all-windows (cl-case arg
-                             (1 nil)
-                             ((2 4) t)
-                             ((3 5 16) 'all-frames)
-                             (otherwise avy-all-windows))))
+                              (1 nil)
+                              ((2 4) t)
+                              ((3 5 16) 'all-frames)
+                              (otherwise avy-all-windows))))
        (call-interactively (quote ,avy-fun)))))
+
+(defun avy-completions-word-or-subword-1 ()
+  (interactive)
+  (switch-to-completions)
+  (let (avy-all-windows)
+    (call-interactively 'avy-goto-word-or-subword-1)))
+
+(defun avy-completions-word-1 ()
+  (interactive)
+  (switch-to-completions)
+  (let (avy-all-windows)
+    (call-interactively 'avy-goto-word-1)))
+
+(defun avy-completions-word-0 ()
+  (interactive)
+  (switch-to-completions)
+  (let (avy-all-windows)
+    (call-interactively 'avy-goto-word-0)))
+
+(defun avy-completions-line ()
+  (interactive)
+  (switch-to-completions)
+  (let (avy-all-windows)
+    (call-interactively 'avy-goto-line)))
+
+(defun avy-completions-timer ()
+  (interactive)
+  (switch-to-completions)
+  (let (avy-all-windows)
+    (call-interactively 'avy-goto-char-timer)))
+
+(defun avy-completions-candidate ()
+  (interactive)
+  (switch-to-completions)
+  (let (avy-all-windows)
+    (avy-with avy-goto-char
+      (avy-jump "[\t\n]\\(?1:[^\t\n]+\\)"
+                :group 1))))
 
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(define-key completion-in-region-mode-map (kbd "M-z")
+  'avy-completions-candidate)
+(define-key minibuffer-local-completion-map (kbd "M-z")
+  'avy-completions-candidate)
+(define-key completion-list-mode-map (kbd "M-z")
+  'avy-completions-candidate)
+
+(define-key completion-in-region-mode-map (kbd "M-Z")
+  'avy-completions-word-or-subword-1)
+(define-key minibuffer-local-completion-map (kbd "M-Z")
+  'avy-completions-word-or-subword-1)
+
+(define-key completion-in-region-mode-map (kbd "C-M-z")
+  'avy-completions-timer)
+(define-key minibuffer-local-completion-map (kbd "C-M-z")
+  'avy-completions-timer)
+
+(define-key completion-in-region-mode-map (kbd "M-g w")
+  'avy-completions-word-1)
+(define-key minibuffer-local-completion-map (kbd "M-g w")
+  'avy-completions-word-1)
+
+(define-key completion-in-region-mode-map (kbd "M-g W")
+  'avy-completions-word-0)
+(define-key minibuffer-local-completion-map (kbd "M-g W")
+  'avy-completions-word-0)
+
+(define-key completion-in-region-mode-map (kbd "M-g l")
+  'avy-completions-line)
+(define-key minibuffer-local-completion-map (kbd "M-g l")
+  'avy-completions-line)
+
 (global-set-key (kbd "M-g c") (avy-prefix-all-windows
                                avy-goto-char))
 (global-set-key (kbd "M-g C") (avy-prefix-all-windows
                                avy-goto-char-2))
-(global-set-key (kbd "M-g s") (avy-prefix-all-windows
+(global-set-key (kbd "C-M-z") (avy-prefix-all-windows
                                avy-goto-char-timer))
+(global-set-key (kbd "M-g s") (avy-prefix-all-windows
+                               avy-goto-symbol-1))
 (global-set-key (kbd "M-g l") (avy-prefix-all-windows
                                avy-goto-line))
 (global-set-key (kbd "M-g w") (avy-prefix-all-windows
                                avy-goto-word-1))
 (global-set-key (kbd "M-g W") (avy-prefix-all-windows
                                avy-goto-word-0))
+(global-set-key (kbd "M-Z")   (avy-prefix-all-windows
+                               avy-goto-char-in-line))
 (global-set-key (kbd "M-z")   (avy-prefix-all-windows
                                avy-goto-word-or-subword-1))
-(global-set-key (kbd "M-Z")   (avy-prefix-all-windows
-                               avy-resume))
+(global-set-key (kbd "M-g L")   (avy-prefix-all-windows
+                                 avy-resume))
 (global-set-key (kbd "M-g k") (avy-prefix-all-windows
                                link-hint-open-link))
 (global-set-key (kbd "M-g K") (avy-prefix-all-windows
@@ -11748,20 +11902,85 @@ Switch the current window to the previous buffer."
 #+end_src
 
 ** Not always required
+*** /fd-dired/
+
+#+begin_src elisp
+(with-eval-after-load 'fd-dired
+  (cond ((executable-find "fdfind")
+         (setq fd-dired-program "fdfind"))
+        ((executable-find "fd-find")
+         (setq fd-dired-program "fd-find"))
+        ((executable-find "fd")
+         (setq fd-dired-program "fd"))))
+
+(global-set-key (kbd "M-g f") 'fd-dired)
+#+end_src
+
+*** /syslog-mode/
+
+#+begin_src elisp
+(push '("\\.log\\'" . syslog-mode) auto-mode-alist)
+(with-eval-after-load 'syslog-mode
+  (push '("\\_<\\([A-Za-z]*[Ww]arnings?\\|WARNINGS?\\|[Ww]arn\\|WARN\\|[Dd]eprecated\\|DEPRECATED\\)\\_>"
+          1 'syslog-warn)
+        syslog-font-lock-keywords)
+  (push '("\\_<\\([A-Za-z]*[Ee]rrors?\\|ERRORS?\\|[A-Za-z]*[Ee]xceptions?\\|EXCEPTIONS?\\|\\(std\\)?[Ee]rr\\(no\\)?\\|\\(STD\\)?ERR\\(NO\\)?\\|[Nn]ot?\\|NOT?\\|[Ff]ailed\\|FAILED\\|[Ff]ailures?\\|FAILURES?\\|[Ff]ails?\\|FAILS?\\)\\_>"
+          1 'syslog-error)
+        syslog-font-lock-keywords)
+  (defun syslog-fix-buffer ()
+    (goto-char (point-min))
+    (let ((inhibit-read-only t))
+      (when (search-forward "\e" nil t)
+        (ansi-color-apply-on-region (point-min) (point-max))
+        (goto-char (point-min)))
+      (while (search-forward "\r" nil t)
+        (replace-match "" t t)))
+    (set-buffer-modified-p nil))
+  (add-hook 'syslog-mode-hook 'syslog-fix-buffer))
+#+end_src
+
 *** /consult/
 
 #+begin_src elisp
 (with-eval-after-load 'consult
+  (add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
   (setq consult-project-root-function 'project-root-directory
         consult-find-command "fdfind -H --color=never --full-path OPTS ARG"
         consult-ripgrep-command
         "rg --hidden --null --line-buffered --color=ansi --max-columns=1000 --no-heading --line-number OPTS . -e ARG"
         consult--gc-threshold gc-cons-threshold
-        consult-async-default-split ","))
-(global-set-key (kbd "M-y") 'consult-yank-pop)
+        consult-async-default-split ",")
+
+  (defun consult-ripgrep-ext ()
+    (interactive)
+    (let ((file-name (buffer-file-name)))
+      (if file-name
+          (let* ((file-ext (file-name-extension file-name))
+                 (file-type
+                  (car
+                   (split-string
+                    (--min-by
+                     (>= (length it) (length other))
+                     (or (split-string
+                          (shell-command-to-string
+                           (concat
+                            "rg --type-list | rg ' \\*." file-ext "(,|$)'"))
+                          "\n" t)
+                         (user-error "Type not found in ripgrep")))
+                    ":")))
+                 (consult-ripgrep-command
+                  (concat "rg -t"
+                          file-type
+                          (substring consult-ripgrep-command 2))))
+            (call-interactively 'consult-ripgrep))
+        (call-interactively 'consult-ripgrep)))))
+
+(autoload 'consult-ripgrep-ext "consult" nil t)
+;; (global-set-key (kbd "M-y") 'consult-yank-pop)
 (global-set-key (kbd "M-g f") 'consult-find)
 (global-set-key (kbd "M-g e") 'consult-error)
-(global-set-key (kbd "M-g r") 'consult-ripgrep)
+(global-set-key (kbd "M-g R") 'consult-ripgrep)
+(global-set-key (kbd "M-g r") 'consult-ripgrep-ext)
 (global-set-key (kbd "M-g O") 'consult-outline)
 (global-set-key (kbd "M-g o") 'consult-multi-occur)
 (global-set-key (kbd "M-g m") 'consult-mark)
@@ -11776,6 +11995,32 @@ Switch the current window to the previous buffer."
 ;; (global-set-key (kbd "C-x 5 b") 'consult-buffer-other-frame)
 (global-set-key (kbd "C-x r x") 'consult-register)
 (global-set-key (kbd "C-x r b") 'consult-bookmark)
+#+end_src
+
+*** /embark/
+
+#+begin_src elisp
+(with-eval-after-load 'embark
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none))))
+
+  (setq embark-action-indicator
+        (lambda (map &optional _target)
+          (which-key--show-keymap "Embark" map nil nil 'no-paging)
+          #'which-key--hide-popup-ignore-command)
+        embark-become-indicator embark-action-indicator)
+
+  (defun embark-act-noquit ()
+    "Run action but don't quit the minibuffer afterwards."
+    (interactive)
+    (let ((embark-quit-after-action nil))
+      (embark-act))))
+
+(autoload 'embark-act-noquit "embark" nil t)
+(global-set-key (kbd "C-S-a") 'embark-act)
+(global-set-key (kbd "C-S-e") 'embark-act-noquit)
 #+end_src
 
 *** Language server protocol /lsp-mode/                            :programming:
@@ -12417,8 +12662,12 @@ Switch the current window to the previous buffer."
         org-babel-min-lines-for-block-output 2
         org-babel-sh-command "bash"
         org-babel-python-command "python3"
-        ;; No pregunta al usuario antes de evaluar un bloque de código
+        ;; inhibit any future confirmation requests
         org-confirm-babel-evaluate nil
+        ;; no code will be evaluated as part of the export, no header arguments
+        ;; will be obeyed. To evaluate insert at the beginning of the file:
+        ;; # -*- org-confirm-babel-evaluate: t -*-
+        org-export-babel-evaluate nil
         org-src-fontify-natively t
         org-src-tab-acts-natively t
         org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar")
@@ -12565,6 +12814,8 @@ Switch the current window to the previous buffer."
   ;; Convert options ;;
   ;; ;;;;;;;;;;;;;;; ;;
   (require 'ox)
+  (eval-when-compile
+    (require 'org-macs))
   (defun org-element-find-all (key)
     (let ((alist '())
           (pattern (concat "^[ \t]*#\\+\\(" key "\\):")))
@@ -13503,7 +13754,8 @@ blockquote {
   ;;   (interactive)
   ;;   (call-interactively #'org-show-block-all)
   ;;   (call-interactively #'org-babel-show-result-all))
-
+  (eval-when-compile
+    (require 'org-macs))
   (defun org-entry-put-multiline-property (pom property value)
     "Set PROPERTY to VALUE for entry at point-or-marker POM.
 Allow multiline properties.
@@ -13849,9 +14101,9 @@ Throw an error when trying to set a property with an invalid name."
 #+end_example
 
 #+begin_src elisp
-(add-hook 'org-mode-hook #'org-super-agenda-mode)
-(with-eval-after-load 'org-super-agenda
+(with-eval-after-load 'org
   (message "Importing org-super-agenda-config")
+  (require 'org-super-agenda)
 
   (setq org-super-agenda-fontify-whole-header-line t
         org-super-agenda-groups
@@ -13870,7 +14122,8 @@ Throw an error when trying to set a property with an invalid name."
                  :tag "@home")
           (:name "Hábito"
                  :habit t)))
-  (eval-after-config 'after-org-super-agenda-config))
+  (eval-after-config 'after-org-super-agenda-config)
+  (org-super-agenda-mode))
 #+end_src
 
 *** /org-appt/
@@ -14842,6 +15095,10 @@ MAKE-FIELDS - t or nil"
   ;; after semantic
   (message "Importing projectile config")
 
+  (cond ((executable-find "fdfind")
+       (setq projectile-generic-command "fdfind . -0 --type f --color=never"))
+      ((executable-find "fd-find")
+       (setq projectile-generic-command "fd-find . -0 --type f --color=never")))
   (setq-default projectile--mode-line "")
   (setq projectile-mode-line-prefix ""
         projectile-dynamic-mode-line nil
@@ -15375,7 +15632,7 @@ Abort: `\\[edit-server-abort]'")))
                  '("~/Music"
                    "~/Música"))
         emms-volume-change-function 'emms-volume-pulse-change
-        emms-volume-pulse-sink 1)
+        emms-volume-pulse-sink "@DEFAULT_SINK@")
 
   (require 'emms-player-mplayer)
   (push "-novideo" emms-player-mplayer-parameters)
@@ -15387,6 +15644,7 @@ Abort: `\\[edit-server-abort]'")))
   (require 'emms-playlist-mode)
   (global-set-key (kbd "C-c e l") 'emms)
   (global-set-key (kbd "C-c e P") 'emms-pause)
+  (global-set-key (kbd "C-c e SPC") 'emms-pause)
   (global-set-key (kbd "C-c e s") 'emms-stop)
   (global-set-key (kbd "C-c e f") 'emms-show)
   (global-set-key (kbd "C-c e r") 'emms-random)
@@ -15578,21 +15836,25 @@ Abort: `\\[edit-server-abort]'")))
 Añadir a =.bashrc= después de la asignación del prompt ~PS1~:
 
 #+begin_src bash
-vterm_printf(){
-    if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
-        # Tell tmux to pass the escape sequences through
-        printf "\ePtmux;\e\e]%s\007\e\\" "$1"
-    elif [ "${TERM%%-*}" = "screen" ]; then
-        # GNU screen (screen, screen-256color, screen-256color-bce)
-        printf "\eP\e]%s\007\e\\" "$1"
-    else
-        printf "\e]%s\e\\" "$1"
-    fi
-}
-vterm_prompt_end(){
-    vterm_printf "51;A$(whoami)@$(hostname):$(pwd)"
-}
-PS1=$PS1'\[$(vterm_prompt_end)\]'
+case "$TERM" in
+xterm-256color)
+    vterm_printf(){
+        if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
+            # Tell tmux to pass the escape sequences through
+            printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+        elif [ "${TERM%%-*}" = "screen" ]; then
+            # GNU screen (screen, screen-256color, screen-256color-bce)
+            printf "\eP\e]%s\007\e\\" "$1"
+        else
+            printf "\e]%s\e\\" "$1"
+        fi
+    }
+    vterm_prompt_end(){
+        vterm_printf "51;A$(whoami)@$(hostname):$(pwd)"
+    }
+    PS1=$PS1'\[$(vterm_prompt_end)\]'
+    ;;
+esac
 #+end_src
 
 #+begin_src elisp
@@ -15812,6 +16074,12 @@ PS1=$PS1'\[$(vterm_prompt_end)\]'
 (eval-after-config 'after-machine-config)
 #+end_src
 
+* Redmine and gitlab
+
+#+begin_src elisp
+(require 'redmine-gitlab-api-autoloads)
+#+end_src
+
 * Bugs
 ** /gdb/
 
@@ -15878,7 +16146,67 @@ window list."
             leaf 'ace-window-path
             (propertize
              (apply #'string (reverse path))
-             'face 'aw-mode-line-face))))))))
+             'face 'aw-mode-line-face)))))))
+  ;;;; OVERRIDDEN
+  (defun aw-select (mode-line &optional action)
+  "Return a selected other window.
+Amend MODE-LINE to the mode line for the duration of the selection."
+  (setq aw-action action)
+  (let ((start-window (selected-window))
+        (next-window-scope (cl-case aw-scope
+                             ('visible 'visible)
+                             ('global 'visible)
+                             ('frame 'frame)))
+        (wnd-list (aw-window-list))
+        window)
+    (setq window
+          (cond ((<= (length wnd-list) 1)
+                 (when aw-dispatch-always
+                   (setq aw-action
+                         (unwind-protect
+                              (catch 'done
+                                (funcall aw-dispatch-function (read-char)))
+                           (aw--done)))
+                   (when (eq aw-action 'exit)
+                     (setq aw-action nil)))
+                 (or (car wnd-list) start-window))
+                ((and (<= (+ (length wnd-list) (if (aw-ignored-p start-window) 1 0))
+                          aw-dispatch-when-more-than)
+                      (not aw-dispatch-always)
+                      (not aw-ignore-current))
+                 (let ((wnd (next-window nil nil next-window-scope)))
+                   (while (and (or (not (memq wnd wnd-list))
+                                   (aw-ignored-p wnd))
+                               (not (equal wnd start-window)))
+                     (setq wnd (next-window wnd nil next-window-scope)))
+                   wnd))
+                (t
+                 (let ((candidate-list
+                        (mapcar (lambda (wnd)
+                                  (cons (aw-offset wnd) wnd))
+                                wnd-list)))
+                   (aw--make-backgrounds wnd-list)
+                   (aw-set-mode-line mode-line)
+                   ;; turn off helm transient map
+                   (remove-hook 'post-command-hook 'helm--maybe-update-keymap)
+                   (unwind-protect
+                        (let* ((avy-handler-function aw-dispatch-function)
+                               (avy-translate-char-function aw-translate-char-function)
+                               (transient-mark-mode nil)
+                               (res (avy-read (avy-tree candidate-list aw-keys)
+                                              (if (and ace-window-display-mode
+                                                       (null aw-display-mode-overlay))
+                                                  (lambda (_path _leaf))
+                                                #'aw--lead-overlay)
+                                              #'avy--remove-leading-chars)))
+                          (if (listp res)
+                              (or (cdr res)
+                                  start-window)
+                            (setq aw-action nil)))
+                     (aw--done))))))
+    (if aw-action
+        (funcall aw-action window)
+      window))))
 #+end_src
 
 ** /comint/
@@ -17326,7 +17654,10 @@ Concurrency is disabled as it breaks the orders of errors, replies and events."
           (xcb:-process-events connection))))))
 #+end_src
 
-** /orderless/
+** CANC /orderless/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'orderless
@@ -17381,10 +17712,45 @@ This function is part of the `orderless' completion style."
                            collect (list (string-to-number (match-string 1 output))
                                          (match-string 2 output)
                                          (match-string 3 output))
-                           do (setq output (replace-match "" nil nil output)))))))))))
+                           do (setq output (replace-match "" nil nil output))))))))))
+;;;; OVERRIDDEN
+  (defun emms-volume-pulse-change (amount)
+    "Change PulseAudio volume by AMOUNT."
+    (let ((pactl (or (executable-find "pactl")
+                     (error "pactl is not in PATH"))))
+      (shell-command
+       (format "%s set-sink-volume %s %s%s%%"
+               pactl emms-volume-pulse-sink (if (> 0 amount "" "+")) amount)))))
 #+end_src
 
 * Improvements
+** Completions
+
+#+begin_src elisp
+;;;; OVERRIDDEN
+(require 'dash)
+(defun completion-metadata-get (metadata prop)
+  (or (cdr (assq prop metadata))
+      (when (eq prop 'display-sort-function)
+        (when-let ((history (minibuffer-history-value)))
+          `(lambda (completions)
+             (let* ((common 
+                     (let (result)
+                       (mapc
+                        (lambda (candidate)
+                          (when-let ((it (car (member candidate completions))))
+                            (add-face-text-property
+                              0 (length it)
+                              '(:background "#473B54") nil it)
+                            (push
+                             it
+                             result)))
+                        (quote ,history))
+                       (nreverse result)))
+                    (rest (-difference completions common)))
+               (nconc common (sort rest 'string-lessp))))))))
+#+end_src
+
 ** /flymake/
 
 #+begin_src elisp
@@ -17553,10 +17919,14 @@ This function is part of the `orderless' completion style."
                    (:propertize "}"))))))))))
 #+end_src
 
-** /icomplete/
+** CANC /icomplete/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'icomplete
+;;;; OVERRIDDEN
   (defun icomplete-completions (name candidates predicate require-match)
     "Identify prospective candidates for minibuffer completion.
 
