@@ -5059,10 +5059,29 @@ mode and header lines."
 (require 'subword)
 (setq minor-mode-alist (assq-delete-all 'subword-mode minor-mode-alist))
 
-(set-face-attribute 'region nil
-                    :foreground 'unspecified
-                    :background "DarkSlateGray"
-                    :box '(:line-width -1 :color "CadetBlue" :style nil))
+(face-spec-set 'region
+               '((((class color) (min-colors 88) (supports :box t))
+                  :box (:line-width (-1 . -1) :color "CadetBlue" :style nil)
+                  :background "DarkSlateGray" :extend nil)
+                 (((class color) (min-colors 88) (background dark))
+                  :background "blue3" :extend nil)
+                 (((class color) (min-colors 88) (background light) (type gtk))
+                  :distant-foreground "gtk_selection_fg_color"
+                  :background "gtk_selection_bg_color" :extend nil)
+                 (((class color) (min-colors 88) (background light) (type ns))
+                  :distant-foreground "ns_selection_fg_color"
+                  :background "ns_selection_bg_color" :extend nil)
+                 (((class color) (min-colors 88) (background light))
+                  :background "lightgoldenrod2" :extend nil)
+                 (((class color) (min-colors 16) (background dark))
+                  :background "blue3" :extend nil)
+                 (((class color) (min-colors 16) (background light))
+                  :background "lightgoldenrod2" :extend nil)
+                 (((class color) (min-colors 8))
+                  :background "blue" :foreground "white" :extend nil)
+                 (((type tty) (class mono))
+                  :inverse-video t)
+                 (t :background "gray" :extend nil)))
 #+end_src
 
 *** /bookmark/
@@ -6636,25 +6655,27 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 ;;                     :box 'unspecified
 ;;                     :inherit 'unspecified)
 
+;; (face-spec-set 'hl-line
+;;                '((((background light))
+;;                   :inherit unspecified
+;;                   :background "#ffffff")  ; looks OK on tty (becomes cyan)
+;;                  (((background dark))
+;;                   :inherit unspecified
+;;                   :background "#000000")  ; looks OK on tty (becomes blue)
+;;                  ))
+
 (face-spec-set 'hl-line
-               '((((background light))
+               '((((supports :box t))
                   :inherit unspecified
-                  :background "#ffffff")  ; looks OK on tty (becomes cyan)
-                 (((background dark))
+                  :box (:line-width (-1 . -1) :color "grey35"))
+                 (((supports :weight bold :slant italic))
                   :inherit unspecified
-                  :background "#000000")  ; looks OK on tty (becomes blue)
-                 ))
+                  :weight bold :slant italic)
+                 (t
+                  :inherit unspecified
+                  :box (:line-width (-1 . -1) :color "grey35"))))
 
-(defface underline-white
-  '((((supports :underline t))
-     :underline "white")
-    (((supports :weight bold))
-     :weight bold)
-    (t :underline "white"))
-  "Basic underlined face."
-  :group 'basic-faces)
-
-(setq hl-line-face 'underline-white)
+;; (setq hl-line-face 'bold-italic)
 
 (global-hl-line-mode 1)
 #+end_src
@@ -8934,21 +8955,21 @@ Improve default ia jump at point."
           gdb-use-separate-io-buffer t)
 
     (add-hook 'gdb-mode-hook 'gud-tooltip-mode)
-    ;;(add-hook 'gdb-mode-hook '(lambda () (require 'gdb-highlight)))
+    ;;(add-hook 'gdb-mode-hook (lambda () (require 'gdb-highlight)))
 
 
     ;; [ <history> cycle command history
     ;; (add-hook 'gud-mode-hook
-    ;;           '(lambda ()
+    ;;           (lambda ()
     ;;             (local-set-key [home]        ; move to beginning of line, after prompt
     ;;              'comint-bol)
     ;;             (local-set-key [up]          ; cycle backward through command history
-    ;;              '(lambda () (interactive)
+    ;;              (lambda () (interactive)
     ;;                (if (comint-after-pmark-p)
     ;;                    (comint-previous-input 1)
     ;;                    (previous-line 1))))
     ;;             (local-set-key [down]        ; cycle forward through command history
-    ;;              '(lambda () (interactive)
+    ;;              (lambda () (interactive)
     ;;                (if (comint-after-pmark-p)
     ;;                    (comint-next-input 1)
     ;;                  (forward-line 1))))))
@@ -10921,6 +10942,10 @@ Switch the current window to the previous buffer."
     (aw-switch-to-window window)
     (switch-to-buffer buffer)))
 
+(defun aw-easyfocus ()
+  (interactive)
+  (make-process :name "easyfocus" :command '("easyfocus"))
+  (selected-window))
 
 (push " *which-key*" aw-ignored-buffers)
 (setq minor-mode-alist
@@ -10943,7 +10968,8 @@ Switch the current window to the previous buffer."
         (?O delete-other-windows "Delete Other Windows")
         (?T aw-transpose-frame "Transpose Frame")
         ;; ?i ?r ?t are used by hyperbole.el
-        (?? aw-show-dispatch-help))
+        (?? aw-show-dispatch-help)
+        (?\M-o aw-easyfocus))
       aw-keys
       (let ((keys
              '(?a ?b ?c ?d ?e ?f ?g ?h ;; ?i
@@ -11095,20 +11121,20 @@ Switch the current window to the previous buffer."
 (define-key minibuffer-local-completion-map (kbd "C-M-z")
   'avy-completions-timer)
 
-(define-key completion-in-region-mode-map (kbd "M-g w")
-  'avy-completions-word-1)
-(define-key minibuffer-local-completion-map (kbd "M-g w")
-  'avy-completions-word-1)
+;; (define-key completion-in-region-mode-map (kbd "M-g w")
+;;   'avy-completions-word-1)
+;; (define-key minibuffer-local-completion-map (kbd "M-g w")
+;;   'avy-completions-word-1)
 
-(define-key completion-in-region-mode-map (kbd "M-g W")
-  'avy-completions-word-0)
-(define-key minibuffer-local-completion-map (kbd "M-g W")
-  'avy-completions-word-0)
+;; (define-key completion-in-region-mode-map (kbd "M-g W")
+;;   'avy-completions-word-0)
+;; (define-key minibuffer-local-completion-map (kbd "M-g W")
+;;   'avy-completions-word-0)
 
-(define-key completion-in-region-mode-map (kbd "M-g l")
-  'avy-completions-line)
-(define-key minibuffer-local-completion-map (kbd "M-g l")
-  'avy-completions-line)
+;; (define-key completion-in-region-mode-map (kbd "M-g l")
+;;   'avy-completions-line)
+;; (define-key minibuffer-local-completion-map (kbd "M-g l")
+;;   'avy-completions-line)
 
 (global-set-key (kbd "M-g c") (avy-prefix-all-windows
                                avy-goto-char))
@@ -11949,7 +11975,7 @@ Switch the current window to the previous buffer."
         consult-ripgrep-command
         "rg --hidden --null --line-buffered --color=ansi --max-columns=1000 --no-heading --line-number OPTS . -e ARG"
         consult--gc-threshold gc-cons-threshold
-        consult-async-default-split ",")
+        consult-async-split-style 'comma)
 
   (defun consult-ripgrep-ext ()
     (interactive)
@@ -13913,9 +13939,9 @@ Throw an error when trying to set a property with an invalid name."
   ;; ;;;; ;;
   ;; Keys ;;
   ;; ;;;; ;;
-  (add-hook 'org-mode-hook '(lambda()
-                              (set
-                               (make-local-variable 'semantic-mode) nil)))
+  (add-hook 'org-mode-hook (lambda()
+                             (set
+                              (make-local-variable 'semantic-mode) nil)))
 
   (define-key org-mode-map (kbd "M-,") #'org-priority)
   (define-key org-mode-map (kbd "C-c v e") #'org-show-entry)
@@ -16148,6 +16174,26 @@ window list."
              (apply #'string (reverse path))
              'face 'aw-mode-line-face)))))))
   ;;;; OVERRIDDEN
+  (defun aw-show-dispatch-help ()
+    "Display action shortucts in echo area."
+    (interactive)
+    (message "%s" (mapconcat
+                   (lambda (action)
+                     (cl-destructuring-bind (key fn &optional description) action
+                       (format "%s: %s"
+                               (propertize
+                                ;; (char-to-string key)      ;; -
+                                (key-description (list key)) ;; +
+                                'face 'aw-key-face)
+                               (or description fn))))
+                   aw-dispatch-alist
+                   "\n"))
+    ;; Prevent this from replacing any help display
+    ;; in the minibuffer.
+    (let (aw-minibuffer-flag)
+      (mapc #'delete-overlay aw-overlays-back)
+      (call-interactively 'ace-window)))
+  ;;;; OVERRIDDEN
   (defun aw-select (mode-line &optional action)
   "Return a selected other window.
 Amend MODE-LINE to the mode line for the duration of the selection."
@@ -17741,7 +17787,7 @@ This function is part of the `orderless' completion style."
                           (when-let ((it (car (member candidate completions))))
                             (add-face-text-property
                               0 (length it)
-                              '(:background "#473B54") nil it)
+                              '(:background "#5c5b30") nil it)
                             (push
                              it
                              result)))
