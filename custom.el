@@ -14,7 +14,6 @@
      bash-completion
      cmake-font-lock
      cmake-mode
-     consult
      cyphejor
      dash
      deferred

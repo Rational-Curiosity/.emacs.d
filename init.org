@@ -23,6 +23,21 @@ mv emacs.elc init.elc
 
 emacs 27 avoids ~(package-initialize)~
 
+* Pre emacs 28
+
+#+begin_src elisp
+(when (< emacs-major-version 28)
+  (message "Making config compatible with emacs < 28")
+  (defun repeat-mode ())
+
+  (defun generate-new-buffer-advice (orig-fun name &optional _inhibit)
+    (funcall orig-fun name))
+  (advice-add 'generate-new-buffer :around 'generate-new-buffer-advice)
+
+  (defun string-replace (fromstring tostring instring)
+    (replace-regexp-in-string (regexp-quote fromstring) tostring instring t t)))
+#+end_src
+
 * Libraries
 ** Config utils
 
@@ -454,9 +469,11 @@ When called from lisp, FUNCTION may also be a function object."
   (interactive)
   (let* ((defnA (or (thing-at-point 'defun)
                     (user-error "Not function at point")))
-         (posnA (string-match
-                 "(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) \\([-_a-zA-Z0-9]+\\)"
-                 defnA))
+         (posnA (progn
+                  (string-match
+                   "^[^;]*(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) \\([-_a-zA-Z0-9]+\\)"
+                   defnA)
+                  (1- (match-beginning 1))))
          (nameA (or (match-string 2 defnA)
                     (user-error "Not name of function at point")))
          (library (or (find-lisp-object-file-name (intern nameA) 'defun)
@@ -464,11 +481,13 @@ When called from lisp, FUNCTION may also be a function object."
          (orig-bufnA (buffer-name)))
     (find-file (find-library-name library))
     (goto-char (point-min))
-    (search-forward (concat "defun " nameA))
+    (search-forward-regexp (concat "defun[ \t\r\n]+\\_<" nameA "\\_>"))
     (let* ((defnB (thing-at-point 'defun))
-           (posnB (string-match
-                   "(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) [-_a-zA-Z0-9]+"
-                   defnB))
+           (posnB (progn
+                    (string-match
+                     "^[^;]*(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) [-_a-zA-Z0-9]+"
+                     defnB)
+                    (1- (match-beginning 1))))
            (bufnA (concat "*bug-ediff A [" orig-bufnA "]*"))
            (bufnB (concat "*bug-ediff B [" (buffer-name) "]*")))
       (switch-to-buffer bufnA)
@@ -476,8 +495,8 @@ When called from lisp, FUNCTION may also be a function object."
       (insert (replace-regexp-in-string "\t" "        " (substring defnA posnA)))
       (goto-char (point-min))
       (setq defnA (thing-at-point 'defun))
-      (erase-buffer)
       (insert defnA)
+      (delete-region (point) (point-max))
       (unless (bolp)
         (insert "\n"))
       (indent-region (point-min) (point-max))
@@ -487,8 +506,8 @@ When called from lisp, FUNCTION may also be a function object."
       (insert (replace-regexp-in-string "\t" "        " (substring defnB posnB)))
       (goto-char (point-min))
       (setq defnB (thing-at-point 'defun))
-      (erase-buffer)
       (insert defnB)
+      (delete-region (point) (point-max))
       (unless (bolp)
         (insert "\n"))
       (indent-region (point-min) (point-max))
@@ -1648,79 +1667,91 @@ prompt the user for a coding system."
 (defun utf8-fix-wrong-ascii (beg end)
   (interactive (list (point) (point-max)))
   (save-excursion
-    (let ((case-fold-search nil))
-      (dolist (map '(("›" . "â\x0080º") ;; \200
-                     ("🐜" . "ð\x009f\x0090\x009c"))) ;; \237\220\234
-        (goto-char beg)
-        (while (search-forward (cdr map) end t 1)
-          (replace-match (car map) t t))))))
+    (save-restriction
+      (narrow-to-region beg end)
+      (let ((case-fold-search nil))
+        (dolist (map '(("›" . "â\x0080º") ;; \200
+                       ("🐜" . "ð\x009f\x0090\x009c"))) ;; \237\220\234
+          (goto-char (point-min))
+          (while (search-forward (cdr map) nil t 1)
+            (replace-match (car map) t t)))))))
 
 (defun utf8-fix-wrong-latin (beg end)
   (interactive (list (point) (point-max)))
   (save-excursion
-    (let ((case-fold-search nil))
-      (dolist (map '(("À" . "Ã€")
-                     ("Â" . "Ã‚")
-                     ("Ã" . "Ãƒ")
-                     ("Ä" . "Ã„")
-                     ("Å" . "Ã…")
-                     ("Æ" . "Ã†")
-                     ("Ç" . "Ã‡")
-                     ("È" . "Ãˆ")
-                     ("É" . "Ã‰")
-                     ("Ê" . "ÃŠ")
-                     ("Ë" . "Ã‹")
-                     ("Ì" . "ÃŒ")
-                     ("Î" . "ÃŽ")
-                     ("Ñ" . "Ã‘")
-                     ("Ò" . "Ã’")
-                     ("Ó" . "Ã“")
-                     ("Ô" . "Ã”")
-                     ("Õ" . "Ã•")
-                     ("Ö" . "Ã–")
-                     ("×" . "Ã—")
-                     ("Ø" . "Ã˜")
-                     ("Ù" . "Ã™")
-                     ("Ú" . "Ãš")
-                     ("Û" . "Ã›")
-                     ("Ü" . "Ãœ")
-                     ("Þ" . "Ãž")
-                     ("ß" . "ÃŸ")
-                     ("á" . "Ã¡")
-                     ("â" . "Ã¢")
-                     ("ã" . "Ã£")
-                     ("ä" . "Ã¤")
-                     ("å" . "Ã¥")
-                     ("æ" . "Ã¦")
-                     ("ç" . "Ã§")
-                     ("è" . "Ã¨")
-                     ("é" . "Ã©")
-                     ("ê" . "Ãª")
-                     ("ë" . "Ã«")
-                     ("ì" . "Ã¬")
-                     ("í" . "Ã­")
-                     ("î" . "Ã®")
-                     ("ï" . "Ã¯")
-                     ("ð" . "Ã°")
-                     ("ñ" . "Ã±")
-                     ("ò" . "Ã²")
-                     ("ó" . "Ã³")
-                     ("ô" . "Ã´")
-                     ("õ" . "Ãµ")
-                     ("ö" . "Ã¶")
-                     ("÷" . "Ã·")
-                     ("ø" . "Ã¸")
-                     ("ù" . "Ã¹")
-                     ("ú" . "Ãº")
-                     ("û" . "Ã»")
-                     ("ü" . "Ã¼")
-                     ("ý" . "Ã½")
-                     ("þ" . "Ã¾")
-                     ("ÿ" . "Ã¿")
-                     ("Á" . "Ã")))
-        (goto-char beg)
-        (while (search-forward (cdr map) end t 1)
-          (replace-match (car map) t t))))))
+    (save-restriction
+      (narrow-to-region beg end)
+      (let ((case-fold-search nil))
+        (dolist (map '(("À" . "Ã€")
+                       ("Â" . "Ã‚")
+                       ("Ã" . "Ãƒ")
+                       ("Ä" . "Ã„")
+                       ("Å" . "Ã…")
+                       ("Æ" . "Ã†")
+                       ("Ç" . "Ã‡")
+                       ("È" . "Ãˆ")
+                       ("É" . "Ã‰")
+                       ("Ê" . "ÃŠ")
+                       ("Ë" . "Ã‹")
+                       ("Ì" . "ÃŒ")
+                       ("Î" . "ÃŽ")
+                       ("Ñ" . "Ã‘")
+                       ("Ò" . "Ã’")
+                       ("Ó" . "Ã“")
+                       ("Ô" . "Ã”")
+                       ("Õ" . "Ã•")
+                       ("Ö" . "Ã–")
+                       ("×" . "Ã—")
+                       ("Ø" . "Ã˜")
+                       ("Ù" . "Ã™")
+                       ("Ú" . "Ãš")
+                       ("Û" . "Ã›")
+                       ("Ü" . "Ãœ")
+                       ("Þ" . "Ãž")
+                       ("ß" . "ÃŸ")
+                       ("á" . "Ã¡")
+                       ("â" . "Ã¢")
+                       ("ã" . "Ã£")
+                       ("ä" . "Ã¤")
+                       ("å" . "Ã¥")
+                       ("æ" . "Ã¦")
+                       ("ç" . "Ã§")
+                       ("è" . "Ã¨")
+                       ("é" . "Ã©")
+                       ("ê" . "Ãª")
+                       ("ë" . "Ã«")
+                       ("ì" . "Ã¬")
+                       ("í" . "Ã­")
+                       ("î" . "Ã®")
+                       ("ï" . "Ã¯")
+                       ("ð" . "Ã°")
+                       ("ñ" . "Ã±")
+                       ("ò" . "Ã²")
+                       ("ó" . "Ã³")
+                       ("ô" . "Ã´")
+                       ("õ" . "Ãµ")
+                       ("ö" . "Ã¶")
+                       ("÷" . "Ã·")
+                       ("ø" . "Ã¸")
+                       ("ù" . "Ã¹")
+                       ("ú" . "Ãº")
+                       ("û" . "Ã»")
+                       ("ü" . "Ã¼")
+                       ("ý" . "Ã½")
+                       ("þ" . "Ã¾")
+                       ("ÿ" . "Ã¿")
+                       ("Á" . "Ã")))
+          (goto-char (point-min))
+          (while (search-forward (cdr map) nil t 1)
+            (replace-match (car map) t t)))))))
+
+(defun insert-fixing-utf8 (&rest args)
+  (let ((beg (point)))
+    (apply 'insert args)
+    (save-restriction
+      (narrow-to-region beg (point))
+      (utf8-fix-wrong-ascii (point-min) (point-max))
+      (utf8-fix-wrong-latin (point-min) (point-max)))))
 
 ;; remove latin1 characters
 (defun remove-tildes (string)
@@ -5060,28 +5091,26 @@ mode and header lines."
 (setq minor-mode-alist (assq-delete-all 'subword-mode minor-mode-alist))
 
 (face-spec-set 'region
-               '((((class color) (min-colors 88) (supports :box t))
-                  :box (:line-width (-1 . -1) :color "CadetBlue" :style nil)
-                  :background "DarkSlateGray" :extend nil)
+               `((((class color) (min-colors 88) (supports :box t))
+                  :box (:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1) :color "CadetBlue" :style nil)
+                  :extend nil)
                  (((class color) (min-colors 88) (background dark))
-                  :background "blue3" :extend nil)
+                  :extend nil)
                  (((class color) (min-colors 88) (background light) (type gtk))
-                  :distant-foreground "gtk_selection_fg_color"
-                  :background "gtk_selection_bg_color" :extend nil)
+                  :extend nil)
                  (((class color) (min-colors 88) (background light) (type ns))
-                  :distant-foreground "ns_selection_fg_color"
-                  :background "ns_selection_bg_color" :extend nil)
+                  :extend nil)
                  (((class color) (min-colors 88) (background light))
-                  :background "lightgoldenrod2" :extend nil)
+                  :extend nil)
                  (((class color) (min-colors 16) (background dark))
-                  :background "blue3" :extend nil)
+                  :extend nil)
                  (((class color) (min-colors 16) (background light))
-                  :background "lightgoldenrod2" :extend nil)
+                  :extend nil)
                  (((class color) (min-colors 8))
-                  :background "blue" :foreground "white" :extend nil)
+                  :extend nil)
                  (((type tty) (class mono))
-                  :inverse-video t)
-                 (t :background "gray" :extend nil)))
+                  :extend nil)
+                 (t :extend nil)))
 #+end_src
 
 *** /bookmark/
@@ -6665,17 +6694,22 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 ;;                  ))
 
 (face-spec-set 'hl-line
-               '((((supports :box t))
+               `((((supports :box t))
                   :inherit unspecified
-                  :box (:line-width (-1 . -1) :color "grey35"))
+                  :box (:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1) :color "grey35")
+                  :extend t)
                  (((supports :weight bold :slant italic))
                   :inherit unspecified
-                  :weight bold :slant italic)
+                  :weight bold :slant italic
+                  :extend t)
                  (t
                   :inherit unspecified
-                  :box (:line-width (-1 . -1) :color "grey35"))))
+                  :box (:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1) :color "grey35")
+                  :extend t)))
 
-;; (setq hl-line-face 'bold-italic)
+(setq global-hl-line-sticky-flag t
+      ;; hl-line-face 'bold-italic
+      )
 
 (global-hl-line-mode 1)
 #+end_src
@@ -8374,21 +8408,19 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 (with-eval-after-load 'hideshow
   (message "Importing hideshow-config")
 
-  (defface hideshow-overlay-face
-    '((t (:foreground "purple" :box '(:line-width -1))))
-    "HideShow overlay face"
-    :group 'hideshow)
-
   (setq minor-mode-alist (assq-delete-all 'hs-minor-mode minor-mode-alist)
         hs-set-up-overlay
         (lambda (ov)
           (when (eq 'code (overlay-get ov 'hs))
-            (overlay-put ov 'display
-                         (propertize
-                          (format "… %d lines"
-                                  (count-lines (overlay-start ov)
-                                               (overlay-end ov)))
-                          'face 'hideshow-overlay-face)))))
+            (overlay-put
+             ov 'display
+             (propertize
+              (format "… %d lines"
+                      (count-lines (overlay-start ov)
+                                   (overlay-end ov)))
+              'face
+              `(:foreground "purple"
+                :box (:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1))))))))
 
   (with-eval-after-load 'tex-mode
     (add-hook 'latex-mode-hook #'hs-minor-mode)
@@ -10928,11 +10960,20 @@ cancel the use of the current buffer (for special-purpose buffers)."
                         :weight 'bold
                         :foreground "green yellow"
                         ;; integers sometimes hide char
-                        :height 3.0)
+                        :height 3.0
+                        :underline nil
+                        :overline nil
+                        :box nil
+                        :inherit 'unspecified)
  (set-face-attribute 'aw-leading-char-face nil
-                     :weight 'normal
-                     :foreground "red"
-                     :height 1.7))
+                     :weight 'ultra-bold
+                     :foreground "white"
+                     :background "black"
+                     :height 'unspecified
+                     :underline nil
+                     :overline nil
+                     :box nil
+                     :inherit 'unspecified))
 
 (defun aw-move-deleting-window (window)
   "Real move the current buffer to WINDOW.
@@ -11121,20 +11162,20 @@ Switch the current window to the previous buffer."
 (define-key minibuffer-local-completion-map (kbd "C-M-z")
   'avy-completions-timer)
 
-;; (define-key completion-in-region-mode-map (kbd "M-g w")
-;;   'avy-completions-word-1)
-;; (define-key minibuffer-local-completion-map (kbd "M-g w")
-;;   'avy-completions-word-1)
+(define-key completion-in-region-mode-map (kbd "M-g w")
+  'avy-completions-word-1)
+(define-key minibuffer-local-completion-map (kbd "M-g w")
+  'avy-completions-word-1)
 
-;; (define-key completion-in-region-mode-map (kbd "M-g W")
-;;   'avy-completions-word-0)
-;; (define-key minibuffer-local-completion-map (kbd "M-g W")
-;;   'avy-completions-word-0)
+(define-key completion-in-region-mode-map (kbd "M-g W")
+  'avy-completions-word-0)
+(define-key minibuffer-local-completion-map (kbd "M-g W")
+  'avy-completions-word-0)
 
-;; (define-key completion-in-region-mode-map (kbd "M-g l")
-;;   'avy-completions-line)
-;; (define-key minibuffer-local-completion-map (kbd "M-g l")
-;;   'avy-completions-line)
+(define-key completion-in-region-mode-map (kbd "M-g l")
+  'avy-completions-line)
+(define-key minibuffer-local-completion-map (kbd "M-g l")
+  'avy-completions-line)
 
 (global-set-key (kbd "M-g c") (avy-prefix-all-windows
                                avy-goto-char))
@@ -11928,20 +11969,6 @@ Switch the current window to the previous buffer."
 #+end_src
 
 ** Not always required
-*** /fd-dired/
-
-#+begin_src elisp
-(with-eval-after-load 'fd-dired
-  (cond ((executable-find "fdfind")
-         (setq fd-dired-program "fdfind"))
-        ((executable-find "fd-find")
-         (setq fd-dired-program "fd-find"))
-        ((executable-find "fd")
-         (setq fd-dired-program "fd"))))
-
-(global-set-key (kbd "M-g f") 'fd-dired)
-#+end_src
-
 *** /syslog-mode/
 
 #+begin_src elisp
@@ -11965,11 +11992,46 @@ Switch the current window to the previous buffer."
   (add-hook 'syslog-mode-hook 'syslog-fix-buffer))
 #+end_src
 
-*** /consult/
+*** /fd-dired/
+
+#+begin_src elisp
+(with-eval-after-load 'fd-dired
+  (cond ((executable-find "fdfind")
+         (setq fd-dired-program "fdfind"))
+        ((executable-find "fd-find")
+         (setq fd-dired-program "fd-find"))
+        ((executable-find "fd")
+         (setq fd-dired-program "fd"))))
+
+(global-set-key (kbd "M-g f") 'fd-dired)
+#+end_src
+
+*** /rg/
+
+#+begin_src elisp
+(global-set-key (kbd "M-g r") 'rg-menu)
+(with-eval-after-load 'rg
+  (rg-enable-default-bindings (kbd "M-g a"))
+  (push '(rg-mode "\nFile: " "\n\n" "-*-"
+                  (lambda (arg)
+                    (re-search-forward hs-block-end-regexp nil t))
+                  nil) hs-special-modes-alist)
+  (defun rg-mode-hideshow-config ()
+    (setq-local comment-start "-*-"
+                comment-end "-*-")
+    (hs-minor-mode))
+  (add-hook 'rg-mode-hook 'rg-mode-hideshow-config))
+#+end_src
+
+*** CANC /consult/ (after rg and fd-dired)
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'consult
-  (add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
+  ;; (add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
+  (define-key completion-list-mode-map " " 'consult-preview-at-point)
   (setq consult-project-root-function 'project-root-directory
         consult-find-command "fdfind -H --color=never --full-path OPTS ARG"
         consult-ripgrep-command
@@ -12498,24 +12560,40 @@ Switch the current window to the previous buffer."
    'append)
 
 
-  (set-face-attribute 'org-agenda-date nil :background "#262e0d" :box '(:line-width -1))
-  (set-face-attribute 'org-scheduled-previously nil :foreground "rosy brown")
-  (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
-  (set-face-attribute 'org-warning nil :foreground "gold")
-  (set-face-attribute 'org-tag nil :bold nil)
-  (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")
-  (set-face-attribute 'org-level-2 nil :bold t :foreground "medium turquoise")
-  (set-face-attribute 'org-level-3 nil :bold t :foreground "pale turquoise")
+  (set-face-attribute 'org-agenda-date nil
+                      :background "#262e0d"
+                      :box `(:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1)))
+  (set-face-attribute 'org-agenda-date-today nil
+                      :background "#262e0d"
+                      :box `(:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1)))
+  (set-face-attribute 'org-agenda-date-weekend nil
+                      :box `(:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1)))
+  ;; (set-face-attribute 'org-scheduled-previously nil :foreground "rosy brown")
+  ;; (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
+  ;; (set-face-attribute 'org-warning nil :foreground "gold")
+  ;; (set-face-attribute 'org-tag nil :bold nil)
+  ;; (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")
+  ;; (set-face-attribute 'org-level-2 nil :bold t :foreground "medium turquoise")
+  ;; (set-face-attribute 'org-level-3 nil :bold t :foreground "pale turquoise")
+  (face-spec-set 'org-ellipsis
+                 '((((class color) (background dark))
+                    :foreground "white"
+                    :underline nil :overline nil :box nil :extend nil)
+                   (((class color) (background light))
+                    :foreground "dark goldenrod"
+                    :underline nil :overline nil :box nil :extend nil)))
 
   (set-face-attribute 'org-block-begin-line nil
-                      :underline "#A7A6AA")  ;; :foreground "#388EFF" :background "#222210")
+                      ;; :foreground "#388EFF" :background "#222210")
+                      :underline "#A7A6AA")
 
-  ;; (set-face-attribute 'org-block nil
-  ;;                     :background "#292929")
+  (set-face-attribute 'org-block nil
+                      :background "#070000")
 
   (set-face-attribute 'org-block-end-line nil
+                      ;; :foreground "#388EFF" :background "#222210")
                       :underline nil
-                      :overline "#A7A6AA") ;; :foreground "#388EFF" :background "#222210")
+                      :overline "#A7A6AA")
 
   (set-face-attribute 'org-code nil
                       :foreground "#bbff95")
@@ -13966,104 +14044,6 @@ Throw an error when trying to set a property with an invalid name."
   (eval-after-config 'after-org-config))
 #+end_src
 
-*** /ox-mediawiki/                                                    :markdown:
-
-#+begin_src elisp
-(with-eval-after-load 'ox-mediawiki
-  (defun org-mw-src-block (block contents info)
-    (concat
-     "<syntaxhighlight lang=\""
-     (org-element-property :language block)
-     "\">\n"
-     (org-element-property :value block)
-     "</syntaxhighlight>"))
-
-  (setcdr (assoc 'src-block (org-export-get-all-transcoders 'mw))
-          'org-mw-src-block)
-  (defun org-mw-link (link contents info)
-    (let ((--link-org-files-as-html-maybe
-           (function
-            (lambda (raw-path info)
-              ;; Treat links to `file.org' as links to `file.html', if
-              ;; needed.  See `org-html-link-org-files-as-html'.
-              (cond
-               ((and org-html-link-org-files-as-html
-                     (string= ".org"
-                              (downcase (file-name-extension raw-path "."))))
-                (concat (file-name-sans-extension raw-path) "."
-                        (plist-get info :html-extension)))
-               (t raw-path)))))
-          (type (org-element-property :type link)))
-      (cond ((member type '("custom-id" "id"))
-             (let ((destination (org-export-resolve-id-link link info)))
-               (if (stringp destination)	; External file.
-                   (let ((path (funcall --link-org-files-as-html-maybe
-                                        destination info)))
-                     (if (not contents) (format "<%s>" path)
-                       (format "[%s](%s)" contents path)))
-                 (concat
-                  (and contents (concat contents " "))
-                  (format "(%s)"
-                          (format
-                           (org-export-translate "See section %s" :html info)
-                           (mapconcat 'number-to-string
-                                      (org-export-get-headline-number
-                                       destination info)
-                                      ".")))))))
-            ((org-export-inline-image-p link org-html-inline-image-rules)
-             (let ((path (let ((raw-path (org-element-property :path link)))
-                           (if (not (file-name-absolute-p raw-path)) raw-path
-                             (expand-file-name raw-path)))))
-               (format "![%s](%s)"
-                       (let ((caption (org-export-get-caption
-                                       (org-export-get-parent-element link))))
-                         (when caption (org-export-data caption info)))
-                       path)))
-            ((string= type "coderef")
-             (let ((ref (org-element-property :path link)))
-               (format (org-export-get-coderef-format ref contents)
-                       (org-export-resolve-coderef ref info))))
-            ((equal type "radio")
-             (let ((destination (org-export-resolve-radio-link link info)))
-               (org-export-data (org-element-contents destination) info)))
-            ((equal type "fuzzy")
-             (if (org-string-nw-p contents) contents
-               (concat "[[#" (replace-regexp-in-string
-                              "^\*+ *" ""
-                              (org-element-property :raw-link link)
-                              t)
-                       "]]")))
-            (t (let* ((raw-path (org-element-property :path link))
-                      (path (cond
-                             ((member type '("http" "https" "ftp"))
-                              (concat type ":" raw-path))
-                             ((equal type "file")
-                              ;; Treat links to ".org" files as ".html",
-                              ;; if needed.
-                              (setq raw-path
-                                    (funcall --link-org-files-as-html-maybe
-                                             raw-path info))
-                              ;; If file path is absolute, prepend it
-                              ;; with protocol component - "file://".
-                              (if (not (file-name-absolute-p raw-path)) raw-path
-                                (concat "file://" (expand-file-name raw-path))))
-                             (t raw-path))))
-                 (if (not contents) (format "%s" path)
-                   (format "[%s %s]" path
-                           (s-join " " (s-split "\n" contents)))))))))
-
-  (defun org-mw-separate-elements (tree backend info)
-    (org-element-map tree org-element-all-elements
-      (lambda (elem)
-        (unless (memq (org-element-type elem) '(org-data item))
-          (org-element-put-property
-           elem :post-blank
-           (let ((post-blank (org-element-property :post-blank elem)))
-             (if (not post-blank) 1 (max 1 post-blank)))))))
-    ;; Return updated tree.
-    tree))
-#+end_src
-
 *** /ox-textile/                                                      :markdown:
 
 #+begin_src elisp
@@ -14133,7 +14113,7 @@ Throw an error when trying to set a property with an invalid name."
 
   (setq org-super-agenda-fontify-whole-header-line t
         org-super-agenda-groups
-        '((:name "Hoy"
+        '((:name "Horario"
                  :time-grid t
                  :todo "TODAY")
           (:name "Negocios"
@@ -15894,23 +15874,6 @@ esac
 (async-bytecomp-package-mode)
 #+end_src
 
-*** /rg/
-
-#+begin_src elisp
-(global-set-key (kbd "M-g a") 'rg-menu)
-(with-eval-after-load 'rg
-  (rg-enable-default-bindings (kbd "M-g a"))
-  (push '(rg-mode "\nFile: " "\n\n" "-*-"
-                  (lambda (arg)
-                    (re-search-forward hs-block-end-regexp nil t))
-                  nil) hs-special-modes-alist)
-  (defun rg-mode-hideshow-config ()
-    (setq-local comment-start "-*-"
-                comment-end "-*-")
-    (hs-minor-mode))
-  (add-hook 'rg-mode-hook 'rg-mode-hideshow-config))
-#+end_src
-
 *** CANC /deadgrep/
 :PROPERTIES:
 :header-args:elisp: :tangle no
@@ -16100,10 +16063,12 @@ esac
 (eval-after-config 'after-machine-config)
 #+end_src
 
-* Redmine and gitlab
+* Config autoloads
+
+- Generated with ~make-directory-autoloads~
 
 #+begin_src elisp
-(require 'redmine-gitlab-api-autoloads)
+(require 'config-autoloads)
 #+end_src
 
 * Bugs
@@ -17581,123 +17546,121 @@ current `default-directory'."
 
 #+begin_src elisp
 (with-eval-after-load 'xcb
-  (when (bug-check-function-bytecode
-         'xcb:-connection-filter
-         "xcYDIcciCBnIyQLKIgMiiUcCywHKBSO2AskDzCKEIgICywHMzSO2As4yGQLPAkdYhRgCAdBIidG3glMBCoNVANLTC4NLAAsggkwA1NXWBgfQzyMkiAyDXQDXgl4A2APZIskF2iLb3AYHBCKyA90CBCKDmQDFAgQisgEGBssB2t4GBgYIBgzfSNYGDtDPI0IGCEKJsgkjI7YC1gYGzyKyBgYGywHgBgYjtgWCFAIMg7UA4YK2AOID4yLP4wJfXNuJiQYHRwRXg84A5M7bIogKg+gA0uULg90ACyCC3gDU1dYGDNAGCiMkiAyD8ADXgvEA2AYI2SKyAtwGCQMisgLJBgnmIrIBxQEDIrIDAoNAAQYIywHm3gUGBwYJOYMrAQYJ1gYQ0AYOI0SCPAEGCUDnBgtB1gYS0AYQI0MiQiMjtgLWBggFIrIIBgjLAeAFI7YHghQCiduJiegE6SLQVYRpAc2yA+gE6iKyBMXJBgnrIgUisgIB7LeCygEMg4EB4YKCAeIGB+MisgHP4wJfXLIBBgZHAVeDnAHkztsiiO3JBgnrIu4GCd9IDIOvAdeCsAHYBgvvIiIisgKCygHtyQYJ6yLuBgnfSCEisgKJhNEBz7IBAYPxAQYHicsB8MkF8CLuBgjWBg/QBgsjBgsjQ6QjtgMKgwsC0vELgwACCyCCAQLU1dYGC9AGByMkiNYGBwIisge2BIiCLAAwiALLAczbI7YCyQPMIj+FVQICyQHKIkcBywHK1skGB8oiBggGCkdaIiO2AokDVYRQAvIGB/MiiLYC9AMhKYc=")
-    (defun xcb:-connection-filter (process message)
-      "Filter function for an X connection.
+  ;;;; OVERRIDDEN
+  (defun xcb:-connection-filter (process message)
+    "Filter function for an X connection.
 
 Concurrency is disabled as it breaks the orders of errors, replies and events."
-      (let* ((connection (plist-get (process-plist process) 'connection))
-             ;; Temporarily disable GC here as typically it's about to do
-             ;; lots of marshaling/unmarshaling.
-             (cache (vconcat (slot-value connection 'message-cache) message))
-             (cache-length (length cache)))
-        (setf (slot-value connection 'message-cache) cache)
-        (unless (slot-value connection 'lock)
-          ;; Start parsing message
-          (setf (slot-value connection 'lock) t)
-          ;; Process error/reply/event
-          (catch 'break
-            (while (<= 32 (length cache))
-              (pcase (aref cache 0)
-                (0                          ;error
-                 (xcb:-log "Error received: %s" (substring cache 0 32))
-                 (let ((sequence (funcall (if xcb:lsb #'xcb:-unpack-u2-lsb
-                                            #'xcb:-unpack-u2)
-                                          cache 2))
-                       (plist (slot-value connection 'error-plist))
-                       struct)
-                   (setq sequence (xcb:-convert-sequence connection sequence))
-                   (when (plist-member plist sequence)
-                     (setq struct (plist-get plist sequence))
-                     (setf (slot-value connection 'error-plist)
-                           (plist-put plist sequence
-                                      (push `(,(aref cache 1) .
-                                              ,(substring cache 0 32))
-                                            struct))))
-                   (setq cache (substring cache 32))
-                   (setf (slot-value connection 'last-seen-sequence) sequence)))
-                (1                          ;reply
-                 (let* ((reply-words (funcall (if xcb:lsb #'xcb:-unpack-u4-lsb
-                                                #'xcb:-unpack-u4)
-                                              cache 4))
-                        (reply-length (+ 32 (* 4 reply-words)))
-                        struct sequence plist)
-                   (when (< (length cache) reply-length) ;too short, do next time
-                     (throw 'break nil))
-                   (xcb:-log "Reply received: %s" (substring cache 0 reply-length))
-                   (setq sequence (funcall (if xcb:lsb #'xcb:-unpack-u2-lsb
-                                             #'xcb:-unpack-u2)
-                                           cache 2)
-                         sequence (xcb:-convert-sequence connection sequence))
-                   (setq plist (slot-value connection 'reply-plist))
+    (let* ((connection (plist-get (process-plist process) 'connection))
+           ;; Temporarily disable GC here as typically it's about to do
+           ;; lots of marshaling/unmarshaling.
+           (cache (vconcat (slot-value connection 'message-cache) message))
+           (cache-length (length cache)))
+      (setf (slot-value connection 'message-cache) cache)
+      (unless (slot-value connection 'lock)
+        ;; Start parsing message
+        (setf (slot-value connection 'lock) t)
+        ;; Process error/reply/event
+        (catch 'break
+          (while (<= 32 (length cache))
+            (pcase (aref cache 0)
+              (0                          ;error
+               (xcb:-log "Error received: %s" (substring cache 0 32))
+               (let ((sequence (funcall (if xcb:lsb #'xcb:-unpack-u2-lsb
+                                          #'xcb:-unpack-u2)
+                                        cache 2))
+                     (plist (slot-value connection 'error-plist))
+                     struct)
+                 (setq sequence (xcb:-convert-sequence connection sequence))
+                 (when (plist-member plist sequence)
                    (setq struct (plist-get plist sequence))
-                   (when struct
-                     (setf (slot-value connection 'reply-plist)
-                           (plist-put plist sequence
-                                      (if (symbolp struct)
-                                          ;; Single reply or
-                                          ;; first reply for multiple replies
-                                          (list struct
-                                                (substring cache 0 reply-length))
-                                        ;; Multiple replies
-                                        `(,(car struct) ,@(cdr struct)
-                                          ,(substring cache 0 reply-length))))))
-                   (setq cache (substring cache reply-length))
-                   (setf (slot-value connection 'last-seen-sequence) sequence)))
-                (x                          ;event
-                 (let (synthetic listener event-length)
-                   (when (/= 0 (logand x #x80)) ;synthetic event
-                     (setq synthetic t
-                           x (logand x #x7f))) ;low 7 bits is the event number
-                   (setq listener
-                         (plist-get (slot-value connection 'event-plist) x))
-                   (pcase listener
-                     (`xge
-                      (setq event-length (funcall (if xcb:lsb
-                                                      #'xcb:-unpack-u4-lsb
-                                                    #'xcb:-unpack-u4)
-                                                  cache 4)
-                            ;; event-length indicates additional words to the
-                            ;; first 32 bytes.
-                            event-length (+ 32 (* 4 event-length)))
-                      (when (< (length cache) event-length)
-                        ;; Too short.
-                        (throw 'break nil))
-                      (setq listener
-                            (lax-plist-get (slot-value connection 'event-plist)
-                                           (vector (aref cache 1)
-                                                   (funcall
-                                                    (if xcb:lsb
-                                                        #'xcb:-unpack-u2-lsb
-                                                      #'xcb:-unpack-u2)
-                                                    cache 8)))))
-                     (`xkb
-                      (setq listener
-                            (lax-plist-get (slot-value connection 'event-plist)
-                                           (vector (aref cache 1))))))
-                   ;; Conventional events are 32 bytes in size.
-                   (unless event-length
-                     (setq event-length 32))
-                   (when listener
-                     (with-slots (event-queue) connection
-                       (setf event-queue (nconc event-queue
-                                                `([,listener
-                                                   ,(substring cache 0
-                                                               event-length)
-                                                   ,synthetic])))))
-                   (xcb:-log "Event received: %s" (substring cache 0 event-length))
-                   (setq cache (substring cache event-length)))))))
-          (setf (slot-value connection 'lock) nil))
-        (unless (slot-value connection 'lock)
-          (with-slots (message-cache) connection
-            (let ((current-cache-length (length message-cache)))
-              (setf message-cache
-                    (substring message-cache (- cache-length (length cache))))
-              (when (/= current-cache-length cache-length)
-                (xcb:-connection-filter process []))))
-          (xcb:-process-events connection))))))
+                   (setf (slot-value connection 'error-plist)
+                         (plist-put plist sequence
+                                    (push `(,(aref cache 1) .
+                                            ,(substring cache 0 32))
+                                          struct))))
+                 (setq cache (substring cache 32))
+                 (setf (slot-value connection 'last-seen-sequence) sequence)))
+              (1                          ;reply
+               (let* ((reply-words (funcall (if xcb:lsb #'xcb:-unpack-u4-lsb
+                                              #'xcb:-unpack-u4)
+                                            cache 4))
+                      (reply-length (+ 32 (* 4 reply-words)))
+                      struct sequence plist)
+                 (when (< (length cache) reply-length) ;too short, do next time
+                   (throw 'break nil))
+                 (xcb:-log "Reply received: %s" (substring cache 0 reply-length))
+                 (setq sequence (funcall (if xcb:lsb #'xcb:-unpack-u2-lsb
+                                           #'xcb:-unpack-u2)
+                                         cache 2)
+                       sequence (xcb:-convert-sequence connection sequence))
+                 (setq plist (slot-value connection 'reply-plist))
+                 (setq struct (plist-get plist sequence))
+                 (when struct
+                   (setf (slot-value connection 'reply-plist)
+                         (plist-put plist sequence
+                                    (if (symbolp struct)
+                                        ;; Single reply or
+                                        ;; first reply for multiple replies
+                                        (list struct
+                                              (substring cache 0 reply-length))
+                                      ;; Multiple replies
+                                      `(,(car struct) ,@(cdr struct)
+                                        ,(substring cache 0 reply-length))))))
+                 (setq cache (substring cache reply-length))
+                 (setf (slot-value connection 'last-seen-sequence) sequence)))
+              (x                          ;event
+               (let (synthetic listener event-length)
+                 (when (/= 0 (logand x #x80)) ;synthetic event
+                   (setq synthetic t
+                         x (logand x #x7f))) ;low 7 bits is the event number
+                 (setq listener
+                       (plist-get (slot-value connection 'event-plist) x))
+                 (pcase listener
+                   (`xge
+                    (setq event-length (funcall (if xcb:lsb
+                                                    #'xcb:-unpack-u4-lsb
+                                                  #'xcb:-unpack-u4)
+                                                cache 4)
+                          ;; event-length indicates additional words to the
+                          ;; first 32 bytes.
+                          event-length (+ 32 (* 4 event-length)))
+                    (when (< (length cache) event-length)
+                      ;; Too short.
+                      (throw 'break nil))
+                    (setq listener
+                          (lax-plist-get (slot-value connection 'event-plist)
+                                         (vector (aref cache 1)
+                                                 (funcall
+                                                  (if xcb:lsb
+                                                      #'xcb:-unpack-u2-lsb
+                                                    #'xcb:-unpack-u2)
+                                                  cache 8)))))
+                   (`xkb
+                    (setq listener
+                          (lax-plist-get (slot-value connection 'event-plist)
+                                         (vector (aref cache 1))))))
+                 ;; Conventional events are 32 bytes in size.
+                 (unless event-length
+                   (setq event-length 32))
+                 (when listener
+                   (with-slots (event-queue) connection
+                     (setf event-queue (nconc event-queue
+                                              `([,listener
+                                                 ,(substring cache 0
+                                                             event-length)
+                                                 ,synthetic])))))
+                 (xcb:-log "Event received: %s" (substring cache 0 event-length))
+                 (setq cache (substring cache event-length)))))))
+        (setf (slot-value connection 'lock) nil))
+      (unless (slot-value connection 'lock)
+        (with-slots (message-cache) connection
+          (let ((current-cache-length (length message-cache)))
+            (setf message-cache
+                  (substring message-cache (- cache-length (length cache))))
+            (when (/= current-cache-length cache-length)
+              (xcb:-connection-filter process []))))
+        (xcb:-process-events connection)))))
 #+end_src
 
 ** CANC /orderless/
@@ -17769,6 +17732,104 @@ This function is part of the `orderless' completion style."
                pactl emms-volume-pulse-sink (if (> 0 amount "" "+")) amount)))))
 #+end_src
 
+*** /ox-mediawiki/                                                    :markdown:
+
+#+begin_src elisp
+(with-eval-after-load 'ox-mediawiki
+  (defun org-mw-src-block (block contents info)
+    (concat
+     "<syntaxhighlight lang=\""
+     (org-element-property :language block)
+     "\">\n"
+     (org-element-property :value block)
+     "</syntaxhighlight>"))
+
+  (setcdr (assoc 'src-block (org-export-get-all-transcoders 'mw))
+          'org-mw-src-block)
+  (defun org-mw-link (link contents info)
+    (let ((--link-org-files-as-html-maybe
+           (function
+            (lambda (raw-path info)
+              ;; Treat links to `file.org' as links to `file.html', if
+              ;; needed.  See `org-html-link-org-files-as-html'.
+              (cond
+               ((and org-html-link-org-files-as-html
+                     (string= ".org"
+                              (downcase (file-name-extension raw-path "."))))
+                (concat (file-name-sans-extension raw-path) "."
+                        (plist-get info :html-extension)))
+               (t raw-path)))))
+          (type (org-element-property :type link)))
+      (cond ((member type '("custom-id" "id"))
+             (let ((destination (org-export-resolve-id-link link info)))
+               (if (stringp destination)	; External file.
+                   (let ((path (funcall --link-org-files-as-html-maybe
+                                        destination info)))
+                     (if (not contents) (format "<%s>" path)
+                       (format "[%s](%s)" contents path)))
+                 (concat
+                  (and contents (concat contents " "))
+                  (format "(%s)"
+                          (format
+                           (org-export-translate "See section %s" :html info)
+                           (mapconcat 'number-to-string
+                                      (org-export-get-headline-number
+                                       destination info)
+                                      ".")))))))
+            ((org-export-inline-image-p link org-html-inline-image-rules)
+             (let ((path (let ((raw-path (org-element-property :path link)))
+                           (if (not (file-name-absolute-p raw-path)) raw-path
+                             (expand-file-name raw-path)))))
+               (format "![%s](%s)"
+                       (let ((caption (org-export-get-caption
+                                       (org-export-get-parent-element link))))
+                         (when caption (org-export-data caption info)))
+                       path)))
+            ((string= type "coderef")
+             (let ((ref (org-element-property :path link)))
+               (format (org-export-get-coderef-format ref contents)
+                       (org-export-resolve-coderef ref info))))
+            ((equal type "radio")
+             (let ((destination (org-export-resolve-radio-link link info)))
+               (org-export-data (org-element-contents destination) info)))
+            ((equal type "fuzzy")
+             (if (org-string-nw-p contents) contents
+               (concat "[[#" (replace-regexp-in-string
+                              "^\*+ *" ""
+                              (org-element-property :raw-link link)
+                              t)
+                       "]]")))
+            (t (let* ((raw-path (org-element-property :path link))
+                      (path (cond
+                             ((member type '("http" "https" "ftp"))
+                              (concat type ":" raw-path))
+                             ((equal type "file")
+                              ;; Treat links to ".org" files as ".html",
+                              ;; if needed.
+                              (setq raw-path
+                                    (funcall --link-org-files-as-html-maybe
+                                             raw-path info))
+                              ;; If file path is absolute, prepend it
+                              ;; with protocol component - "file://".
+                              (if (not (file-name-absolute-p raw-path)) raw-path
+                                (concat "file://" (expand-file-name raw-path))))
+                             (t raw-path))))
+                 (if (not contents) (format "%s" path)
+                   (format "[%s %s]" path
+                           (s-join " " (s-split "\n" contents)))))))))
+
+  (defun org-mw-separate-elements (tree backend info)
+    (org-element-map tree org-element-all-elements
+      (lambda (elem)
+        (unless (memq (org-element-type elem) '(org-data item))
+          (org-element-put-property
+           elem :post-blank
+           (let ((post-blank (org-element-property :post-blank elem)))
+             (if (not post-blank) 1 (max 1 post-blank)))))))
+    ;; Return updated tree.
+    tree))
+#+end_src
+
 * Improvements
 ** Completions
 
@@ -17787,7 +17848,7 @@ This function is part of the `orderless' completion style."
                           (when-let ((it (car (member candidate completions))))
                             (add-face-text-property
                               0 (length it)
-                              '(:background "#5c5b30") nil it)
+                              '(:weight ultra-bold) nil it)
                             (push
                              it
                              result)))
@@ -18372,36 +18433,37 @@ If not, show simply the clocked time like 01:50."
 ;;               (tablist-revert))))))))
 
 (with-eval-after-load 'docker-utils
-  (when (bug-check-function-bytecode
-         'docker-utils-generic-action
-         "wCDBAYMbAAFAwgUFAyO2AolUsgEBQbICggMAtgLDIIc=")
-    (setq docker-utils-generic-action-count 0)
-    (defun docker-utils-generic-action (action args)
-      (interactive (list (docker-utils-get-transient-action)
-                         (transient-args transient-current-command)))
-      (let ((buffer (current-buffer))
-            (items (docker-utils-get-marked-items-ids)))
-        (setq docker-utils-generic-action-count
-              (+ (length items)
-                 docker-utils-generic-action-count))
-        (--each items
-          (async-start
-           `(lambda ()
-              (load ,(locate-library "s"))
-              (load ,(locate-library "transient"))
-              (load ,(locate-library "dash"))
-              (load ,(locate-library "docker-core"))
-              (let ((pos (with-current-buffer "*Messages*"
-                           (point-max))))
-                (docker-run-docker ,action ,args ,it)
-                (with-current-buffer "*Messages*"
-                  (buffer-substring-no-properties pos (1- (point-max))))))
-           `(lambda (result)
-              (message "Async %s" result)
-              (cl-decf docker-utils-generic-action-count)
-              (when (= 0 docker-utils-generic-action-count)
-                (with-current-buffer ,buffer
-                  (tablist-revert))))))))))
+  ;;;; OVERRIDDEN
+  (setq docker-utils-generic-action-count 0)
+  (defun docker-utils-generic-action (action args)
+    (interactive (list (docker-utils-get-transient-action)
+                       (transient-args transient-current-command)))
+    ;; (--each (docker-utils-get-marked-items-ids) ;; -
+    ;;   (docker-run-docker action args it))       ;; -
+    ;; (tablist-revert)                            ;; -
+    (let ((buffer (current-buffer))
+          (items (docker-utils-get-marked-items-ids)))
+      (setq docker-utils-generic-action-count
+            (+ (length items)
+               docker-utils-generic-action-count))
+      (--each items
+        (async-start
+         `(lambda ()
+            (load ,(locate-library "s"))
+            (load ,(locate-library "transient"))
+            (load ,(locate-library "dash"))
+            (load ,(locate-library "docker-core"))
+            (let ((pos (with-current-buffer "*Messages*"
+                         (point-max))))
+              (docker-run-docker ,action ,args ,it)
+              (with-current-buffer "*Messages*"
+                (buffer-substring-no-properties pos (1- (point-max))))))
+         `(lambda (result)
+            (message "Async %s" result)
+            (cl-decf docker-utils-generic-action-count)
+            (when (= 0 docker-utils-generic-action-count)
+              (with-current-buffer ,buffer
+                (tablist-revert)))))))))
 #+end_src
 
 ** CANC M-x with bindings help

@@ -52,17 +52,21 @@
 
 (defun gitlab-api-request (resource &optional method params)
   (request (concat gitlab-api-url-base resource)
-           :type (or method "GET")
-           :encoding 'utf-8
-           :headers (list (cons "Private-Token" gitlab-api-token))
-           :params params
-           :parser 'json-read
-           ;; :parser (lambda ()
-           ;;           (decode-coding-region (point-min) (point-max) 'utf-8)
-           ;;           (utf8-fix-wrong-ascii (point-min) (point-max))
-           ;;           (utf8-fix-wrong-latin (point-min) (point-max))
-           ;;           (json-read))
-           :sync t))
+    :type (or method "GET")
+    :encoding 'utf-8
+    :headers (list (cons "Private-Token" gitlab-api-token))
+    :params params
+    ;; :parser 'json-read
+    :parser (lambda ()
+              (condition-case err
+                  (progn
+                    (decode-coding-region (point-min) (point-max) 'utf-8)
+                    (utf8-fix-wrong-ascii (point-min) (point-max))
+                    (utf8-fix-wrong-latin (point-min) (point-max)))
+                (error (message "Fixing utf8 error `%s' with message `%s'"
+                                (car err) (cdr err))))
+              (json-read))
+    :sync t))
 
 (defun gitlab-api-data (resource &optional method params)
   (request-response-data
@@ -235,9 +239,9 @@
               (setq entry (concat
                            entry
                            (gitlab-api--format-field (if (eq key 'id)
-                                                          "id_"
-                                                        (symbol-name key))
-                                                      value indent)))))))
+                                                         "id_"
+                                                       (symbol-name key))
+                                                     value indent)))))))
       (replace-regexp-in-string "\n\\*" "\n.*" (concat entry indent ":END:\n\n") t 'literal))))
 
 (defun gitlab-api-default-sort (a b)
@@ -324,9 +328,9 @@
   (interactive "p\nXParams alist: ")
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
-                     (gitlab-api-data-all-pages "/search" "GET" params)
-                     (concat "/projects/{project_id}/" (cdr (assoc "scope" params)) "/{iid}")
-                     level sort-func filter-funcs))
+                                 (gitlab-api-data-all-pages "/search" "GET" params)
+                                 (concat "/projects/{project_id}/" (cdr (assoc "scope" params)) "/{iid}")
+                                 level sort-func filter-funcs))
     (apply 'gitlab-api-org-convert
            (gitlab-api-data-all-pages "/search" "GET" params)
            (concat "/projects/{project_id}/" (cdr (assoc "scope" params)) "/{iid}")
@@ -338,9 +342,9 @@
   (map-put params "state" "all" 'string-equal)
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
-                     (gitlab-api-data-all-pages "/issues" "GET" params)
-                     "/projects/{project_id}/issues/{iid}"
-                     level sort-func filter-funcs))
+                                 (gitlab-api-data-all-pages "/issues" "GET" params)
+                                 "/projects/{project_id}/issues/{iid}"
+                                 level sort-func filter-funcs))
     (apply 'gitlab-api-org-convert
            (gitlab-api-data-all-pages "/issues" "GET" params)
            "/projects/{project_id}/issues/{iid}"
@@ -374,9 +378,9 @@
   (map-put params "state" "all" 'string-equal)
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
-                     (gitlab-api-data-all-pages "/merge_requests" "GET" params)
-                     "/projects/{project_id}/merge_requests/{iid}"
-                     level sort-func filter-funcs))
+                                 (gitlab-api-data-all-pages "/merge_requests" "GET" params)
+                                 "/projects/{project_id}/merge_requests/{iid}"
+                                 level sort-func filter-funcs))
     (apply 'gitlab-api-org-convert
            (gitlab-api-data-all-pages "/merge_requests" "GET" params)
            "/projects/{project_id}/merge_requests/{iid}"
@@ -404,6 +408,7 @@
                                  ("state" . "all"))))
     "/projects/{project_id}/merge_requests/{iid}" level)))
 
+;;;###autoload
 (defun gitlab-api-org-update-entry-at-point ()
   (interactive)
   (let ((properties (org-entry-properties nil 'standard)))

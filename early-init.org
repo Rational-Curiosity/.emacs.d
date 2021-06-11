@@ -339,7 +339,14 @@ modified.
 
 #+begin_src elisp
 ;; (set 'custom-enabled-themes 'wheatgrass)
-(load-theme 'misterioso t)
+(condition-case nil
+    (load-theme 'modus-vivendi t)
+  (error
+   (message "Modus vivendi theme not found")
+   (condition-case nil
+       (load-theme 'wombat t)
+     (error
+      (message "Wombat theme not found")))))
 ;; (face-attribute 'mode-line nil :background "#003445")
 (add-to-list 'default-frame-alist '(cursor-color . "sky blue"))
 (face-spec-set 'show-paren-match

@@ -25,18 +25,22 @@
 
 (defun redmine-api-request (resource &optional method params)
   (request (concat redmine-api-url-base resource ".json")
-           :type (or method "GET")
-           :encoding 'utf-8
-           :headers (list (cons "X-Redmine-API-Key" redmine-api-token)
-                          '("Accept-Charset" . "utf-8"))
-           :params params
-           :parser 'json-read
-           ;; :parser (lambda ()
-           ;;           (decode-coding-region (point-min) (point-max) 'utf-8)
-           ;;           (utf8-fix-wrong-ascii (point-min) (point-max))
-           ;;           (utf8-fix-wrong-latin (point-min) (point-max))
-           ;;           (json-read))
-           :sync t))
+    :type (or method "GET")
+    :encoding 'utf-8
+    :headers (list (cons "X-Redmine-API-Key" redmine-api-token)
+                   '("Accept-Charset" . "utf-8"))
+    :params params
+    ;; :parser 'json-read
+    :parser (lambda ()
+              (condition-case err
+                  (progn
+                    (decode-coding-region (point-min) (point-max) 'utf-8)
+                    (utf8-fix-wrong-ascii (point-min) (point-max))
+                    (utf8-fix-wrong-latin (point-min) (point-max)))
+                (error (message "Fixing utf8 error `%s' with message `%s'"
+                                (car err) (cdr err))))
+              (json-read))
+    :sync t))
 
 (defun redmine-api-data (resource &optional method params)
   (request-response-data
@@ -86,10 +90,13 @@
     ("On hold"     "HOLD")
     ("QA Failed"   "REOP")
     ("QA Blocked"  "LINK")
-    ("QA Queue"    "DONE")
-    ("QA Passed"   "FINI")
+    ("QA Queue"    "VERI")
+    ("QA Passed"   "DONE")
+    ("Completed"   "FINI")
     ("Closed"      "CANC")
-    (_ (concat state "/" type))))
+    (_
+     (message "Unknown state `%s' of `%s'" state type)
+     state)))
 
 (defun redmine-api--abbrev-project-name (project-name)
   (pcase project-name
@@ -106,7 +113,9 @@
     ("API Provisión"       "Apv")
     ("GO panel"            "Gpn")
     ("Kudeiro"             "Kud")
-    (_ project-name)))
+    (_
+     (message "Project `%s' without abbreviation" project-name)
+     project-name)))
 
 (defun redmine-api--format-field (field value indent)
   (concat indent
@@ -127,10 +136,10 @@
         (project (assoc-keys '(project name) data)))
     (let* ((status-name (assoc-keys '(status name) data))
            (entry (format "%s %s %-64s  :%s:"
-                         (make-string level ?*)
-                         (redmine-api--convert-state status-name type)
-                         (assoc-default 'subject data)
-                         status-name)))
+                          (make-string level ?*)
+                          (redmine-api--convert-state status-name type)
+                          (assoc-default 'subject data)
+                          status-name)))
       (setq entry (concat entry indent ":PROPERTIES:"
                           (and resource (concat indent ":RESOURCE:     " resource))
                           (and resource (concat indent ":ORIGIN:       "
@@ -198,8 +207,8 @@
                                               (priority id)
                                               (priority name)
                                               (tracker name))
-                                           level
-                                           template))
+                                            level
+                                            template))
              (sort
               datas
               (or sort-func 'redmine-api-default-sort))
@@ -280,6 +289,7 @@
         (insert result)
       result)))
 
+;;;###autoload
 (defun redmine-api-org-update-entry-at-point ()
   (interactive)
   (let ((properties (org-entry-properties nil 'standard)))

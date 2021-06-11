@@ -119,15 +119,15 @@
                       (org-entry-get nil (or property "ORIGIN")))))
   (let* ((level-gitlab (1+ level))
          (result (mapconcat
-                 (lambda (issue)
-                   (concat
-                    (redmine-api-org-convert (list issue) "/issues/{id}" level)
-                    (gitlab-api-org-get-from-redmine-id
-                     level-gitlab
-                     (int-to-string (assoc-default 'id issue))
-                     property)))
-                 (redmine-api-issues-from-version version-id)
-                 "")))
+                  (lambda (issue)
+                    (concat
+                     (redmine-api-org-convert (list issue) "/issues/{id}" level)
+                     (gitlab-api-org-get-from-redmine-id
+                      level-gitlab
+                      (int-to-string (assoc-default 'id issue))
+                      property)))
+                  (redmine-api-issues-from-version version-id)
+                  "")))
     (if (called-interactively-p 'any)
         (insert result)
       result)))
