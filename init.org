@@ -7139,6 +7139,45 @@ By default insert it, with prefix display a message with it."
 #+end_src
 
 ** Not always required
+*** /dired/
+
+#+begin_src elisp
+(with-eval-after-load 'dired
+  (defface dired-python
+    '((((type w32 pc)) :inherit default)
+      (t (:foreground "green")))
+    "Python file face."
+    :group 'dired-faces
+    :version "22.1")
+
+  (defface dired-php
+    '((((type w32 pc)) :inherit default)
+      (t (:foreground "blue")))
+    "PHP file face."
+    :group 'dired-faces
+    :version "22.1")
+
+  (defface dired-javascript
+    '((((type w32 pc)) :inherit default)
+      (t (:foreground "yellow")))
+    "PHP file face."
+    :group 'dired-faces
+    :version "22.1")
+
+  (dolist (face-type '((dired-python     . (".py" ".pyc" ".pyd" ".pyo"))
+                       (dired-php        . (".php" ".phps" ".php5" ".phtml"))
+                       (dired-javascipt  . (".json" ".js" ".jsx" ".ts" ".tsx"))))
+    (setcdr
+     (last dired-font-lock-keywords)
+     (list
+      `(eval .
+             ;; It is quicker to first find just an extension, then go back to the
+             ;; start of that file name.  So we do this complex MATCH-ANCHORED form.
+             (list
+              ,(concat "\\(" (regexp-opt (cdr face-type)) "\\|#\\)[*=|]?$")
+              '(".+" (dired-move-to-filename) nil (0 (quote ,(car face-type))))))))))
+#+end_src
+
 *** /nxml/
 
 #+begin_src elisp
@@ -8710,6 +8749,9 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;; first loaded
 (add-hook 'emacs-lisp-mode-hook #'semantic-mode -91)
 (add-hook 'lisp-mode-hook #'semantic-mode -91)
+(with-eval-after-load 'semantic/symref/grep
+  (push '(php-mode "*.php" "*.php[s345678]" "*.phtml")
+        semantic-symref-filepattern-alist))
 (with-eval-after-load 'semantic
   (message "Importing semantic-config")
   ;; [ Included by default
