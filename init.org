@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --with-cairo --without-x-toolkit --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --without-xwidgets --with-native-compilation CFLAGS='-O3 -mtune=native -march=native'
+./configure --with-json --without-cairo --without-x-toolkit --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --without-xwidgets --with-native-compilation CFLAGS='-O3 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -4769,7 +4769,8 @@ mode and header lines."
 (add-hook 'completion-list-mode-hook 'inhibit-mode-line)
 
 (setq completion-cycle-threshold 3
-      completion-show-help nil)
+      completion-show-help nil
+      completions-format 'vertical)
 
 (with-eval-after-load 'simple
   (define-key minibuffer-local-shell-command-map (kbd "M-v")
@@ -9819,8 +9820,9 @@ if __name__ == \"__main__\":
 *** /tree-sitter/
 
 #+begin_src elisp
-(require 'tree-sitter)
-(require 'tree-sitter-langs)
+(ignore-errors
+  (require 'tree-sitter)
+  (require 'tree-sitter-langs))
 #+end_src
 
 *** CANC /helm/
@@ -12175,7 +12177,12 @@ Switch the current window to the previous buffer."
                       :weight 'bold
                       :background 'unspecified)
 
-  (setq lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
+  (setq minor-mode-alist
+        (delq (assoc 'lsp-mode
+                     minor-mode-alist)
+              minor-mode-alist)
+        lsp-enable-symbol-highlighting nil
+        lsp-enable-xref nil ;; lsp-enable-xref t suppress etags--xref-backend
         ;; performance
         read-process-output-max (* 3 1024 1024)
         lsp-completion-provider :capf
@@ -12403,15 +12410,12 @@ Switch the current window to the previous buffer."
 *** /php/                                                          :programming:
 
 #+begin_src elisp
-(add-hook 'php-mode-hook 'eglot-ensure)
+(add-hook 'php-mode-hook 'lsp-deferred)
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
     (require 'dap-php))
   (setq php-mode-coding-style 'psr2
         php-mode-use-php7-syntax-table t)
-
-  (c-mode)
-  (php-set-style "psr2")
 
   ;; Keys
   (define-key php-mode-map (kbd "M-b") nil)
