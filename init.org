@@ -9627,7 +9627,7 @@ if __name__ == \"__main__\":
   (define-key flymake-mode-map (kbd "M-g M-n") #'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-g p") #'flymake-goto-prev-error)
   (define-key flymake-mode-map (kbd "M-g M-p") #'flymake-goto-prev-error)
-  (define-key flymake-mode-map (kbd "M-c ! l") #'flymake-show-diagnostics-buffer)
+  (define-key flymake-mode-map (kbd "C-c ! l") #'flymake-show-diagnostics-buffer)
   (define-key flymake-mode-map (kbd "C-c ! c") #'flymake-start))
 #+end_src
 
@@ -12739,33 +12739,6 @@ Switch the current window to the previous buffer."
         org-table-convert-region-max-lines 9999)
   ;;(:box t :foreground "#AAF")
 
-
-  ;; ;;;;;;;;;;;;;;; ;;
-  ;; Heading markers ;;
-  ;; ;;;;;;;;;;;;;;; ;;
-  ;; (require 'org-superstar)
-  ;; (setq org-superstar-todo-bullet-alist
-  ;;       '(("TODO" . ?☐)
-  ;;         ("NEXT" . ?⇒)
-  ;;         ("DONE" . ?✓)
-  ;;         ("PLAN" . ?☶)
-  ;;         ("STAR" . ?☆)
-  ;;         ("REOP" . ?◯)
-  ;;         ("FINI" . ?☑)
-  ;;         ("ENOU" . ?~)
-  ;;         ("DELE" . ?↓)
-  ;;         ("LINK" . ?⛓)
-  ;;         ("WAIT" . ?⏳)
-  ;;         ("HOLD" . ?✋)
-  ;;         ("CANC" . ?✗)
-  ;;         ("FIXM" . ?!)
-  ;;         ("VERI" . ??)
-  ;;         ("UNDO" . ?←))
-  ;;       org-superstar-special-todo-items t
-  ;;       org-superstar-headline-bullets-list
-  ;;       '("α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "λ" "μ"))
-  ;; (add-hook 'org-mode-hook #'org-superstar-mode)
-
   ;; ;;;;;;; ;;
   ;; Modules ;;
   ;; ;;;;;;; ;;
@@ -14106,6 +14079,38 @@ Throw an error when trying to set a property with an invalid name."
           'org-textile-src-block))
 #+end_src
 
+*** /org-superstar/ (when installed)
+
+#+begin_src elisp
+(when (locate-library "org-superstar")
+  (add-hook 'org-mode-hook #'org-superstar-mode)
+  (with-eval-after-load 'org-superstar
+    ;; ;;;;;;;;;;;;;;; ;;
+    ;; Heading markers ;;
+    ;; ;;;;;;;;;;;;;;; ;;
+    (setq org-superstar-todo-bullet-alist
+          '(("TODO" . ?☐)
+            ("NEXT" . ?⇒)
+            ("DONE" . ?✓)
+            ("PLAN" . ?☶)
+            ("STAR" . ?☆)
+            ("REOP" . ?◯)
+            ("FINI" . ?☑)
+            ("ENOU" . ?~)
+            ("DELE" . ?↓)
+            ("LINK" . ?⛓)
+            ("WAIT" . ?⏳)
+            ("HOLD" . ?✋)
+            ("CANC" . ?✗)
+            ("FIXM" . ?!)
+            ("VERI" . ??)
+            ("UNDO" . ?←))
+          org-superstar-special-todo-items t
+          org-superstar-headline-bullets-list
+          ;; '("α" "β" "γ" "δ" "ε" "ζ" "η" "θ" "ι" "κ" "λ" "μ")
+          '(?◉ ?○ ?• ?◦ ?‣))))
+#+end_src
+
 *** /org-super-agenda/
 
 #+begin_example
@@ -14337,34 +14342,58 @@ If run interactively, get ENTRY from context."
 
 #+begin_src elisp
 (with-eval-after-load 'org-tree-slide
-  (defvar org-tree-slide-face-remapping nil)
-  (defun org-tree-slide-play ()
+  (defvar org-tree-slide-store (make-hash-table :test 'eq))
+  (defun org-tree-slide-play-config ()
     (org-show-all)
+    (puthash 'face-remapping-alist
+             face-remapping-alist org-tree-slide-store)
+    (puthash 'hl-line-range-function
+             hl-line-range-function org-tree-slide-store)
     (setq-local
-     org-tree-slide-face-remapping face-remapping-alist
-     face-remapping-alist (let ((color "#00C598")
+     hl-line-range-function
+     (lambda ()
+       (let ((beg (line-beginning-position))
+             (end (line-beginning-position 2)))
+         (if (null (overlays-in beg end))
+             (cons beg end))))
+     face-remapping-alist (let (;; (color "#00C598")
                                 (bg (face-attribute 'default :background)))
-                            `((default (:height 1.5) default)
-                              (header-line (:height 4.5) variable-pitch)
+                            `((default (:height 1.6) default)
+                              ;; (header-line (:height 4.5) variable-pitch)
+                              (org-level-1 (:height 1.5) org-level-1)
                               (org-block-begin-line
-                               (:height 0.5 :foreground ,color :background ,color)
+                               (:height 0.5 :foreground ,(face-attribute
+                                                          'org-block-begin-line
+                                                          :background))
                                org-block-begin-line)
-                              (org-block (:background "#D3FBD8") org-block)
+                              ;; (org-block (:background "#D3FBD8") org-block)
                               (org-block-end-line
-                               (:height 0.5 :foreground ,color :background ,color)
+                               (:height 0.8 :foreground ,(face-attribute
+                                                          'org-block-end-line
+                                                          :background))
                                org-block-end-line)
+                              (org-drawer
+                               (:height 0.5 :foreground ,bg)
+                               org-drawer)
                               (org-meta-line
                                (:height 0.5 :foreground ,bg)
-                               org-meta-line)))))
-  (add-hook 'org-tree-slide-play-hook 'org-tree-slide-play)
+                               org-meta-line)
+                              (org-ellipsis
+                               (:height 0.5 :foreground ,bg)
+                               org-ellipsis)))))
+  (add-hook 'org-tree-slide-play-hook 'org-tree-slide-play-config)
 
-  (defun org-tree-slide-stop ()
+  (defun org-tree-slide-stop-config ()
     (setq-local
-     face-remapping-alist org-tree-slide-face-remapping
-     org-tree-slide-face-remapping nil))
-  (add-hook 'org-tree-slide-stop-hook 'org-tree-slide-stop)
+     hl-line-range-function
+     (gethash 'hl-line-range-function org-tree-slide-store)
+     face-remapping-alist
+     (gethash 'face-remapping-alist org-tree-slide-store)))
+  (add-hook 'org-tree-slide-stop-hook 'org-tree-slide-stop-config)
 
   (setq org-tree-slide-breadcrumbs " / "
+        org-tree-slide-skip-outline-level 2
+        org-tree-slide-content-margin-top 0
         org-tree-slide-slide-in-brank-lines 7
         org-tree-slide-slide-in-waiting 0.03
         org-tree-slide-never-touch-face t

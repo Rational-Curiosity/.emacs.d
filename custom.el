@@ -124,7 +124,8 @@
      yasnippet
      yasnippet-snippets))
  '(safe-local-variable-values
-   '((org-confirm-babel-evaluate)
+   '((org-babel-min-lines-for-block-output . 99)
+     (org-confirm-babel-evaluate)
      (org-babel-noweb-wrap-end . "»")
      (org-babel-noweb-wrap-start . "«"))))
 
