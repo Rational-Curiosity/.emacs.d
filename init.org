@@ -1909,7 +1909,8 @@ prompt the user for a coding system."
 
 ;; Mostrar parentesis (ya lo hace show-smartparents-mode)
 (show-paren-mode 1)
-(electric-pair-mode 1)
+;; (electric-pair-mode 1)
+(electric-indent-mode -1)
 ;; Narrow enabled
 (put 'narrow-to-region 'disabled nil)
 
@@ -2250,6 +2251,17 @@ there's a region, all lines that region covers will be duplicated."
 (require 'rotate-text)
 (require 'string-inflection)
 
+(defvar inflection-repeat-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "n" 'string-inflection-all-cycle)
+    (define-key map "+" 'rotate-text)
+    (define-key map "-" 'rotate-text-backward)
+    map))
+
+(put 'string-inflection-all-cycle 'repeat-map 'inflection-repeat-map)
+(put 'rotate-text 'repeat-map 'inflection-repeat-map)
+(put 'rotate-text-backward 'repeat-map 'inflection-repeat-map)
+
 (defun rotate-or-inflection (arg)
   (interactive (list (if (consp current-prefix-arg)
                          -1
@@ -2286,6 +2298,16 @@ there's a region, all lines that region covers will be duplicated."
         (kill-region opoint (point)))
     (backward-kill-sexp arg)))
 
+;;;;;;;;;;;
+;; Pairs ;;
+;;;;;;;;;;;
+(setq parens-require-spaces nil
+      insert-pair-alist
+      (nconc insert-pair-alist '((?¡ ?!)
+                                 (?¿ ??)
+                                 (?« ?»)
+                                 (?“ ?”))))
+
 (defun surround-delete-pair (&optional arg escape-strings no-syntax-crossing)
   (interactive "^p\nd\nd")
   (save-excursion
@@ -2295,26 +2317,40 @@ there's a region, all lines that region covers will be duplicated."
 
 (defun surround-change-pair (&optional arg escape-strings no-syntax-crossing)
   (interactive "^p\nd\nd")
-  (let ((alist '((?\( . ?\))
-                 (?\[ . ?\])
-                 (?{ . ?})
-                 (?< . ?>)
-                 (?¡ . ?!)
-                 (?¿ . ??)
-                 (?« . ?»)
-                 (?“ . ?”)))
+  (let ((alist insert-pair-alist)
         (char (read-char "Left delimiter: ")))
     (let ((pair (or (assoc char alist 'char-equal)
                     (rassoc char alist)
-                    (cons char char))))
+                    (list char char))))
       (save-excursion
         (backward-up-list arg escape-strings no-syntax-crossing)
         (save-excursion
           (forward-sexp 1)
           (delete-char -1)
-          (insert (cdr pair)))
+          (insert (car (cdr pair))))
         (delete-char 1)
         (insert (car pair))))))
+
+(global-set-key "¡" #'insert-pair)
+(global-set-key "¿" #'insert-pair)
+;;;;;;;;;;;;;;;;;;;;
+;; Indent newline ;;
+;;;;;;;;;;;;;;;;;;;;
+(defun newline-indent (arg interactive)
+  (interactive "*P\np")
+  (ignore-error 'beginning-of-buffer
+      (fixup-whitespace))
+  (newline arg interactive)
+  (indent-according-to-mode))
+
+(defun newline-blankline-indent (arg interactive)
+  (interactive "*p\np")
+  (ignore-error 'beginning-of-buffer
+    (fixup-whitespace))
+  (newline (1+ arg) interactive)
+  (indent-according-to-mode)
+  (forward-line -1)
+  (indent-according-to-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard macros ;;
@@ -2428,6 +2464,11 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
+(with-eval-after-load 'simple
+  (define-key read-expression-map "("  #'insert-pair)
+  (define-key read-expression-map "["  #'insert-pair)
+  (define-key read-expression-map "{"  #'insert-pair)
+  (define-key read-expression-map "\""  #'insert-pair))
 ;; (global-set-key (kbd "M-y") #'kill-ring-insert)
 (global-set-key (kbd "C-M-º") #'indent-region)
 (global-set-key (kbd "M-s º") #'indent-region)
@@ -2437,9 +2478,15 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "C-(") 'surround-change-pair)
 (global-set-key (kbd "C-)") 'surround-delete-pair)
 (global-set-key (kbd "C-M-(") 'blink-matching-open)
-(define-key prog-mode-map (kbd "C-c C-f") #'rotate-text)
-(define-key prog-mode-map (kbd "C-c C-b") #'rotate-text-backward)
-(define-key prog-mode-map (kbd "C-c C-u") #'string-inflection-all-cycle)
+(define-key prog-mode-map "("  #'insert-pair)
+(define-key prog-mode-map "["  #'insert-pair)
+(define-key prog-mode-map "{"  #'insert-pair)
+(define-key prog-mode-map "\""  #'insert-pair)
+(define-key prog-mode-map (kbd "RET") 'newline-indent)
+(define-key prog-mode-map (kbd "S-<return>") 'newline-blankline-indent)
+(define-key prog-mode-map (kbd "M-s 6 +") #'rotate-text)
+(define-key prog-mode-map (kbd "M-s 6 -") #'rotate-text-backward)
+(define-key prog-mode-map (kbd "M-s 6 n") #'string-inflection-all-cycle)
 ;; (global-set-key (kbd "ŧ") #'rotate-text)                            ;; AltGr-t
 ;; (global-set-key (kbd "→") #'string-inflection-all-cycle)            ;; AltGr-i
 ;; (global-set-key (kbd "ħ") #'pulse-momentary-highlight-current-line) ;; AltGr-h
@@ -9123,10 +9170,37 @@ Improve default ia jump at point."
   (speedbar-enable-update))
 #+end_src
 
+*** CANC /lisp-mode/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
+
+#+begin_src elisp
+(with-eval-after-load 'lisp-mode
+  (define-key lisp-data-mode-map "`" #'insert-pair))
+#+end_src
+
 *** /cc-mode/                                                      :programming:
 
 #+begin_src elisp
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+
+(with-eval-after-load 'cc-mode
+  (define-key c-mode-base-map "#" nil)
+  (define-key c-mode-base-map "{" #'insert-pair)
+  (define-key c-mode-base-map "}" nil)
+  (define-key c-mode-base-map "/" nil)
+  (define-key c-mode-base-map "*" nil)
+  (define-key c-mode-base-map ";" nil)
+  (define-key c-mode-base-map "," nil)
+  (define-key c-mode-base-map ":" nil)
+  (define-key c-mode-base-map "(" #'insert-pair)
+  (define-key c-mode-base-map ")" nil)
+  (define-key c-mode-base-map (kbd "C-c C-f") #'rotate-text)
+  (define-key c-mode-base-map (kbd "C-c C-b") #'rotate-text-backward)
+  (define-key c-mode-base-map (kbd "C-c C-u") #'string-inflection-all-cycle)
+  (define-key c-mode-base-map "'" #'insert-pair)
+  (define-key c-mode-base-map (kbd "C-c m c") 'compile-cmake-make))
 
 (defun c-c++-config ()
   ;; run only once
@@ -9359,12 +9433,7 @@ Improve default ia jump at point."
        ((string-equal (downcase (substring file 0 8)) "makefile")
         (let ((default-directory path))
           (set 'make-target-last (make-completing-read file make-target-last))
-          (compilation-execute (concat "make -k -f " file " " make-target-last " ")))))))
-
-  ;; Teclas
-  (with-eval-after-load 'cc-mode
-    (define-key c++-mode-map (kbd "C-c m c") 'compile-cmake-make)
-    (define-key c-mode-map (kbd "C-c m c") 'compile-cmake-make)))
+          (compilation-execute (concat "make -k -f " file " " make-target-last " "))))))))
 
 (add-hook 'c-mode-hook   'c-c++-config)
 (add-hook 'c++-mode-hook 'c-c++-config)
@@ -9578,6 +9647,7 @@ if __name__ == \"__main__\":
   ;; (define-key python-mode-map (kbd "C-c d h")
   ;;   #'sphinx-build-html)
 
+  (define-key python-mode-map "'" #'insert-pair)
   (define-key python-mode-map (kbd "C-c p t d") #'python-doctest-to-message)
   (define-key python-mode-map (kbd "C-c p t t") #'python-timeit-to-message)
   (define-key python-mode-map (kbd "C-c p d h") #'sphinx-build-html)
@@ -12202,8 +12272,10 @@ Switch the current window to the previous buffer."
         lsp-modeline-diagnostics-enable nil
         lsp-file-watch-ignored (cons "[/\\\\]tmp$"
                                      lsp-file-watch-ignored)
+        ;; eldoc
+        lsp-eldoc-render-all t
         ;; signature
-        lsp-signature-render-documentation nil
+        ;; lsp-signature-render-documentation nil
         ;; headerline
         lsp-headerline-breadcrumb-enable nil)
 
@@ -12342,14 +12414,10 @@ Switch the current window to the previous buffer."
                                       ;;   (eldoc-mode -1))
                                       )
                                     eglot-managed-mode-hook))
-     (setcdr (last (assoc '(c++-mode c-mode) eglot-server-programs))
-             '("--init={\"clang\": {\"extraArgs\": [\"-std=c++17\"]}}"))
-     (let ((filename
-            (expand-file-name
-             "~/.config/composer/vendor/felixfbecker/language-server/bin/php-language-server.php")))
-       (when (file-exists-p filename)
-         (setcar (last (assoc '(php-mode phps-mode) eglot-server-programs))
-                 filename))))
+     (setcdr (assoc '(c++-mode c-mode) eglot-server-programs)
+             '("ccls" "--init={\"clang\": {\"extraArgs\": [\"-std=c++17\"]}}"))
+     (setcdr (assoc '(php-mode phps-mode) eglot-server-programs)
+             '("intelephense" "--stdio")))
 #+end_src
 
 *** /rust/                                                         :programming:
@@ -12407,19 +12475,25 @@ Switch the current window to the previous buffer."
   (setq typescript-indent-level 2))
 #+end_src
 
-*** /php/                                                          :programming:
+*** /php-mode/                                                     :programming:
 
 #+begin_src elisp
-(add-hook 'php-mode-hook 'lsp-deferred)
+(add-hook 'php-mode-hook 'eglot-ensure)
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
     (require 'dap-php))
-  (setq php-mode-coding-style 'psr2
-        php-mode-use-php7-syntax-table t)
+  (setq php-mode-coding-style 'psr2)
 
   ;; Keys
   (define-key php-mode-map (kbd "M-b") nil)
   (define-key php-mode-map (kbd "C-.") nil))
+#+end_src
+
+*** /sh-mode/                                                      :programming:
+
+#+begin_src elisp
+(with-eval-after-load 'sh-script
+  (define-key sh-mode-map "'" #'insert-pair))
 #+end_src
 
 *** /minimap/
@@ -12556,7 +12630,135 @@ Switch the current window to the previous buffer."
   (define-key yaml-mode-map "\C-m" 'newline-and-indent))
 #+end_src
 
-*** /org/                                                             :markdown:
+*** TODO /rst/                                                        :markdown:
+
+- [ ] Find /sphinx-frontend-config/ in repo
+
+#+begin_src elisp
+(with-eval-after-load 'rst
+  (message "Importing rst config")
+
+  (with-eval-after-load 'sphinx-doc
+    (require 'sphinx-frontend-config)))
+#+end_src
+
+*** /latex/                                                           :markdown:
+
+#+begin_src elisp
+(add-to-list 'auto-mode-alist '("\\.ptx\\'" . latex-mode))
+(with-eval-after-load 'latex
+  (message "Importing latex config")
+  ;; latex mode buttons
+  (defvar TeX-bar-LaTeX-button-alist
+    (quote
+     ((latex :image
+             (lambda nil
+               (if TeX-PDF-mode "pdftex" "tex"))
+             :command
+             (progn
+               (TeX-save-document
+                (TeX-master-file))
+               (TeX-command "LaTeX"
+                            (quote TeX-master-file)
+                            -1))
+             :help
+             (lambda
+               (&rest ignored)
+               (TeX-bar-help-from-command-list "LaTeX")))
+      (pdfpslatex :image "pdftex" :command
+                  (progn
+                    (TeX-save-document
+                     (TeX-master-file))
+                    (TeX-command "PDFpsLaTeX"
+                                 (quote TeX-master-file)
+                                 -1))
+                  :help
+                  (lambda
+                    (&rest ignored)
+                    (TeX-bar-help-from-command-list "PDFpsLaTeX")))
+      (evince :image "viewpdf" :command
+              (TeX-command "Evince"
+                           (quote TeX-master-file)
+                           -1)
+              :help
+              (lambda
+                (&rest ignored)
+                (TeX-bar-help-from-command-list "Evince")))
+      (clean :image "delete" :command
+             (TeX-command "Clean"
+                          (quote TeX-master-file)
+                          -1)
+             :help
+             (lambda
+               (&rest ignored)
+               (TeX-bar-help-from-command-list "Clean")))
+      (pdflatex :image "pdftex" :command
+                (progn
+                  (TeX-save-document
+                   (TeX-master-file))
+                  (TeX-command "PDFLaTeX"
+                               (quote TeX-master-file)
+                               -1))
+                :help
+                (lambda
+                  (&rest ignored)
+                  (TeX-bar-help-from-command-list "PDFLaTeX")))
+      (next-error :image "error" :command TeX-next-error :enable
+                  (plist-get TeX-error-report-switches
+                             (intern
+                              (TeX-master-file)))
+                  :visible
+                  (plist-get TeX-error-report-switches
+                             (intern
+                              (TeX-master-file))))
+      (view :image
+            (lambda nil
+              (if TeX-PDF-mode "viewpdf" "viewdvi"))
+            :command
+            (TeX-command "View"
+                         (quote TeX-master-file)
+                         -1)
+            :help
+            (lambda
+              (&rest ignored)
+              (TeX-bar-help-from-command-list "View")))
+      (file :image "dvips" :command
+            (TeX-command "File"
+                         (quote TeX-master-file)
+                         -1)
+            :visible
+            (not TeX-PDF-mode)
+            :help
+            (lambda
+              (&rest ignored)
+              (TeX-bar-help-from-command-list "File")))
+      (bibtex :image "bibtex" :command
+              (TeX-command "BibTeX"
+                           (quote TeX-master-file)
+                           -1)
+              :help
+              (lambda
+                (&rest ignored)
+                (TeX-bar-help-from-command-list "BibTeX")))
+      (clean :image "delete" :command
+             (TeX-command "Clean"
+                          (quote TeX-master-file)
+                          -1)
+             :help
+             (lambda
+               (&rest ignored)
+               (TeX-bar-help-from-command-list "Clean")))
+      (latex-symbols-experimental :alias :eval-group LaTeX-symbols-toolbar-switch-contents LaTeX-symbols-toolbar-contents))))
+
+  (defvar TeX-bar-LaTeX-buttons
+    (quote
+     (new-file open-file dired kill-buffer save-buffer undo cut copy paste
+               [separator nil]
+               latex next-error view bibtex
+               (pdfpslatex evince clean)))))
+#+end_src
+
+*** /org-mode/                                                        :markdown:
 
 #+begin_src elisp
 (setq org-replace-disputed-keys t)
@@ -12618,7 +12820,7 @@ Switch the current window to the previous buffer."
   ;; (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
   ;; (set-face-attribute 'org-warning nil :foreground "gold")
   ;; (set-face-attribute 'org-tag nil :bold nil)
-  ;; (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")
+  ;; (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")<
   ;; (set-face-attribute 'org-level-2 nil :bold t :foreground "medium turquoise")
   ;; (set-face-attribute 'org-level-3 nil :bold t :foreground "pale turquoise")
   (face-spec-set 'org-ellipsis
@@ -14040,6 +14242,7 @@ Throw an error when trying to set a property with an invalid name."
                              (set
                               (make-local-variable 'semantic-mode) nil)))
 
+  (define-key org-mode-map "«" #'insert-pair)
   (define-key org-mode-map (kbd "M-,") #'org-priority)
   (define-key org-mode-map (kbd "C-c v e") #'org-show-entry)
   (define-key org-mode-map (kbd "C-c TAB") #'org-show-subtree)
@@ -14399,134 +14602,6 @@ If run interactively, get ENTRY from context."
         org-tree-slide-never-touch-face t
         org-tree-slide-activate-message nil
         org-tree-slide-deactivate-message nil))
-#+end_src
-
-*** TODO /rst/                                                        :markdown:
-
-- [ ] Find /sphinx-frontend-config/ in repo
-
-#+begin_src elisp
-(with-eval-after-load 'rst
-  (message "Importing rst config")
-
-  (with-eval-after-load 'sphinx-doc
-    (require 'sphinx-frontend-config)))
-#+end_src
-
-*** /latex/                                                           :markdown:
-
-#+begin_src elisp
-(add-to-list 'auto-mode-alist '("\\.ptx\\'" . latex-mode))
-(with-eval-after-load 'latex
-  (message "Importing latex config")
-  ;; latex mode buttons
-  (defvar TeX-bar-LaTeX-button-alist
-    (quote
-     ((latex :image
-             (lambda nil
-               (if TeX-PDF-mode "pdftex" "tex"))
-             :command
-             (progn
-               (TeX-save-document
-                (TeX-master-file))
-               (TeX-command "LaTeX"
-                            (quote TeX-master-file)
-                            -1))
-             :help
-             (lambda
-               (&rest ignored)
-               (TeX-bar-help-from-command-list "LaTeX")))
-      (pdfpslatex :image "pdftex" :command
-                  (progn
-                    (TeX-save-document
-                     (TeX-master-file))
-                    (TeX-command "PDFpsLaTeX"
-                                 (quote TeX-master-file)
-                                 -1))
-                  :help
-                  (lambda
-                    (&rest ignored)
-                    (TeX-bar-help-from-command-list "PDFpsLaTeX")))
-      (evince :image "viewpdf" :command
-              (TeX-command "Evince"
-                           (quote TeX-master-file)
-                           -1)
-              :help
-              (lambda
-                (&rest ignored)
-                (TeX-bar-help-from-command-list "Evince")))
-      (clean :image "delete" :command
-             (TeX-command "Clean"
-                          (quote TeX-master-file)
-                          -1)
-             :help
-             (lambda
-               (&rest ignored)
-               (TeX-bar-help-from-command-list "Clean")))
-      (pdflatex :image "pdftex" :command
-                (progn
-                  (TeX-save-document
-                   (TeX-master-file))
-                  (TeX-command "PDFLaTeX"
-                               (quote TeX-master-file)
-                               -1))
-                :help
-                (lambda
-                  (&rest ignored)
-                  (TeX-bar-help-from-command-list "PDFLaTeX")))
-      (next-error :image "error" :command TeX-next-error :enable
-                  (plist-get TeX-error-report-switches
-                             (intern
-                              (TeX-master-file)))
-                  :visible
-                  (plist-get TeX-error-report-switches
-                             (intern
-                              (TeX-master-file))))
-      (view :image
-            (lambda nil
-              (if TeX-PDF-mode "viewpdf" "viewdvi"))
-            :command
-            (TeX-command "View"
-                         (quote TeX-master-file)
-                         -1)
-            :help
-            (lambda
-              (&rest ignored)
-              (TeX-bar-help-from-command-list "View")))
-      (file :image "dvips" :command
-            (TeX-command "File"
-                         (quote TeX-master-file)
-                         -1)
-            :visible
-            (not TeX-PDF-mode)
-            :help
-            (lambda
-              (&rest ignored)
-              (TeX-bar-help-from-command-list "File")))
-      (bibtex :image "bibtex" :command
-              (TeX-command "BibTeX"
-                           (quote TeX-master-file)
-                           -1)
-              :help
-              (lambda
-                (&rest ignored)
-                (TeX-bar-help-from-command-list "BibTeX")))
-      (clean :image "delete" :command
-             (TeX-command "Clean"
-                          (quote TeX-master-file)
-                          -1)
-             :help
-             (lambda
-               (&rest ignored)
-               (TeX-bar-help-from-command-list "Clean")))
-      (latex-symbols-experimental :alias :eval-group LaTeX-symbols-toolbar-switch-contents LaTeX-symbols-toolbar-contents))))
-
-  (defvar TeX-bar-LaTeX-buttons
-    (quote
-     (new-file open-file dired kill-buffer save-buffer undo cut copy paste
-               [separator nil]
-               latex next-error view bibtex
-               (pdfpslatex evince clean)))))
 #+end_src
 
 *** CANC /ellocate/

@@ -173,8 +173,10 @@ text."
 
 (defvar rotate-text-last-offset nil)
 
+(eval-when-compile
+  (require 'cl-macs))
 ;;;###autoload
-(defun rotate-text (arg)
+(cl-defun rotate-text (arg)
   "Rotate the text at point ARG times."
   (interactive (list (if (consp current-prefix-arg)
                          -1
@@ -188,7 +190,7 @@ text."
                                    rotate-text-symbols))
             (when (setq replacement
                         (rotate-text-replacement symbols match arg))
-              (return t))))
+              (cl-return-from rotate-text t))))
         ;; words
         (when (setq match (rotate-text-word-at-point))
           (dolist (words (append rotate-text-local-words
@@ -196,13 +198,13 @@ text."
             (when (setq replacement
                         (rotate-text-replacement words (downcase match) arg))
               (setq replacement (rotate-text-match-case match replacement))
-              (return t))))
+              (cl-return-from rotate-text t))))
         ;; regexp
         (dolist (pattern (append rotate-text-local-patterns
                                  rotate-text-patterns))
           (when (setq match (rotate-text-match-at-point (car pattern)))
             (setq replacement (rotate-text-replacement (cdr pattern) match arg))
-            (return t)))
+            (cl-return-from rotate-text t)))
         (error "Nothing to rotate"))
 
     (unless (eq last-command this-command)

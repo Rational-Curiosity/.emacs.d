@@ -72,6 +72,7 @@
      org-noter
      org-plus-contrib
      org-super-agenda
+     org-superstar
      org-tree-slide
      ox-gfm
      ox-mediawiki
