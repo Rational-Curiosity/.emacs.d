@@ -11,7 +11,7 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --without-cairo --without-x-toolkit --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --without-xwidgets --with-native-compilation CFLAGS='-O3 -mtune=native -march=native'
+./configure --with-json --without-cairo --without-x-toolkit --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --without-xwidgets --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
@@ -637,6 +637,9 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
           (assoc-delete-all key after-config-functions))
       (message-color #("WARN Missing `after-config-functions' variable"
                        0 4 (face warning))))))
+
+(defun inhibit-mode-line ()
+  (setq mode-line-format nil))
 #+end_src
 
 ** Random functions
@@ -709,6 +712,7 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
                              (* 30 1024 1024))
           undo-strong-limit (eval-when-compile
                               (* 30 1024 1024))
+          savehist-file (concat saves-directory "minibuffer-history")
           backup-directory-alist
           `((".*" . ,backup-directory))
           auto-save-list-file-prefix auto-save-list-directory
@@ -3198,6 +3202,14 @@ ARG non-nil resize window to ARG height."
 ;;
 ;; (set-frame-size-according-to-resolution)
 
+(when (executable-find "bspc")
+  (let ((color
+         (substring
+          (shell-command-to-string "bspc config focused_border_color") 0 -1)))
+    (when (and (stringp color)
+               (string-match-p "#[0-9abcdef]\\{6\\}" color))
+      (modify-all-frames-parameters `((border-color . ,color))))))
+
 ;; Call last keyboard macro in windows
 (defun kmacro-call-other-windows-all-frames (window &optional all-frames)
   "Call last keyboard macro in windows other than WINDOW.
@@ -4810,10 +4822,8 @@ mode and header lines."
 * Completions
 
 #+begin_src elisp
-(defun inhibit-mode-line ()
-  (setq mode-line-format nil))
-
 (add-hook 'completion-list-mode-hook 'inhibit-mode-line)
+(add-hook 'completion-list-mode-hook (lambda () (setq truncate-lines t)))
 
 (setq completion-cycle-threshold 3
       completion-show-help nil
@@ -5255,6 +5265,8 @@ If `case-replace' is nil, do not alter case of replacement text."
 *** /recentf/
 
 #+begin_src elisp
+(defvar recentf-history nil)
+
 (defun completing-recentf-find-file (arg)
   "Show a list of recent files."
   (interactive "P")
@@ -5270,7 +5282,7 @@ If `case-replace' is nil, do not alter case of replacement text."
          (if (eq action 'metadata)
              '(metadata (category . file))
            (complete-with-action action it string pred)))
-       nil t))
+       nil t nil 'recentf-history))
     (if arg (find-file-other-window it) (find-file it))))
 (global-set-key "\C-x\ \C-r" 'completing-recentf-find-file)
 
@@ -5316,6 +5328,8 @@ If `case-replace' is nil, do not alter case of replacement text."
 #+end_src
 
 *** /savehist/
+
+See [[* Backup and Undo]]
 
 #+begin_src elisp
 (savehist-mode 1)
@@ -7187,6 +7201,15 @@ By default insert it, with prefix display a message with it."
 #+end_src
 
 ** Not always required
+*** /zone/
+
+#+begin_src elisp
+(with-eval-after-load 'zone
+  (setq zone-programs [
+                       zone-pgm-five-oclock-swan-dive
+                       ]))
+#+end_src
+
 *** /dired/
 
 #+begin_src elisp
@@ -8724,13 +8747,22 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
               (eldoc-doc-buffer))))
       (message "Eldoc not ready. Wait or call `eldoc'.")))
 
-  (setq eldoc-minor-mode-string ""
+  (with-eval-after-load 'flymake
+    (defun flymake-avoid-at-overlay-advice (orig-fun &rest args)
+      (unless (or (null flymake-mode)
+                  (flymake--overlays :beg (point)))
+        (apply orig-fun args)))
+    (advice-add 'eldoc-minibuffer-message :around 'flymake-avoid-at-overlay-advice))
+
+  (setq eldoc-idle-delay 1
+        eldoc-minor-mode-string ""
         eldoc-echo-area-prefer-doc-buffer t
         eldoc-echo-area-use-multiline-p 3
         eldoc-echo-area-display-truncation-message nil)
   ;; (global-eldoc-mode -1)
-  (global-set-key (kbd "C-h .") 'eldoc-doc-buffer-toggle))
-(global-set-key (kbd "C-h :") 'global-eldoc-mode)
+  (global-set-key (kbd "C-h ,") 'eldoc-print-current-symbol-info)
+  (global-set-key (kbd "C-h :") 'eldoc-doc-buffer-toggle))
+(global-set-key (kbd "C-h .") 'eldoc-mode)
 #+end_src
 
 *** /which-function-mode/
@@ -12082,6 +12114,14 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "C-c A A") 'annotate-mode)
 #+end_src
 
+*** /ov/
+
+#+begin_src elisp
+(require 'ov)
+(global-set-key (kbd "M-g M-f") 'ov-goto-next)
+(global-set-key (kbd "M-g M-b") 'ov-goto-prev)
+#+end_src
+
 ** Not always required
 *** /syslog-mode/
 
@@ -12455,9 +12495,11 @@ Switch the current window to the previous buffer."
 #+begin_src elisp
 (defun language-server-protocol-js-cond ()
   (unless (derived-mode-p 'ein:ipynb-mode)
-    (eglot-ensure)))
+    ;; (eglot-ensure)
+    (lsp-deferred)))
 (add-hook 'js-mode-hook #'language-server-protocol-js-cond)
 (with-eval-after-load 'js
+  (setq js-indent-level 2)
   (with-eval-after-load 'dap-mode
     (require 'dap-firefox)
     (dap-firefox-setup)))
@@ -12478,6 +12520,7 @@ Switch the current window to the previous buffer."
 *** /php-mode/                                                     :programming:
 
 #+begin_src elisp
+(add-to-list 'auto-mode-alist '("\\.php\\'" . php-mode))
 (add-hook 'php-mode-hook 'eglot-ensure)
 (with-eval-after-load 'php-mode
   (with-eval-after-load 'dap-mode
@@ -12550,12 +12593,20 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "M-s 7 m") 'minimap-mode)
 #+end_src
 
-*** /csv/
+*** /csv-mode/
 
 #+begin_src elisp
 (require 'csv-mode-autoloads)
 (with-eval-after-load 'csv-mode
   (setq csv-separators '("," ";" "	" "|")
+        ;; [ read defcustom csv-separators :set field
+        csv-separator-chars (mapcar #'string-to-char csv-separators)
+        csv--skip-chars (apply #'concat "^\n" csv-separators)
+        csv-separator-regexp (apply #'concat `("[" ,@csv-separators "]"))
+        csv-font-lock-keywords
+        ;; NB: csv-separator-face variable evaluates to itself.
+        `((,csv-separator-regexp (0 'csv-separator-face)))
+        ;; ]
         csv-field-quotes '("\"")  ;; ("\"" "'" "`")
         csv-comment-start-default nil  ;; "#"
         csv-comment-start nil  ;; "#"
@@ -13020,6 +13071,7 @@ Switch the current window to the previous buffer."
      (octave     . t)
      (org        . t)
      (perl       . t)
+     (php        . t)
      (plantuml   . t)
      (python     . t)
      (shell      . t)
@@ -13241,12 +13293,12 @@ Switch the current window to the previous buffer."
 
   ;; Formatea el archivo antes del proceso de org-mode
   ;; para tener una salida adecuada.
-  (defun pytex-org-export-replacement (backend)
-    "Límpia los códigos pytex para dejar sólo el latex."
-    (org-map-entries
-     (lambda ()
-       (if (cl-find backend '(latex html)) (pytex-clean-environments)))))
-  (add-hook 'org-export-before-processing-hook 'pytex-org-export-replacement)
+  ;; (defun pytex-org-export-replacement (backend)
+  ;;   "Límpia los códigos pytex para dejar sólo el latex."
+  ;;   (org-map-entries
+  ;;    (lambda ()
+  ;;      (if (cl-find backend '(latex html)) (pytex-clean-environments)))))
+  ;; (add-hook 'org-export-before-processing-hook 'pytex-org-export-replacement)
 
   ;; ;;;;;;;;;;;;;;;; ;;
   ;; Convert to latex ;;
@@ -15028,6 +15080,7 @@ If run interactively, get ENTRY from context."
             (vc-refresh-state)))))
     (add-hook 'magit-post-refresh-hook 'vc-refresh-buffers)
     (require 'magit-todos)
+    (setq magit-todos-auto-group-items 'always)
     (add-hook 'magit-mode-hook 'magit-todos-mode)
     (require 'multi-magit)
     (setq multi-magit-repolist-columns '(("Name" 25 multi-magit-repolist-column-repo nil)
@@ -15992,8 +16045,8 @@ Abort: `\\[edit-server-abort]'")))
 Añadir a =.bashrc= después de la asignación del prompt ~PS1~:
 
 #+begin_src bash
-case "$TERM" in
-xterm-256color)
+case "$INSIDE_EMACS" in
+vterm)
     vterm_printf(){
         if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
             # Tell tmux to pass the escape sequences through
@@ -16014,8 +16067,11 @@ esac
 #+end_src
 
 #+begin_src elisp
+;;(add-hook 'vterm-mode-hook 'inhibit-mode-line)
 (global-set-key (kbd "C-M-<return>") 'vterm)
 (global-set-key (kbd "C-x 4 RET") 'vterm-other-window)
+(with-eval-after-load 'vterm
+  (setq vterm-buffer-name-string "*vterm %s*"))
 #+end_src
 
 *** /async/
@@ -18512,7 +18568,7 @@ matches exist."
           (run-hooks 'exwm-randr-refresh-hook))))))
 #+end_src
 
-** /org/
+** /org-clock/
 
 #+begin_src elisp
 (with-eval-after-load 'org-clock
@@ -18552,6 +18608,43 @@ If not, show simply the clocked time like 01:50."
                     (org-duration-from-minutes currently-clocked-time)
                     (org-duration-from-minutes clocked-time)
                     org-clock-heading)))))))
+#+end_src
+
+** /ob-php/
+
+#+begin_src elisp
+(with-eval-after-load 'ob-php
+  (defun org-babel-php-var-to-php (var)
+    "Convert an elisp value to a php variable.
+Convert an elisp value, VAR, into a string of php source code
+specifying a variable of the same value."
+    (if (listp var)
+        (concat "array(" (mapconcat #'org-babel-python-var-to-python var ", ") ")")
+      (if (eq var 'hline)
+          "null"
+        (format
+         "%S"
+         (if (stringp var) (substring-no-properties var) var)))))
+
+  (defun org-babel-variable-assignments:php (params)
+    "Return a list of php statements assigning the block's variables."
+    (mapcar
+     (lambda (pair)
+       (format "$%s=%s;"
+               (car pair)
+               (org-babel-php-var-to-php (cdr pair))))
+     (org-babel--get-vars params)))
+
+  (defun org-babel-execute:php (body params)
+    "Orgmode Babel PHP evaluate function for `BODY' with `PARAMS'."
+    (let* ((cmd (concat org-babel-php-command " " org-babel-php-command-options))
+           (body (concat "<?php\n"
+                         (mapconcat
+                          'identity
+                          (org-babel-variable-assignments:php params) "\n")
+                         "\n"
+                         body "\n?>")))
+      (org-babel-eval cmd body))))
 #+end_src
 
 ** /docker/

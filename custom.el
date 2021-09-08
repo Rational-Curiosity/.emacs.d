@@ -74,6 +74,7 @@
      org-super-agenda
      org-superstar
      org-tree-slide
+     ov
      ox-gfm
      ox-mediawiki
      ox-rst

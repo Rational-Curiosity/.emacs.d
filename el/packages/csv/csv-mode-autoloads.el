@@ -3,8 +3,7 @@
 ;;; Code:
 
 
-;;;### (autoloads nil "csv-mode" "csv-mode.el" (23962 25943 398571
-;;;;;;  867000))
+;;;### (autoloads nil "csv-mode" "csv-mode.el" "85bbc6a4dad01409ddc1fe114b0d5faa")
 ;;; Generated autoloads from csv-mode.el
 
 (autoload 'csv-mode "csv-mode" "\
@@ -53,8 +52,14 @@ CSV mode provides the following specific keyboard key bindings:
 Major mode for editing files of tab-separated value type.
 
 \(fn)" t nil)
+
+;;;### (autoloads "actual autoloads are elsewhere" "csv-mode" "csv-mode.el"
+;;;;;;  (24797 44515 162639 311000))
+;;; Generated autoloads from csv-mode.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "csv-mode" '(#("tsv-" 0 4 (fontified nil face font-lock-function-name-face)) #("csv-" 0 4 (fontified nil)))))
+(register-definition-prefixes "csv-mode" '("csv-" "tsv-"))
+
+;;;***
 
 ;;;***
 
