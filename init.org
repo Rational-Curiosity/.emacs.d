@@ -764,7 +764,7 @@ No argument or nil as argument means do this for the current buffer."
 ;; (defun undo-advice (&optional arg)
 ;;   (recenter nil t))
 ;; (advice-add #'undo :after 'undo-advice)
-(defun allow-undoing-advice (&rest args)
+(defun allow-undoing-advice (&rest _args)
   (when (eq last-command 'undo)
     (setq this-command 'undo)))
 (advice-add #'recenter-top-bottom :after 'allow-undoing-advice)
@@ -1368,7 +1368,7 @@ mouse-3: Toggle minor modes"
 ;; (add-hook 'after-revert-hook 'vc-refresh-state-when-vc-mode)
 
 (with-eval-after-load 'vc-hooks
-  (defun vc-mode-line-advice (file &optional backend)
+  (defun vc-mode-line-advice (_file &optional backend)
     "Colorize and abbrev `vc-mode'."
     (when (stringp vc-mode)
       (let ((noback (replace-regexp-in-string
@@ -2809,7 +2809,7 @@ For more information, see the function `buffer-menu'."
 ;; ]
 ;; message timestamp
 ;; thanks to: https://emacs.stackexchange.com/questions/32150/how-to-add-a-timestamp-to-each-entry-in-emacs-messages-buffer
-(defun message-timestamp-advice (format-string &rest args)
+(defun message-timestamp-advice (format-string &rest _args)
   "Advice to run before `message' with FORMAT-STRING ARGS that prepend a timestamp to each message."
   (unless (string-equal format-string "%s%s")
     (let ((deactivate-mark nil)
@@ -4572,14 +4572,14 @@ sudo apt-get remove --purge dbus-user-session
 
   (with-eval-after-load 'helm-posframe
     (defvar exwm-helm-posframe-display-buffer nil)
-    (defun helm-posframe-display-advice (&rest args)
+    (defun helm-posframe-display-advice (&rest _args)
       (let ((buffer (current-buffer)))
         (when (exwm-buffer-p buffer)
           (exwm-set-window-transparency buffer 0.2)
           (setq exwm-helm-posframe-display-buffer buffer))))
     (advice-add 'helm-posframe-display :before 'helm-posframe-display-advice)
 
-    (defun helm-posframe-cleanup-advice (&rest args)
+    (defun helm-posframe-cleanup-advice (&rest _args)
       (when exwm-helm-posframe-display-buffer
         (with-current-buffer exwm-helm-posframe-display-buffer
           (exwm-set-window-transparency
@@ -8396,14 +8396,14 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;; Keys ;;
 ;;;;;;;;;;
 
-  (defun eshell-cmpl-initialize-advice ()
+  (defun eshell-cmpl-initialize-advice (&rest _args)
     (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
     (when (featurep 'helm)
       (define-key eshell-mode-map [tab] #'helm-esh-pcomplete))
     (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr))
   (advice-add 'eshell-cmpl-initialize :after 'eshell-cmpl-initialize-advice)
 
-  (defun eshell-hist-initialize-advice ()
+  (defun eshell-hist-initialize-advice (&rest _args)
     (when (featurep 'helm)
       (define-key eshell-command-map [(control ?l)] #'helm-eshell-history)))
   (advice-add 'eshell-hist-initialize :after 'eshell-hist-initialize-advice)
@@ -8432,7 +8432,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
 #+begin_src elisp
 (with-eval-after-load 'ispell
-  (defun importing-ispell-config-advice ()
+  (defun importing-ispell-config-advice (&rest _args)
     (message "Importing ispell config")
 
     (let ((executable (file-name-nondirectory ispell-program-name)))
@@ -9773,7 +9773,7 @@ if __name__ == \"__main__\":
 ;; ]
 
 (with-eval-after-load 'flyspell
-  (defun importing-flyspell-config-advice ()
+  (defun importing-flyspell-config-advice (&rest _args)
     (message "Importing flyspell config")
 
     (setq flyspell-use-meta-tab nil
