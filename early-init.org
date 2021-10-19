@@ -224,12 +224,15 @@ modified.
                          (not (gnutls-available-p)))
                     "http"
                   "https"))
-      (repos '(("org"          . "://orgmode.org/elpa/")
-               ("melpa"        . "://melpa.org/packages/")
-               ("melpa-stable" . "://stable.melpa.org/packages/")
-               ;; package name conflict: `project'
-               ;; ("marmalade"    . "://marmalade-repo.org/packages/")
-               ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/"))))
+      (repos
+       '(("org"          . "://orgmode.org/elpa/")
+         ("melpa"        . "://melpa.org/packages/")
+         ("melpa-stable" . "://stable.melpa.org/packages/")
+         ;; package name conflict: `project'
+         ;; ("marmalade"    . "://marmalade-repo.org/packages/")
+         ;; obsolete
+         ;; ("emacswiki"    . "://mirrors.tuna.tsinghua.edu.cn/elpa/emacswiki/")
+         )))
   (mapc (lambda (p)
           (add-to-list
            'package-archives
