@@ -9889,7 +9889,14 @@ if __name__ == \"__main__\":
     (define-key flyspell-mode-map (kbd "C-c i s") 'spanish-dictionary)
     (define-key flyspell-mode-map (kbd "C-c i e") 'english-dictionary)
     (advice-remove 'flyspell-mode 'importing-flyspell-config-advice))
-  (advice-add 'flyspell-mode :before 'importing-flyspell-config-advice))
+  (advice-add 'flyspell-mode :before 'importing-flyspell-config-advice)
+  (with-eval-after-load 'tex-mode
+    (add-hook 'latex-mode-hook #'flyspell-mode)
+    (add-hook 'tex-mode-hook #'flyspell-mode))
+  (with-eval-after-load 'latex
+    (add-hook 'LaTeX-mode-hook #'flyspell-mode))
+  (with-eval-after-load 'tex
+    (add-hook 'TeX-mode-hook #'flyspell-mode)))
 #+end_src
 
 * External packages
