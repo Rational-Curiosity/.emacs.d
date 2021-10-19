@@ -1567,8 +1567,6 @@ mouse-3: Toggle minor modes"
       ;; fontification of non modified but context lines
       ;; jit-lock-context-time 0.5
       column-number-mode t
-      isearch-lazy-count t
-      isearch-allow-scroll 'unlimited
       max-mini-window-height 0.55
       ;; kill-ring
       kill-do-not-save-duplicates t
@@ -1576,6 +1574,10 @@ mouse-3: Toggle minor modes"
       set-mark-command-repeat-pop t
       mark-ring-max 32
       global-mark-ring-max 128
+      ;; isearch
+      isearch-lazy-count t
+      isearch-allow-scroll 'unlimited
+      isearch-allow-motion t
       ;; Deshabilita insertar una nueva linea al final de los ficheros
       ;; para que las plantillas de 'yasnippet' no añadan nueva liena
       mode-require-final-newline nil)
@@ -5304,13 +5306,11 @@ If `case-replace' is nil, do not alter case of replacement text."
          (if (eq action 'metadata)
              '(metadata (category . file))
            (complete-with-action action it string pred)))
-       nil t nil 'recentf-history))
+       nil nil nil 'recentf-history))
     (if arg (find-file-other-window it) (find-file it))))
 (global-set-key "\C-x\ \C-r" 'completing-recentf-find-file)
 
 (with-eval-after-load 'recentf
-  (recentf-cleanup)
-
   ;; (with-eval-after-load 'machine-config
   ;;   (cl-letf (((symbol-function 'sit-for)
   ;;              (lambda (secs))))
