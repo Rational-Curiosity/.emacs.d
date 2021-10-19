@@ -11,7 +11,29 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure --with-json --without-cairo --without-x-toolkit --without-toolkit-scroll-bars --without-gconf --without-xaw3d --without-gsettings --without-xwidgets --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
+./configure \
+  --without-sound --without-xpm --without-selinux \
+  --without-xwidgets --without-cairo --with-x-toolkit=gtk3 \
+  --without-jpeg --without-tiff --without-gif --without-rsvg \
+  --without-imagemagick --without-libotf --without-m17n-flt \
+  --without-xaw3d --without-toolkit-scroll-bars --without-gpm --without-dbus \
+  --without-gconf --without-gsettings --without-makeinfo \
+  --with-json --with-xml2 --with-zlib \
+  --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
+#+end_src
+
+- minimal emacs
+
+#+begin_src sh
+./configure \
+  --without-sound --without-xpm --without-selinux \
+  --without-xwidgets --without-cairo --without-x-toolkit \
+  --without-jpeg --without-tiff --without-gif --without-rsvg \
+  --without-imagemagick --without-libotf --without-m17n-flt \
+  --without-xaw3d --without-toolkit-scroll-bars --without-gpm --without-dbus \
+  --without-gconf --without-gsettings --without-makeinfo \
+  --with-json --with-xml2 --with-zlib \
+  --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
 #+end_src
 
 Compile .el files with
