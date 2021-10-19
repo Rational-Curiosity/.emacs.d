@@ -5410,6 +5410,25 @@ See [[* Backup and Undo]]
 (setq eww-search-prefix "https://www.google.com/search?q="
       browse-url-secondary-browser-function 'eww-browse-url)
 
+
+(defvar browse-url-qutebrowser-program "qutebrowser")
+(defvar browse-url-qutebrowser-arguments nil)
+(defun browse-url-qutebrowser (url &optional _new-window)
+  "Ask the Chromium WWW browser to load URL.
+Default to the URL around or before point.  The strings in
+variable `browse-url-chromium-arguments' are also passed to
+Chromium.
+The optional argument NEW-WINDOW is not used."
+  (interactive (browse-url-interactive-arg "URL: "))
+  (setq url (browse-url-encode-url url))
+  (let* ((process-environment (browse-url-process-environment)))
+    (apply #'start-process
+           (concat "qutebrowser " url) nil
+           browse-url-qutebrowser-program
+           (append
+            browse-url-qutebrowser-arguments
+            (list url)))))
+
 (defun browse-url-browser-function-selection (arg)
   (interactive "P")
   (let ((selection
@@ -5425,6 +5444,7 @@ See [[* Backup and Undo]]
              (if (executable-find browse-url-chromium-program) (push 'browse-url-chromium browsers))
              (if (executable-find browse-url-firefox-program) (push 'browse-url-firefox browsers))
              (if (executable-find browse-url-mozilla-program) (push 'browse-url-mozilla browsers))
+             (if (executable-find browse-url-qutebrowser-program) (push 'browse-url-qutebrowser browsers))
              (push 'eww-browse-url browsers)
              (push 'browse-url-default-browser browsers)
              browsers)
