@@ -12544,14 +12544,17 @@ Switch the current window to the previous buffer."
 #+begin_src elisp
 (defun language-server-protocol-js-cond ()
   (unless (derived-mode-p 'ein:ipynb-mode)
-    ;; (eglot-ensure)
-    (lsp-deferred)))
+    (eglot-ensure)
+    ;;(lsp-deferred)
+    ))
 (add-hook 'js-mode-hook #'language-server-protocol-js-cond)
 (with-eval-after-load 'js
-  (setq js-indent-level 2)
   (with-eval-after-load 'dap-mode
     (require 'dap-firefox)
-    (dap-firefox-setup)))
+    (dap-firefox-setup))
+  (setq js-indent-level 2)
+  (define-key js-mode-map "'" #'insert-pair)
+  (define-key js-mode-map [(meta ?.)] nil))
 #+end_src
 
 *** /typescript/                                                   :programming:
@@ -12563,7 +12566,8 @@ Switch the current window to the previous buffer."
   (with-eval-after-load 'dap-mode
     (require 'dap-firefox)
     (dap-firefox-setup))
-  (setq typescript-indent-level 2))
+  (setq typescript-indent-level 2)
+  (define-key typescript-mode-map "'" #'insert-pair))
 #+end_src
 
 *** /php-mode/                                                     :programming:
