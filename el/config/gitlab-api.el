@@ -181,6 +181,7 @@
     ("managers-lib"       "MGR")
     ("bestof-lib"         "BOF")
     ("gigas-errors-pkg"   "ERR")
+    ("gigas_front"        "FRT")
     ("gigas_hv_failover"  "HFO")
     ("gigas_kudeiro"      "KUD")
     ("gigas_apiproxy"     "AXY")

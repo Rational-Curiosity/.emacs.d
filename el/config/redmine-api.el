@@ -90,6 +90,7 @@
     ("On hold"     "HOLD")
     ("QA Failed"   "REOP")
     ("QA Blocked"  "LINK")
+    ("QA Ready"    "WAIT")
     ("QA Queue"    "VERI")
     ("QA Passed"   "DONE")
     ("Completed"   "FINI")
@@ -139,23 +140,27 @@
                           (make-string level ?*)
                           (redmine-api--convert-state status-name type)
                           (assoc-default 'subject data)
-                          status-name)))
-      (setq entry (concat entry indent ":PROPERTIES:"
-                          (and resource (concat indent ":RESOURCE:     " resource))
-                          (and resource (concat indent ":ORIGIN:       "
-                                                (concat
-                                                 redmine-api-url-base
-                                                 (replace-regexp-in-string
-                                                  "{id}"
-                                                  (int-to-string (cdr (assoc 'id data)))
-                                                  resource t t))))))
+                          (string-replace " " "_" status-name))))
+      (setq entry
+            (concat
+             entry indent ":PROPERTIES:"
+             (and resource (concat indent ":RESOURCE:     " resource))
+             (and resource (concat indent ":ORIGIN:       "
+                                   (concat
+                                    redmine-api-url-base
+                                    (replace-regexp-in-string
+                                     "{id}"
+                                     (int-to-string (cdr (assoc 'id data)))
+                                     resource t t))))))
       (dolist (key keys)
         (if (listp key)
             (let ((value (assoc-keys key data)))
               (if value
-                  (setq entry (concat
-                               entry
-                               (redmine-api--format-field (mapconcat 'symbol-name key ".") value indent)))))
+                  (setq entry
+                        (concat
+                         entry
+                         (redmine-api--format-field
+                          (mapconcat 'symbol-name key ".") value indent)))))
           (let ((value (assoc-default key data)))
             (when value
               (setq entry (concat
@@ -319,7 +324,9 @@
                       (unless (string-equal value (replace-regexp-in-string "\n" "" data t t))
                         (org-entry-put-multiline-property nil name data)
                         (pcase name
-                          ("status.name" (org-entry-put nil "TODO" (redmine-api--convert-state data type)))))))))
+                          ("status.name"
+                           (org-entry-put nil "TODO" (redmine-api--convert-state data type))
+                           (org-set-tags (concat ":" (string-replace " " "_" data) ":")))))))))
               properties)))))
 
 
