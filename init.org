@@ -5344,9 +5344,9 @@ If `case-replace' is nil, do not alter case of replacement text."
         recentf-keep '(local-file-exists-p)
         tool-bar-max-label-size 12
         recentf-auto-cleanup 'never
-        tool-bar-style 'image)
-
-  (recentf-mode 1))
+        tool-bar-style 'image))
+(add-hook 'after-init-hook 'recentf-cleanup)  ;; called after `recentf-mode'
+(add-hook 'after-init-hook 'recentf-mode)
 #+end_src
 
 *** /savehist/
