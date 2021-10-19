@@ -8791,12 +8791,12 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
   (with-eval-after-load 'flymake
     (defun flymake-avoid-at-overlay-advice (orig-fun &rest args)
-      (unless (or (null flymake-mode)
-                  (flymake--overlays :beg (point)))
+      (unless (and flymake-mode
+                   (flymake--overlays :beg (point)))
         (apply orig-fun args)))
     (advice-add 'eldoc-minibuffer-message :around 'flymake-avoid-at-overlay-advice))
 
-  (setq eldoc-idle-delay 1
+  (setq eldoc-idle-delay 0.5
         eldoc-minor-mode-string ""
         eldoc-echo-area-prefer-doc-buffer t
         eldoc-echo-area-use-multiline-p 3
