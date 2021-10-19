@@ -14138,25 +14138,54 @@ blockquote {
       (org-redisplay-inline-images)))
   (add-hook 'org-babel-after-execute-hook 'org-auto-redisplay-inline-images)
 
+  (defun org-execute-file-search-in-prog (s)
+    (when (derived-mode-p 'prog-mode)
+      (let ((searches (split-string s "\\^\\^")))
+        (when (< 1 (length searches))
+          (goto-char (point-min))
+          (cl-every (lambda (search)
+                      (and (re-search-forward (regexp-quote search)
+                                              nil t)
+                           (goto-char (match-end 0))))
+                    searches)))))
+  (add-hook 'org-execute-file-search-functions 'org-execute-file-search-in-prog)
+
+  (defun org-link-abbrev-path (path)
+    (or (cl-some (lambda (abbrev-root)
+                   (let* ((root (cdr abbrev-root))
+                          (root-len (length root)))
+                     (when (and
+                            (<= root-len (length path))
+                            (string-equal root
+                                          (substring path 0 root-len)))
+                       (replace-regexp-in-string
+                        (concat "^" (regexp-quote root))
+                        (concat (car abbrev-root) ":")
+                        path t t))))
+                 org-link-abbrev-alist)
+        path))
+
   (defun copy-buffer-file-name-org-link ()
     (interactive)
     (let* ((path-name (abbreviate-file-name buffer-file-name))
            (name (file-name-nondirectory path-name)))
-      (kill-new (concat "[[" path-name "][" name "]]"))))
+      (kill-new (concat "[[" (org-link-abbrev-path path-name) "][" name "]]"))))
+  (autoload 'copy-buffer-file-name-org-link "org" nil t)
 
   (defun copy-buffer-file-name-line-org-link ()
     (interactive)
     (let* ((path-name (abbreviate-file-name buffer-file-name))
            (name (file-name-nondirectory path-name)))
-      (kill-new (concat "[[" path-name "::"
+      (kill-new (concat "[[" (org-link-abbrev-path path-name) "::"
                         (number-to-string (line-number-at-pos))
                         "][" name "]]"))))
+  (autoload 'copy-buffer-file-name-line-org-link "org" nil t)
 
   (defun copy-buffer-file-name-search-org-link ()
     (interactive)
     (let* ((path-name (abbreviate-file-name buffer-file-name))
            (name (file-name-nondirectory path-name)))
-      (kill-new (concat "[[" path-name "::"
+      (kill-new (concat "[[" (org-link-abbrev-path path-name) "::"
                         (org-link-escape
                          (string-trim-right
                           (save-excursion
@@ -14166,6 +14195,7 @@ blockquote {
                                        (end-of-line)
                                        (point))))))
                         "][" name "]]"))))
+  (autoload 'copy-buffer-file-name-search-org-link "org" nil t)
 
   (defun org-todo-prompt-date (&optional arg)
     (interactive "P")
@@ -18129,27 +18159,30 @@ This function is part of the `orderless' completion style."
             "!"
             mouse-face mode-line-highlight
             help-echo
-            (lambda (&rest whatever)
-              (concat
-               (format "%s known backends\n" (hash-table-count flymake--backend-state))
-               (format "%s running\n" (length (flymake-running-backends)))
-               (format "%s disabled\n" (length (flymake-disabled-backends)))
-               "mouse-1: Display minor mode menu\n"
-               "mouse-2: Show help for minor mode"))
+            ,(lambda (&rest _)
+               (concat
+                (format "%s known backends\n" (hash-table-count flymake--state))
+                (format "%s running\n" (length (flymake-running-backends)))
+                (format "%s disabled\n" (length (flymake-disabled-backends)))
+                "mouse-1: Display minor mode menu\n"
+                "mouse-2: Show help for minor mode"))
             keymap
             ,(let ((map (make-sparse-keymap)))
                (define-key map [mode-line down-mouse-1]
+                 flymake-menu)
+               (define-key map [mode-line down-mouse-3]
                  flymake-menu)
                (define-key map [mode-line mouse-2]
                  (lambda ()
                    (interactive)
                    (describe-function 'flymake-mode)))
                map)))
+
         (defun flymake--mode-line-exception ()
           "Helper for `flymake-mode-line-exception'."
           (pcase-let* ((running) (reported)
                        (`(,ind ,face ,explain)
-                        (cond ((zerop (hash-table-count flymake--backend-state))
+                        (cond ((zerop (hash-table-count flymake--state))
                                '("?" nil "No known backends"))
                               ((cl-set-difference
                                 (setq running (flymake-running-backends))
@@ -18163,12 +18196,13 @@ This function is part of the `orderless' completion style."
                               (t
                                '(nil nil nil)))))
             (when ind
-              `(:propertize ,ind face ,face
-                            help-echo ,explain
-                            keymap ,(let ((map (make-sparse-keymap)))
-                                      (define-key map [mode-line mouse-1]
-                                        'flymake-switch-to-log-buffer)
-                                      map))))))
+              `(":"
+                (:propertize ,ind face ,face
+                             help-echo ,explain
+                             keymap ,(let ((map (make-sparse-keymap)))
+                                       (define-key map [mode-line mouse-1]
+                                         'flymake-switch-to-log-buffer)
+                                       map)))))))
     (when (bug-check-function-bytecode
            'flymake--mode-line-format
            "CMVDxsfIycrLBgYhzCLNziUDIoiJop+2gs8g0CDRINIgAoUnAAM/0wUEIsbHyNTKywYIIdUi1tclCCKI2Nna29zd3gYNRyLd3wYNRyLd4AYNRyLhUuLjIOQB5QkjiOQB5ucjiImyAa8I6AYIhHMA6YKMAAKDgwDq693sBgZHIkWCjAADg4sA7YKMAO6JQAFBiUABQYlAAUEBBAYHiYW4AO/YAvAF3AYI4uMg5AHx8iOIibIBrwhEQ7aDtocEhsMABgk/P4UIAgXFQ8bHyMnKywYGIcwizc4lAyKIiaKftoLzxQE6g/oAAUCyAfQBBPX2JLIDAUGyAoLiAMW2gvcC+PX2JMWJiYkEOoPOAQRAsgT5BAYOIrID+gT7/COyAgKEOgEK/T2ExwEKgzYB9gQh/gohWYI3Af2DxwGJ2N3/BgZHIvAF2tvi4yAGDOQCy4FAAAsix4FBAIFCAMrLBgghgUMAIoFEAIFFAIFGACYGI4jkAsuBQAAMIseBQQCBQgDKywYIIYFHACKBRACBRQCBRgAmBiOIAbaC3N2BSACBSQDd/wYRRyLwBhAjgUkA3YFKAAYTIvAGESMj3YFLAAsMI1CvCkOksgEEQbIFggcBgUwA6ALFiYkDOoP9AQOyAwKJQbIEorICAQFCsgECg/YBgU0AAUKyAQNBsgSC1gGJn7aEgU4AIkK2hyJChw==")
