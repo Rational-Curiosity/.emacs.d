@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.15
+;; Version: 1.16
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -1374,7 +1374,8 @@ If there is already a header line, then unset the header line."
       (jit-lock-fontify-now (point) (line-end-position))
       ;; Not sure why it is sometimes nil!
       (move-to-column (or csv--header-hscroll 0))
-      (let ((str (buffer-substring (point) (line-end-position)))
+      (let ((str (replace-regexp-in-string
+                  "%" "%%" (buffer-substring (point) (line-end-position))))
             (i 0))
         (while (and i (< i (length str)))
           (let ((prop (get-text-property i 'display str)))

@@ -415,6 +415,7 @@ point for the operation if applicable."
          (key (read-char (format "Apply on %s:" formatted) t)))
     (apply--operation-to-number-at-point key t parsed)))
 
+;;;###autoload
 (defun operate-on-number-at-point-or-region (&optional arg)
   "Operate on number at point or on region.
 

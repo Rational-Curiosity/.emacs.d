@@ -14,6 +14,7 @@
      bash-completion
      cmake-font-lock
      cmake-mode
+     consult
      cyphejor
      dash
      deferred
@@ -26,6 +27,7 @@
      eldoc
      elfeed
      embark
+     embark-consult
      emms
      expand-region
      exwm
@@ -38,7 +40,9 @@
      gnuplot
      gnuplot-mode
      go-mode
+     goto-chg
      graphviz-dot-mode
+     grugru
      guess-language
      haskell-mode
      hide-comnt
@@ -65,14 +69,13 @@
      minimap
      multiple-cursors
      ob-async
+     ob-php
+     ob-rust
      orderless
-     org
      org-agenda-property
      org-brain
      org-noter
-     org-plus-contrib
      org-super-agenda
-     org-superstar
      org-tree-slide
      ov
      ox-gfm
@@ -86,6 +89,7 @@
      polymode
      project
      protobuf-mode
+     queue
      rainbow-delimiters
      rebox2
      request
@@ -107,7 +111,9 @@
      ts
      typescript-mode
      undo-propose
+     undo-tree
      vdiff
+     vertico
      vimish-fold
      virtualenvwrapper
      vlf

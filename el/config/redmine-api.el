@@ -102,7 +102,7 @@
 (defun redmine-api--abbrev-project-name (project-name)
   (pcase project-name
     ("Command"             "Cmd")
-    ("Comfy"               "CMF")
+    ("Comfy"               "Cmf")
     ("Managers"            "Mgr")
     ("BestOf"              "Bof")
     ("Programación"        "Prg")
@@ -176,7 +176,7 @@
    'issues
    (request-response-data
     (request (concat redmine-api-url-base
-                     "/issues.json?fixed_version_id="
+                     "/issues.json?limit=100&status_id=*&fixed_version_id="
                      version-id)
       :type "GET"
       :encoding 'utf-8
@@ -219,8 +219,86 @@
               (or sort-func 'redmine-api-default-sort))
              ""))
 
+
+;;;###autoload
+(defun redmine-api-org-get-deploy-notes-from-version-id (level &optional version-id property)
+  (interactive
+   (list (and current-prefix-arg
+              (prefix-numeric-value current-prefix-arg))
+         (completing-read
+          "Redmine version id: "
+          (mapcar
+           (lambda (str-or-url)
+             (replace-regexp-in-string "^https?://.*/" "" str-or-url))
+           (remove
+            nil
+            (mapcar
+             (lambda (key) (org-entry-get nil key))
+             '("ORIGIN" "BUG_IN")))))))
+  (or level (setq level (1+ (org-outline-level))))
+  (setq version-id (if (and
+                        (stringp version-id)
+                        (not (string-empty-p version-id)))
+                       version-id
+                     (replace-regexp-in-string
+                      "^https?://.*/" ""
+                      (org-entry-get nil (or property "ORIGIN")))))
+  (let* ((level-gitlab (1+ level))
+         (result (mapconcat
+                  (lambda (issue)
+                    (let (deploy-notes)
+                      (mapc (lambda (journal)
+                              (let ((notes (assoc-default 'notes journal)))
+                                (when (and notes (string-match-p "[dD][eE][pP][lL][oO][yY]" notes))
+                                  (push notes deploy-notes))))
+                            (assoc-default
+                             'journals
+                             (assoc 'issue (request-response-data
+                                            (request (concat redmine-api-url-base
+                                                             "/issues/"
+                                                             (number-to-string (assoc-default 'id issue))
+                                                             ".json?include=journals"
+                                                             )
+                                              :type "GET"
+                                              :encoding 'utf-8
+                                              :headers (list (cons "X-Redmine-API-Key" redmine-api-token))
+                                              :parser 'json-read
+                                              :sync t)))))
+
+                      (when deploy-notes (setf (map-elt issue 'notes nil 'eq)
+                                               (mapconcat 'identity deploy-notes "\n-------------------------------------\n"))
+                            (redmine-api--convert-to-org issue
+                                                         '(id
+                                                           (project id)
+                                                           (project name)
+                                                           subject
+                                                           description
+                                                           (status name)
+                                                           created_on
+                                                           updated_on
+                                                           start_date
+                                                           done_ratio
+                                                           spent_hours
+                                                           (fixed_version name)
+                                                           (author id)
+                                                           (author name)
+                                                           (assigned_to id)
+                                                           (assigned_to name)
+                                                           (priority id)
+                                                           (priority name)
+                                                           (tracker name)
+                                                           notes)
+                                                         level
+                                                         "/issues/{id}"))))
+                  (redmine-api-issues-from-version version-id)
+                  "")))
+    (if (called-interactively-p 'any)
+        (insert result)
+      result)))
+
+;;;###autoload
 (defun redmine-api-org-get-issue (level issue-id)
-  (interactive (list (prefix-numeric-value current-prefix-arg)
+  (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
                      (read-string "Issue id: ")))
   (or level (setq level (1+ (org-outline-level))))
   (let* ((resource (concat "/issues/" issue-id))
@@ -232,6 +310,7 @@
         (insert result)
       result)))
 
+;;;###autoload
 (defun redmine-api-org-get-issues (level &optional params)
   (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
                      (let ((expr (read-from-minibuffer "Params alist: ")))
@@ -252,6 +331,7 @@
         (insert result)
       result)))
 
+;;;###autoload
 (defun redmine-api-org-get-immediates (level &optional params)
   (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
                      (let ((expr (read-from-minibuffer "Params alist: ")))
@@ -259,7 +339,7 @@
                            nil
                          (eval-string expr)))))
   (or level (setq level (1+ (org-outline-level))))
-  (map-put params "priority_id" "5" 'string-equal)
+  (setf (map-elt params "priority_id" nil 'string-equal) "5")
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
     (if redmine-api-debug (let ((item-count 0))
@@ -273,6 +353,7 @@
         (insert result)
       result)))
 
+;;;###autoload
 (defun redmine-api-org-get-bugs (level &optional params)
   (interactive (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))
                      (let ((expr (read-from-minibuffer "Params alist: ")))
@@ -280,7 +361,7 @@
                            nil
                          (eval-string expr)))))
   (or level (setq level (1+ (org-outline-level))))
-  (map-put params "tracker_name" "~bug" 'string-equal)
+  (setf (map-elt params "tracker_name" nil 'string-equal) "~bug")
   (let* ((issues (cdr (assoc 'issues (redmine-api-data "/issues" "GET" params))))
          (result (redmine-api-org-convert issues "/issues/{id}" level)))
     (if redmine-api-debug (let ((item-count 0))

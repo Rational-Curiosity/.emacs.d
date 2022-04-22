@@ -95,7 +95,7 @@
       result)))
 
 ;;;###autoload
-(defun gitlab-api-org-get-from-version-id (level &optional version-id property)
+(defun gitlab-api-org-get-from-redmine-version-id (level &optional version-id property)
   (interactive
    (list (and current-prefix-arg
               (prefix-numeric-value current-prefix-arg))
@@ -121,7 +121,28 @@
          (result (mapconcat
                   (lambda (issue)
                     (concat
-                     (redmine-api-org-convert (list issue) "/issues/{id}" level)
+                     (redmine-api--convert-to-org issue
+                                            '(id
+                                              (project id)
+                                              (project name)
+                                              subject
+                                              description
+                                              (status name)
+                                              created_on
+                                              updated_on
+                                              start_date
+                                              done_ratio
+                                              spent_hours
+                                              (fixed_version name)
+                                              (author id)
+                                              (author name)
+                                              (assigned_to id)
+                                              (assigned_to name)
+                                              (priority id)
+                                              (priority name)
+                                              (tracker name))
+                                            level
+                                            "/issues/{id}")
                      (gitlab-api-org-get-from-redmine-id
                       level-gitlab
                       (int-to-string (assoc-default 'id issue))

@@ -73,14 +73,14 @@
    (gitlab-api-request resource method params)))
 
 (defun gitlab-api-data-all-pages (resource &optional method params)
-  (map-put params "per_page" gitlab-api-per-page 'string-equal)
+  (setf (map-elt params "per_page" nil 'string-equal) gitlab-api-per-page)
   (let ((page 1) data-page data)
-    (map-put params "page" (int-to-string page) 'string-equal)
+    (setf (map-elt params "page" nil 'string-equal) (int-to-string page))
     (setq data-page (gitlab-api-data resource method params)
           data data-page)
     (while (not (seq-empty-p data-page))
       (setq page (1+ page))
-      (map-put params "page" (int-to-string page) 'string-equal)
+      (setf (map-elt params "page" nil 'string-equal) (int-to-string page))
       (setq data-page (gitlab-api-data resource method params)
             data (vconcat data data-page)))
     (if gitlab-api-debug (let ((item-count 0))
@@ -337,10 +337,11 @@
            (concat "/projects/{project_id}/" (cdr (assoc "scope" params)) "/{iid}")
            level sort-func filter-funcs)))
 
+;;;###autoload
 (defun gitlab-api-org-get-issues (level &optional params sort-func &rest filter-funcs)
   (interactive "p")
-  (map-put params "scope" "all" 'string-equal)
-  (map-put params "state" "all" 'string-equal)
+  (setf (map-elt params "scope" nil 'string-equal) "all")
+  (setf (map-elt params "state" nil 'string-equal) "all")
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
                                  (gitlab-api-data-all-pages "/issues" "GET" params)
@@ -351,8 +352,10 @@
            "/projects/{project_id}/issues/{iid}"
            level sort-func filter-funcs)))
 
+;;;###autoload
 (defun gitlab-api-org-get-issue (level project-id iid)
-  (interactive (list (prefix-numeric-value current-prefix-arg)
+  (interactive (list (and current-prefix-arg
+                          (prefix-numeric-value current-prefix-arg))
                      (car (rassoc
                            (completing-read
                             "Project: "
@@ -373,10 +376,11 @@
                                  ("state" . "all"))))
     "/projects/{project_id}/issues/{iid}" level)))
 
+;;;###autoload
 (defun gitlab-api-org-get-merge-requests (level &optional params sort-func &rest filter-funcs)
   (interactive "p")
-  (map-put params "scope" "all" 'string-equal)
-  (map-put params "state" "all" 'string-equal)
+  (setf (map-elt params "scope" nil 'string-equal) "all")
+  (setf (map-elt params "state" nil 'string-equal) "all")
   (if (called-interactively-p 'any)
       (insert (apply 'gitlab-api-org-convert
                                  (gitlab-api-data-all-pages "/merge_requests" "GET" params)
@@ -387,8 +391,10 @@
            "/projects/{project_id}/merge_requests/{iid}"
            level sort-func filter-funcs)))
 
+;;;###autoload
 (defun gitlab-api-org-get-merge-request (level project-id iid)
-  (interactive (list (prefix-numeric-value current-prefix-arg)
+  (interactive (list (and current-prefix-arg
+                          (prefix-numeric-value current-prefix-arg))
                      (car (rassoc
                            (completing-read
                             "Project: "

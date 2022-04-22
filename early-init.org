@@ -32,6 +32,16 @@
 #+end_src
 
 * Performance
+
+#+begin_src elisp
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "Emacs loaded in %.2f seconds with %d garbage collections"
+                     (float-time (time-subtract after-init-time before-init-time))
+                     gcs-done))
+          100)
+#+end_src
+
 ** Benchmark startup advising ~require~
 
 #+begin_src elisp
@@ -126,7 +136,10 @@
 (global-so-long-mode 1)
 #+end_src
 
-** Fast pager
+** CANC Fast pager
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (defvar-local fast-pager-column-goal 0)
@@ -225,7 +238,8 @@ modified.
                     "http"
                   "https"))
       (repos
-       '(("org"          . "://orgmode.org/elpa/")
+       '(;;("org"          . "://orgmode.org/elpa/")
+         ("nongnu"       . "://elpa.nongnu.org/nongnu/")
          ("melpa"        . "://melpa.org/packages/")
          ("melpa-stable" . "://stable.melpa.org/packages/")
          ;; package name conflict: `project'
@@ -287,30 +301,72 @@ modified.
 ;;             'emacs-startup-hook)
 ;;           'package-auto-install-remove)
 
-(defun package-emacswiki-update ()
-  (interactive)
-  ;; bookmark+
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-mac.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-mac.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-bmu.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-bmu.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-1.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-1.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-key.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-key.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-lit.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-lit.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-doc.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-doc.el" t)
-  (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-chg.el"
-                 "~/.emacs.d/el/packages/bookmark+/bookmark+-chg.el" t)
-  (byte-recompile-directory "~/.emacs.d/el/packages/bookmark+" 0 t)
-  ;; thingatpt+
-  (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
-                 "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
-  (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t))
+(defun package-from-url-update (&optional arg)
+  (interactive "P")
+  ;; ;; bookmark+
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-mac.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-mac.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-bmu.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-bmu.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-1.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-1.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-key.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-key.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-lit.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-lit.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-doc.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-doc.el" t)
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/bookmark%2b-chg.el"
+  ;;                "~/.emacs.d/el/packages/bookmark+/bookmark+-chg.el" t)
+  ;; (byte-recompile-directory "~/.emacs.d/el/packages/bookmark+" 0 t)
+  ;; ;; thingatpt+
+  ;; (url-copy-file "https://www.emacswiki.org/emacs/download/thingatpt%2b.el"
+  ;;                "~/.emacs.d/el/packages/thingatpt+/thingatpt+.el" t)
+  ;; (byte-recompile-directory "~/.emacs.d/el/packages/thingatpt+" 0 t)
+  ;; undo-tree
+  (let ((packages
+         '(;; vertico
+           ("vertico-autoloads.el" "el/packages/vertico/"
+            (("vertico.el" .
+              "https://github.com/minad/vertico/raw/main/vertico.el")
+             ("vertico-flat.el" .
+              "https://github.com/minad/vertico/raw/main/extensions/vertico-flat.el")
+             ("vertico-indexed.el" .
+              "https://github.com/minad/vertico/raw/main/extensions/vertico-indexed.el")
+             ("vertico-quick.el" .
+              "https://github.com/minad/vertico/raw/main/extensions/vertico-quick.el")
+             ("vertico-repeat.el" .
+              "https://github.com/minad/vertico/raw/main/extensions/vertico-repeat.el")
+             ("vertico-grid.el" .
+              "https://github.com/minad/vertico/raw/main/extensions/vertico-grid.el")))
+           ;; undo-tree
+           ("undo-tree-autoloads.el" "el/packages/undo-tree/"
+            (("undo-tree.el" .
+              "https://gitlab.com/tsc25/undo-tree/-/raw/master/undo-tree.el")))
+           )))
+    (dolist (package packages)
+      (let ((file-url-list
+             (car (last package))))
+        (when (cl-every (lambda (l)
+                          (if (url-file-exists-p (cdr l))
+                              t
+                            (message "Url not found: %s" (cdr l))
+                            nil))
+                        file-url-list)
+          (let ((package-directory (expand-file-name (cl-second package)
+                                                     user-emacs-directory)))
+            (dolist (file-url file-url-list)
+              (make-directory package-directory t)
+              (let ((dest (concat package-directory (car file-url))))
+                (when (file-exists-p dest)
+                  (rename-file dest (concat dest ".tmp") t))
+                (url-copy-file (cdr file-url) dest t)))
+            (byte-recompile-directory package-directory 0 t)
+            (make-directory-autoloads
+             package-directory
+             (concat package-directory (cl-first package)))))))))
 #+end_src
 
 * Frame configuration previous GUI activation
@@ -416,7 +472,12 @@ modified.
                     ((numberp (cadr alpha)) (cadr alpha)))
               80)
          '(100 . 100) '(80 . 70)))))
-(add-to-list 'default-frame-alist '(alpha . (80 . 70)))
+
+
+(add-to-list 'default-frame-alist
+             (if (intern-soft "alpha-background")
+                 '(alpha-background . 0.6)
+               '(alpha . (80 . 70))))
 ;; (set-frame-parameter (selected-frame) 'alpha '(90 . 75))
 ;; ]
 

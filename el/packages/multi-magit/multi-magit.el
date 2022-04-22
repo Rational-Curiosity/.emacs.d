@@ -105,7 +105,9 @@ merge-base betweenn HEAD and @{upstream}."
 (defun multi-magit--all-repositories ()
   (magit-list-repos-uniquify
    (--map (cons (multi-magit--repo-name it) it)
-          (magit-list-repos))))
+          (cl-remove-duplicates (append (multi-magit-get-selected-repositories)
+                                        (magit-list-repos))
+                                :test #'string=))))
 
 (defun multi-magit--selected-repositories ()
   (magit-list-repos-uniquify
@@ -568,7 +570,7 @@ repositories are displayed."
 (defun multi-magit-status-refresh-buffer ()
   (multi-magit-status))
 
-(defvar multi-magit-status-buffer-name "*Multi-Magit Status")
+(defvar multi-magit-status-buffer-name "*Multi-Magit Status*")
 
 (defun multi-magit--around-magit-mode-get-buffers (original-function &rest args)
   (let ((buffers (apply original-function args))
@@ -670,6 +672,8 @@ like to select some using `multi-magit-list-repositories'? ")
 
 ;;;; Magit-status Sections
 
+;;; Implicitly used by (magit-insert-section (multi-magit-repo ...) ...)
+;;; in `multi-magit-insert-repos-overview'.
 (defvar magit-multi-magit-repo-section-map
   (let ((map (make-sparse-keymap)))
     (unless (featurep 'jkl)

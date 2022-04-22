@@ -12,15 +12,16 @@ Emacs buind from source
 
 #+begin_src sh
 ./configure \
-  --without-sound --without-xpm --without-selinux \
-  --without-xwidgets --without-cairo --with-x-toolkit=gtk3 \
-  --without-jpeg --without-tiff --without-gif --without-rsvg \
-  --without-imagemagick --without-libotf --without-m17n-flt \
-  --without-xaw3d --without-toolkit-scroll-bars --without-gpm --without-dbus \
-  --without-gconf --without-gsettings --without-makeinfo \
-  --with-json --with-xml2 --with-zlib \
-  --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
+  --without-sound --without-xpm --without-selinux --without-xwidgets\
+  --without-jpeg --without-tiff --without-gif --without-rsvg\
+  --without-imagemagick --without-libotf --without-m17n-flt --without-xaw3d\
+  --without-toolkit-scroll-bars --without-gpm --without-gconf\
+  --without-gsettings --without-makeinfo\
+  --with-cairo --with-x-toolkit=gtk3 --with-dbus --with-json --with-xml2\
+  --with-zlib --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
 #+end_src
+
+#+RESULTS:
 
 - minimal emacs
 
@@ -36,12 +37,16 @@ Emacs buind from source
   --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
 #+end_src
 
+#+RESULTS:
+
 Compile .el files with
 
 #+begin_src sh
 emacs -batch -f batch-byte-compile emacs.el
 mv emacs.elc init.elc
 #+end_src
+
+#+RESULTS:
 
 emacs 27 avoids ~(package-initialize)~
 
@@ -109,11 +114,11 @@ emacs 27 avoids ~(package-initialize)~
 (defun keymaps-with-binding (key)
   (let (keymaps)
     (mapatoms (lambda (ob) (if (boundp ob)
-                          (let ((keymap (symbol-value ob)))
-                            (if (keymapp keymap)
-                                (let ((m (lookup-key keymap key)))
-                                  (if (and m (or (symbolp m) (keymapp m)))
-                                      (push keymap keymaps)))))))
+                               (let ((keymap (symbol-value ob)))
+                                 (if (keymapp keymap)
+                                     (let ((m (lookup-key keymap key)))
+                                       (if (and m (or (symbolp m) (keymapp m)))
+                                           (push keymap keymaps)))))))
               obarray)
     keymaps))
 
@@ -122,9 +127,9 @@ emacs 27 avoids ~(package-initialize)~
   (interactive "kPress key: ")
   (let ((key-str (key-description key)))
     (mapatoms (lambda (ob) (when (and (boundp ob) (keymapp (symbol-value ob)))
-                        (let ((m (lookup-key (symbol-value ob) key)))
-                          (when m
-                            (message "key: %s, keymap: %S, bind: %s" key-str ob m)))))
+                             (let ((m (lookup-key (symbol-value ob) key)))
+                               (when m
+                                 (message "key: %s, keymap: %S, bind: %s" key-str ob m)))))
               obarray)))
 
 ;; Recursive byte compile
@@ -271,16 +276,16 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
 ;; Example: (compose #'1+ #'2* #'-) => (LAMBDA (X) (1+ (2* (- X))))
 (cl-define-compiler-macro compose (&rest functions)
   (cl-labels ((sharp-quoted-p (x)
-                           (and (listp x)
-                                (eql (cl-first x) 'function)
-                                (symbolp (cl-second x)))))
+                              (and (listp x)
+                                   (eql (cl-first x) 'function)
+                                   (symbolp (cl-second x)))))
     `(lambda (x) ,(cl-reduce #'(lambda (fun arg)
-                         (if (sharp-quoted-p fun)
-                             (list (cl-second fun) arg)
-                           (list 'funcall fun arg)))
-                     functions
-                     :initial-value 'x
-                     :from-end t))))
+                                 (if (sharp-quoted-p fun)
+                                     (list (cl-second fun) arg)
+                                   (list 'funcall fun arg)))
+                             functions
+                             :initial-value 'x
+                             :from-end t))))
 
 ;; Eval checking bound before
 (defmacro bound-and-eval (func &rest args)
@@ -336,15 +341,18 @@ does not exist.  Files in subdirectories of DIRECTORY are processed also."
 (defmacro eval-and-when-daemon (frame &rest body)
   "When starting daemon wait FRAME ready before BODY."
   (declare (indent defun))
-  (cons 'if
-        (cons
-         (list 'daemonp)
-         (nconc
-          (list (list 'add-hook (quote 'after-make-frame-functions)
-                      (cons 'lambda (cons (list (if frame frame 'frame)) body))))
-          (list (list 'funcall
-                      (cons 'lambda (cons (list (if frame frame 'frame)) body))
-                      (list 'selected-frame)))))))
+  (let ((fun-args (list (or frame 'frame))))
+    `(if (daemonp)
+         (let ((fun-name (intern (symbol-name (gensym "when-daemon-hook"))))
+               (fun-args (quote ,fun-args))
+               (body (quote ,body)))
+           (defalias fun-name
+             `(lambda ,fun-args
+                ,@body
+                (remove-hook 'after-make-frame-functions (quote ,fun-name))
+                (unintern (quote ,fun-name))))
+           (add-hook 'after-make-frame-functions fun-name))
+       (funcall (lambda ,fun-args ,@body) (selected-frame)))))
 
 ;; Load all libraries in directory
 (defun load-all-in-directory (dir)
@@ -489,7 +497,7 @@ When called from lisp, FUNCTION may also be a function object."
 
 (defun bug-ediff-defun-at-point ()
   (interactive)
-  (let* ((defnA (or (thing-at-point 'defun)
+  (let* ((defnA (or (thing-at-point 'defun t)
                     (user-error "Not function at point")))
          (posnA (progn
                   (string-match
@@ -504,7 +512,7 @@ When called from lisp, FUNCTION may also be a function object."
     (find-file (find-library-name library))
     (goto-char (point-min))
     (search-forward-regexp (concat "defun[ \t\r\n]+\\_<" nameA "\\_>"))
-    (let* ((defnB (thing-at-point 'defun))
+    (let* ((defnB (thing-at-point 'defun t))
            (posnB (progn
                     (string-match
                      "^[^;]*(\\(defun\\|cl-defun\\|defmacro\\|cl-defmethod\\) [-_a-zA-Z0-9]+"
@@ -516,7 +524,7 @@ When called from lisp, FUNCTION may also be a function object."
       (emacs-lisp-mode)
       (insert (replace-regexp-in-string "\t" "        " (substring defnA posnA)))
       (goto-char (point-min))
-      (setq defnA (thing-at-point 'defun))
+      (setq defnA (thing-at-point 'defun t))
       (insert defnA)
       (delete-region (point) (point-max))
       (unless (bolp)
@@ -527,7 +535,7 @@ When called from lisp, FUNCTION may also be a function object."
       (emacs-lisp-mode)
       (insert (replace-regexp-in-string "\t" "        " (substring defnB posnB)))
       (goto-char (point-min))
-      (setq defnB (thing-at-point 'defun))
+      (setq defnB (thing-at-point 'defun t))
       (insert defnB)
       (delete-region (point) (point-max))
       (unless (bolp)
@@ -593,9 +601,9 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
     processes))
 
 (defmacro processes-run-with-timer-cond-body (secs repeat process-names
-                                                 processes-number-variable
-                                                 processes-number-condition
-                                                 &rest body)
+                                                   processes-number-variable
+                                                   processes-number-condition
+                                                   &rest body)
   (declare (indent 5))
   `(run-with-timer
     ,secs ,repeat
@@ -622,7 +630,7 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
 ;; With eval after load replacement ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar named-code-hash-table
-      (make-hash-table :test 'eq))
+  (make-hash-table :test 'eq))
 
 (defmacro named-code-declare (name &rest body)
   (declare (indent 1) (debug t))
@@ -731,9 +739,9 @@ Example: (advice-add 'mt-interchange-thing-up :around #'rollback-on-error-advice
     (setq undo-limit (eval-when-compile
                        (* 1024 1024))
           undo-outer-limit (eval-when-compile
-                             (* 30 1024 1024))
+                             (* 10 1024 1024))
           undo-strong-limit (eval-when-compile
-                              (* 30 1024 1024))
+                              (* 3 1024 1024))
           savehist-file (concat saves-directory "minibuffer-history")
           backup-directory-alist
           `((".*" . ,backup-directory))
@@ -1820,15 +1828,15 @@ prompt the user for a coding system."
   (defun xkb-swap-ralt-ctrl (&optional arg)
     (interactive "P")
     (let ((xkb-path (expand-file-name "~/.emacs.d/cache/xkb")))
-     (if arg
-         (start-process " *xkbcomp" nil
-                        "xkbcomp" (concat "-I" xkb-path)
-                        (concat xkb-path "/keymap/kbd")
-                        (getenv "DISPLAY"))
-       (start-process " *xkbcomp" nil
-                      "xkbcomp" (concat "-I" xkb-path)
-                      (concat xkb-path "/keymap/kbd_swap_ralt_ctrl")
-                      (getenv "DISPLAY"))))))
+      (if arg
+          (start-process " *xkbcomp" nil
+                         "xkbcomp" (concat "-I" xkb-path)
+                         (concat xkb-path "/keymap/kbd")
+                         (getenv "DISPLAY"))
+        (start-process " *xkbcomp" nil
+                       "xkbcomp" (concat "-I" xkb-path)
+                       (concat xkb-path "/keymap/kbd_swap_ralt_ctrl")
+                       (getenv "DISPLAY"))))))
 
 (defun swap-for-programming-keys (&optional arg)
   (interactive "P")
@@ -1903,10 +1911,10 @@ prompt the user for a coding system."
 
 (defmacro save-line (&rest body)
   `(let* ((origin (point))
-         (line (count-lines 1 origin)))
-    ,@body
-    (unless (= line (count-lines 1 (point)))
-      (goto-char origin))))
+          (line (count-lines 1 origin)))
+     ,@body
+     (unless (= line (count-lines 1 (point)))
+       (goto-char origin))))
 
 ;; unescape line
 (defun join-lines-unescaping-new-lines ()
@@ -1980,8 +1988,8 @@ prompt the user for a coding system."
        ((or (= end (cdr (car bounds)))
             (= end (cdr (car (last bounds)))))
         (dotimes (i arg)
-            (goto-char (car region))
-            (insert-rectangle rectangle)))
+          (goto-char (car region))
+          (insert-rectangle rectangle)))
        ((= end (car (car bounds)))
         (let ((column (current-column))
               (lines (length bounds))
@@ -2080,7 +2088,7 @@ there's a region, all lines that region covers will be duplicated."
 
 
 ;; Activa imath-mode
-;(global-set-key (kbd "M-n M-m") 'imath-mode)
+                                        ;(global-set-key (kbd "M-n M-m") 'imath-mode)
 
 ;; Bookmark handling
 ;;
@@ -2225,7 +2233,7 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 ;; Prompt ;;
 ;;;;;;;;;;;;
-;(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
+                                        ;(advice-add 'read-from-minibuffer :around #'message-inhibit-advice)
 
 ;; [ Allow typing out of input area
 ;; (defun minibuffer-try-pre ()
@@ -2276,27 +2284,13 @@ there's a region, all lines that region covers will be duplicated."
 ;;;;;;;;;;;;
 ;; Cycles ;;
 ;;;;;;;;;;;;
-(require 'rotate-text)
-(require 'string-inflection)
-
-(defvar inflection-repeat-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "n" 'string-inflection-all-cycle)
-    (define-key map "+" 'rotate-text)
-    (define-key map "-" 'rotate-text-backward)
-    map))
-
-(put 'string-inflection-all-cycle 'repeat-map 'inflection-repeat-map)
-(put 'rotate-text 'repeat-map 'inflection-repeat-map)
-(put 'rotate-text-backward 'repeat-map 'inflection-repeat-map)
-
-(defun rotate-or-inflection (arg)
-  (interactive (list (if (consp current-prefix-arg)
-                         -1
-                       (prefix-numeric-value current-prefix-arg))))
-  (condition-case nil
-      (rotate-text arg)
-    (error (string-inflection-all-cycle))))
+;; (defun rotate-or-inflection (arg)
+;;   (interactive (list (if (consp current-prefix-arg)
+;;                          -1
+;;                        (prefix-numeric-value current-prefix-arg))))
+;;   (condition-case nil
+;;       (rotate-text arg)
+;;     (error (string-inflection-all-cycle))))
 
 (defun scroll-down-or-completions (&optional arg)
   (interactive "^P")
@@ -2367,7 +2361,7 @@ there's a region, all lines that region covers will be duplicated."
 (defun newline-indent (arg interactive)
   (interactive "*P\np")
   (ignore-error 'beginning-of-buffer
-      (fixup-whitespace))
+    (fixup-whitespace))
   (newline arg interactive)
   (indent-according-to-mode))
 
@@ -2375,6 +2369,10 @@ there's a region, all lines that region covers will be duplicated."
   (interactive "*p\np")
   (ignore-error 'beginning-of-buffer
     (fixup-whitespace))
+  (when (save-excursion
+          (beginning-of-line)
+          (looking-at "^[[:space:]]*{}"))
+    (indent-according-to-mode))
   (newline (1+ arg) interactive)
   (indent-according-to-mode)
   (forward-line -1)
@@ -2405,23 +2403,24 @@ there's a region, all lines that region covers will be duplicated."
 ;; (require 'thing-cmds)
 ;; (defvar thgcmd--last-like-this nil)
 
-;; (defun buffer-substring-no-properties-thing (thing)
-;;   (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag)
-;;                            thgcmd-use-nearest-thing-flag))
-;;          (bds         (if use-near-p
-;;                           (tap-bounds-of-thing-nearest-point
-;;                            (intern thing))
-;;                         (thgcmd-bounds-of-thing-at-point
-;;                          (intern thing))))
-;;          (start       (car bds))
-;;          (end         (cdr bds)))
-;;     (cond ((and start  end)
-;;            (buffer-substring-no-properties start end))
-;;           (t
-;;            (message "No `%s' %s point"
-;;                     thing (if use-near-p 'near 'at))
-;;            (setq deactivate-mark  nil)
-;;            nil))))
+(defun buffer-substring-no-properties-thing (thing)
+  (let* ((use-near-p  (and (boundp 'thgcmd-use-nearest-thing-flag)
+                           thgcmd-use-nearest-thing-flag))
+         (bds         (if use-near-p
+                          (tap-bounds-of-thing-nearest-point
+                           (intern thing))
+                        (thgcmd-bounds-of-thing-at-point
+                         (intern thing))))
+         (start       (car bds))
+         (end         (cdr bds)))
+    (cond ((and start  end)
+           (buffer-substring-no-properties start end))
+          (t
+           (message "No `%s' %s point"
+                    thing (if use-near-p 'near 'at))
+           (setq deactivate-mark  nil)
+           nil))))
+(autoload 'thgcmd-bounds-of-thing-at-point "thing-cmds" nil t)
 
 ;; (defun next-thing-like-this (this)
 ;;   (interactive (list
@@ -2489,6 +2488,30 @@ there's a region, all lines that region covers will be duplicated."
 ;;             (overlays-at (point)))
 ;;       (message "Found previous match of `%s'" this))))
 
+(defun minibuffer-yank-word (&optional arg)
+  "Yank word at point in the buffer when entering minibuffer into minibuffer."
+  (interactive "P")
+  (when-let ((text
+              (with-selected-window (minibuffer-selected-window)
+                (let* ((thing (if arg
+                                  (intern
+                                   (let ((enable-recursive-minibuffers t))
+                                     (completing-read
+                                      "Thing (word): "
+                                      (thgcmd-things-alist) nil t nil nil
+                                      "word")))
+                                'word))
+                       (bds (tap-bounds-of-thing-at-point thing)))
+                  (when bds
+                    (goto-char (car bds)))
+                  (let ((beg (point)))
+                    (when (or (and bds (goto-char (cdr bds)))
+                              (forward-word))
+                      (buffer-substring-no-properties beg (point))))))))
+    (insert text)))
+(autoload 'thgcmd-things-alist "thing-cmds" nil t)
+(autoload 'tap-bounds-of-thing-at-point "thingatpt+" nil t)
+
 ;;;;;;;;;;
 ;; Keys ;;
 ;;;;;;;;;;
@@ -2539,7 +2562,7 @@ there's a region, all lines that region covers will be duplicated."
 (global-set-key (kbd "<C-M-backspace>") #'sp-or-backward-kill-sexp)
 ;; (global-set-key (kbd "M-s DEL") #'backward-kill-sexp)
 ;; (global-set-key (kbd "S-<delete>") #'kill-sexp)
-(global-set-key [?\C-x ?u] #'undo-propose)
+(global-set-key (kbd "C-x C-u") #'undo-propose)
 (global-set-key (kbd "M-s <deletechar>") #'kill-sexp)
 (global-set-key (kbd "C-*") #'duplicate-current-line-or-region)
 (global-set-key (kbd "M-s *") #'duplicate-current-line-or-region)
@@ -2579,6 +2602,7 @@ there's a region, all lines that region covers will be duplicated."
 
 (global-set-key (kbd "M-g f") #'find-dired)
 
+(define-key minibuffer-local-map "\C-w" #'minibuffer-yank-word)
 (define-key minibuffer-local-map (kbd "C-c C-l") 'helm-minibuffer-history)
 
 ;; Usa el clipboard del sistema
@@ -2618,12 +2642,13 @@ there's a region, all lines that region covers will be duplicated."
       (kill-buffers-from-file frame)
     (kill-buffer)))
 
-(defun kill-buffer-and-window (buffer)
-  (interactive (list (current-buffer)))
-  (let ((win (get-buffer-window buffer)))
-    (kill-buffer buffer)
-    (when (window-live-p win)
-      (delete-window win))))
+;; already exists
+;; (defun kill-buffer-and-window (buffer)
+;;   (interactive (list (current-buffer)))
+;;   (let ((win (get-buffer-window buffer)))
+;;     (kill-buffer buffer)
+;;     (when (window-live-p win)
+;;       (delete-window win))))
 
 (defun buffers-with-window (&optional frame)
   "Get buffers with window in FRAME."
@@ -2671,7 +2696,7 @@ For more information, see the function `buffer-menu'."
    (display-buffer (list-buffers-noselect files-only (buffer-list)))))
 
 (define-key global-map [remap list-buffers] 'ibuffer)
-(define-key global-map (kbd "C-x B") 'ibuffer-list-buffers)
+(define-key global-map (kbd "C-x C-b") 'ibuffer-other-window)
 #+end_src
 
 * Windows
@@ -3226,13 +3251,13 @@ ARG non-nil resize window to ARG height."
 ;;
 ;; (set-frame-size-according-to-resolution)
 
-(when (executable-find "bspc")
-  (let ((color
-         (substring
-          (shell-command-to-string "bspc config focused_border_color") 0 -1)))
-    (when (and (stringp color)
-               (string-match-p "#[0-9abcdef]\\{6\\}" color))
-      (modify-all-frames-parameters `((border-color . ,color))))))
+;; (when (executable-find "bspc")
+;;   (let ((color
+;;          (substring
+;;           (shell-command-to-string "bspc config focused_border_color") 0 -1)))
+;;     (when (and (stringp color)
+;;                (string-match-p "#[0-9abcdef]\\{6\\}" color))
+;;       (modify-all-frames-parameters `((border-color . ,color))))))
 
 ;; Call last keyboard macro in windows
 (defun kmacro-call-other-windows-all-frames (window &optional all-frames)
@@ -3374,7 +3399,7 @@ others."
 (global-set-key (kbd "C-c w n") 'windmove-down)
 (global-set-key (kbd "C-c b p") #'previous-buffer)
 (global-set-key (kbd "C-c b n") #'next-buffer)
-(global-set-key (kbd "C-x C-b") 'list-all-buffers)
+(global-set-key (kbd "C-x B") 'list-all-buffers)
 
 ;; (defhydra hydra-win (global-map "C-c")
 ;;   "WIN"
@@ -3433,6 +3458,8 @@ Avoid /Ubuntu 20.04/ slow startup
 #+begin_src sh
 sudo apt-get remove --purge dbus-user-session
 #+end_src
+
+#+RESULTS:
 
 #+begin_src elisp
 (with-eval-after-load 'exwm
@@ -4839,8 +4866,8 @@ mode and header lines."
   ;; ;;;; ;;
   (global-set-key (kbd "M-s 7 T") 'exwm-toggle-transparency)
 
-  (after-exwm-config)
-  (fmakunbound 'after-exwm-config))
+  (after-exwm-config:tmp)
+  (fmakunbound 'after-exwm-config:tmp))
 #+end_src
 
 * Completions
@@ -4853,10 +4880,25 @@ mode and header lines."
       completion-show-help nil
       completions-format 'vertical)
 
+;; (defun switch-to-completions-updating ()
+;;   (interactive)
+;;   (when (active-minibuffer-window)
+;;     (minibuffer-completion-help
+;;      ;; (save-excursion
+;;      ;;   (when (search-backward (find-tag--default) nil t)
+;;      ;;     (point)))
+;;      ))
+;;   (switch-to-completions))
+
 (with-eval-after-load 'simple
   (define-key minibuffer-local-shell-command-map (kbd "M-v")
     'switch-to-completions)
   (define-key read-expression-map (kbd "M-v") 'switch-to-completions))
+
+(defun return-to-minibuffer-advice (&rest _args)
+  (when (active-minibuffer-window)
+    (switch-to-minibuffer)))
+(advice-add 'quit-window :after 'return-to-minibuffer-advice)
 
 (define-key completion-in-region-mode-map (kbd "M-v")
   'switch-to-completions)
@@ -4892,6 +4934,8 @@ mode and header lines."
 
 #+end_src
 
+#+RESULTS:
+
 * Internal packages
 ** Always required
 *** /repeat-mode/
@@ -4899,6 +4943,19 @@ mode and header lines."
 #+begin_src elisp
 (setq repeat-exit-timeout 3)
 (repeat-mode)
+
+(defvar inflection-repeat-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "u" 'string-inflection-all-cycle)
+    (define-key map "+" 'rotate-text)
+    (define-key map "-" 'rotate-text-backward)
+    (define-key map ";" 'grugru)
+    map))
+
+(put 'string-inflection-all-cycle 'repeat-map 'inflection-repeat-map)
+(put 'rotate-text 'repeat-map 'inflection-repeat-map)
+(put 'rotate-text-backward 'repeat-map 'inflection-repeat-map)
+(put 'grugru 'repeat-map 'inflection-repeat-map)
 #+end_src
 
 *** CANC /fido/
@@ -5057,6 +5114,9 @@ mode and header lines."
 
 (fido-mode)
 #+end_src
+
+#+RESULTS:
+: t
 
 *** Caps modes
 
@@ -5276,79 +5336,6 @@ If `case-replace' is nil, do not alter case of replacement text."
      start end from-string to-string search-function t)))
 #+end_src
 
-*** /tramp/
-
-#+begin_src elisp
-(setq password-cache t
-      password-cache-expiry 3600
-      auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
-      tramp-default-method "ssh"
-      auth-source-save-behavior nil)
-#+end_src
-
-*** /recentf/
-
-#+begin_src elisp
-(defvar recentf-history nil)
-
-(defun completing-recentf-find-file (arg)
-  "Show a list of recent files."
-  (interactive "P")
-  (require 'recentf)
-  (--> recentf-list
-    (mapcar #'substring-no-properties it)
-    (mapcar #'abbreviate-file-name it)
-    (cl-remove-duplicates it :test #'string-equal)
-    (let ((minibuffer-completing-file-name t))
-      (completing-read
-       "Recent Files: "
-       (lambda (string pred action)
-         (if (eq action 'metadata)
-             '(metadata (category . file))
-           (complete-with-action action it string pred)))
-       nil nil nil 'recentf-history))
-    (if arg (find-file-other-window it) (find-file it))))
-(global-set-key "\C-x\ \C-r" 'completing-recentf-find-file)
-
-(with-eval-after-load 'recentf
-  ;; (with-eval-after-load 'machine-config
-  ;;   (cl-letf (((symbol-function 'sit-for)
-  ;;              (lambda (secs))))
-  ;;     (let ((tramp-message-show-message nil))
-  ;;       (recentf-mode 1))))
-  (require 'tramp)
-  (defun recentf-remove-sudo-tramp-prefix (path)
-    "Remove sudo from path.  Argument PATH is path."
-    (if (tramp-tramp-file-p path)
-        (let ((tx (tramp-dissect-file-name path)))
-          (pcase (tramp-file-name-method tx)
-            ("sudo" (tramp-file-name-localname tx))
-            ("docker" (if (featurep 'docker) path
-                        (tramp-file-name-localname path)))
-            (_ path)))
-      path))
-
-  (defun local-file-exists-p (filename)
-    (file-exists-p (recentf-remove-sudo-tramp-prefix filename)))
-
-  (defun recentf-file-truename (filename)
-    (let* ((local-file-name (recentf-remove-sudo-tramp-prefix filename))
-           (local-file-truename (file-truename local-file-name)))
-      (concat (substring filename 0 (- (length local-file-name))) local-file-truename)))
-
-  (setq recentf-max-saved-items 500
-        recentf-max-menu-items 30
-        recentf-exclude '("\\.emacs\\.d/elpa/.*\\.el\\'" "\\.el\\.gz\\'")
-        recentf-filename-handlers '(recentf-file-truename
-                                    abbreviate-file-name)
-        recentf-keep '(local-file-exists-p)
-        tool-bar-max-label-size 12
-        recentf-auto-cleanup 'never
-        tool-bar-style 'image))
-(add-hook 'after-init-hook 'recentf-cleanup)  ;; called after `recentf-mode'
-(add-hook 'after-init-hook 'recentf-mode)
-#+end_src
-
 *** /savehist/
 
 See [[* Backup and Undo]]
@@ -5401,69 +5388,73 @@ See [[* Backup and Undo]]
 ;; | S-SPC     | Scroll down                                                          |
 ;; |-----------+----------------------------------------------------------------------|
 
-(require 'eww)
+(with-eval-after-load 'eww
+  (cond ((file-exists-p "~/Downloads")
+         (setq eww-download-directory "~/Downloads"))
+        ((file-exists-p "~/Descargas")
+         (setq eww-download-directory "~/Descargas")))
+  (setq eww-search-prefix "https://www.google.com/search?q="
+        browse-url-secondary-browser-function 'eww-browse-url)
 
-(cond ((file-exists-p "~/Downloads")
-       (setq eww-download-directory "~/Downloads"))
-      ((file-exists-p "~/Descargas")
-       (setq eww-download-directory "~/Descargas")))
-(setq eww-search-prefix "https://www.google.com/search?q="
-      browse-url-secondary-browser-function 'eww-browse-url)
 
-
-(defvar browse-url-qutebrowser-program "qutebrowser")
-(defvar browse-url-qutebrowser-arguments nil)
-(defun browse-url-qutebrowser (url &optional _new-window)
-  "Ask the Chromium WWW browser to load URL.
+  (defvar browse-url-qutebrowser-program "qutebrowser")
+  (defvar browse-url-qutebrowser-arguments nil)
+  (defun browse-url-qutebrowser (url &optional _new-window)
+    "Ask the Chromium WWW browser to load URL.
 Default to the URL around or before point.  The strings in
 variable `browse-url-chromium-arguments' are also passed to
 Chromium.
 The optional argument NEW-WINDOW is not used."
-  (interactive (browse-url-interactive-arg "URL: "))
-  (setq url (browse-url-encode-url url))
-  (let* ((process-environment (browse-url-process-environment)))
-    (apply #'start-process
-           (concat "qutebrowser " url) nil
-           browse-url-qutebrowser-program
-           (append
-            browse-url-qutebrowser-arguments
-            (list url)))))
+    (interactive (browse-url-interactive-arg "URL: "))
+    (setq url (browse-url-encode-url url))
+    (let* ((process-environment (browse-url-process-environment)))
+      (apply #'start-process
+             (concat "qutebrowser " url) nil
+             browse-url-qutebrowser-program
+             (append
+              browse-url-qutebrowser-arguments
+              (list url)))))
 
-(defun browse-url-browser-function-selection (arg)
-  (interactive "P")
-  (let ((selection
-         (intern
-          (completing-read
-           "Select function to open urls: "
-           (let (browsers)
-             (if (locate-library "w3") 'browse-url-w3)
-             (if (executable-find browse-url-xterm-program) (push 'browse-url-text-xterm browsers))
-             (if (executable-find browse-url-kde-program) (push 'browse-url-kde browsers))
-             (if (executable-find browse-url-conkeror-program) (push 'browse-url-conkeror browsers))
-             (if (executable-find browse-url-chrome-program) (push 'browse-url-chrome browsers))
-             (if (executable-find browse-url-chromium-program) (push 'browse-url-chromium browsers))
-             (if (executable-find browse-url-firefox-program) (push 'browse-url-firefox browsers))
-             (if (executable-find browse-url-mozilla-program) (push 'browse-url-mozilla browsers))
-             (if (executable-find browse-url-qutebrowser-program) (push 'browse-url-qutebrowser browsers))
-             (push 'eww-browse-url browsers)
-             (push 'browse-url-default-browser browsers)
-             browsers)
-           nil t nil nil browse-url-browser-function))))
-    (if arg
-        (message "browse-url-secondary-browser-function setted to `%s'"
-                 (setq browse-url-secondary-browser-function selection))
-      (message "browse-url-browser-function setted to `%s'"
-               (setq browse-url-browser-function selection)))))
+  (defun browse-url-browser-function-selection (arg)
+    (interactive "P")
+    (let ((selection
+           (intern
+            (completing-read
+             "Select function to open urls: "
+             (let (browsers)
+               (if (locate-library "w3") 'browse-url-w3)
+               (if (executable-find browse-url-xterm-program) (push 'browse-url-text-xterm browsers))
+               (if (executable-find browse-url-kde-program) (push 'browse-url-kde browsers))
+               (if (executable-find browse-url-conkeror-program) (push 'browse-url-conkeror browsers))
+               (if (executable-find browse-url-chrome-program) (push 'browse-url-chrome browsers))
+               (if (executable-find browse-url-chromium-program) (push 'browse-url-chromium browsers))
+               (if (executable-find browse-url-firefox-program) (push 'browse-url-firefox browsers))
+               (if (executable-find browse-url-mozilla-program) (push 'browse-url-mozilla browsers))
+               (if (executable-find browse-url-qutebrowser-program) (push 'browse-url-qutebrowser browsers))
+               (push 'eww-browse-url browsers)
+               (push 'browse-url-default-browser browsers)
+               browsers)
+             nil t nil nil browse-url-browser-function))))
+      (if arg
+          (message "browse-url-secondary-browser-function setted to `%s'"
+                   (setq browse-url-secondary-browser-function selection))
+        (message "browse-url-browser-function setted to `%s'"
+                 (setq browse-url-browser-function selection)))))
 
-(global-set-key (kbd "C-x W") 'browse-url-browser-function-selection)
-;; Make the binding for `revert-buffer' do `eww-reload' in eww-mode
-(define-key eww-mode-map (kbd "<backtab>") 'shr-previous-link)
-(define-key eww-mode-map (kbd ":") 'eww)
-(define-key eww-mode-map (kbd "h") 'eww-list-histories)
-(define-key eww-mode-map (kbd "w") 'modi/eww-copy-url-dwim)
-(define-key eww-mode-map (kbd "k") 'modi/eww-keep-lines)
-(define-key eww-mode-map [remap revert-buffer] 'eww-reload)
-(define-key eww-checkbox-map (kbd "<down-mouse-1>") 'eww-toggle-checkbox)
+  (global-set-key (kbd "C-x W") 'browse-url-browser-function-selection)
+  ;; Make the binding for `revert-buffer' do `eww-reload' in eww-mode
+  (define-key eww-mode-map (kbd "<backtab>") 'shr-previous-link)
+  (define-key eww-mode-map (kbd ":") 'eww)
+  (define-key eww-mode-map (kbd "h") 'eww-list-histories)
+  (define-key eww-mode-map (kbd "w") 'modi/eww-copy-url-dwim)
+  (define-key eww-mode-map (kbd "k") 'modi/eww-keep-lines)
+  (define-key eww-mode-map [remap revert-buffer] 'eww-reload)
+  (define-key eww-checkbox-map (kbd "<down-mouse-1>") 'eww-toggle-checkbox))
+(global-set-key (kbd "C-x W")
+                (lambda ()
+                  (interactive)
+                  (require 'eww)
+                  (browse-url-browser-function-selection)))
 #+end_src
 
 *** CANC /prettify-symbols/
@@ -6401,12 +6392,12 @@ The optional argument NEW-WINDOW is not used."
   (interactive "p")
   (mt-forward-thing arg))
 
-(defun push-mark--pre-command ()
-  (when (and (null mark-active)
-             (gethash this-original-command mt-movement-commands)
-             (not (gethash last-command mt-movement-commands)))
-    (push-mark nil t)))
-(add-hook 'pre-command-hook 'push-mark--pre-command)
+;; (defun push-mark--pre-command ()
+;;   (when (and (null mark-active)
+;;              (gethash this-original-command mt-movement-commands)
+;;              (not (gethash last-command mt-movement-commands)))
+;;     (push-mark nil t)))
+;; (add-hook 'pre-command-hook 'push-mark--pre-command)
 #+end_src
 
 *** Multiple windows
@@ -6798,20 +6789,32 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
 ;;                  ))
 
 (face-spec-set 'hl-line
-               `((((supports :box t))
+               `((((supports :underline t))
+                  :inherit unspecified
+                  :underline t
+                  :foreground "gray60"
+                  :extend t)
+                 (((supports :box t))
                   :inherit unspecified
                   :box (:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1) :color "grey35")
                   :extend t)
                  (((supports :weight bold :slant italic))
                   :inherit unspecified
                   :weight bold :slant italic
-                  :extend t)
-                 (t
-                  :inherit unspecified
-                  :box (:line-width ,(if (>= emacs-major-version 28) '(-1 . -1) -1) :color "grey35")
                   :extend t)))
 
 (setq global-hl-line-sticky-flag t
+      hl-line-range-function
+      (lambda ()
+        (unless (and (eq major-mode 'vterm-mode)
+                     (null vterm-copy-mode))
+            (let ((pos (let* ((p (save-excursion (end-of-line) (point)))
+                              (ovs (delq global-hl-line-overlay
+                                         (delq hl-line-overlay (overlays-at p)))))
+                         (if ovs
+                             (apply 'max (mapcar 'overlay-end ovs))
+                           p))))
+              (cons pos (1+ pos)))))
       ;; hl-line-face 'bold-italic
       )
 
@@ -6961,7 +6964,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
   (global-set-key (kbd "C-c l") 'display-line-numbers-cycle))
 #+end_src
 
-*** /symon/
+*** /symon-mode/
 
 #+begin_src elisp
 (eval-and-compile
@@ -7026,7 +7029,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
       ""))
   (push 'symon-custom-virtualenv symon-custom-monitor-list))
 
-(defun after-exwm-config ()
+(defun after-exwm-config:tmp ()
   (defun symon-custom-recording ()
     (if (and exwm-record-process
                       (eq 'run (process-status exwm-record-process)))
@@ -7212,7 +7215,7 @@ By default insert it, with prefix display a message with it."
 (defvar language-text-to-speak-process nil)
 #+end_src
 
-*** Vi transfer
+*** Transfer file
 
 #+begin_src elisp
 (defun vi-transfer-file (filepath &optional nokill)
@@ -7239,10 +7242,127 @@ By default insert it, with prefix display a message with it."
                 (delete-window))))))
     (message "File not found: %s" filepath)))
 
-(global-set-key (kbd "M-S-RET") 'vi-transfer-file)
+(defun kak-transfer-file (filepath &optional nokill)
+  (interactive (list (buffer-file-name) current-prefix-arg))
+  (if (and (stringp filepath)
+           (file-exists-p filepath))
+      (let ((terminal (or (executable-find "alacritty")
+                          (executable-find "urxvt")
+                          (executable-find "xterm"))))
+        (if (null terminal)
+            (message
+             "Terminal not found, install `alacritty', `urxvt' or `xterm'")
+          (start-process
+           (concat "*kak " filepath "*") nil terminal "-e"
+           "kak"
+           filepath
+           (concat
+            "+" (number-to-string (line-number-at-pos))
+            ":" (number-to-string (1+ (current-column)))))
+          (unless nokill
+            (when-let ((buffer (find-buffer-visiting filepath)))
+              (kill-buffer buffer)
+              (when (< 1 (length (window-list)))
+                (delete-window))))))
+    (message "File not found: %s" filepath)))
+
+(global-set-key (kbd "C-x C-RET") 'kak-transfer-file)
 #+end_src
 
 ** Not always required
+*** /tramp/
+
+#+begin_src elisp
+(with-eval-after-load 'tramp
+  (setq password-cache t
+        password-cache-expiry 3600
+        auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
+        tramp-default-method "ssh"
+        auth-source-save-behavior nil))
+#+end_src
+
+*** /recentf-mode/
+
+#+begin_src elisp
+(with-eval-after-load 'recentf
+  (remove-hook 'find-file-hook 'recentf-startup:tmp)
+  (fmakunbound 'recentf-startup:tmp)
+  (add-hook 'delete-frame-functions
+            (defun recentf-save-list-if-change (&rest _args)
+              (interactive)
+              (let ((list-hash
+                     (secure-hash 'md5 (mapconcat 'identity recentf-list ""))))
+                (unless (string-equal list-hash recentf-list-hash)
+                  (recentf-save-list)
+                  (setq recentf-list-hash list-hash)))))
+  ;; (with-eval-after-load 'machine-config
+  ;;   (cl-letf (((symbol-function 'sit-for)
+  ;;              (lambda (secs))))
+  ;;     (let ((tramp-message-show-message nil))
+  ;;       (recentf-mode 1))))
+  (defun recentf-remove-sudo-tramp-prefix (path)
+    "Remove sudo from path.  Argument PATH is path."
+    (if (null (string-match-p "\\`/[^/:]+:[^/:]*:" path)) ;; (tramp-tramp-file-p path)
+        path
+      (require 'tramp)
+      (let ((tx (tramp-dissect-file-name path)))
+        (pcase (tramp-file-name-method tx)
+          ("sudo" (tramp-file-name-localname tx))
+          ("docker" (if (featurep 'docker) path
+                      (tramp-file-name-localname path)))
+          (_ path)))))
+
+  (defun local-file-exists-p (filename)
+    (file-exists-p (recentf-remove-sudo-tramp-prefix filename)))
+
+  (defun recentf-file-truename (filename)
+    (let* ((local-file-name (recentf-remove-sudo-tramp-prefix filename))
+           (local-file-truename (file-truename local-file-name)))
+      (concat (substring filename 0 (- (length local-file-name))) local-file-truename)))
+
+  (setq recentf-list-hash
+        (secure-hash 'md5 (mapconcat 'identity recentf-list ""))
+        recentf-max-saved-items 500
+        recentf-max-menu-items 30
+        recentf-exclude '("\\.emacs\\.d/elpa/.*\\.el\\'" "\\.el\\.gz\\'")
+        recentf-filename-handlers '(recentf-file-truename
+                                    abbreviate-file-name)
+        recentf-keep '(local-file-exists-p)
+        tool-bar-max-label-size 12
+        recentf-auto-cleanup 'never
+        tool-bar-style 'image)
+  (recentf-mode)
+  (recentf-cleanup))
+
+(defvar recentf-history nil)
+(defun completing-recentf-find-file (arg)
+  "Show a list of recent files."
+  (interactive "P")
+  (require 'recentf)
+  (--> recentf-list
+    (mapcar #'substring-no-properties it)
+    (mapcar #'abbreviate-file-name it)
+    (cl-remove-duplicates it :test #'string-equal)
+    (let ((minibuffer-completing-file-name t))
+      (completing-read
+       "Recent Files: "
+       (lambda (string pred action)
+         (if (eq action 'metadata)
+             '(metadata (category . file))
+           (complete-with-action action it string pred)))
+       nil t nil 'recentf-history))
+    (if arg (find-file-other-window it) (find-file it))))
+
+(defun recentf-startup:tmp ()
+  (require 'recentf)
+  (recentf-track-opened-file))
+(add-hook 'find-file-hook 'recentf-startup:tmp)
+
+
+(global-set-key "\C-x\ \C-r" 'completing-recentf-find-file)
+(global-set-key (kbd "C-x R") 'recentf-open-files)
+#+end_src
+
 *** /zone/
 
 #+begin_src elisp
@@ -7665,6 +7785,8 @@ ARG - `C-u' differ with prompted file.
     (add-to-list 'eshell-visual-commands "nvim")
     (add-to-list 'eshell-visual-commands "nano")
     (add-to-list 'eshell-visual-commands "unison")
+    (add-to-list 'eshell-visual-commands "hx")
+    (add-to-list 'eshell-visual-commands "kak")
     (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
     (add-to-list 'eshell-visual-subcommands '("git" "help" "log" "diff" "show" "reflog")))
   (setq eshell-prefer-lisp-functions nil
@@ -7887,6 +8009,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;;;;;;;;;;;;;;;
   (defun eshell-send-input-rename ()
     (interactive)
+    (end-of-buffer)
     (call-interactively 'eshell-send-input)
     (let ((proc-running (eshell-interactive-process)))
       (when proc-running
@@ -8155,7 +8278,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
     (defun pcmpl-python-packages ()
       (with-temp-buffer
-        (call-process-shell-command "python -m pip freeze" nil (current-buffer))
+        (call-process-shell-command "LC_ALL=C python -m pip freeze" nil (current-buffer))
         (goto-char 0)
         (let (packages)
           (while (re-search-forward "^\\([[:word:]-.]+\\)=" nil t)
@@ -8189,7 +8312,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
     (defun pcmpl-python3-packages ()
       (with-temp-buffer
-        (call-process-shell-command "python3 -m pip freeze" nil (current-buffer))
+        (call-process-shell-command "LC_ALL=C python3 -m pip freeze" nil (current-buffer))
         (goto-char 0)
         (let (packages)
           (while (re-search-forward "^\\([[:word:]-.]+\\)=" nil t)
@@ -8417,7 +8540,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 ;;;;;;;;;;
 
   (defun eshell-cmpl-initialize-advice (&rest _args)
-    (define-key eshell-mode-map (kbd "<return>") 'eshell-send-input-rename)
+    (define-key eshell-mode-map "\r" 'eshell-send-input-rename)
     (when (featurep 'helm)
       (define-key eshell-mode-map [tab] #'helm-esh-pcomplete))
     (define-key eshell-mode-map (kbd "<S-return>") 'eshell-send-input-rename-stderr))
@@ -8428,24 +8551,26 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
       (define-key eshell-command-map [(control ?l)] #'helm-eshell-history)))
   (advice-add 'eshell-hist-initialize :after 'eshell-hist-initialize-advice)
 
-  (add-hook 'eshell-mode-hook (lambda ()
-                                (goto-address-mode 1)
-                                (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
-                                (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
-                                (define-key eshell-mode-map (kbd "M-p") 'eshell-key-alt-previous)
-                                (define-key eshell-mode-map (kbd "M-n") 'eshell-key-alt-next)
-                                (define-key eshell-mode-map (kbd "C-c C-k") 'eshell-send-chars-interactive-process)
-                                ;; Make file paths clickable
-                                (define-key eshell-mode-map (kbd "C-c c")
-                                  (lambda (arg)
-                                    (interactive "P")
-                                    (if arg
-                                        (compilation-shell-minor-mode -1)
-                                      (if (null compilation-shell-minor-mode)
-                                          (compilation-shell-minor-mode 1)
-                                        (compilation-shell-minor-mode -1)
-                                        (compilation-shell-minor-mode 1)))))
-                                (add-to-list 'eshell-complex-commands "ag"))))
+  (add-hook
+   'eshell-mode-hook
+   (lambda ()
+     (goto-address-mode 1)
+     (define-key eshell-mode-map (kbd "<up>") 'eshell-key-up)
+     (define-key eshell-mode-map (kbd "<down>") 'eshell-key-down)
+     (define-key eshell-mode-map (kbd "M-p") 'eshell-key-alt-previous)
+     (define-key eshell-mode-map (kbd "M-n") 'eshell-key-alt-next)
+     (define-key eshell-mode-map (kbd "C-c C-k") 'eshell-send-chars-interactive-process)
+     ;; Make file paths clickable
+     (define-key eshell-mode-map (kbd "C-c c")
+       (lambda (arg)
+         (interactive "P")
+         (if arg
+             (compilation-shell-minor-mode -1)
+           (if (null compilation-shell-minor-mode)
+               (compilation-shell-minor-mode 1)
+             (compilation-shell-minor-mode -1)
+             (compilation-shell-minor-mode 1)))))
+     (add-to-list 'eshell-complex-commands "ag"))))
 #+end_src
 
 *** /ispell/
@@ -8687,6 +8812,7 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
     (condition-case nil
         (apply orig-fun args)
       (error
+       (message "Current xref backends failed, trying `etags'")
        (let ((xref-backend-functions '(etags--xref-backend)))
          (call-interactively orig-fun)))))
 
@@ -8699,9 +8825,9 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
 
 
 
-;;;;;;;;;;
+  ;; ;;;; ;;
   ;; Keys ;;
-;;;;;;;;;;
+  ;; ;;;; ;;
   (with-eval-after-load 'hydra
     (defhydra hydra-xref (:foreign-keys run :hint nil)
       ("M-," #'xref-pop-marker-stack "pop")
@@ -9698,7 +9824,7 @@ if __name__ == \"__main__\":
               ((2 4) 'find-file-other-window)
               ((3 5 16) 'find-file-other-frame)
               (otherwise 'find-file))
-           line)
+           (substring line 0 -1))
           (goto-char (point-min))
           (dolist (string (quote ,strings))
             (search-forward string))))))
@@ -9899,8 +10025,56 @@ if __name__ == \"__main__\":
     (add-hook 'TeX-mode-hook #'flyspell-mode)))
 #+end_src
 
+*** /calendar-mode/
+
+#+begin_src elisp
+(with-eval-after-load 'calendar
+  (add-hook 'calendar-mode-hook (lambda () (setq truncate-lines t)))
+  (setq calendar-week-start-day 1
+        ;; calendar-day-name-array     ["domingo" "lunes" "martes"
+        ;;                              "miércoles" "jueves" "viernes" "sábado"]
+        ;; calendar-day-abbrev-array   ["dom" "lun" "mar" "mié" "jue" "vie" "sáb"]
+        ;; calendar-day-header-array   ["D" "L" "M" "X" "J" "V" "S"]
+        ;; calendar-month-name-array   ["Enero" "Febrero" "Marzo" "Abril" "Mayo"
+        ;;                              "Junio" "Julio" "Agosto" "Septiembre"
+        ;;                              "Octubre" "Noviembre" "Diciembre"]
+        ;; calendar-month-abbrev-array ["Ene" "Feb" "Mar" "Abr" "May" "Jun"
+        ;;                              "Jul" "Ago" "Sep" "Oct" "Nov" "Di
+        )
+  )
+#+end_src
+
 * External packages
 ** Always required
+*** /goto-chg/
+
+#+begin_src elisp
+(global-set-key (kbd "C-<") 'goto-last-change)
+(global-set-key (kbd "C->") 'goto-last-change-reverse)
+#+end_src
+
+*** /undo-tree/
+
+#+begin_src elisp
+;;(require 'undo-tree-autoloads)
+(with-eval-after-load 'undo-tree
+  (setq undo-tree-mode-lighter
+        (propertize "^"
+                    'face '(:foreground "light slate blue" :weight bold))
+        undo-tree-enable-undo-in-region t
+        undo-tree-limit undo-limit
+        undo-tree-strong-limit undo-strong-limit
+        undo-tree-outer-limit undo-outer-limit
+        undo-tree-history-directory-alist
+        `(("." . ,(expand-file-name "undo-tree" user-emacs-directory))))
+  (setcar (cdr (assq 'undo-tree-mode minor-mode-alist))
+          undo-tree-mode-lighter))
+(global-undo-tree-mode)
+(global-set-key (kbd "C-x u") #'undo-tree-visualize)
+(global-set-key (kbd "C-_") #'undo-tree)
+(global-set-key (kbd "M-_") #'redo-tree)
+#+end_src
+
 *** /orderless/
 
 #+begin_src elisp
@@ -9957,23 +10131,78 @@ if __name__ == \"__main__\":
    ((equal orderless-matching-styles '(orderless-flex))
     (setq orderless-matching-styles '(orderless-regexp orderless-flex))
     (message "orderless-regexp orderless-flex")))
-  (when icomplete-mode
+  (cond 
+   (icomplete-mode
     (completion--flush-all-sorted-completions)
     (icomplete-pre-command-hook)
-    (icomplete-post-command-hook)))
+    (icomplete-post-command-hook))
+   ((bound-and-true-p vertico-mode)
+    (vertico--update-candidates 
+     (max 0 (- (point) (minibuffer-prompt-end))) 
+     (minibuffer-contents-no-properties)))))
 
-(define-key minibuffer-local-completion-map (kbd "C-v")
+(define-key minibuffer-local-completion-map (kbd "C-o")
   'orderless-match-components-cycle)
-(define-key completion-in-region-mode-map (kbd "C-v")
+(define-key completion-in-region-mode-map (kbd "C-o")
   'orderless-match-components-cycle)
+#+end_src
+
+*** /vertico-mode/ (when installed)
+
+#+begin_src elisp
+(when (require 'vertico nil t)
+  (require 'vertico-grid)
+  ;;(require 'vertico-autoloads nil t)
+
+  (setq completion-styles '(orderless)
+        completion-category-overrides '((file (styles basic-remote partial-completion)))
+        completion-in-region-function
+        (lambda (&rest args)
+          (apply (if vertico-mode
+                     #'consult-completion-in-region
+                   #'completion--in-region)
+                 args))
+        vertico-grid-rows 5
+        vertico-grid-min-columns 4)
+
+  (defun basic-remote-try-completion (string table pred point)
+    (and (vertico--remote-p string)
+         (completion-basic-try-completion string table pred point)))
+  (defun basic-remote-all-completions (string table pred point)
+    (and (vertico--remote-p string)
+         (completion-basic-all-completions string table pred point)))
+  (add-to-list
+   'completion-styles-alist
+   '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+
+  (define-key vertico-map (kbd "C-o") 'orderless-match-components-cycle)
+  (define-key vertico-map (kbd "M-z") 'vertico-quick-exit)
+
+  (vertico-grid-mode)
+  (vertico-mode))
 #+end_src
 
 *** /tree-sitter/
 
 #+begin_src elisp
-(ignore-errors
+;; (add-hook 'emacs-lisp-mode-hook #'tree-sitter-mode)
+;; (add-hook 'lisp-mode-hook #'tree-sitter-mode)
+;; (add-hook 'rust-mode-hook #'tree-sitter-mode)
+;; (add-hook 'python-mode-hook #'tree-sitter-mode)
+;; (add-hook 'typescript-mode-hook #'tree-sitter-mode)
+;; (add-hook 'js-mode-hook #'tree-sitter-mode)
+;; (add-hook 'json-mode-hook #'tree-sitter-mode)
+;; (add-hook 'html-mode-hook #'tree-sitter-mode)
+;; (add-hook 'nxhtml-mode-hook #'tree-sitter-mode)
+;; (add-hook 'c-mode-hook #'tree-sitter-mode)
+(defun tree-sitter-startup:tmp ()
   (require 'tree-sitter)
-  (require 'tree-sitter-langs))
+  (require 'tree-sitter-langs)
+  (global-tree-sitter-mode)
+
+  (remove-hook 'find-file-hook 'tree-sitter-startup:tmp)
+  (fmakunbound 'tree-sitter-startup:tmp))
+(add-hook 'find-file-hook 'tree-sitter-startup:tmp)
 #+end_src
 
 *** CANC /helm/
@@ -11240,7 +11469,7 @@ Switch the current window to the previous buffer."
 *** /operate-on-number/
 
 #+begin_src elisp
-(require 'operate-on-number)
+(require 'operate-on-number-autoloads)
 
 (defhydra hydra-operate (:foreign-keys nil)
   "OPERATE"
@@ -11265,6 +11494,13 @@ Switch the current window to the previous buffer."
 #+begin_src elisp
 (require 'avy)
 (require 'link-hint)
+
+(set-face-attribute 'avy-lead-face nil
+                    :bold nil
+                    :background "#b4002e")
+(set-face-attribute 'avy-lead-face-0 nil
+                    :bold nil
+                    :background "#2642df")
 
 (setq avy-dispatch-alist
       '((?M . avy-action-kill-move)
@@ -11333,9 +11569,10 @@ Switch the current window to the previous buffer."
   (interactive)
   (switch-to-completions)
   (let (avy-all-windows)
-    (avy-with avy-goto-char
-      (avy-jump "[\t\n]\\(?1:[^\t\n]+\\)"
-                :group 1))))
+    (when (avy-with avy-goto-char
+            (avy-jump "[\t\n]\\(?1:[^\t\n]+\\)"
+                      :group 1))
+      (choose-completion))))
 
 ;;;;;;;;;;
 ;; Keys ;;
@@ -12022,19 +12259,30 @@ Switch the current window to the previous buffer."
 *** /multiple-cursors/
 
 #+begin_src elisp
-(require 'multiple-cursors)
+(with-eval-after-load 'multiple-cursors
+  (setq mc/list-file (expand-file-name "cache/mc-lists.el" user-emacs-directory)))
 
-(setq mc/list-file (expand-file-name "cache/mc-lists.el" user-emacs-directory))
 ;; Add a cursor to each line in active region
-(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+(global-set-key (kbd "C-c m r") 'mc/edit-lines)
 
 ;; Add a cursor based on keywords in the buffer
 ;; (global-set-key (kbd "C->") 'mc/mark-next-like-this)
 ;; (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
 
-(global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
-(global-set-key (kbd "C->") #'mc/mark-next-like-this)
-(global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this-dwim)
+(global-set-key (kbd "C-c m p") #'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c m n") #'mc/mark-next-like-this)
+(global-set-key (kbd "C-c m a") #'mc/mark-all-like-this-dwim)
+
+(global-set-key (kbd "C-c m S") #'mc/mark-previous-symbol-like-this)
+(global-set-key (kbd "C-c m s") #'mc/mark-next-symbol-like-this)
+(global-set-key (kbd "C-c m M-s") #'mc/mark-all-symbols-like-this)
+(global-set-key (kbd "C-c m C-s") #'mc/mark-all-symbols-like-this-in-defun)
+
+(global-set-key (kbd "C-c m W") #'mc/mark-previous-word-like-this)
+(global-set-key (kbd "C-c m w") #'mc/mark-next-word-like-this)
+(global-set-key (kbd "C-c m M-w") #'mc/mark-all-words-like-this)
+(global-set-key (kbd "C-c m C-w") #'mc/mark-all-words-like-this-in-defun)
+
 (global-set-key (kbd "C-S-<mouse-1>") #'mc/add-cursor-on-click)
 
 
@@ -12172,6 +12420,58 @@ Switch the current window to the previous buffer."
 #+end_src
 
 ** Not always required
+*** /string-inflection/
+
+#+begin_src elisp
+(global-set-key (kbd "C-c C-u") 'string-inflection-all-cycle)
+#+end_src
+
+*** /rotate-text/
+
+#+begin_src elisp
+(require 'rotate-text-autoloads)
+(global-set-key (kbd "C-c C-+") 'rotate-text)
+(global-set-key (kbd "C-c C--") 'rotate-text-backward)
+#+end_src
+
+*** /grugru/
+
+#+begin_src elisp
+(with-eval-after-load 'grugru
+  (eval-when-compile
+    (require 'grugru))
+  (grugru-default-setup)
+  (grugru-define-multiple
+   (rust-mode
+    (non-alphabet "&&" "||")
+    (non-alphabet "&" "|")
+    (non-alphabet "+" "-")
+    (non-alphabet "*" "/" "%")
+    (non-alphabet "+=" "-=")
+    (non-alphabet "*=" "/=" "%=")
+    (non-alphabet "&=" "|=" "^=")
+    (non-alphabet ">>=" "<<=")
+    (non-alphabet "++" "--")
+    (non-alphabet "==" "!=")
+    (non-alphabet "<" "<=" ">" ">=")
+    (symbol "true" "false")
+    (symbol "break" "continue"))
+   (python-mode
+    (non-alphabet "+" "-")
+    (non-alphabet "*" "/" "%")
+    (non-alphabet "+=" "-=")
+    (non-alphabet "*=" "/=" "%=")
+    (non-alphabet "&=" "|=" "^=")
+    (non-alphabet ">>=" "<<=")
+    (non-alphabet "==" "!=")
+    (non-alphabet "<" "<=" ">" ">=")
+    (symbol "True" "False" "None")
+    (symbol "break" "continue"))
+   ))
+
+(global-set-key (kbd "C-;") #'grugru)
+#+end_src
+
 *** /syslog-mode/
 
 #+begin_src elisp
@@ -12209,9 +12509,10 @@ Switch the current window to the previous buffer."
 (global-set-key (kbd "M-g f") 'fd-dired)
 #+end_src
 
-*** /rg/
+*** /rg/ (before consult)
 
 #+begin_src elisp
+(global-set-key (kbd "M-g R") 'rg-menu)
 (global-set-key (kbd "M-g r") 'rg-menu)
 (with-eval-after-load 'rg
   (rg-enable-default-bindings (kbd "M-g a"))
@@ -12226,72 +12527,97 @@ Switch the current window to the previous buffer."
   (add-hook 'rg-mode-hook 'rg-mode-hideshow-config))
 #+end_src
 
-*** CANC /consult/ (after rg and fd-dired)
-:PROPERTIES:
-:header-args:elisp: :tangle no
-:END:
+*** /consult/ (when installed, after rg and fd-dired)
 
 #+begin_src elisp
-(with-eval-after-load 'consult
-  ;; (add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
-  (define-key completion-list-mode-map " " 'consult-preview-at-point)
-  (setq consult-project-root-function 'project-root-directory
-        consult-find-command "fdfind -H --color=never --full-path OPTS ARG"
-        consult-ripgrep-command
-        "rg --hidden --null --line-buffered --color=ansi --max-columns=1000 --no-heading --line-number OPTS . -e ARG"
-        consult--gc-threshold gc-cons-threshold
-        consult-async-split-style 'comma)
+(when (locate-library "consult")
+  (with-eval-after-load 'consult
+    ;; (add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
+    (define-key completion-list-mode-map " " 'consult-preview-at-point)
+    (setq consult-project-root-function 'project-root-directory
+          consult-find-args "find . -not ( -wholename */.* -prune -readable )"
+          consult-ripgrep-args
+          "rg --hidden --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number ."
+          consult--gc-threshold gc-cons-threshold
+          consult-async-split-style 'comma)
 
-  (defun consult-ripgrep-ext ()
-    (interactive)
-    (let ((file-name (buffer-file-name)))
-      (if file-name
-          (let* ((file-ext (file-name-extension file-name))
-                 (file-type
-                  (car
-                   (split-string
-                    (--min-by
-                     (>= (length it) (length other))
-                     (or (split-string
-                          (shell-command-to-string
-                           (concat
-                            "rg --type-list | rg ' \\*." file-ext "(,|$)'"))
-                          "\n" t)
-                         (user-error "Type not found in ripgrep")))
-                    ":")))
-                 (consult-ripgrep-command
-                  (concat "rg -t"
-                          file-type
-                          (substring consult-ripgrep-command 2))))
-            (call-interactively 'consult-ripgrep))
-        (call-interactively 'consult-ripgrep)))))
+    ;; (defun consult-ripgrep-ext ()
+    ;;   (interactive)
+    ;;   (let ((file-name (buffer-file-name)))
+    ;;     (if file-name
+    ;;         (let* ((file-ext (file-name-extension file-name))
+    ;;                (file-type
+    ;;                 (car
+    ;;                  (split-string
+    ;;                   (--min-by
+    ;;                    (>= (length it) (length other))
+    ;;                    (or (split-string
+    ;;                         (shell-command-to-string
+    ;;                          (concat
+    ;;                           "rg --type-list | rg ' \\*." file-ext "(,|$)'"))
+    ;;                         "\n" t)
+    ;;                        (user-error "Type not found in ripgrep")))
+    ;;                   ":")))
+    ;;                (consult-ripgrep-command
+    ;;                 (concat "rg -t"
+    ;;                         file-type
+    ;;                         (substring consult-ripgrep-command 2))))
+    ;;           (call-interactively 'consult-ripgrep))
+    ;;       (call-interactively 'consult-ripgrep))))
 
-(autoload 'consult-ripgrep-ext "consult" nil t)
-;; (global-set-key (kbd "M-y") 'consult-yank-pop)
-(global-set-key (kbd "M-g f") 'consult-find)
-(global-set-key (kbd "M-g e") 'consult-error)
-(global-set-key (kbd "M-g R") 'consult-ripgrep)
-(global-set-key (kbd "M-g r") 'consult-ripgrep-ext)
-(global-set-key (kbd "M-g O") 'consult-outline)
-(global-set-key (kbd "M-g o") 'consult-multi-occur)
-(global-set-key (kbd "M-g m") 'consult-mark)
-(global-set-key (kbd "M-g M") 'consult-global-mark)
-(global-set-key (kbd "M-g i") 'consult-imenu)
-(global-set-key (kbd "M-g I") 'consult-project-imenu)
-(global-set-key (kbd "M-g M-g") 'consult-goto-line)
-(global-set-key (kbd "M-g M-l") 'consult-line)
-(global-set-key (kbd "M-g C-k") 'consult-kmacro)
-;; (global-set-key (kbd "C-x b") 'consult-buffer)
-;; (global-set-key (kbd "C-x 4 b") 'consult-buffer-other-window)
-;; (global-set-key (kbd "C-x 5 b") 'consult-buffer-other-frame)
-(global-set-key (kbd "C-x r x") 'consult-register)
-(global-set-key (kbd "C-x r b") 'consult-bookmark)
+    (defvar consult--fd-command
+      (or (executable-find "fdfind")
+          "fd"))
+    (defun consult--fd-builder (input)
+      (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+                   (`(,re . ,hl) (funcall consult--regexp-compiler
+                                          arg 'extended)))
+        (when re
+          (list :command (append
+                          (list consult--fd-command
+                                "--hidden" "--color=never" "--full-path"
+                                (consult--join-regexps re 'extended))
+                          opts)
+                :highlight hl))))
+    (defun consult-fd (&optional dir initial)
+      (interactive "P")
+      (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
+             (default-directory (cdr prompt-dir)))
+        (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial)))))
+
+  (autoload 'consult-fd "consult" nil t)
+  ;; (autoload 'consult-ripgrep-ext "consult" nil t)
+  (global-set-key (kbd "M-y") 'consult-yank-pop)
+  (global-set-key (kbd "M-g F") 'consult-find)
+  (global-set-key (kbd "M-g f") 'consult-fd)
+  (global-set-key (kbd "M-g l") 'consult-locate)
+  (global-set-key (kbd "M-g e") 'consult-error)
+  (global-set-key (kbd "M-g r") 'consult-ripgrep)
+  ;;(global-set-key (kbd "M-g R") 'consult-ripgrep-ext)
+  (global-set-key (kbd "M-g O") 'consult-outline)
+  (global-set-key (kbd "M-g o") 'consult-multi-occur)
+  (global-set-key (kbd "M-g m") 'consult-mark)
+  (global-set-key (kbd "M-g M") 'consult-global-mark)
+  (global-set-key (kbd "M-g i") 'consult-imenu)
+  (global-set-key (kbd "M-g I") 'consult-project-imenu)
+  (global-set-key (kbd "M-g M-g") 'consult-goto-line)
+  (global-set-key (kbd "M-g M-l") 'consult-line)
+  (global-set-key (kbd "M-g C-k") 'consult-kmacro)
+  (global-set-key (kbd "M-g b") 'consult-buffer)
+  (global-set-key (kbd "M-g 4 b") 'consult-buffer-other-window)
+  (global-set-key (kbd "M-g 5 b") 'consult-buffer-other-frame)
+  (global-set-key (kbd "C-x r x") 'consult-register)
+  (global-set-key (kbd "C-x r b") 'consult-bookmark))
 #+end_src
 
 *** /embark/
 
 #+begin_src elisp
 (with-eval-after-load 'embark
+  (when (locate-library "embark-consult")
+    (with-eval-after-load 'consult
+      (require 'embark-consult)))
+  
   (add-to-list 'display-buffer-alist
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
@@ -12310,8 +12636,8 @@ Switch the current window to the previous buffer."
       (embark-act))))
 
 (autoload 'embark-act-noquit "embark" nil t)
-(global-set-key (kbd "C-S-a") 'embark-act)
-(global-set-key (kbd "C-S-e") 'embark-act-noquit)
+(global-set-key (kbd "C-.") 'embark-act)
+(global-set-key (kbd "C-:") 'embark-act-noquit)
 #+end_src
 
 *** Language server protocol /lsp-mode/                            :programming:
@@ -12937,7 +13263,8 @@ Switch the current window to the previous buffer."
 
   (set-face-attribute 'org-block-begin-line nil
                       ;; :foreground "#388EFF" :background "#222210")
-                      :underline "#A7A6AA")
+                      :overline nil
+                      :underline nil)  ;; "#A7A6AA")
 
   (set-face-attribute 'org-block nil
                       :background "#070000")
@@ -12945,7 +13272,7 @@ Switch the current window to the previous buffer."
   (set-face-attribute 'org-block-end-line nil
                       ;; :foreground "#388EFF" :background "#222210")
                       :underline nil
-                      :overline "#A7A6AA")
+                      :overline nil)  ;; "#A7A6AA")
 
   (set-face-attribute 'org-code nil
                       :foreground "#bbff95")
@@ -12975,8 +13302,8 @@ Switch the current window to the previous buffer."
           (?N . "#28B463")
           (?O . "#239B56"))
         org-emphasis-alist
-        '(("*" (bold :foreground "#AAF") bold)
-          ("/" (italic :foreground "#FF8") italic)
+        '(("*" (:foreground "#AAF") bold)
+          ("/" (:foreground "#FF8") italic)
           ("_" underline)
           ("=" org-verbatim verbatim)
           ("~" org-code)
@@ -13053,11 +13380,6 @@ Switch the current window to the previous buffer."
   (add-to-list 'org-modules 'org-habit)
   (add-to-list 'org-modules 'org-mouse)
 
-  ;; ;;;;;;; ;;
-  ;; Exports ;;
-  ;; ;;;;;;; ;;
-  (add-to-list 'org-export-backends 'taskjuggler)
-
   ;; ;;;;;;;;;;;;;;; ;;
   ;; Startup options ;;
   ;; ;;;;;;;;;;;;;;; ;;
@@ -13073,7 +13395,6 @@ Switch the current window to the previous buffer."
         org-export-with-sub-superscripts '{}
         org-export-allow-bind-keywords nil
         org-tags-column -80
-        org-agenda-tags-column -90
         org-cycle-include-plain-lists t ;; 'integrate ;; list initally folded
         org-tags-sort-function #'string>
         org-ellipsis "▼"
@@ -13112,7 +13433,6 @@ Switch the current window to the previous buffer."
    '((C          . t)
      (awk        . t)
      (calc       . t)
-     (csharp     . t)
      (ditaa      . t)
      (dot        . t)
      (emacs-lisp . t)
@@ -13218,7 +13538,7 @@ Switch the current window to the previous buffer."
         org-log-into-drawer "LOGSTATE"
         org-todo-keywords
         '(;; Basic
-          (sequence "TODO(t)" "NEXT(n)" "STAR(s!)" "|" "DONE(d!)")
+          (sequence "TODO(t!)" "NEXT(n!)" "STAR(s!)" "|" "DONE(d!)")
           ;; Actions
           (sequence "UNDO(u!)" "VERI(v@/!)" "|" "ENOU(e@/!)" "DELE(l@/!)")
           ;; States
@@ -13238,7 +13558,7 @@ Switch the current window to the previous buffer."
         org-clock-clocked-in-display 'frame-title
         org-clock-heading-function 'org-abbrev-es-heading)
 
-  (setcdr (assoc 'state org-log-note-headings) "%-6S --> %-6s at %t")
+  (setcdr (assoc 'state org-log-note-headings) "State %-6s <- %-6S %t")
 
   ;; ;;;;;;;;;;;;;;; ;;
   ;; Convert options ;;
@@ -13725,11 +14045,6 @@ blockquote {
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ;;
   (require 'ox-twbs)
 
-  ;; ;;;;;;;;;;;;;;;;;;; ;;
-  ;; Convert taskjuggler ;;
-  ;; ;;;;;;;;;;;;;;;;;;; ;;
-  (require 'ox-taskjuggler)
-
   ;; ;;;;;;; ;;
   ;; Publish ;;
   ;; ;;;;;;; ;;
@@ -13743,6 +14058,7 @@ blockquote {
 
   (delete '("\\.pdf\\'" . default) org-file-apps)
 
+  (add-to-list 'org-file-apps '("\\.pdf\\'" . "evince \"%s\""))
   (add-to-list 'org-file-apps '("\\.pdf::\\([0-9]+\\)\\'" . "evince \"%s\" -p %1"))
   (add-to-list 'org-file-apps '("\\.png\\'" . "eog \"%s\""))
 
@@ -13762,11 +14078,10 @@ blockquote {
   ;;            "~/Prog/org")
   ;;          when (file-exists-p folder)
   ;;          return folder)
-  (require 'org-expiry)
-  (org-expiry-insinuate)
-
-  (when (boundp 'personal-notes-directory)
-    (setq ))
+  ;; [ OBSOLETE
+  ;;(require 'org-expiry)
+  ;;(org-expiry-insinuate)
+  ;; ]
 
   (require 'org-agenda-property)
   (setq org-directory "~/Prog/org/"
@@ -13789,17 +14104,6 @@ blockquote {
         org-annotate-file-add-search nil
         ;; <property>
         org-agenda-property-list '("REQUIRED")
-        ;; <Calendar>
-        calendar-week-start-day 1
-        calendar-day-name-array     ["domingo" "lunes" "martes"
-                                     "miércoles" "jueves" "viernes" "sábado"]
-        calendar-day-abbrev-array   ["dom" "lun" "mar" "mié" "jue" "vie" "sáb"]
-        calendar-day-header-array   ["D" "L" "M" "X" "J" "V" "S"]
-        calendar-month-name-array   ["Enero" "Febrero" "Marzo" "Abril" "Mayo"
-                                     "Junio" "Julio" "Agosto" "Septiembre"
-                                     "Octubre" "Noviembre" "Diciembre"]
-        calendar-month-abbrev-array ["Ene" "Feb" "Mar" "Abr" "May" "Jun"
-                                     "Jul" "Ago" "Sep" "Oct" "Nov" "Dic"]
         ;; <Agenda includes>
         org-agenda-skip-deadline-prewarning-if-scheduled t
         org-agenda-skip-scheduled-if-deadline-is-shown t
@@ -13807,6 +14111,7 @@ blockquote {
         ;; org-agenda-include-diary t
         ;; org-agenda-include-inactive-timestamps t
         ;; <Agenda format>
+        org-agenda-tags-column -80
         org-agenda-time-grid
         '((daily today require-timed remove-match)
           (800 1000 1200 1400 1600 1800 2000)
@@ -13832,7 +14137,11 @@ blockquote {
           (0.0 . default))
         org-deadline-warning-days 15
         org-agenda-start-on-weekday 1
+        ;; <Habits>
         org-habit-show-habits-only-for-today t
+        org-habit-show-all-today t
+        org-habit-preceding-days 14
+        org-habit-graph-column 44
         ;; <Agenda commands>
         org-agenda-custom-commands
         '(("h" "[h]abits" 
@@ -14501,6 +14810,7 @@ Throw an error when trying to set a property with an invalid name."
   (require 'org-super-agenda)
 
   (setq org-super-agenda-fontify-whole-header-line t
+        org-super-agenda-unmatched-name "Tareas"
         org-super-agenda-groups
         '((:name "Horario"
                  :time-grid t
@@ -14536,9 +14846,9 @@ Throw an error when trying to set a property with an invalid name."
 
   (setq appt-disp-window-function 'org-appt-disp-function
         ;; appt-delete-window-function (lambda () t)
-        appt-display-interval 5
-        appt-message-warning-time (* 2 appt-display-interval)
-        appt-display-duration 12
+        appt-display-interval 2
+        appt-message-warning-time 1
+        appt-display-duration 1
         appt-display-diary nil
         diary-file "~/.emacs.d/cache/diary"
         ;; delete old appointments
@@ -14565,6 +14875,7 @@ Throw an error when trying to set a property with an invalid name."
   (advice-add 'org-deadline :after #'org-appt-update)
   (advice-add 'org-schedule :after #'org-appt-update)
   (advice-add 'org-agenda-schedule :after #'org-appt-update)
+  (advice-add 'org-time-stamp :after #'org-appt-update)
   (run-at-time "00:00" (* 24 3600) 'org-appt-update)
 
   (defvar org-appt-disp-functions nil)
@@ -14573,6 +14884,17 @@ Throw an error when trying to set a property with an invalid name."
   (if (not (executable-find "termux-notification"))
       (cl-block 'find
         (cond
+         ((fboundp 'notifications-notify)
+          (defun org-appt-function-xmessage (msg)
+            (notifications-notify
+             :title "Org Tasks"
+             :body msg
+             :timeout 0
+             :urgency 'critical)
+            (org-appt-start-process "yad disp" "yad" nil "--text" msg)))
+         ((executable-find "yad")
+          (defun org-appt-function-xmessage (msg)
+            (org-appt-start-process "yad disp" "yad" nil "--text" msg)))
          ((executable-find "gxmessage")
           (defun org-appt-function-xmessage (msg)
             (org-appt-start-process "gxmessage disp" "gxmessage" nil msg)))
@@ -14613,7 +14935,7 @@ Throw an error when trying to set a property with an invalid name."
 
 
   (defun org-appt-format-and-calls (min-to-app new-time appt-msg)
-    (let ((msg (concat min-to-app " minutos para " appt-msg)))
+    (let ((msg (concat min-to-app " minuto(s) para \n* " appt-msg)))
       (dolist (fun org-appt-disp-functions)
         (funcall fun msg))))
 
@@ -15252,6 +15574,13 @@ If run interactively, get ENTRY from context."
 *** /docker/
 
 #+begin_src elisp
+(with-eval-after-load 'docker-core
+  (setq docker-command (or (executable-find "podman")
+                           "docker")))
+(with-eval-after-load 'docker-compose
+  (setq docker-compose-command (or (executable-find "podman-compose")
+                                   "docker-compose")))
+
 (dolist (el-file '(docker docker-container))
   (with-eval-after-load el-file
     (message "Importing docker-config")
@@ -15269,8 +15598,8 @@ If run interactively, get ENTRY from context."
       ("-t" "Tail" "--tail " read-string)
       ("-u" "Until" "--until " read-string)
       ("-T" "Timestamps" "--timestamps")]
-     [:description docker-utils-generic-actions-heading
-                   ("L" "Logs" docker-utils-generic-action-async)])
+     [:description docker-generic-action-description
+      ("L" "Logs" docker-generic-action-with-buffer)])
 
     ;; (setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
     ;;       docker-container-logs-popup
@@ -15649,16 +15978,17 @@ nil."
 *** /web-mode/
 
 #+begin_src elisp
-(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
-
-(add-to-list 'auto-mode-alist '("\\.tpl\\'" . web-mode))
+(setq auto-mode-alist (nconc auto-mode-alist
+                             '(("\\.phtml\\'" . web-mode)
+                               ("\\.tpl\\.php\\'" . web-mode)
+                               ("\\.[agj]sp\\'" . web-mode)
+                               ("\\.as[cp]x\\'" . web-mode)
+                               ("\\.erb\\'" . web-mode)
+                               ("\\.mustache\\'" . web-mode)
+                               ("\\.djhtml\\'" . web-mode)
+                               ("\\.html?\\'" . web-mode)
+                               ("\\.tpl\\'" . web-mode)
+                               ("\\.hbs\\'" . web-mode))))
 (with-eval-after-load 'web-mode
   (message "Importing web-config")
 
@@ -16154,7 +16484,8 @@ esac
 (global-set-key (kbd "C-M-<return>") 'vterm)
 (global-set-key (kbd "C-x 4 RET") 'vterm-other-window)
 (with-eval-after-load 'vterm
-  (setq vterm-buffer-name-string "*vterm %s*"))
+  (setq vterm-buffer-name-string "*vterm %s*"
+        vterm-max-scrollback 20000))
 #+end_src
 
 *** /async/
@@ -16671,89 +17002,10 @@ file under the current directory."
              args)
             posns))))
 
-(cl-eval-when 'compile
-  (require 'esh-util)) ;; eshell-condition-case
-(with-eval-after-load 'esh-mode
-  ;;;; OVERRIDDEN
-  (defun eshell-send-input (&optional use-region queue-p no-newline)
-    "Send the input received to Eshell for parsing and processing.
-After `eshell-last-output-end', sends all text from that marker to
-point as input.  Before that marker, calls `eshell-get-old-input' to
-retrieve old input, copies it to the end of the buffer, and sends it.
-
-If USE-REGION is non-nil, the current region (between point and mark)
-will be used as input.
-
-If QUEUE-P is non-nil, input will be queued until the next prompt,
-rather than sent to the currently active process.  If no process, the
-input is processed immediately.
-
-If NO-NEWLINE is non-nil, the input is sent without an implied final
-newline."
-    (interactive "P")
-    ;; Note that the input string does not include its terminal newline.
-    (let ((proc-running-p (and (eshell-interactive-process)
-                               (not queue-p)))
-          (inhibit-point-motion-hooks t)
-          (inhibit-modification-hooks t))
-      (unless (and proc-running-p
-                   (not (eq (process-status
-                             (eshell-interactive-process))
-                            'run)))
-        (if (or proc-running-p
-                (>= (point) eshell-last-output-end))
-            (goto-char (point-max))
-          (let ((copy (eshell-get-old-input use-region)))
-            (goto-char eshell-last-output-end)
-            (insert-and-inherit copy)))
-        (unless (or no-newline
-                    (and eshell-send-direct-to-subprocesses
-                         proc-running-p))
-          (insert-before-markers-and-inherit ?\n))
-        (if proc-running-p
-            (progn
-              (eshell-update-markers eshell-last-output-end)
-              (if (or eshell-send-direct-to-subprocesses
-                      (= eshell-last-input-start eshell-last-input-end))
-                  (unless no-newline
-                    (process-send-string (eshell-interactive-process) "\n"))
-                (process-send-region (eshell-interactive-process)
-                                     eshell-last-input-start
-                                     eshell-last-input-end)))
-          (run-hooks 'eshell-input-filter-functions))) ;; +
-      (if (= eshell-last-output-end (point))
-          (run-hooks 'eshell-post-command-hook)
-        (let (input)
-          (eshell-condition-case err
-              (progn
-                (setq input (buffer-substring-no-properties
-                             eshell-last-output-end (1- (point))))
-                (run-hook-with-args 'eshell-expand-input-functions
-                                    eshell-last-output-end (1- (point)))
-                (let ((cmd (eshell-parse-command-input
-                            eshell-last-output-end (1- (point)))))
-                  (when cmd
-                    (eshell-update-markers eshell-last-output-end)
-                    (setq input (buffer-substring-no-properties
-                                 eshell-last-input-start
-                                 (1- eshell-last-input-end)))
-                    (run-hooks 'eshell-input-filter-functions)
-                    (and (catch 'eshell-terminal
-                           (ignore
-                            (if (eshell-invoke-directly cmd)
-                                (eval cmd)
-                              (eshell-eval-command cmd input))))
-                         (eshell-life-is-too-much)))))
-            (quit
-             (eshell-reset t)
-             (run-hooks 'eshell-post-command-hook)
-             (signal 'quit nil))
-            (error
-             (eshell-reset t)
-             (eshell-interactive-print
-              (concat (error-message-string err) "\n"))
-             (run-hooks 'eshell-post-command-hook)
-             (insert-and-inherit input))))))))
+(with-eval-after-load 'em-hist
+  (defun end-of-buffer-advice (&rest _args)
+    (end-of-buffer))
+  (advice-add 'eshell-previous-matching-input-from-input :before 'end-of-buffer-advice))
 
 (with-eval-after-load 'em-term
   ;;;; OVERRIDDEN
@@ -17652,7 +17904,10 @@ current `default-directory'."
   (advice-add 'move-to-column :around #'avoid-whitespace-mode-advice))
 #+end_src
 
-** /exwm/
+** CANC /exwm/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'exwm-manage
@@ -17831,7 +18086,10 @@ current `default-directory'."
             (run-hooks 'exwm-manage-finish-hook)))))))
 #+end_src
 
-** /xelb/
+** CANC /xelb/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'xcb
@@ -18120,7 +18378,68 @@ This function is part of the `orderless' completion style."
 #+end_src
 
 * Improvements
-** Completions
+** /vertico-mode/
+
+#+begin_src elisp
+(with-eval-after-load 'vertico-grid
+  (defun vertico-grid--arrange-candidates ()
+    "Arrange candidates."
+    (when (<= vertico--index 0)
+      (let ((cand vertico--candidates) (w 1) (n 0))
+        (while (and cand (< n vertico-grid-lookahead))
+          (setq w (max w (length (car cand))) n (1+ n))
+          (pop cand))
+        (setq vertico-grid--columns
+              (max 1 (min vertico-grid-max-columns
+                          (floor (window-width) (+ w (length vertico-grid-separator))))))))
+    (let* ((sep (length vertico-grid-separator))
+           (count (* vertico-grid-rows vertico-grid--columns))
+           (start (* count (floor (max 0 vertico--index) count)))
+           (width (- (/ (window-width) vertico-grid--columns) sep))
+           (cands
+            (seq-map-indexed (lambda (cand index)
+                               (setq cand (mapconcat 'identity cand " ")) ;; +
+                               (cl-incf index start)
+                               ;; (when (string-match-p "\n" cand) ;; -
+                               ;;   (setq cand (vertico--truncate-multiline cand width))) ;; -
+                               (truncate-string-to-width
+                                (string-trim
+                                 (replace-regexp-in-string
+                                  "[ \t]+"
+                                  (lambda (x) (apply #'propertize " " (text-properties-at 0 x)))
+                                  (vertico--format-candidate cand "" "" index start)))
+                                width))
+                             (vertico--affixate ;; +
+                              (funcall vertico--highlight-function
+                                       (seq-subseq vertico--candidates start
+                                                   (min (+ start count)
+                                                        vertico--total)))
+                              ) ;; +
+                             ))
+           (width (make-vector vertico-grid--columns 0)))
+      (dotimes (col vertico-grid--columns)
+        (dotimes (row vertico-grid-rows)
+          (aset width col (max
+                           (aref width col)
+                           (string-width (or (nth (+ row (* col vertico-grid-rows)) cands) ""))))))
+      (dotimes (col (1- vertico-grid--columns))
+        (cl-incf (aref width (1+ col)) (+ (aref width col) sep)))
+      (cl-loop for row from 0 to (1- vertico-grid-rows) collect
+               (let ((line (list "\n")))
+                 (cl-loop for col from (1- vertico-grid--columns) downto 0 do
+                          (when-let (cand (nth (+ row (* col vertico-grid-rows)) cands))
+                            (push cand line)
+                            (when (> col 0)
+                              (push vertico-grid-separator line)
+                              (push (propertize " " 'display
+                                                `(space :align-to (+ left ,(aref width (1- col))))) line))))
+                 (string-join line))))))
+#+end_src
+
+** CANC Completions
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 ;;;; OVERRIDDEN
@@ -18137,7 +18456,7 @@ This function is part of the `orderless' completion style."
                           (when-let ((it (car (member candidate completions))))
                             (add-face-text-property
                               0 (length it)
-                              '(:weight ultra-bold) nil it)
+                              '(:weight ultra-bold :foreground "#00B4AB") nil it)
                             (push
                              it
                              result)))
@@ -18485,7 +18804,10 @@ matches exist."
             (concat determ " [Matched]")))))))
 #+end_src
 
-** /exwm/
+** CANC /exwm/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'exwm-layout
@@ -18734,7 +19056,10 @@ specifying a variable of the same value."
       (org-babel-eval cmd body))))
 #+end_src
 
-** /docker/
+** CANC /docker/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 ;; (with-eval-after-load 'docker-utils
