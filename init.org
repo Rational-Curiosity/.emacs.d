@@ -10178,7 +10178,7 @@ if __name__ == \"__main__\":
   (define-key vertico-map (kbd "C-o") 'orderless-match-components-cycle)
   (define-key vertico-map (kbd "M-z") 'vertico-quick-exit)
 
-  (vertico-grid-mode)
+  ;;(vertico-grid-mode)
   (vertico-mode))
 #+end_src
 
@@ -13214,7 +13214,7 @@ Switch the current window to the previous buffer."
   (font-lock-add-keywords
    'org-mode
    '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?: \\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
-      1 'org-checkbox-todo prepend))
+      0 'org-checkbox-todo append))
    'append)
 
   (defface org-checkbox-partial
@@ -13224,7 +13224,7 @@ Switch the current window to the previous buffer."
   (font-lock-add-keywords
    'org-mode
    '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:-\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
-      1 'org-checkbox-partial prepend))
+      0 'org-checkbox-partial append))
    'append)
 
   (defface org-checkbox-done
@@ -13234,7 +13234,7 @@ Switch the current window to the previous buffer."
   (font-lock-add-keywords
    'org-mode
    '(("^[ \t]*\\(?:[-+*]\\|[0-9]+[).]\\)[ \t]+\\(\\(?:\\[@\\(?:start:\\)?[0-9]+\\][ \t]*\\)?\\[\\(?:X\\|\\([0-9]+\\)/\\2\\)\\][^\n]*\n\\)"
-      1 'org-checkbox-done prepend))
+      0 'org-checkbox-done append))
    'append)
 
 
@@ -13555,7 +13555,7 @@ Switch the current window to the previous buffer."
         org-clock-string-limit 45
         org-clock-in-resume t
         org-clock-persist t
-        org-clock-clocked-in-display 'frame-title
+        org-clock-clocked-in-display 'mode-line
         org-clock-heading-function 'org-abbrev-es-heading)
 
   (setcdr (assoc 'state org-log-note-headings) "State %-6s <- %-6S %t")
@@ -15581,59 +15581,75 @@ If run interactively, get ENTRY from context."
   (setq docker-compose-command (or (executable-find "podman-compose")
                                    "docker-compose")))
 
-(dolist (el-file '(docker docker-container))
-  (with-eval-after-load el-file
-    (message "Importing docker-config")
-    (eval-when-compile
-      (require 'docker-utils))
+(with-eval-after-load 'docker-container
+  (message "Importing docker-config")
+  (eval-when-compile
+    (require 'docker-utils))
+  (setq docker-container-columns
+        '((:name "Id" :width 12 :template "{{ json .ID }}" :sort nil :format nil)
+          (:name "Image" :width 6 :template "{{ json .Image }}" :sort nil :format nil)
+          (:name "Command" :width 8 :template "{{ json .Command }}" :sort nil :format nil)
+          (:name "Created" :width 11 :template "{{ json .CreatedAt }}" :sort nil :format (lambda (x) (format-time-string "%F %T" (date-to-time x))))
+          (:name "Status" :width 14 :template "{{ json .Status }}" :sort nil :format (lambda (s) (replace-regexp-in-string "^[^ ]+" (lambda (s) (substring s 0 2)) s)))
+          (:name "Ports" :width 19 :template "{{ json .Ports }}" :sort nil :format nil)
+          (:name "Names" :width 10 :template "{{ json .Names }}" :sort nil :format nil)))
+  (defun docker-container-status-face (status)
+    "Return the correct face according to STATUS."
+    (cond
+     ((s-starts-with? "Up" status)
+      'docker-face-status-up)
+     ((s-starts-with? "Ex" status)
+      'docker-face-status-down)
+     (t
+      'docker-face-status-other)))
 
-    (docker-utils-transient-define-prefix
-     docker-container-logs ()
-     "Transient for showing containers logs."
-     :man-page "docker-container-logs"
-     :value '("--tail 150" "-f" "--timestamps")
-     ["Arguments"
-      ("-f" "Follow" "-f")
-      ("-s" "Since" "--since " read-string)
-      ("-t" "Tail" "--tail " read-string)
-      ("-u" "Until" "--until " read-string)
-      ("-T" "Timestamps" "--timestamps")]
-     [:description docker-generic-action-description
-      ("L" "Logs" docker-generic-action-with-buffer)])
+  (docker-utils-transient-define-prefix
+   docker-container-logs ()
+   "Transient for showing containers logs."
+   :man-page "docker-container-logs"
+   :value '("--tail 150" "-f" "--timestamps")
+   ["Arguments"
+    ("-f" "Follow" "-f")
+    ("-s" "Since" "--since " read-string)
+    ("-t" "Tail" "--tail " read-string)
+    ("-u" "Until" "--until " read-string)
+    ("-T" "Timestamps" "--timestamps")]
+   [:description docker-generic-action-description
+                 ("L" "Logs" docker-generic-action-with-buffer)])
 
-    ;; (setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
-    ;;       docker-container-logs-popup
-    ;;       (list :variable 'docker-container-logs-arguments
-    ;;             :man-page "docker-logs"
-    ;;             :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
-    ;;             :options  '((?T "Tail" "--tail="))
-    ;;             :actions  '((?L "Logs" docker-container-logs-selection))
-    ;;             :default-arguments '("-f" "-t" "--tail=150")
-    ;;             :setup-function #'docker-utils-setup-popup))
-    ;; (magit-define-popup docker-container-logs-popup
-    ;;   "Popup for showing containers logs."
-    ;;   'docker-container
-    ;;   :man-page "docker-logs"
-    ;;   :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
-    ;;   :options  '((?T "Tail" "--tail="))
-    ;;   :actions  '((?L "Logs" docker-container-logs-selection))
-    ;;   :default-arguments '("-f" "-t" "--tail=150")
-    ;;   :setup-function #'docker-utils-setup-popup)
+  ;; (setq docker-container-logs-arguments '("-f" "-t" "--tail=150")
+  ;;       docker-container-logs-popup
+  ;;       (list :variable 'docker-container-logs-arguments
+  ;;             :man-page "docker-logs"
+  ;;             :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
+  ;;             :options  '((?T "Tail" "--tail="))
+  ;;             :actions  '((?L "Logs" docker-container-logs-selection))
+  ;;             :default-arguments '("-f" "-t" "--tail=150")
+  ;;             :setup-function #'docker-utils-setup-popup))
+  ;; (magit-define-popup docker-container-logs-popup
+  ;;   "Popup for showing containers logs."
+  ;;   'docker-container
+  ;;   :man-page "docker-logs"
+  ;;   :switches '((?f "Follow" "-f") (?t "Timestamps" "-t"))
+  ;;   :options  '((?T "Tail" "--tail="))
+  ;;   :actions  '((?L "Logs" docker-container-logs-selection))
+  ;;   :default-arguments '("-f" "-t" "--tail=150")
+  ;;   :setup-function #'docker-utils-setup-popup)
 
 ;;;;;;;;;;
-;; Keys ;;
+  ;; Keys ;;
 ;;;;;;;;;;
-    ;; (dolist (map-symbol '(docker-container-mode-map
-    ;;                       docker-image-mode-map
-    ;;                       docker-machine-mode-map
-    ;;                       docker-network-mode-map
-    ;;                       docker-volume-mode-map))
-    ;;   (let ((map (eval map-symbol)))
-    ;;     ;; (with-eval-after-load (intern (replace-regexp-in-string "-mode-map" "" (symbol-name map-symbol) t 'literal))
-    ;;     (modal-add-first-parent map)
-    ;;     ;; )
-    ;;     ))
-    ))
+  ;; (dolist (map-symbol '(docker-container-mode-map
+  ;;                       docker-image-mode-map
+  ;;                       docker-machine-mode-map
+  ;;                       docker-network-mode-map
+  ;;                       docker-volume-mode-map))
+  ;;   (let ((map (eval map-symbol)))
+  ;;     ;; (with-eval-after-load (intern (replace-regexp-in-string "-mode-map" "" (symbol-name map-symbol) t 'literal))
+  ;;     (modal-add-first-parent map)
+  ;;     ;; )
+  ;;     ))
+  )
 #+end_src
 
 *** /transient/
@@ -18279,7 +18295,7 @@ This function is part of the `orderless' completion style."
                pactl emms-volume-pulse-sink (if (> 0 amount "" "+")) amount)))))
 #+end_src
 
-*** /ox-mediawiki/                                                    :markdown:
+** /ox-mediawiki/                                                     :markdown:
 
 #+begin_src elisp
 (with-eval-after-load 'ox-mediawiki
@@ -18377,8 +18393,38 @@ This function is part of the `orderless' completion style."
     tree))
 #+end_src
 
+** CANC /org-babel/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
+
+Included /-T/ argument in alacritty
+
+#+begin_src elisp
+(with-eval-after-load 'ob-screen
+;;;; OVERRIDDEN
+  (defun org-babel-prep-session:screen (_session params)
+    "Prepare SESSION according to the header arguments specified in PARAMS."
+    (let* ((session (cdr (assq :session params)))
+           (cmd (cdr (assq :cmd params)))
+           (terminal (cdr (assq :terminal params)))
+           (screenrc (cdr (assq :screenrc params)))
+           (process-name (concat "org-babel: terminal (" session ")")))
+      (apply 'start-process process-name "*Messages*"
+             terminal `(,(if (string-equal terminal "alacritty") "-t" "-T") ,(concat "org-babel: " session) "-e" ,org-babel-screen-location
+                        "-c" ,screenrc "-mS" ,session ,cmd))
+      ;; XXX: Is there a better way than the following?
+      (while (not (org-babel-screen-session-socketname session))
+        ;; wait until screen session is available before returning
+        ))))
+#+end_src
+alacritty (-T org-babel: apiproxy -e screen -c /dev/null -mS apiproxy bash)
+
 * Improvements
-** /vertico-mode/
+** CANC /vertico-mode/
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
 
 #+begin_src elisp
 (with-eval-after-load 'vertico-grid
