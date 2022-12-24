@@ -94,6 +94,7 @@
     ("QA Queue"    "VERI")
     ("QA Passed"   "DONE")
     ("Completed"   "FINI")
+    ("Invalid"     "CANC")
     ("Closed"      "CANC")
     (_
      (message "Unknown state `%s' of `%s'" state type)
