@@ -72,6 +72,7 @@
      ob-php
      ob-rust
      orderless
+     org
      org-agenda-property
      org-brain
      org-noter

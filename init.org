@@ -1401,6 +1401,15 @@ mouse-3: Toggle minor modes"
   (when (display-graphic-p frame)
     (with-selected-frame frame
       (cond
+       ((member "Hack Nerd Font Mono" (font-family-list))
+        (set-face-attribute 'default nil
+                            :family "Hack Nerd Font Mono"
+                            :height 90
+                            :foundry "unknown"
+                            :weight 'regular
+                            :slant 'normal
+                            :width 'normal)
+        (message "Monospace font: Hack Nerd Font Mono Family"))
        ((member "Hack" (font-family-list))
         (set-face-attribute 'default nil
                             :family "Hack"
@@ -15589,8 +15598,10 @@ If run interactively, get ENTRY from context."
         '((:name "Id" :width 12 :template "{{ json .ID }}" :sort nil :format nil)
           (:name "Image" :width 6 :template "{{ json .Image }}" :sort nil :format nil)
           (:name "Command" :width 8 :template "{{ json .Command }}" :sort nil :format nil)
-          (:name "Created" :width 11 :template "{{ json .CreatedAt }}" :sort nil :format (lambda (x) (format-time-string "%F %T" (date-to-time x))))
-          (:name "Status" :width 14 :template "{{ json .Status }}" :sort nil :format (lambda (s) (replace-regexp-in-string "^[^ ]+" (lambda (s) (substring s 0 2)) s)))
+          (:name "Created" :width 11 :template "{{ json .CreatedAt }}" :sort nil
+                 :format (lambda (x) (format-time-string "%F %T" (date-to-time x))))
+          (:name "Status" :width 15 :template "{{ json .Status }}" :sort nil
+                 :format (lambda (s) (replace-regexp-in-string "^[^ ]+" (lambda (s) (substring s 0 2)) s)))
           (:name "Ports" :width 19 :template "{{ json .Ports }}" :sort nil :format nil)
           (:name "Names" :width 10 :template "{{ json .Names }}" :sort nil :format nil)))
   (defun docker-container-status-face (status)
@@ -15607,7 +15618,7 @@ If run interactively, get ENTRY from context."
    docker-container-logs ()
    "Transient for showing containers logs."
    :man-page "docker-container-logs"
-   :value '("--tail 150" "-f" "--timestamps")
+   :value '("--tail 1000" "-f" "--timestamps")
    ["Arguments"
     ("-f" "Follow" "-f")
     ("-s" "Since" "--since " read-string)
