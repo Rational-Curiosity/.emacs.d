@@ -6817,7 +6817,7 @@ _C-p_rev   _C-u_pper  _C-e_diff    _C-=_: upper-lower
       (lambda ()
         (unless (and (eq major-mode 'vterm-mode)
                      (null vterm-copy-mode))
-            (let ((pos (let* ((p (save-excursion (end-of-line) (point)))
+            (let ((pos (let* ((p (save-excursion (end-of-visual-line) (point)))
                               (ovs (delq global-hl-line-overlay
                                          (delq hl-line-overlay (overlays-at p)))))
                          (if ovs
