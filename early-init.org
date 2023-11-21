@@ -476,7 +476,7 @@ modified.
 (add-to-list 'default-frame-alist
              (if (intern-soft "alpha-background")
 ;; thanks to: https://github.com/TheVaffel/emacs
-                 '(alpha-background . 0.6)
+                 '(alpha-background . 60)
                '(alpha . (80 . 70))))
 ;; (set-frame-parameter (selected-frame) 'alpha '(90 . 75))
 ;; ]
