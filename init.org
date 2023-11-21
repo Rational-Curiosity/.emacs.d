@@ -15621,7 +15621,12 @@ If run interactively, get ENTRY from context."
           (:name "Created" :width 11 :template "{{ json .CreatedAt }}" :sort nil
                  :format (lambda (x) (format-time-string "%F %T" (date-to-time x))))
           (:name "Status" :width 15 :template "{{ json .Status }}" :sort nil
-                 :format (lambda (s) (replace-regexp-in-string "^[^ ]+" (lambda (s) (substring s 0 2)) s)))
+                 :format (lambda (s)
+                           (replace-regexp-in-string
+                            "^[^ ]+" (lambda (s) (substring s 0 2))
+                            (string-replace
+                             "About" "~"
+                             (string-replace "Less than" "<" s)))))
           (:name "Ports" :width 19 :template "{{ json .Ports }}" :sort nil :format nil)
           (:name "Names" :width 10 :template "{{ json .Names }}" :sort nil :format nil)))
   (defun docker-container-status-face (status)
@@ -15638,7 +15643,7 @@ If run interactively, get ENTRY from context."
    docker-container-logs ()
    "Transient for showing containers logs."
    :man-page "docker-container-logs"
-   :value '("--tail 1000" "-f" "--timestamps")
+   :value '("--tail 512" "-f" "--timestamps")
    ["Arguments"
     ("-f" "Follow" "-f")
     ("-s" "Since" "--since " read-string)
