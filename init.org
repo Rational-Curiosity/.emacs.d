@@ -2,7 +2,7 @@
 #+AUTHOR: e
 #+EMAIL:  no-reply@
 #+PROPERTY:  header-args:elisp   :results silent
-#+PROPERTY:  header-args:elisp+  :tangle ~/.emacs.d/init.el
+#+PROPERTY:  header-args:elisp+  :tangle (expand-file-name "init.el" user-emacs-directory)
 #+PROPERTY:  header-args:elisp+  :eval no-export
 # Save to tangle file: C-c C-v C-t
 
@@ -1519,7 +1519,8 @@ mouse-3: Toggle minor modes"
 
 #+begin_src elisp
 (eval-and-compile
-  (let ((default-directory "~/.emacs.d/el"))
+  (let ((default-directory (expand-file-name
+                            "el" user-emacs-directory)))
     (normal-top-level-add-subdirs-to-load-path)))
 #+end_src
 
@@ -1837,7 +1838,7 @@ prompt the user for a coding system."
 (when (executable-find "xkbcomp")
   (defun xkb-swap-ralt-ctrl (&optional arg)
     (interactive "P")
-    (let ((xkb-path (expand-file-name "~/.emacs.d/cache/xkb")))
+    (let ((xkb-path (expand-file-name "cache/xkb" user-emacs-directory)))
       (if arg
           (start-process " *xkbcomp" nil
                          "xkbcomp" (concat "-I" xkb-path)
@@ -7286,7 +7287,8 @@ By default insert it, with prefix display a message with it."
 (with-eval-after-load 'tramp
   (setq password-cache t
         password-cache-expiry 3600
-        auth-sources '((:source "~/.emacs.d/authinfo.gpg"))
+        auth-sources '((:source (expand-file-name "authinfo.gpg"
+                                                  user-emacs-directory)))
         tramp-default-method "ssh"
         auth-source-save-behavior nil))
 #+end_src
@@ -8594,10 +8596,14 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
       (cond
        ((string-equal executable "aspell")
         (setq ispell-personal-dictionary
-              (file-truename "~/.emacs.d/cache/aspell.spanish.pws"))
+              (file-truename (expand-file-name
+                              "cache/aspell.spanish.pws"
+                              user-emacs-directory)))
         (add-to-list 'ispell-extra-args "--sug-mode=ultra"))
        ((string-equal executable "hunspell")
-        (setenv "DICPATH" (file-truename "~/.emacs.d/cache/hunspell/"))
+        (setenv "DICPATH" (file-truename (expand-file-name
+                                          "cache/hunspell/"
+                                          user-emacs-directory)))
         (add-to-list 'ispell-local-dictionary-alist `("es_ES"
                                                       "[a-zA-ZáéíóúÁÉÍÓÚÑüÜ]"
                                                       "[^a-zA-ZáéíóúÁÉÍÓÚÑüÜ]"
@@ -8608,7 +8614,9 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                                                       utf-8))
         (setq ispell-really-hunspell t
               ispell-personal-dictionary
-              (file-truename "~/.emacs.d/cache/hunspell.spanish.pws")
+              (file-truename (expand-file-name
+                              "cache/hunspell.spanish.pws"
+                              user-emacs-directory))
               ispell-current-dictionary "es_ES"
               ispell-local-dictionary "es_ES"
               ispell-dictionary "es_ES")
@@ -8627,9 +8635,11 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
       (setq ispell-personal-dictionary
             (cond
              ((string-equal ispell-program-name "aspell")
-              (concat "~/.emacs.d/cache/aspell." dictionary ".pws"))
+              (expand-file-name (concat "cache/aspell." dictionary ".pws")
+                                user-emacs-directory))
              ((string-equal ispell-program-name "hunspell")
-              (concat "~/.emacs.d/cache/hunspell." dictionary ".pws"))))
+              (expand-file-name (concat "cache/hunspell." dictionary ".pws")
+                                user-emacs-directory))))
       (ispell-change-dictionary dictionary))
 
                                         ;(ispell-change-dictionary)
@@ -12074,8 +12084,12 @@ Switch the current window to the previous buffer."
       bmkp-last-as-first-bookmark-file nil
       ;;bmkp-light-style-autonamed 'lfringe
       ;;bmkp-light-style-non-autonamed 'lfringe
-      bmkp-bmenu-commands-file "~/.emacs.d/cache/bmk-bmenu-commands.el"
-      bmkp-bmenu-state-file "~/.emacs.d/cache/bmk-bmenu-state.el")
+      bmkp-bmenu-commands-file (expand-file-name
+                                "cache/bmk-bmenu-commands.el"
+                                user-emacs-directory)
+      bmkp-bmenu-state-file (expand-file-name
+                             "cache/bmk-bmenu-state.el"
+                             user-emacs-directory))
 
 (set-face-background 'bmkp-light-non-autonamed "DarkSlateGray")
 (set-face-background 'bmkp-light-autonamed "DimGray")
@@ -13430,12 +13444,15 @@ Switch the current window to the previous buffer."
         org-export-babel-evaluate nil
         org-src-fontify-natively t
         org-src-tab-acts-natively t
-        org-plantuml-jar-path (expand-file-name "~/.emacs.d/cache/java/plantuml.jar")
+        org-plantuml-jar-path (expand-file-name
+                               "cache/java/plantuml.jar"
+                               user-emacs-directory)
         org-babel-default-header-args:plantuml
         '((:results . "file")
           (:exports . "results")
           (:java . "-Dfile.encoding=UTF-8"))
-        org-ditaa-jar-path (expand-file-name "~/.emacs.d/cache/java/ditaa.jar"))
+        org-ditaa-jar-path (expand-file-name "cache/java/ditaa.jar"
+                                             user-emacs-directory))
 
   ;; active Babel languages
   (org-babel-do-load-languages
@@ -13634,7 +13651,8 @@ Switch the current window to the previous buffer."
         org-latex-to-mathml-convert-command
         "java -jar %j -unicode -force -df %o %I"
         org-latex-to-mathml-jar-file
-        (expand-file-name "~/.emacs.d/cache/java/mathtoweb.jar")
+        (expand-file-name "cache/java/mathtoweb.jar"
+                          user-emacs-directory)
         ;; Convert to other formats
         org-odt-convert-processes
         `(("WINWORD"
@@ -14860,7 +14878,8 @@ Throw an error when trying to set a property with an invalid name."
         appt-message-warning-time 1
         appt-display-duration 1
         appt-display-diary nil
-        diary-file "~/.emacs.d/cache/diary"
+        diary-file (expand-file-name "cache/diary"
+                                      user-emacs-directory)
         ;; delete old appointments
         ;; appt-time-msg-list nil
         )
@@ -15694,7 +15713,7 @@ If run interactively, get ENTRY from context."
 
   (require 'yasnippet-snippets)
   (setq yas-snippet-dirs
-        (list (expand-file-name "~/.emacs.d/cache/snippets")))
+        (list (expand-file-name "cache/snippets" user-emacs-directory)))
 
   (define-key yas-minor-mode-map (kbd "<tab>") nil)
   (define-key yas-minor-mode-map (kbd "TAB") nil)
@@ -16036,7 +16055,8 @@ nil."
 
   (setq plantuml-default-exec-mode 'jar
         plantuml-jar-path (expand-file-name 
-                           "~/.emacs.d/cache/java/plantuml.jar")))
+                           "cache/java/plantuml.jar"
+                           user-emacs-directory)))
 #+end_src
 
 **** Plantuml documentation

@@ -2,7 +2,7 @@
 #+AUTHOR: e
 #+EMAIL:  no-reply@
 #+PROPERTY:  header-args:elisp   :results silent
-#+PROPERTY:  header-args:elisp+  :tangle ~/.emacs.d/early-init.el
+#+PROPERTY:  header-args:elisp+  :tangle (expand-file-name "early-init.el" user-emacs-directory)
 #+PROPERTY:  header-args:elisp+  :eval no-export
 # Save to tangle file: C-c C-v C-t
 
