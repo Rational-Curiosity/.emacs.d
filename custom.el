@@ -19,7 +19,6 @@
      dash
      deferred
      docker
-     docker-tramp
      dockerfile-mode
      edit-server
      eglot
