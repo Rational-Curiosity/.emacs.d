@@ -12,13 +12,14 @@ Emacs buind from source
 
 #+begin_src sh
 ./configure \
-  --without-sound --without-xpm --without-selinux --without-xwidgets\
-  --without-jpeg --without-tiff --without-gif --without-rsvg\
-  --without-imagemagick --without-libotf --without-m17n-flt --without-xaw3d\
-  --without-toolkit-scroll-bars --without-gpm --without-gconf\
-  --without-gsettings --without-makeinfo\
-  --with-cairo --with-x-toolkit=gtk3 --with-dbus --with-json --with-xml2\
-  --with-zlib --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
+    --without-sound --without-xpm --without-selinux --without-xwidgets\
+    --without-jpeg --without-tiff --without-gif --without-rsvg\
+    --without-imagemagick --without-libotf --without-m17n-flt --without-xaw3d\
+    --without-toolkit-scroll-bars --without-gpm --without-gconf\
+    --without-gsettings --with-png --with-tree-sitter\
+    --enable-link-time-optimization --with-mailutils\
+    --with-cairo-xcb --with-x-toolkit=gtk3 --with-dbus --with-json --with-xml2\
+    --with-zlib --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
 #+end_src
 
 #+RESULTS:
@@ -8240,21 +8241,21 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
                     (beep))))
                ((< 0 eshell-last-command-status)
                 (let ((filename (expand-file-name
-                                "cache/sounds/negative-beep.wav"
-                                user-emacs-directory)))
+                                 "cache/sounds/negative-beep.wav"
+                                 user-emacs-directory)))
                   (if (file-exists-p filename)
                       (start-process "*aplay*" nil "aplay" filename)
                     (beep))))
                (t
                 (let ((filename (expand-file-name
-                                "cache/sounds/sonar.wav"
-                                user-emacs-directory)))
+                                 "cache/sounds/sonar.wav"
+                                 user-emacs-directory)))
                   (if (file-exists-p filename)
                       (start-process "*aplay*" nil "aplay" filename)
                     (beep)))))
             (let ((filename (expand-file-name
-                            "cache/sounds/startup.wav"
-                            user-emacs-directory)))
+                             "cache/sounds/startup.wav"
+                             user-emacs-directory)))
                   (if (file-exists-p filename)
                       (start-process "*aplay*" nil "aplay" filename)
                     (beep))))))))
@@ -13259,7 +13260,7 @@ Switch the current window to the previous buffer."
   ;; (set-face-attribute 'org-upcoming-deadline nil :foreground "orange")
   ;; (set-face-attribute 'org-warning nil :foreground "gold")
   ;; (set-face-attribute 'org-tag nil :bold nil)
-  ;; (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")<
+  ;; (set-face-attribute 'org-level-1 nil :bold t :foreground "dark cyan")
   ;; (set-face-attribute 'org-level-2 nil :bold t :foreground "medium turquoise")
   ;; (set-face-attribute 'org-level-3 nil :bold t :foreground "pale turquoise")
   (face-spec-set 'org-ellipsis
