@@ -28,7 +28,7 @@ sudo apt install libxml2-dev libjansson-dev libxt-dev
 - minimal emacs
 
 #+begin_src sh
-./configure \
+./configure\
   --without-sound --without-xpm --without-selinux \
   --without-xwidgets --without-cairo --without-x-toolkit \
   --without-jpeg --without-tiff --without-gif --without-rsvg \
@@ -9141,14 +9141,14 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   ;;   "Parses all files under the current directory matching regex"
   ;;   (semantic-parse-dir (file-name-directory buffer-file-name) regex)
   ;; )
-  
+
   ;; (defun semantic-parse-curdir-c ()
   ;;   "Parses all the c/c++ related files under the current directory
   ;;    and inputs their data into semantic"
   ;;   (interactive)
   ;;   (semantic-parse-current-dir semantic-parse-c-files-regex)
   ;; )
-  
+
   ;; (defun semantic-parse-dir-c (dir)
   ;;   "Prompts the user for a directory and parses all c/c++ related files
   ;;    under the directory"
@@ -9604,7 +9604,7 @@ Improve default ia jump at point."
      ;;          (return path-file))))))
      (t
       (recursive-find-to-root '("CMakeLists.txt" "Makefile" "makefile") default-directory))))
-  
+
   (defun cmake-make-conf ()
     "Get current compilation mode.  Examples: debug, release..."
     (cond
@@ -10156,14 +10156,14 @@ if __name__ == \"__main__\":
    ((equal orderless-matching-styles '(orderless-flex))
     (setq orderless-matching-styles '(orderless-regexp orderless-flex))
     (message "orderless-regexp orderless-flex")))
-  (cond 
+  (cond
    (icomplete-mode
     (completion--flush-all-sorted-completions)
     (icomplete-pre-command-hook)
     (icomplete-post-command-hook))
    ((bound-and-true-p vertico-mode)
-    (vertico--update-candidates 
-     (max 0 (- (point) (minibuffer-prompt-end))) 
+    (vertico--recompute
+     (max 0 (- (point) (minibuffer-prompt-end)))
      (minibuffer-contents-no-properties)))))
 
 (define-key minibuffer-local-completion-map (kbd "C-o")
@@ -12646,7 +12646,7 @@ Switch the current window to the previous buffer."
   (when (locate-library "embark-consult")
     (with-eval-after-load 'consult
       (require 'embark-consult)))
-  
+
   (add-to-list 'display-buffer-alist
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
@@ -12976,7 +12976,7 @@ Switch the current window to the previous buffer."
                         :foreground "yellow"))
 
   (setq minimap-window-location 'right
-        minimap-width-fraction 0.0 ;; always minimum width 
+        minimap-width-fraction 0.0 ;; always minimum width
         minimap-minimum-width 15
         minimap-update-delay 0.3
         minimap-always-recenter nil
@@ -13626,7 +13626,7 @@ Switch the current window to the previous buffer."
   ;; ;;;;;;;;;;;;;;; ;;
   (require 'ox-mediawiki)
   ;; Change dispatcher bind key because of conflict with markdown
-  (setcar (org-export-backend-menu 
+  (setcar (org-export-backend-menu
            (-first
             (lambda (b)
               (string-equal "mw" (symbol-name (org-export-backend-name b))))
@@ -14177,7 +14177,7 @@ blockquote {
         org-habit-graph-column 44
         ;; <Agenda commands>
         org-agenda-custom-commands
-        '(("h" "[h]abits" 
+        '(("h" "[h]abits"
            ((agenda ""))
            ((org-agenda-show-log t)
             (org-agenda-ndays 7)
@@ -14460,8 +14460,8 @@ blockquote {
       (skip-chars-forward "^|")
       (setq ecol (point))
       (org-table-copy-region bcol ecol nil)
-      (setq lns (mapcar (lambda (x) (cons 
-                                     (org-sort-remove-invisible 
+      (setq lns (mapcar (lambda (x) (cons
+                                     (org-sort-remove-invisible
                                       (substring-no-properties x) )
                                      x))
                         ( mapcar 'car org-table-clip)))
@@ -14725,8 +14725,8 @@ Throw an error when trying to set a property with an invalid name."
   (define-key org-mode-map (kbd "C-c TAB") #'org-show-subtree)
   (define-key org-mode-map (kbd "C-c <backtab>") #'org-show-all)
   (define-key org-mode-map (kbd "C-c v t") #'org-show-todo-tree)
-  ;; (define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all) 
-  ;; (define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all) 
+  ;; (define-key org-mode-map (kbd "C-c v s") #'org-block-and-result-show-all)
+  ;; (define-key org-mode-map (kbd "C-c v h") #'org-block-and-result-hide-all)
   (define-key org-mode-map (kbd "C-c M-s") #'org-sort-entries-user-defined)
   (define-key org-mode-map (kbd "C-c C") #'org-capture)
   (define-key org-mode-map (kbd "C-c a") #'org-agenda)
@@ -15237,7 +15237,7 @@ If run interactively, get ENTRY from context."
           (indent-according-to-mode)
           (forward-line -1)
           (indent-according-to-mode))))
-    
+
     (defun my-double-angle-c-mode (id action context)
       "Delete closed angles when ID ACTION CONTEXT."
       (let* ((current-pos (point))
@@ -16077,7 +16077,7 @@ nil."
   (message "Importing plantuml-mode")
 
   (setq plantuml-default-exec-mode 'jar
-        plantuml-jar-path (expand-file-name 
+        plantuml-jar-path (expand-file-name
                            "cache/java/plantuml.jar"
                            user-emacs-directory)))
 #+end_src
@@ -16196,13 +16196,13 @@ Some HTML tags are also working:
     <img:http://url> : the URL must be available from the Internet
 
 @startuml
-  :* You can change <color:red>text color</color> 
-  * You can change <back:cadetblue>background color</back> 
-  * You can change <size:18>size</size> 
-  * You use <u>legacy</u> <b>HTML <i>tag</i></b> 
+  :* You can change <color:red>text color</color>
+  * You can change <back:cadetblue>background color</back>
+  * You can change <size:18>size</size>
+  * You use <u>legacy</u> <b>HTML <i>tag</i></b>
   * You use <u:red>color</u> <s:green>in HTML</s> <w:#0000FF>tag</w>
   ----
-  * Use image : <img:sourceforge.jpg> 
+  * Use image : <img:sourceforge.jpg>
   ;
 @enduml
 
@@ -16317,7 +16317,7 @@ Abort: `\\[edit-server-abort]'")))
 
   (require 'emms-source-file)
   (require 'emms-volume)
-  
+
   (setq emms-source-file-default-directory
         (cl-some (lambda (f)
                    (and (file-exists-p f)
@@ -18120,7 +18120,7 @@ current `default-directory'."
                 ;; [ <FIXED>
                 (select-window (frame-selected-window exwm--frame))
                 (exwm-floating--unset-floating id)
-                ;; ] <FIXED>  
+                ;; ] <FIXED>
                 )
             ;; Try to determine if it should be floating.
             (if (and (not exwm-manage-force-tiling)
@@ -18550,7 +18550,7 @@ alacritty (-T org-babel: apiproxy -e screen -c /dev/null -mS apiproxy bash)
       (when (eq prop 'display-sort-function)
         (when-let ((history (minibuffer-history-value)))
           `(lambda (completions)
-             (let* ((common 
+             (let* ((common
                      (let (result)
                        (mapc
                         (lambda (candidate)
