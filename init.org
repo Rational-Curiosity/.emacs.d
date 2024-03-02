@@ -8749,6 +8749,9 @@ Only stdout sent to eshell buffer, stderr sent to *stderr* buffer."
   (push '("\\_<\\(GET\\|HEAD\\|POST\\|PUT\\|DELETE\\|CONNECT\\|OPTIONS\\|TRACE\\|PATCH\\)\\_> [^ \t\r\n]*"
           0 compilation-info-face)
         compilation-mode-font-lock-keywords)
+  (push '("\\_<[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}[ T][0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\(\\.[0-9]+Z?\\)?\\_>"
+          0 compilation-info-face)
+        compilation-mode-font-lock-keywords)
 
   ;; (defun compilation-conditional-scroll-output ()
   ;;   (let ((name (buffer-name)))
