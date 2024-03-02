@@ -11,15 +11,16 @@
 Emacs buind from source
 
 #+begin_src sh
-./configure \
-    --without-sound --without-xpm --without-selinux --without-xwidgets\
-    --without-jpeg --without-tiff --without-gif --without-rsvg\
-    --without-imagemagick --without-libotf --without-m17n-flt --without-xaw3d\
-    --without-toolkit-scroll-bars --without-gpm --without-gconf\
-    --without-gsettings --with-png --with-tree-sitter\
-    --enable-link-time-optimization --with-mailutils\
-    --with-cairo-xcb --with-x-toolkit=gtk3 --with-dbus --with-json --with-xml2\
-    --with-zlib --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
+sudo apt install libxml2-dev libjansson-dev libxt-dev
+./configure\
+  --without-sound --without-xpm --without-selinux --without-xwidgets\
+  --without-jpeg --without-tiff --without-gif --without-rsvg\
+  --without-imagemagick --without-libotf --without-m17n-flt --without-xaw3d\
+  --without-toolkit-scroll-bars --without-gpm --without-gconf\
+  --without-gsettings --with-png --with-tree-sitter\
+  --enable-link-time-optimization --with-mailutils\
+  --with-cairo-xcb --with-x-toolkit=gtk3 --with-dbus --with-json --with-xml2\
+  --with-zlib --with-native-compilation CFLAGS='-O2 -mtune=native -march=native'
 #+end_src
 
 #+RESULTS:
