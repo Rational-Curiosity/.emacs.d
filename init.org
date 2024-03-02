@@ -15645,7 +15645,10 @@ If run interactively, get ENTRY from context."
                            (or (gethash s docker-container-replacements) s)))
                         (replace-regexp-in-string
                          " (\\([0-9]+\\))" "\\1"))))
-          (:name "Ports" :width 19 :template "{{ json .Ports }}" :sort nil :format nil)
+          (:name "Ports" :width 14 :template "{{ json .Ports }}" :sort nil
+                 :format
+                 (lambda (s)
+                   (string-replace "0.0.0.0:" "0…:" s)))
           (:name "Names" :width 10 :template "{{ json .Names }}" :sort nil :format nil)))
   (defun docker-container-status-face (status)
     "Return the correct face according to STATUS."
