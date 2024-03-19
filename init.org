@@ -1863,7 +1863,7 @@ prompt the user for a coding system."
 (defun apple-keyboard-toggle-fn-key (&optional arg)
   ;; * permanent change
   ;; 1. edit or create: /etc/modprobe.d/hid_apple.conf
-  ;; 2. append line:    options hid_apple fnmode=2
+  ;; 2. append line:    options hid_apple fnmode=0
   ;; 3. shell command:  sudo update-initramfs -u -k all
   ;; 4. reboot.
   (interactive "P")
@@ -7376,6 +7376,13 @@ By default insert it, with prefix display a message with it."
 (global-set-key (kbd "C-x R") 'recentf-open-files)
 #+end_src
 
+*** /browse-url/
+
+#+begin_src elisp
+(with-eval-after-load 'browse-url
+  (setq browse-url-browser-function 'browse-url-chrome))
+#+end_src
+
 *** /zone/
 
 #+begin_src elisp
@@ -7389,6 +7396,15 @@ By default insert it, with prefix display a message with it."
 
 #+begin_src elisp
 (with-eval-after-load 'dired
+  (face-spec-set
+   'dired-marked
+   `((((class color) (min-colors 88) (supports :box t))
+      :box
+      (:line-width ,(if (>= emacs-major-version 28) '(-2 . -2) -2)
+       :color "dark violet"
+       :style nil))
+     (t :inherit font-lock-constant-face)))
+
   (defface dired-python
     '((((type w32 pc)) :inherit default)
       (t (:foreground "green")))
@@ -10093,7 +10109,8 @@ if __name__ == \"__main__\":
         undo-tree-history-directory-alist
         `(("." . ,(expand-file-name "undo-tree" user-emacs-directory))))
   (setcar (cdr (assq 'undo-tree-mode minor-mode-alist))
-          undo-tree-mode-lighter))
+          undo-tree-mode-lighter)
+  (add-to-list 'undo-tree-incompatible-major-modes 'elfeed-search-mode))
 (global-undo-tree-mode)
 (global-set-key (kbd "C-x u") #'undo-tree-visualize)
 (global-set-key (kbd "C-_") #'undo-tree)
@@ -10162,9 +10179,11 @@ if __name__ == \"__main__\":
     (icomplete-pre-command-hook)
     (icomplete-post-command-hook))
    ((bound-and-true-p vertico-mode)
-    (vertico--recompute
-     (max 0 (- (point) (minibuffer-prompt-end)))
-     (minibuffer-contents-no-properties)))))
+    ;; (vertico--recompute
+    ;;  (max 0 (- (point) (minibuffer-prompt-end)))
+    ;;  (minibuffer-contents-no-properties))
+    (setq vertico--input t)
+    )))
 
 (define-key minibuffer-local-completion-map (kbd "C-o")
   'orderless-match-components-cycle)
@@ -10176,6 +10195,7 @@ if __name__ == \"__main__\":
 
 #+begin_src elisp
 (when (require 'vertico nil t)
+  (require 'vertico-multiform)
   (require 'vertico-grid)
   ;;(require 'vertico-autoloads nil t)
 
@@ -10187,8 +10207,11 @@ if __name__ == \"__main__\":
                      #'consult-completion-in-region
                    #'completion--in-region)
                  args))
+        vertico-cycle t
         vertico-grid-rows 5
-        vertico-grid-min-columns 4)
+        vertico-grid-min-columns 4
+        vertico-grid-max-columns 16
+        vertico-grid-annotate 16)
 
   (defun basic-remote-try-completion (string table pred point)
     (and (vertico--remote-p string)
@@ -10203,8 +10226,8 @@ if __name__ == \"__main__\":
   (define-key vertico-map (kbd "C-o") 'orderless-match-components-cycle)
   (define-key vertico-map (kbd "M-z") 'vertico-quick-exit)
 
-  ;;(vertico-grid-mode)
-  (vertico-mode))
+  (vertico-mode)
+  (vertico-multiform-mode))
 #+end_src
 
 *** /tree-sitter/
@@ -15645,10 +15668,28 @@ If run interactively, get ENTRY from context."
                            (or (gethash s docker-container-replacements) s)))
                         (replace-regexp-in-string
                          " (\\([0-9]+\\))" "\\1"))))
-          (:name "Ports" :width 14 :template "{{ json .Ports }}" :sort nil
+          (:name "Ports" :width 13 :template "{{ json .Ports }}" :sort nil
                  :format
                  (lambda (s)
-                   (string-replace "0.0.0.0:" "0…:" s)))
+                   (->> s
+                        (string-replace "0.0.0.0" "0…")
+                        (replace-regexp-in-string
+                         "\\(0\\{4,\\}\\|1\\{4,\\}\\|2\\{4,\\}\\|3\\{4,\\}\\|4\\{4,\\}\\|5\\{4,\\}\\|6\\{4,\\}\\|7\\{4,\\}\\|8\\{4,\\}\\|9\\{4,\\}\\)"
+                         (lambda (s)
+                           (concat (substring s 0 1)
+                                   (pcase (length s)
+                                     (3 "⑶")
+                                     (4 "⑷")
+                                     (5 "⑸")
+                                     (6 "⑹")
+                                     (7 "⑺")
+                                     (8 "⑻")
+                                     (9 "⑼")
+                                     (_ "…")))))
+                        (string-replace "->" "→")
+                        (string-replace "/tcp" "⒯")
+                        (string-replace "/udp" "⒰")
+                        (string-replace ", " ","))))
           (:name "Names" :width 10 :template "{{ json .Names }}" :sort nil :format nil)))
   (defun docker-container-status-face (status)
     "Return the correct face according to STATUS."
@@ -16368,6 +16409,19 @@ Abort: `\\[edit-server-abort]'")))
 (with-eval-after-load 'elfeed
   (message "Importing elfeed-config")
 
+
+  (face-spec-set 'elfeed-search-title-face
+                 '((((class color) (background light))
+                    :foreground unspecified :strike-through "red")
+                   (((class color) (background dark))
+                    :foreground unspecified :strike-through "red")))
+
+  (face-spec-set 'elfeed-search-unread-title-face
+                 '((((class color) (background light))
+                    :foreground "#000" :strike-through nil)
+                   (((class color) (background dark))
+                    :foreground "#fff" :strike-through nil)))
+
   (defface elfeed-search-science-title-face
     '((((class color) (background light)) (:foreground "#fd0"))  ;; gold
       (((class color) (background dark))  (:foreground "#fd0")))
@@ -16375,8 +16429,8 @@ Abort: `\\[edit-server-abort]'")))
     :group 'elfeed)
 
   (defface elfeed-search-arxiv-title-face
-    '((((class color) (background light)) (:foreground "#ad3" :underline t))  ;; yellow green
-      (((class color) (background dark))  (:foreground "#ad3" :underline t)))
+    '((((class color) (background light)) (:foreground "#ad3"))  ;; yellow green
+      (((class color) (background dark))  (:foreground "#ad3")))
     "Face used in search mode for titles."
     :group 'elfeed)
 
@@ -16408,6 +16462,35 @@ Abort: `\\[edit-server-abort]'")))
   (push '(arxiv elfeed-search-arxiv-title-face) elfeed-search-face-alist)
   (push '(health elfeed-search-health-title-face) elfeed-search-face-alist)
 
+  ;;;; OVERRIDDEN
+  (defun elfeed-normalize-tags (tags &rest more-tags)
+    "Return the normalized tag list for TAGS."
+    (let ((all (apply #'append tags (nconc more-tags (list ())))))
+      (cl-delete-duplicates all)))
+
+  (defun elfeed-search-print-entry (entry)
+    "Print ENTRY to the buffer."
+    (let* ((date (elfeed-search-format-date (elfeed-entry-date entry)))
+           (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+           (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
+           (feed (elfeed-entry-feed entry))
+           (tags (mapcar #'symbol-name (elfeed-entry-tags entry)))
+           (tags-str (mapconcat
+                      (lambda (s) (propertize s 'face 'elfeed-search-tag-face))
+                      tags ","))
+           (title-width (- (window-width) 10 elfeed-search-trailing-width))
+           (title-column (elfeed-format-column
+                          (replace-regexp-in-string "</?[a-z]+>" "" title nil t)
+                          (elfeed-clamp
+                           elfeed-search-title-min-width
+                           title-width
+                           elfeed-search-title-max-width)
+                          :left)))
+      (insert (propertize date 'face 'elfeed-search-date-face) " ")
+      (insert (propertize title-column 'face title-faces 'kbd-help title) " ")
+      (when tags
+        (insert "(" tags-str ")"))))
+
   (defun elfeed-youtube-expand (id)
     (format
      (pcase (substring id 0 2)
@@ -16416,7 +16499,8 @@ Abort: `\\[edit-server-abort]'")))
        (_    "https://www.youtube.com/feeds/videos.xml?user=%s"))
      id))
 
-  (setq elfeed-feeds
+  (setq elfeed-search-print-entry-function 'elfeed-search-print-entry
+        elfeed-feeds
         `(
           ;; ("https://e00-expansion.uecdn.es/rss/portada.xml" expansion es txt)
           ;; ("http://estaticos.elmundo.es/elmundo/rss/espana.xml" elmundo spain es txt)
@@ -16440,37 +16524,51 @@ Abort: `\\[edit-server-abort]'")))
           ;;           '(astro-ph cond-mat cs econ eess gr-qc hep-ex hep-lat
           ;;                      hep-ph hep-th math math-ph nlin nucl-ex nucl-th
           ;;                      physics q-bio q-fin quant-ph stat))
-          ("http://arxiv.org/rss/math-ph" arxiv math en txt)
-          ("http://arxiv.org/rss/physics" arxiv physics en txt)
-          ("http://arxiv.org/rss/cs.AI" arxiv ai en txt)
+          ("http://rss.arxiv.org/atom/math-ph" papers arxiv math en txt)
+          ("http://rss.arxiv.org/atom/physics" papers arxiv physics en txt)
+          ("http://rss.arxiv.org/atom/cs.AI" papers arxiv ai en txt)
           ;; ]
           ;; [ health
-          ("https://www.who.int/rss-feeds/news-english.xml" oms health es txt)
+          ("https://medlineplus.gov/groupfeeds/new.xml" news medline health en txt)
           ;; ]
-          ;; podcast
-          ;; ("https://podcasts.files.bbci.co.uk/p02pc9ny.rss" bbc en aud)
-          ;; ("https://www.theguardian.com/news/series/todayinfocus/podcast.xml" theguardian en aud)
-          ;; images
-          ("https://xkcd.com/atom.xml" xkcd en img)
-          ;; video
-          (,(elfeed-youtube-expand "UCHnyfMqiRRG1u-2MsSQLbXA") veritasium science en vid)
-          ;; curiosity
-          ("http://www.iqscorner.com/feeds/posts/default?alt=rss" cur corner iq en txt)
-          ("http://importantquestionsabout.blogspot.com/feeds/posts/default?alt=rss" cur quest gk en txt)
-          ("https://www.reddit.com/r/IntelligenceQ/.rss" cur reddit iq en txt)
-          ("http://brainstormingbox.org/feed/" cur storm gk en txt)
-          ("https://deepmind.com/blog/feed/basic/" cur google ai en txt)
-          ("https://writings.stephenwolfram.com/feed/" cur wolfram math en txt)
-          ;; universities
+          ;; [ newspapers
+          ("https://feeds.bloomberg.com/bview/news.rss" news bloomberg opinion en txt)
+          ("https://feeds.bloomberg.com/markers/news.rss" news bloomberg markers en txt)
+          ("https://feeds.bloomberg.com/politics/news.rss" news bloomberg politics en txt)
+          ("http://feeds.bbci.co.uk/news/world/rss.xml" news bbc world en txt)
+          ("http://feeds.reuters.com/Reuters/worldNews" news reuters world en txt)
+          ;; ]
+          ;; [ curiosity
+          ;; ("http://www.iqscorner.com/feeds/posts/default?alt=rss" cur corner iq en txt)
+          ;; ("http://importantquestionsabout.blogspot.com/feeds/posts/default?alt=rss" cur quest gk en txt)
+          ;; ("https://www.reddit.com/r/IntelligenceQ/.rss" cur reddit iq en txt)
+          ;; ("http://brainstormingbox.org/feed/" cur storm gk en txt)
+          ;; ("https://deepmind.com/blog/feed/basic/" cur google ai en txt)
+          ;; ("https://writings.stephenwolfram.com/feed/" cur wolfram math en txt)
+          ;; ]
+          ;; [ universities
           ("https://www.sup.org/rss/?feed=economics" uni stanford economics en txt)
           ("https://www.sup.org/rss/?feed=anthropology" uni stanford anthropology en txt)
           ("https://www.sup.org/rss/?feed=philosophy" uni stanford philosophy en txt)
           ("https://www.cam.ac.uk/news-feed-generator.rss?field_taxonomy_section_tid=All" uni cambridge en txt)
           ("https://www.southampton.ac.uk/news/feeds/home-news-feed.page" uni southampton en txt)
+          ;; ]
+          ;; [ images
+          ("https://xkcd.com/atom.xml" xkcd en img)
+          ;; ]
+          ;; [ podcast
+          ;; ("https://podcasts.files.bbci.co.uk/p02pc9ny.rss" bbc en aud)
+          ;; ("https://www.theguardian.com/news/series/todayinfocus/podcast.xml" theguardian en aud)
+          ;; ]
+          ;; [ video inspect page -> search: browseId
+          (,(elfeed-youtube-expand "UC6jM0RFkr4eSkzT5Gx0HOAw") michaelpenn science en vid)
+          (,(elfeed-youtube-expand "UCYO_jab_esuFRV4b17AJtAw") 3blue1brown science en vid)
+          (,(elfeed-youtube-expand "UCHnyfMqiRRG1u-2MsSQLbXA") veritasium science en vid)
+          ;; ]
           )
         elfeed-db-directory (expand-file-name "elfeed" user-emacs-directory)
         elfeed-search-filter "@1-month-ago +unread"
-        elfeed-search-date-format '("%Y-%m-%d %H:%M" 16 :left)
+        elfeed-search-date-format '("%y-%m-%d %H:%M" 14 :left)
         elfeed-search-trailing-width 30
         elfeed-search-title-min-width 20
         elfeed-search-title-max-width 100)

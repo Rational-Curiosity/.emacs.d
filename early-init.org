@@ -272,7 +272,14 @@ modified.
                        (unless a
                          (set 'list-of-uninstalled (cons b list-of-uninstalled))))
                    list-of-boolean package-selected-packages)
-          (mapc #'package-install list-of-uninstalled)))))
+          (mapc (lambda (package)
+                  (condition-case err
+                      (package-install package)
+                    (error
+                     (message
+                      "Auto installing package error: %s"
+                      (error-message-string err)))))
+                list-of-uninstalled)))))
   ;; [ uninstall packages not in list
   ;; (mapc (lambda (pkg)
   ;;         (package-delete (cadr (assq pkg package-alist))))
